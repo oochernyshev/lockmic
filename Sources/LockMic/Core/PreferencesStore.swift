@@ -30,6 +30,10 @@ final class PreferencesStore: ObservableObject {
         static let ptmKeyCode = "hotkeyPushToMuteKeyCode"
         static let ptmModifiers = "hotkeyPushToMuteModifiers"
 
+        static let pttogEnabled = "hotkeyPushToToggleEnabled"
+        static let pttogKeyCode = "hotkeyPushToToggleKeyCode"
+        static let pttogModifiers = "hotkeyPushToToggleModifiers"
+
         // Legacy single-toggle keys (migrated once)
         static let legacyKeyCode = "hotkeyKeyCode"
         static let legacyModifiers = "hotkeyModifiers"
@@ -45,10 +49,12 @@ final class PreferencesStore: ObservableObject {
     static let defaultMute = HotkeyChord(keyCode: 46, modifiers: cmdKey | shiftKey | controlKey) // ⌃⌘⇧M
     static let defaultUnmute = HotkeyChord(keyCode: 46, modifiers: cmdKey | shiftKey | optionKey) // ⌥⌘⇧M
     static let defaultToggleAlt = HotkeyChord(keyCode: 96, modifiers: cmdKey) // ⌘F5
-    /// Hold to talk — Option+Space by default.
-    static let defaultPushToTalk = HotkeyChord(keyCode: 49, modifiers: optionKey) // ⌥Space
-    /// Hold to mute — Shift+Space by default (distinct from PTT ⌥Space).
-    static let defaultPushToMute = HotkeyChord(keyCode: 49, modifiers: shiftKey) // ⇧Space
+    /// Hold to invert mute — Option+Space by default.
+    static let defaultPushToToggle = HotkeyChord(keyCode: 49, modifiers: optionKey) // ⌥Space
+    /// Hold to talk — Shift+Space by default.
+    static let defaultPushToTalk = HotkeyChord(keyCode: 49, modifiers: shiftKey) // ⇧Space
+    /// Hold to mute — Shift+Option+Space by default.
+    static let defaultPushToMute = HotkeyChord(keyCode: 49, modifiers: shiftKey | optionKey) // ⇧⌥Space
 
     @Published var hudEnabled: Bool {
         didSet { UserDefaults.standard.set(hudEnabled, forKey: Keys.hudEnabled) }
@@ -138,6 +144,18 @@ final class PreferencesStore: ObservableObject {
         }
     }
 
+    /// Hold to invert mute; release restores previous state.
+    @Published var pushToToggleEnabled: Bool {
+        didSet { UserDefaults.standard.set(pushToToggleEnabled, forKey: Keys.pttogEnabled) }
+    }
+
+    @Published var pushToToggleChord: HotkeyChord {
+        didSet {
+            UserDefaults.standard.set(Int(pushToToggleChord.keyCode), forKey: Keys.pttogKeyCode)
+            UserDefaults.standard.set(Int(pushToToggleChord.modifiers), forKey: Keys.pttogModifiers)
+        }
+    }
+
     init() {
         let defaults = UserDefaults.standard
 
@@ -216,55 +234,74 @@ final class PreferencesStore: ObservableObject {
         }
         f5ToggleEnabled = defaults.bool(forKey: "hotkeyF5ToggleEnabled")
 
-        // Push-to-talk (off by default)
+        // Momentary shortcuts (all off by default). Order in UI: toggle → talk → mute.
+        let space: UInt32 = 49
+        let legacyControlSpace = HotkeyChord(keyCode: space, modifiers: Self.controlKey)
+        let legacyOptionSpace = HotkeyChord(keyCode: space, modifiers: Self.optionKey)
+        let legacyShiftSpace = HotkeyChord(keyCode: space, modifiers: Self.shiftKey)
+
+        if defaults.object(forKey: Keys.pttogEnabled) == nil {
+            defaults.set(false, forKey: Keys.pttogEnabled)
+        }
+        pushToToggleEnabled = defaults.bool(forKey: Keys.pttogEnabled)
+        pushToToggleChord = Self.loadChord(
+            defaults: defaults,
+            keyCodeKey: Keys.pttogKeyCode,
+            modifiersKey: Keys.pttogModifiers,
+            factory: Self.defaultPushToToggle,
+            legacyDefaults: [legacyControlSpace]
+        )
+
         if defaults.object(forKey: Keys.pttEnabled) == nil {
             defaults.set(false, forKey: Keys.pttEnabled)
         }
         pushToTalkEnabled = defaults.bool(forKey: Keys.pttEnabled)
-        if defaults.object(forKey: Keys.pttKeyCode) == nil {
-            defaults.set(Int(Self.defaultPushToTalk.keyCode), forKey: Keys.pttKeyCode)
-            defaults.set(Int(Self.defaultPushToTalk.modifiers), forKey: Keys.pttModifiers)
-        } else {
-            // Migrate previous factory default ⌃Space → ⌥Space if user never customized.
-            let stored = HotkeyChord(
-                keyCode: UInt32(defaults.integer(forKey: Keys.pttKeyCode)),
-                modifiers: UInt32(defaults.integer(forKey: Keys.pttModifiers))
-            )
-            let legacyDefault = HotkeyChord(keyCode: 49, modifiers: Self.controlKey) // ⌃Space
-            if stored == legacyDefault {
-                defaults.set(Int(Self.defaultPushToTalk.keyCode), forKey: Keys.pttKeyCode)
-                defaults.set(Int(Self.defaultPushToTalk.modifiers), forKey: Keys.pttModifiers)
-            }
-        }
-        pushToTalkChord = HotkeyChord(
-            keyCode: UInt32(defaults.integer(forKey: Keys.pttKeyCode)),
-            modifiers: UInt32(defaults.integer(forKey: Keys.pttModifiers))
+        pushToTalkChord = Self.loadChord(
+            defaults: defaults,
+            keyCodeKey: Keys.pttKeyCode,
+            modifiersKey: Keys.pttModifiers,
+            factory: Self.defaultPushToTalk,
+            // Prior factory defaults for talk: ⌃Space, then ⌥Space
+            legacyDefaults: [legacyControlSpace, legacyOptionSpace]
         )
 
-        // Push-to-mute (off by default)
         if defaults.object(forKey: Keys.ptmEnabled) == nil {
             defaults.set(false, forKey: Keys.ptmEnabled)
         }
         pushToMuteEnabled = defaults.bool(forKey: Keys.ptmEnabled)
-        if defaults.object(forKey: Keys.ptmKeyCode) == nil {
-            defaults.set(Int(Self.defaultPushToMute.keyCode), forKey: Keys.ptmKeyCode)
-            defaults.set(Int(Self.defaultPushToMute.modifiers), forKey: Keys.ptmModifiers)
-        } else {
-            // Migrate previous factory default ⌃Space → ⇧Space if user never customized.
-            let stored = HotkeyChord(
-                keyCode: UInt32(defaults.integer(forKey: Keys.ptmKeyCode)),
-                modifiers: UInt32(defaults.integer(forKey: Keys.ptmModifiers))
-            )
-            let legacyDefault = HotkeyChord(keyCode: 49, modifiers: Self.controlKey) // ⌃Space
-            if stored == legacyDefault {
-                defaults.set(Int(Self.defaultPushToMute.keyCode), forKey: Keys.ptmKeyCode)
-                defaults.set(Int(Self.defaultPushToMute.modifiers), forKey: Keys.ptmModifiers)
-            }
-        }
-        pushToMuteChord = HotkeyChord(
-            keyCode: UInt32(defaults.integer(forKey: Keys.ptmKeyCode)),
-            modifiers: UInt32(defaults.integer(forKey: Keys.ptmModifiers))
+        pushToMuteChord = Self.loadChord(
+            defaults: defaults,
+            keyCodeKey: Keys.ptmKeyCode,
+            modifiersKey: Keys.ptmModifiers,
+            factory: Self.defaultPushToMute,
+            // Prior factory defaults for mute: ⌃Space, then ⇧Space
+            legacyDefaults: [legacyControlSpace, legacyShiftSpace]
         )
+    }
+
+    /// Load a stored chord, writing the factory default if missing, or migrating known legacy factory chords.
+    private static func loadChord(
+        defaults: UserDefaults,
+        keyCodeKey: String,
+        modifiersKey: String,
+        factory: HotkeyChord,
+        legacyDefaults: [HotkeyChord]
+    ) -> HotkeyChord {
+        if defaults.object(forKey: keyCodeKey) == nil {
+            defaults.set(Int(factory.keyCode), forKey: keyCodeKey)
+            defaults.set(Int(factory.modifiers), forKey: modifiersKey)
+            return factory
+        }
+        let stored = HotkeyChord(
+            keyCode: UInt32(defaults.integer(forKey: keyCodeKey)),
+            modifiers: UInt32(defaults.integer(forKey: modifiersKey))
+        )
+        if legacyDefaults.contains(stored) {
+            defaults.set(Int(factory.keyCode), forKey: keyCodeKey)
+            defaults.set(Int(factory.modifiers), forKey: modifiersKey)
+            return factory
+        }
+        return stored
     }
 
     /// Named rows used for registration and conflict detection.
@@ -274,6 +311,7 @@ final class PreferencesStore: ObservableObject {
             ("⌘F5 toggle", f5ToggleEnabled, Self.defaultToggleAlt, .toggle),
             ("Mute", muteShortcutEnabled, muteChord, .mute),
             ("Unmute", unmuteShortcutEnabled, unmuteChord, .unmute),
+            ("Push to toggle", pushToToggleEnabled, pushToToggleChord, .pushToToggle),
             ("Push to talk", pushToTalkEnabled, pushToTalkChord, .pushToTalk),
             ("Push to mute", pushToMuteEnabled, pushToMuteChord, .pushToMute),
         ]
@@ -313,6 +351,9 @@ final class PreferencesStore: ObservableObject {
 
         unmuteShortcutEnabled = false
         unmuteChord = Self.defaultUnmute
+
+        pushToToggleEnabled = false
+        pushToToggleChord = Self.defaultPushToToggle
 
         pushToTalkEnabled = false
         pushToTalkChord = Self.defaultPushToTalk

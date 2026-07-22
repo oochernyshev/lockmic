@@ -12,17 +12,29 @@ final class StatusItemController {
     private var statusItem: NSStatusItem?
     private var preferencesWindow: NSWindow?
     private var cancellables: [NSObjectProtocol] = []
-    /// Tracks last applied floating preference so we only hide on a true off transition.
+    /// Tracks last applied floating preference so we only hide/show on a real change.
     private var lastHudFloating: Bool?
-    /// Active momentary hold (push-to-talk / push-to-mute).
+    /// Last bindings passed to HotkeyManager (skip re-register when unchanged).
+    private var lastRegisteredBindings: [HotkeyBinding] = []
+    /// Active momentary hold (push-to-talk / mute / toggle).
     private enum MomentaryHold {
         case none
         case pushToTalk(wasMuted: Bool)
         case pushToMute(wasMuted: Bool)
+        case pushToToggle(wasMuted: Bool)
 
         var isActive: Bool {
             if case .none = self { return false }
             return true
+        }
+
+        var hudHold: HUDHoldKind {
+            switch self {
+            case .none: return .none
+            case .pushToTalk: return .talk
+            case .pushToMute: return .mute
+            case .pushToToggle: return .flip
+            }
         }
     }
 
@@ -75,7 +87,8 @@ final class StatusItemController {
     }
 
     private func observePreferenceHotkeys() {
-        // Re-register shortcuts and sync floating HUD when Preferences change.
+        // Prefer-scoped updates: only re-register / re-show when those prefs actually change.
+        // (HUD drag/hide writes UserDefaults frequently and must not thrash hotkeys.)
         cancellables.append(
             NotificationCenter.default.addObserver(
                 forName: UserDefaults.didChangeNotification,
@@ -83,8 +96,8 @@ final class StatusItemController {
                 queue: .main
             ) { [weak self] _ in
                 Task { @MainActor in
-                    self?.registerHotkeys()
-                    self?.syncFloatingHUD()
+                    self?.registerHotkeysIfNeeded()
+                    self?.syncFloatingHUDIfNeeded()
                 }
             }
         )
@@ -99,18 +112,54 @@ final class StatusItemController {
             sounds.play(muted: displayMuted)
         }
 
+        presentHUD(muted: displayMuted, userInitiated: showHUD)
+    }
+
+    /// Floating = always interactive; momentary hold keeps toast HUD up without auto-hide.
+    private func presentHUD(muted: Bool, userInitiated: Bool) {
+        let hold = momentaryHold.hudHold
+
         if preferences.hudFloating {
-            hud.show(muted: displayMuted, deviceName: mic.deviceName, persistent: true)
-        } else if showHUD, preferences.hudEnabled {
-            hud.show(muted: displayMuted, deviceName: mic.deviceName, persistent: false)
+            hud.show(
+                muted: muted,
+                deviceName: mic.deviceName,
+                persistent: true,
+                interactive: true,
+                hold: hold
+            )
+            return
         }
+
+        guard preferences.hudEnabled, userInitiated || momentaryHold.isActive else { return }
+
+        // While PTT/PTM/flip is held, keep HUD visible (non-interactive toast layout).
+        let holdVisible = momentaryHold.isActive
+        hud.show(
+            muted: muted,
+            deviceName: mic.deviceName,
+            persistent: holdVisible,
+            interactive: false,
+            hold: hold
+        )
     }
 
     /// Show or hide the always-on floating mute indicator based on preference.
     func syncFloatingHUD() {
+        syncFloatingHUDIfNeeded(force: true)
+    }
+
+    private func syncFloatingHUDIfNeeded(force: Bool = false) {
         let floating = preferences.hudFloating
+        guard force || floating != lastHudFloating else { return }
+
         if floating {
-            hud.show(muted: currentDisplayMuted(), deviceName: mic.deviceName, persistent: true)
+            hud.show(
+                muted: currentDisplayMuted(),
+                deviceName: mic.deviceName,
+                persistent: true,
+                interactive: true,
+                hold: momentaryHold.hudHold
+            )
         } else if lastHudFloating == true {
             // Only dismiss when floating is turned off — don't cancel toast HUDs.
             hud.hide()
@@ -127,7 +176,14 @@ final class StatusItemController {
     }
 
     private func registerHotkeys() {
-        hotkeys.register(bindings: preferences.activeBindings) { [weak self] action, phase in
+        registerHotkeysIfNeeded(force: true)
+    }
+
+    private func registerHotkeysIfNeeded(force: Bool = false) {
+        let bindings = preferences.activeBindings
+        guard force || bindings != lastRegisteredBindings else { return }
+        lastRegisteredBindings = bindings
+        hotkeys.register(bindings: bindings) { [weak self] action, phase in
             DispatchQueue.main.async {
                 self?.handleHotkeyAction(action, phase: phase)
             }
@@ -150,48 +206,64 @@ final class StatusItemController {
             mic.setMuted(false)
             handleMuteChanged(showHUD: true)
         case .pushToTalk:
-            handlePushToTalk(phase: phase)
+            handleMomentary(phase: phase, mode: .talk)
         case .pushToMute:
-            handlePushToMute(phase: phase)
+            handleMomentary(phase: phase, mode: .mute)
+        case .pushToToggle:
+            handleMomentary(phase: phase, mode: .toggle)
         }
     }
 
-    private func handlePushToTalk(phase: HotkeyPhase) {
+    private enum MomentaryMode {
+        case talk
+        case mute
+        case toggle
+    }
+
+    private func handleMomentary(phase: HotkeyPhase, mode: MomentaryMode) {
         switch phase {
         case .pressed:
             guard case .none = momentaryHold else { return }
             let wasMuted = mic.desiredMuted || mic.isMuted
-            momentaryHold = .pushToTalk(wasMuted: wasMuted)
-            if wasMuted {
-                mic.setMuted(false)
-                handleMuteChanged(showHUD: true)
+            let targetMuted: Bool
+            switch mode {
+            case .talk:
+                momentaryHold = .pushToTalk(wasMuted: wasMuted)
+                targetMuted = false
+            case .mute:
+                momentaryHold = .pushToMute(wasMuted: wasMuted)
+                targetMuted = true
+            case .toggle:
+                momentaryHold = .pushToToggle(wasMuted: wasMuted)
+                targetMuted = !wasMuted
             }
+            let changed = (mic.isMuted || mic.desiredMuted) != targetMuted
+            if changed {
+                mic.setMuted(targetMuted)
+            }
+            // Always present HUD for hold (stays up until release when not floating).
+            handleMuteChanged(showHUD: true)
         case .released:
-            guard case .pushToTalk(let wasMuted) = momentaryHold else { return }
-            momentaryHold = .none
-            if wasMuted {
-                mic.setMuted(true)
-                handleMuteChanged(showHUD: true)
+            let wasMuted: Bool?
+            switch (mode, momentaryHold) {
+            case (.talk, .pushToTalk(let w)),
+                 (.mute, .pushToMute(let w)),
+                 (.toggle, .pushToToggle(let w)):
+                wasMuted = w
+            default:
+                wasMuted = nil
             }
-        }
-    }
-
-    private func handlePushToMute(phase: HotkeyPhase) {
-        switch phase {
-        case .pressed:
-            guard case .none = momentaryHold else { return }
-            let wasMuted = mic.desiredMuted || mic.isMuted
-            momentaryHold = .pushToMute(wasMuted: wasMuted)
-            if !wasMuted {
-                mic.setMuted(true)
-                handleMuteChanged(showHUD: true)
-            }
-        case .released:
-            guard case .pushToMute(let wasMuted) = momentaryHold else { return }
+            guard let wasMuted else { return }
             momentaryHold = .none
-            if !wasMuted {
-                mic.setMuted(false)
+            let currentlyMuted = mic.isMuted || mic.desiredMuted
+            if currentlyMuted != wasMuted {
+                mic.setMuted(wasMuted)
+                // Toast shows restored state then auto-hides (hold already cleared).
                 handleMuteChanged(showHUD: true)
+            } else if !preferences.hudFloating, preferences.hudEnabled {
+                // End hold-visible HUD with a short toast (no second sound if state unchanged).
+                updateIcon()
+                presentHUD(muted: currentDisplayMuted(), userInitiated: true)
             }
         }
     }
@@ -382,15 +454,29 @@ final class StatusItemController {
     }
 
     private func tooltip(for state: MicState) -> String {
+        let holdLine: String? = {
+            switch momentaryHold {
+            case .none: return nil
+            case .pushToTalk: return "Holding push-to-talk"
+            case .pushToMute: return "Holding push-to-mute"
+            case .pushToToggle: return "Holding push-to-flip"
+            }
+        }()
+
+        let base: String
         switch state {
         case .muted:
-            return "LockMic: Muted — \(mic.deviceName)\nClick to unmute · Right-click for menu"
+            base = "LockMic: Muted — \(mic.deviceName)\nClick to unmute · Right-click for menu"
         case .unmuted:
-            return "LockMic: Unmuted — \(mic.deviceName)\nClick to mute · Right-click for menu"
+            base = "LockMic: Unmuted — \(mic.deviceName)\nClick to mute · Right-click for menu"
         case .unknown:
-            return "LockMic: Microphone state unknown"
+            base = "LockMic: Microphone state unknown"
         case .unsupported(let name):
-            return "LockMic: Cannot mute \(name)"
+            base = "LockMic: Cannot mute \(name)"
         }
+        if let holdLine {
+            return "\(base)\n\(holdLine)"
+        }
+        return base
     }
 }

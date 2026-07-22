@@ -156,12 +156,12 @@ final class MicController: ObservableObject {
             }
         }
 
-        if muted {
-            if preferences.muteAllInputs {
-                let result = audio.setAllInputsMuted(true)
-                if let id = try? audio.defaultInputDeviceID() {
-                    deviceName = audio.deviceName(id)
-                }
+        if preferences.muteAllInputs {
+            let result = audio.setAllInputsMuted(muted)
+            if let id = try? audio.defaultInputDeviceID() {
+                deviceName = audio.deviceName(id)
+            }
+            if muted {
                 if result.allFailed, !result.failed.isEmpty {
                     state = .unsupported(deviceName: deviceName)
                     lastError = result.failed.map { "\($0.name): \($0.message)" }.joined(separator: "; ")
@@ -172,34 +172,27 @@ final class MicController: ObservableObject {
                         : "No system mute on: \(result.failed.map(\.name).joined(separator: ", "))"
                 }
             } else {
-                do {
-                    let id = try audio.defaultInputDeviceID()
-                    try audio.setMuted(true, deviceID: id)
-                    deviceName = audio.deviceName(id)
-                    state = .muted
-                    lastError = nil
-                } catch {
-                    lastError = error.localizedDescription
+                state = .unmuted
+                lastError = nil
+            }
+        } else {
+            // Default input only — never touch other devices.
+            do {
+                let id = try audio.defaultInputDeviceID()
+                try audio.setMuted(muted, deviceID: id)
+                deviceName = audio.deviceName(id)
+                state = muted ? .muted : .unmuted
+                lastError = nil
+            } catch {
+                lastError = error.localizedDescription
+                if muted {
                     state = .unsupported(deviceName: deviceName)
+                } else {
+                    state = .unknown
                 }
             }
-            log.info("Muted")
-        } else {
-            if preferences.muteAllInputs {
-                _ = audio.setAllInputsMuted(false)
-            } else if let id = try? audio.defaultInputDeviceID() {
-                try? audio.setMuted(false, deviceID: id)
-            }
-            for d in audio.listInputDevices() where d.supportsMute {
-                try? audio.setMuted(false, deviceID: d.id)
-            }
-            if let id = try? audio.defaultInputDeviceID() {
-                deviceName = audio.deviceName(id)
-            }
-            state = .unmuted
-            lastError = nil
-            log.info("Unmuted")
         }
+        log.info("\(muted ? "Muted" : "Unmuted", privacy: .public)")
         refreshDeviceList()
     }
 

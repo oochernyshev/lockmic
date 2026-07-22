@@ -98,6 +98,7 @@ enum MicState: muted | unmuted | unknown | unsupported(deviceName)
 |--------|-------|---------|
 | **Push to talk** | If muted → unmute | Restore prior mute |
 | **Push to mute** | If unmuted → mute | Restore prior unmute |
+| **Push to toggle** | Invert current mute | Restore prior state |
 
 Only one momentary hold is active at a time; latching shortcuts are ignored while held.
 

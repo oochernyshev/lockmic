@@ -23,10 +23,12 @@ enum HotkeyAction: String, Sendable {
     case pushToTalk
     /// Hold to temporarily mute; release restores prior mute state.
     case pushToMute
+    /// Hold to invert mute; release restores prior mute state.
+    case pushToToggle
 
     var isMomentary: Bool {
         switch self {
-        case .pushToTalk, .pushToMute: return true
+        case .pushToTalk, .pushToMute, .pushToToggle: return true
         default: return false
         }
     }
@@ -47,12 +49,14 @@ struct HotkeyBinding: Equatable, Sendable {
     }
 }
 
-/// Global hotkeys via Carbon + NSEvent monitors.
-/// Momentary actions (push-to-talk / push-to-mute) receive both press and release.
+/// Global hotkeys via Carbon, with NSEvent monitors only for chords Carbon rejects.
+/// Momentary actions receive both press and release.
 final class HotkeyManager {
     private var hotKeyRefs: [EventHotKeyRef] = []
     private var carbonIDs: [UInt32] = []
     private var bindings: [HotkeyBinding] = []
+    /// Bindings that failed Carbon registration (NSEvent fallback only).
+    private var fallbackBindings: [HotkeyBinding] = []
     private var actionHandler: ((HotkeyAction, HotkeyPhase) -> Void)?
 
     private var localMonitor: Any?
@@ -96,10 +100,17 @@ final class HotkeyManager {
         }
         HotkeyManager.sharedEventSink = self.actionHandler
 
+        var fallback: [HotkeyBinding] = []
         for binding in self.bindings {
-            installCarbonHotKey(binding)
+            if !installCarbonHotKey(binding) {
+                fallback.append(binding)
+            }
         }
-        installEventMonitors()
+        fallbackBindings = fallback
+        if !fallback.isEmpty {
+            installEventMonitors(for: fallback)
+            NSLog("LockMic: NSEvent fallback for %d hotkey(s)", fallback.count)
+        }
     }
 
     func unregister() {
@@ -123,13 +134,15 @@ final class HotkeyManager {
         }
 
         bindings = []
+        fallbackBindings = []
         actionHandler = nil
         HotkeyManager.sharedEventSink = nil
     }
 
     // MARK: - Carbon
 
-    private func installCarbonHotKey(_ binding: HotkeyBinding) {
+    @discardableResult
+    private func installCarbonHotKey(_ binding: HotkeyBinding) -> Bool {
         HotkeyManager.installSharedHandlerIfNeeded()
 
         let id = HotkeyManager.nextID
@@ -158,20 +171,19 @@ final class HotkeyManager {
                 action.rawValue,
                 handlesRelease ? " (momentary)" : ""
             )
-        } else {
-            NSLog(
-                "LockMic: Carbon RegisterEventHotKey failed for %@ status=%d",
-                binding.chord.displayString,
-                status
-            )
+            return true
         }
+
+        NSLog(
+            "LockMic: Carbon RegisterEventHotKey failed for %@ status=%d — using NSEvent fallback",
+            binding.chord.displayString,
+            status
+        )
+        return false
     }
 
     private static func installSharedHandlerIfNeeded() {
-        if handlerInstalled {
-            // Ensure both press + release are observed (upgrade from press-only installs).
-            return
-        }
+        if handlerInstalled { return }
 
         var eventTypes = [
             EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
@@ -236,17 +248,15 @@ final class HotkeyManager {
         return noErr
     }
 
-    // MARK: - NSEvent monitors
+    // MARK: - NSEvent fallback (Carbon registration failed only)
 
-    private func installEventMonitors() {
-        let bindings = self.bindings
+    private func installEventMonitors(for bindings: [HotkeyBinding]) {
         let mask: NSEvent.EventTypeMask = [.keyDown, .keyUp]
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
             guard let self else { return event }
             if let (action, phase) = Self.match(event: event, bindings: bindings) {
                 self.actionHandler?(action, phase)
-                // Swallow only keyDown for latching shortcuts; let keyUp through for system.
                 if event.type == .keyDown {
                     return nil
                 }
@@ -266,10 +276,6 @@ final class HotkeyManager {
 
     private static func match(event: NSEvent, bindings: [HotkeyBinding]) -> (HotkeyAction, HotkeyPhase)? {
         let phase: HotkeyPhase = (event.type == .keyUp) ? .released : .pressed
-        if event.type == .keyDown, event.isARepeat {
-            // Only ignore repeats for momentary PTT; latching shortcuts already debounced.
-            // Still ignore PTT key-repeat so we don't re-enter.
-        }
 
         for binding in bindings {
             if phase == .released, !binding.action.isMomentary {

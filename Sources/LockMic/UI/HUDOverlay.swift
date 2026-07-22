@@ -1,5 +1,22 @@
 import AppKit
 
+/// Why the HUD is held on-screen (momentary shortcuts).
+enum HUDHoldKind: Equatable, Sendable {
+    case none
+    case talk
+    case mute
+    case flip
+
+    var caption: String? {
+        switch self {
+        case .none: return nil
+        case .talk: return "Talking"
+        case .mute: return "Hold mute"
+        case .flip: return "Holding"
+        }
+    }
+}
+
 /// Large, semi-transparent mute indicator on every connected display.
 /// Toast mode auto-hides; floating mode stays up, is draggable, click toggles mute,
 /// and right-click can hide/restore the indicator per display.
@@ -12,6 +29,8 @@ final class HUDOverlay: NSObject {
     private var hideWorkItem: DispatchWorkItem?
     private var isPersistent = false
     private var lastMuted = false
+    private var lastHold: HUDHoldKind = .none
+    private var lastInteractive = false
     private var screenObserver: NSObjectProtocol?
 
     private let panelSize = NSSize(width: 160, height: 160)
@@ -38,25 +57,45 @@ final class HUDOverlay: NSObject {
     }
 
     /// Show or update the HUD.
-    /// - Parameter persistent: when true, stays visible, accepts drag + click + right-click menu.
-    func show(muted: Bool, deviceName: String, persistent: Bool = false) {
+    /// - Parameters:
+    ///   - persistent: when true, stays visible until `hide()` or a non-persistent `show`.
+    ///   - interactive: drag / click / per-display hide (floating mode). Defaults to `persistent`.
+    ///     Momentary holds use `persistent: true, interactive: false` so toast HUD stays up while held.
+    ///   - hold: optional momentary label (Talking / Hold mute / Holding).
+    func show(
+        muted: Bool,
+        deviceName: String,
+        persistent: Bool = false,
+        interactive: Bool? = nil,
+        hold: HUDHoldKind = .none
+    ) {
         hideWorkItem?.cancel()
         hideWorkItem = nil
         isPersistent = persistent
         lastMuted = muted
+        lastHold = hold
+        let isInteractive = interactive ?? persistent
+        lastInteractive = isInteractive
 
         ensurePanels()
         for entry in panels.values {
-            configureContent(entry.panel, muted: muted, interactive: persistent, screen: entry.screen)
-            entry.panel.ignoresMouseEvents = !persistent
+            configureContent(
+                entry.panel,
+                muted: muted,
+                interactive: isInteractive,
+                hold: hold,
+                screen: entry.screen
+            )
+            entry.panel.ignoresMouseEvents = !isInteractive
 
-            if persistent, isDisplayHidden(displayID(for: entry.screen)) {
+            // Per-display hide only applies to interactive floating HUD.
+            if isInteractive, isDisplayHidden(displayID(for: entry.screen)) {
                 entry.panel.orderOut(nil)
                 entry.panel.alphaValue = 0
                 continue
             }
 
-            if persistent {
+            if isInteractive {
                 applyRelativePosition(entry.panel, on: entry.screen)
             } else {
                 positionAtBottom(entry.panel, on: entry.screen)
@@ -65,8 +104,11 @@ final class HUDOverlay: NSObject {
         }
 
         if persistent {
-            observeScreenChangesIfNeeded()
+            if isInteractive {
+                observeScreenChangesIfNeeded()
+            }
         } else {
+            stopObservingScreenChanges()
             let work = DispatchWorkItem { [weak self] in
                 self?.hide()
             }
@@ -99,7 +141,13 @@ final class HUDOverlay: NSObject {
     /// Re-layout floating panels when displays change (resolution / add / remove).
     func relayoutIfPersistent() {
         guard isPersistent else { return }
-        show(muted: lastMuted, deviceName: "", persistent: true)
+        show(
+            muted: lastMuted,
+            deviceName: "",
+            persistent: true,
+            interactive: lastInteractive,
+            hold: lastHold
+        )
     }
 
     // MARK: - Per-display visibility
@@ -124,7 +172,13 @@ final class HUDOverlay: NSObject {
         }
         saveHiddenDisplayIDs(hiddenIDs)
         if isPersistent {
-            show(muted: lastMuted, deviceName: "", persistent: true)
+            show(
+                muted: lastMuted,
+                deviceName: "",
+                persistent: true,
+                interactive: lastInteractive,
+                hold: lastHold
+            )
         }
     }
 
@@ -135,7 +189,13 @@ final class HUDOverlay: NSObject {
             saveHiddenDisplayIDs([])
         }
         if isPersistent {
-            show(muted: lastMuted, deviceName: "", persistent: true)
+            show(
+                muted: lastMuted,
+                deviceName: "",
+                persistent: true,
+                interactive: lastInteractive,
+                hold: lastHold
+            )
         }
     }
 
@@ -188,9 +248,15 @@ final class HUDOverlay: NSObject {
         return panel
     }
 
-    private func configureContent(_ panel: NSPanel, muted: Bool, interactive: Bool, screen: NSScreen) {
+    private func configureContent(
+        _ panel: NSPanel,
+        muted: Bool,
+        interactive: Bool,
+        hold: HUDHoldKind,
+        screen: NSScreen
+    ) {
         guard let content = panel.contentView as? HUDContentView else { return }
-        content.configureToast(muted: muted)
+        content.configureToast(muted: muted, hold: hold)
         content.isInteractive = interactive
         content.dragThreshold = dragThreshold
         content.assignedScreen = screen
@@ -482,19 +548,40 @@ private final class HUDContentView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configureToast(muted: Bool) {
+    func configureToast(muted: Bool, hold: HUDHoldKind = .none) {
         let name = muted ? "mic.slash.fill" : "mic.fill"
         let config = NSImage.SymbolConfiguration(pointSize: 58, weight: .medium)
             .applying(NSImage.SymbolConfiguration(paletteColors: [.white]))
         iconView.image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
             .withSymbolConfiguration(config)
         iconView.contentTintColor = .white
-        captionLabel.stringValue = muted ? "Muted" : "Unmuted"
+
+        if let holdCaption = hold.caption {
+            captionLabel.stringValue = holdCaption
+        } else {
+            captionLabel.stringValue = muted ? "Muted" : "Unmuted"
+        }
+
+        // Slightly brighter while a momentary key is held.
+        let holding = hold != .none
         backdrop.layer?.backgroundColor = muted
-            ? NSColor.black.withAlphaComponent(0.62).cgColor
-            : NSColor.black.withAlphaComponent(0.50).cgColor
-        backdrop.layer?.borderWidth = 0
-        toolTip = isInteractive ? "Click to toggle · drag to move · right-click to hide" : nil
+            ? NSColor.black.withAlphaComponent(holding ? 0.72 : 0.62).cgColor
+            : NSColor.black.withAlphaComponent(holding ? 0.60 : 0.50).cgColor
+        if holding {
+            backdrop.layer?.borderWidth = 2
+            backdrop.layer?.borderColor = NSColor.white.withAlphaComponent(0.45).cgColor
+        } else {
+            backdrop.layer?.borderWidth = 0
+            backdrop.layer?.borderColor = nil
+        }
+
+        if isInteractive {
+            toolTip = "Click to toggle · drag to move · right-click to hide"
+        } else if holding {
+            toolTip = "Key held — release to restore"
+        } else {
+            toolTip = nil
+        }
     }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }

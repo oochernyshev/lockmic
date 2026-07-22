@@ -131,13 +131,15 @@ struct PreferencesView: View {
 
             sectionHeader("Options")
             Toggle("Show on-screen HUD when muting", isOn: $preferences.hudEnabled)
-                .disabled(preferences.hudFloating)
+            Text("Brief indicator on mute/unmute (and while holding push-to-talk / mute / flip).")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Toggle("Keep HUD indicator floating", isOn: $preferences.hudFloating)
-            if preferences.hudFloating {
-                Text("Drag to move · click to toggle · right-click to hide/show per display.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text("Always-on indicator · drag to move · click to toggle · right-click to hide per display.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Toggle("Play sound when muting / unmuting", isOn: $preferences.soundEnabled)
             Toggle("Launch at login", isOn: $preferences.launchAtLogin)
         }
@@ -329,6 +331,11 @@ struct PreferencesView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            shortcutRow(
+                title: "Push to toggle",
+                enabled: $preferences.pushToToggleEnabled,
+                chord: $preferences.pushToToggleChord
+            )
             shortcutRow(
                 title: "Push to talk",
                 enabled: $preferences.pushToTalkEnabled,

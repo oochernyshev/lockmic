@@ -15,8 +15,9 @@ System-wide microphone mute for macOS — menu bar icon, global hotkeys, and an 
 - Global hotkeys (customizable):
   - **Toggle:** ⌘⇧M (and optional ⌘F5)
   - **Mute only / Unmute only** (off by default)
-  - **Push to talk:** hold to unmute, release to restore (off by default; default ⌥Space)
-  - **Push to mute:** hold to mute, release to restore (off by default; default ⇧Space)
+  - **Push to toggle:** hold to invert mute, release to restore (off by default; default ⌥Space)
+  - **Push to talk:** hold to unmute, release to restore (off by default; default ⇧Space)
+  - **Push to mute:** hold to mute, release to restore (off by default; default ⇧⌥Space)
   - **Conflict warnings** when two enabled shortcuts share the same keys
 - **On-screen HUD** on mute/unmute (optional toast)
 - **Floating HUD** (optional): always visible on each display
@@ -88,6 +89,7 @@ open build/LockMic.app
 | Toggle mute | Click menu bar icon, **⌘⇧M**, **⌘F5**, or click the floating HUD |
 | Push to talk | Hold PTT shortcut (Preferences → Keyboard; off by default) |
 | Push to mute | Hold PTM shortcut (Preferences → Keyboard; off by default) |
+| Push to toggle | Hold to invert mute, release restores (off by default) |
 | Menu / Preferences | Right-click (or Control-click) the menu bar icon |
 | Floating HUD move | Drag the indicator (each display is independent) |
 | Floating HUD hide/show | Right-click the indicator, or menu bar → **Floating HUD** |
@@ -99,7 +101,7 @@ open build/LockMic.app
 |---------|---------|
 | **General** | Status, HUD toast, floating HUD, sound, launch at login |
 | **Devices** | Mute-all vs default-only, live input list (virtual = ignored) |
-| **Keyboard** | Toggle / mute / unmute / PTT / PTM; optional ⌘F5; conflict warnings; reset |
+| **Keyboard** | Toggle / mute / unmute / PTT / PTM / push-to-toggle; optional ⌘F5; conflicts; reset |
 | **About** | Logo, version, WIXEE.AI, website, MIT license |
 
 ## Development in VS Code
