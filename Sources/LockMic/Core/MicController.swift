@@ -101,11 +101,10 @@ final class MicController: ObservableObject {
 
     func preferenceMuteScopeChanged() {
         if desiredMuted {
-            applyMute(true)
+            applyMute(true) // includes refreshDeviceList
         } else {
-            refreshFromHardware(applyDesired: false)
+            refreshFromHardware(applyDesired: false) // includes refreshDeviceList
         }
-        refreshDeviceList()
     }
 
     func refreshFromHardware(applyDesired: Bool) {
@@ -136,7 +135,7 @@ final class MicController: ObservableObject {
         let defaultID = try? audio.defaultInputDeviceID()
         inputDevices = audio.listInputDevices().map { device in
             let isDefault = device.id == defaultID
-            // Virtual loopbacks are listed for visibility but never controlled.
+            // Virtual-transport devices are listed but never controlled.
             let inScope = !device.isVirtual && (preferences.muteAllInputs || isDefault)
             let muted: Bool? = device.supportsMute ? (try? audio.isMuted(device.id)) : nil
             return InputDeviceRow(
@@ -206,8 +205,8 @@ final class MicController: ObservableObject {
         deviceChangeWorkItem?.cancel()
         let work = DispatchWorkItem { [weak self] in
             guard let self, !self.isApplyingMute else { return }
+            // applyDesired → applyMute already ends with refreshDeviceList().
             self.refreshFromHardware(applyDesired: true)
-            self.refreshDeviceList()
         }
         deviceChangeWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)

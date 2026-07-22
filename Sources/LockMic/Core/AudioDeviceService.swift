@@ -113,11 +113,11 @@ final class AudioDeviceService: @unchecked Sendable {
 
     func setAllInputsMuted(_ muted: Bool) -> MuteBatchResult {
         var result = MuteBatchResult()
-        // Skip Virtual transport devices — mute is often meaningless on software loopbacks.
+        // Skip devices with Core Audio transport type Virtual (software devices).
         for device in listInputDevices() where !device.isVirtual {
             do {
                 try setMuted(muted, deviceID: device.id)
-                // Verify the driver actually honored mute.
+                // Confirm the driver applied mute (some expose the property but ignore it).
                 if muted, let nowMuted = try? isMuted(device.id), !nowMuted {
                     result.failed.append((device.name, "Mute not honored by driver"))
                 } else {

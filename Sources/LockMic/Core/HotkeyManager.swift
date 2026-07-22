@@ -22,11 +22,11 @@ enum HotkeyAction: String, Sendable {
     case toggle
     case mute
     case unmute
-    /// Hold to temporarily unmute; release restores prior mute state.
+    /// Hold to unmute; release restores prior mute state.
     case pushToTalk
-    /// Hold to temporarily mute; release restores prior mute state.
+    /// Hold to mute; release restores prior mute state.
     case pushToMute
-    /// Hold to invert mute; release restores prior mute state.
+    /// Hold to invert mute; release restores prior mute state (UI: “Push to flip”).
     case pushToToggle
 
     var isMomentary: Bool {
@@ -52,8 +52,8 @@ struct HotkeyBinding: Equatable, Sendable {
     }
 }
 
-/// Global hotkeys via Carbon, with NSEvent monitors only for chords Carbon rejects.
-/// Momentary actions receive both press and release.
+/// Global hotkeys: Carbon first; NSEvent only when Carbon registration fails.
+/// Momentary actions (talk / mute / flip) get press and release.
 final class HotkeyManager {
     private var hotKeyRefs: [EventHotKeyRef] = []
     private var carbonIDs: [UInt32] = []

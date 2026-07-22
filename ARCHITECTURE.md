@@ -82,7 +82,7 @@ enum MicState: muted | unmuted | unknown | unsupported(deviceName)
   - `.muted` → true, `.unmuted` → false  
   - `.unknown` / `.unsupported` → `desiredMuted`
 - Scope: **all controllable inputs** or **default only** (preference)
-- Skips **virtual** devices (loopbacks, etc.)
+- Skips **virtual** devices (`transportType == Virtual`)
 - On device change: re-apply desired state to devices in scope
 - Publishes `InputDeviceRow` list for Preferences → Devices
 - API: `toggle()`, `setMuted(_:)`, `refreshFromHardware`, `preferenceMuteScopeChanged()`
@@ -102,7 +102,7 @@ enum MicState: muted | unmuted | unknown | unsupported(deviceName)
 |--------|-------|---------|
 | **Push to talk** | If muted → unmute | Restore prior mute |
 | **Push to mute** | If unmuted → mute | Restore prior unmute |
-| **Push to toggle** | Invert current mute | Restore prior state |
+| **Push to flip** | Invert current mute | Restore prior state |
 
 Only one momentary hold is active at a time; latching shortcuts are ignored while held.
 
@@ -138,7 +138,7 @@ Preferences window: resizable, frosted material background (`regularMaterial` / 
 `UserDefaults`-backed `@Published` settings:
 
 - HUD toast, floating HUD, sound, launch at login, mute-all
-- Shortcut enable flags + chords (toggle / mute / unmute / F5)
+- Shortcut enable flags + chords (toggle / mute / unmute / F5 / flip / talk / mute-hold)
 - Defaults: mute-all on; toast + sound on; floating off; mute/unmute shortcuts off
 
 Floating HUD also stores (via `HUDOverlay` / UserDefaults):

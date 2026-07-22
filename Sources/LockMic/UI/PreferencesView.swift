@@ -131,7 +131,7 @@ struct PreferencesView: View {
 
             sectionHeader("Options")
             Toggle("Show on-screen HUD when muting", isOn: $preferences.hudEnabled)
-            Text("Brief indicator on mute/unmute (and while holding push-to-talk / mute / flip).")
+            Text("Brief indicator on mute/unmute, and while holding talk / mute / flip.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -332,7 +332,7 @@ struct PreferencesView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             shortcutRow(
-                title: "Push to toggle",
+                title: "Push to flip",
                 enabled: $preferences.pushToToggleEnabled,
                 chord: $preferences.pushToToggleChord
             )

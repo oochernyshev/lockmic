@@ -16,7 +16,7 @@ final class StatusItemController {
     private var lastHudFloating: Bool?
     /// Last bindings passed to HotkeyManager (skip re-register when unchanged).
     private var lastRegisteredBindings: [HotkeyBinding] = []
-    /// Active momentary hold (push-to-talk / mute / toggle).
+    /// Active momentary hold (push-to-talk / mute / flip).
     private enum MomentaryHold {
         case none
         case pushToTalk(wasMuted: Bool)
@@ -111,12 +111,16 @@ final class StatusItemController {
         )
     }
 
-    func handleMuteChanged(showHUD: Bool) {
+    /// - Parameters:
+    ///   - showHUD: present toast/floating update when appropriate.
+    ///   - playSound: defaults to `showHUD`. Pass `false` for hold UI with no mute change.
+    func handleMuteChanged(showHUD: Bool, playSound: Bool? = nil) {
         updateIcon()
 
         let muted = mic.effectiveMuted
+        let shouldPlay = playSound ?? showHUD
 
-        if showHUD, preferences.soundEnabled {
+        if shouldPlay, preferences.soundEnabled {
             sounds.play(muted: muted)
         }
 
@@ -237,11 +241,12 @@ final class StatusItemController {
                 momentaryHold = .pushToToggle(wasMuted: wasMuted)
                 targetMuted = !wasMuted
             }
-            if mic.effectiveMuted != targetMuted {
+            let changed = mic.effectiveMuted != targetMuted
+            if changed {
                 mic.setMuted(targetMuted)
             }
-            // Always present HUD for hold (stays up until release when not floating).
-            handleMuteChanged(showHUD: true)
+            // Always show hold HUD; sound only when mute actually changed.
+            handleMuteChanged(showHUD: true, playSound: changed)
         case .released:
             let wasMuted: Bool?
             switch (mode, momentaryHold) {
@@ -257,11 +262,10 @@ final class StatusItemController {
             if mic.effectiveMuted != wasMuted {
                 mic.setMuted(wasMuted)
                 // Toast shows restored state then auto-hides (hold already cleared).
-                handleMuteChanged(showHUD: true)
-            } else if !preferences.hudFloating, preferences.hudEnabled {
-                // End hold-visible HUD with a short toast (no second sound if state unchanged).
-                updateIcon()
-                presentHUD(muted: mic.effectiveMuted, userInitiated: true)
+                handleMuteChanged(showHUD: true, playSound: true)
+            } else {
+                // End hold UI without a second beep.
+                handleMuteChanged(showHUD: true, playSound: false)
             }
         }
     }

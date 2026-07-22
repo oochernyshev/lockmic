@@ -123,7 +123,7 @@ final class PreferencesStore: ObservableObject {
         didSet { UserDefaults.standard.set(f5ToggleEnabled, forKey: "hotkeyF5ToggleEnabled") }
     }
 
-    /// Hold to temporarily unmute; release restores previous mute state.
+    /// Hold to unmute; release restores previous mute state.
     @Published var pushToTalkEnabled: Bool {
         didSet { UserDefaults.standard.set(pushToTalkEnabled, forKey: Keys.pttEnabled) }
     }
@@ -135,7 +135,7 @@ final class PreferencesStore: ObservableObject {
         }
     }
 
-    /// Hold to temporarily mute; release restores previous mute state.
+    /// Hold to mute; release restores previous mute state.
     @Published var pushToMuteEnabled: Bool {
         didSet { UserDefaults.standard.set(pushToMuteEnabled, forKey: Keys.ptmEnabled) }
     }
@@ -147,7 +147,7 @@ final class PreferencesStore: ObservableObject {
         }
     }
 
-    /// Hold to invert mute; release restores previous state.
+    /// Hold to invert mute; release restores previous state (UI: Push to flip).
     @Published var pushToToggleEnabled: Bool {
         didSet { UserDefaults.standard.set(pushToToggleEnabled, forKey: Keys.pttogEnabled) }
     }
@@ -237,7 +237,7 @@ final class PreferencesStore: ObservableObject {
         }
         f5ToggleEnabled = defaults.bool(forKey: "hotkeyF5ToggleEnabled")
 
-        // Momentary shortcuts (all off by default). Order in UI: toggle → talk → mute.
+        // Momentary shortcuts (all off by default). UI order: flip → talk → mute.
         let space: UInt32 = 49
         let legacyControlSpace = HotkeyChord(keyCode: space, modifiers: Self.controlKey)
         let legacyOptionSpace = HotkeyChord(keyCode: space, modifiers: Self.optionKey)
@@ -314,7 +314,7 @@ final class PreferencesStore: ObservableObject {
             ("⌘F5 toggle", f5ToggleEnabled, Self.defaultToggleAlt, .toggle),
             ("Mute", muteShortcutEnabled, muteChord, .mute),
             ("Unmute", unmuteShortcutEnabled, unmuteChord, .unmute),
-            ("Push to toggle", pushToToggleEnabled, pushToToggleChord, .pushToToggle),
+            ("Push to flip", pushToToggleEnabled, pushToToggleChord, .pushToToggle),
             ("Push to talk", pushToTalkEnabled, pushToTalkChord, .pushToTalk),
             ("Push to mute", pushToMuteEnabled, pushToMuteChord, .pushToMute),
         ]
