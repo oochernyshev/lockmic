@@ -53,6 +53,10 @@ final class MicController: ObservableObject {
     /// Sticky user intent, re-applied when devices change.
     private(set) var desiredMuted: Bool = false
 
+    /// When true (e.g. push-to-talk held), device-change handlers only refresh the list —
+    /// they must not re-apply mute and clobber hold/restore state.
+    var suppressDeviceResync = false
+
     private let audio: AudioDeviceService
     private let preferences: PreferencesStore
     private var devicesToken: UUID?
@@ -205,6 +209,11 @@ final class MicController: ObservableObject {
         deviceChangeWorkItem?.cancel()
         let work = DispatchWorkItem { [weak self] in
             guard let self, !self.isApplyingMute else { return }
+            if self.suppressDeviceResync {
+                // Hold in progress (PTT/PTM/flip): list only, no mute re-apply.
+                self.refreshDeviceList()
+                return
+            }
             // applyDesired → applyMute already ends with refreshDeviceList().
             self.refreshFromHardware(applyDesired: true)
         }

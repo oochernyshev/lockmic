@@ -214,20 +214,16 @@ LockMic/
 ├── project.yml                # XcodeGen
 ├── LockMic.xcodeproj/
 ├── Sources/LockMic/
-│   ├── App/
-│   │   ├── LockMicApp.swift
-│   │   └── AppDelegate.swift
-│   ├── Core/
-│   │   ├── AudioDeviceService.swift
-│   │   ├── MicController.swift
-│   │   ├── HotkeyManager.swift
-│   │   ├── PreferencesStore.swift
-│   │   └── SoundFeedback.swift
+│   ├── App/          LockMicApp, AppDelegate
+│   ├── Core/         AudioDeviceService, MicController, HotkeyTypes,
+│   │                 HotkeyManager, PreferencesStore, SoundFeedback
+│   ├── Util/         Comparable+Clamped
 │   └── UI/
-│       ├── StatusItemController.swift
-│       ├── HUDOverlay.swift
-│       ├── PreferencesView.swift
-│       └── HotkeyRecorderButton.swift
+│       ├── StatusItemController, EscapeToCloseWindow
+│       ├── HUDHoldKind, HUDContentView, HUDOverlay
+│       ├── PreferencesView, PreferencesTab, PreferencesChrome,
+│       │   PreferencesGeneral/Devices/Keyboard/AboutPage
+│       └── HotkeyRecorderButton
 ├── Resources/
 │   ├── Info.plist
 │   ├── LockMic.entitlements

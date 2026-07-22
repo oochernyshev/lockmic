@@ -241,6 +241,7 @@ final class StatusItemController {
                 momentaryHold = .pushToToggle(wasMuted: wasMuted)
                 targetMuted = !wasMuted
             }
+            mic.suppressDeviceResync = true
             let changed = mic.effectiveMuted != targetMuted
             if changed {
                 mic.setMuted(targetMuted)
@@ -259,6 +260,7 @@ final class StatusItemController {
             }
             guard let wasMuted else { return }
             momentaryHold = .none
+            mic.suppressDeviceResync = false
             if mic.effectiveMuted != wasMuted {
                 mic.setMuted(wasMuted)
                 // Toast shows restored state then auto-hides (hold already cleared).
@@ -267,6 +269,9 @@ final class StatusItemController {
                 // End hold UI without a second beep.
                 handleMuteChanged(showHUD: true, playSound: false)
             }
+            // Catch up: re-apply post-hold desired mute to any devices that appeared mid-hold.
+            mic.refreshFromHardware(applyDesired: true)
+            updateIcon()
         }
     }
 
@@ -419,8 +424,14 @@ final class StatusItemController {
             let window = EscapeToCloseWindow(contentViewController: hosting)
             window.title = "LockMic Preferences"
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-            window.minSize = NSSize(width: 520, height: 380)
-            window.setContentSize(NSSize(width: 560, height: 460))
+            window.minSize = NSSize(
+                width: PreferencesChrome.windowMinSize.width,
+                height: PreferencesChrome.windowMinSize.height
+            )
+            window.setContentSize(NSSize(
+                width: PreferencesChrome.windowIdealSize.width,
+                height: PreferencesChrome.windowIdealSize.height
+            ))
             window.isOpaque = false
             window.backgroundColor = .clear
             window.center()
@@ -483,12 +494,5 @@ final class StatusItemController {
             return "\(base)\n\(holdLine)"
         }
         return base
-    }
-}
-
-/// Preferences window that closes on Esc (standard `cancelOperation`).
-private final class EscapeToCloseWindow: NSWindow {
-    override func cancelOperation(_ sender: Any?) {
-        performClose(sender)
     }
 }
