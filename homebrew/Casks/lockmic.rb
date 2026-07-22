@@ -11,9 +11,9 @@
 # Before publishing: set version, url, and sha256 from Scripts/package_dmg.sh output.
 
 cask "lockmic" do
-  version "1.1.2"
+  version "1.2.0"
   # After first GitHub Release, set sha256 from:
-  #   shasum -a 256 build/dist/LockMic-1.1.2.zip
+  #   shasum -a 256 build/dist/LockMic-1.2.0.zip
   sha256 :no_check
 
   # Point this at your GitHub Releases asset (or a file:// path while testing):
