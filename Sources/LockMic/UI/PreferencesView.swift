@@ -46,7 +46,7 @@ struct PreferencesView: View {
             detailPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .frame(minWidth: 500, idealWidth: 540, minHeight: 340, idealHeight: 380)
+        .frame(minWidth: 520, idealWidth: 560, minHeight: 380, idealHeight: 460)
         .background(.regularMaterial)
     }
 
@@ -95,24 +95,26 @@ struct PreferencesView: View {
 
     @ViewBuilder
     private var detailPane: some View {
-        Group {
-            switch selection {
-            case .general:
-                generalPage
-            case .devices:
-                devicesPage
-            case .keyboard:
-                keyboardPage
-            case .about:
-                aboutPage
+        // Scroll only when content exceeds the window (indicators appear as needed).
+        ScrollView(.vertical, showsIndicators: true) {
+            Group {
+                switch selection {
+                case .general:
+                    generalPage
+                case .devices:
+                    devicesPage
+                case .keyboard:
+                    keyboardPage
+                case .about:
+                    aboutPage
+                }
             }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .padding(16)
-        // Prevent SwiftUI Form from introducing a scroll view.
-        .scrollDisabled(true)
     }
 
-    // MARK: - Pages (compact VStacks — no Form ScrollView)
+    // MARK: - Pages
 
     private var generalPage: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -138,8 +140,6 @@ struct PreferencesView: View {
             }
             Toggle("Play sound when muting / unmuting", isOn: $preferences.soundEnabled)
             Toggle("Launch at login", isOn: $preferences.launchAtLogin)
-
-            Spacer(minLength: 0)
         }
     }
 
@@ -186,8 +186,6 @@ struct PreferencesView: View {
                     }
                 }
             }
-
-            Spacer(minLength: 0)
         }
         .onAppear {
             mic.refreshDeviceList()
@@ -275,12 +273,33 @@ struct PreferencesView: View {
     }
 
     private var keyboardPage: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             sectionHeader("Shortcuts")
-            Text("Click a shortcut field, then press the new keys. Esc cancels · Delete clears.")
+            Text("Click a field, then press keys · Esc cancels · Delete clears")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            if !preferences.shortcutConflictMessages.isEmpty {
+                VStack(alignment: .leading, spacing: 3) {
+                    Label("Shortcut conflicts", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.orange)
+                        .labelStyle(.titleAndIcon)
+                    ForEach(preferences.shortcutConflictMessages, id: \.self) { message in
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.orange.opacity(0.12))
+                )
+            }
 
             shortcutRow(
                 title: "Toggle mute",
@@ -298,23 +317,38 @@ struct PreferencesView: View {
                 chord: $preferences.unmuteChord
             )
 
-            Divider().padding(.vertical, 2)
-
             Toggle("Also toggle with ⌘F5", isOn: $preferences.f5ToggleEnabled)
                 .focusable(false)
                 .focusEffectDisabled()
 
+            Divider().padding(.vertical, 2)
+
+            sectionHeader("Momentary")
+            Text("Hold to change mute · release restores previous state")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            shortcutRow(
+                title: "Push to talk",
+                enabled: $preferences.pushToTalkEnabled,
+                chord: $preferences.pushToTalkChord
+            )
+            shortcutRow(
+                title: "Push to mute",
+                enabled: $preferences.pushToMuteEnabled,
+                chord: $preferences.pushToMuteChord
+            )
+
             HStack {
-                Spacer()
+                Spacer(minLength: 0)
                 Button("Reset to Defaults") {
                     preferences.resetShortcutsToDefaults()
                 }
                 .focusable(false)
                 .focusEffectDisabled()
             }
-            .padding(.top, 4)
-
-            Spacer(minLength: 0)
+            .padding(.top, 2)
         }
     }
 
@@ -383,8 +417,6 @@ struct PreferencesView: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 2)
             }
-
-            Spacer(minLength: 0)
         }
     }
 

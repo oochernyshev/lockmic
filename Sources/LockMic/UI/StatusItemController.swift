@@ -14,6 +14,19 @@ final class StatusItemController {
     private var cancellables: [NSObjectProtocol] = []
     /// Tracks last applied floating preference so we only hide on a true off transition.
     private var lastHudFloating: Bool?
+    /// Active momentary hold (push-to-talk / push-to-mute).
+    private enum MomentaryHold {
+        case none
+        case pushToTalk(wasMuted: Bool)
+        case pushToMute(wasMuted: Bool)
+
+        var isActive: Bool {
+            if case .none = self { return false }
+            return true
+        }
+    }
+
+    private var momentaryHold: MomentaryHold = .none
 
     init(mic: MicController, preferences: PreferencesStore) {
         self.mic = mic
@@ -114,25 +127,72 @@ final class StatusItemController {
     }
 
     private func registerHotkeys() {
-        hotkeys.register(bindings: preferences.activeBindings) { [weak self] action in
+        hotkeys.register(bindings: preferences.activeBindings) { [weak self] action, phase in
             DispatchQueue.main.async {
-                self?.handleHotkeyAction(action)
+                self?.handleHotkeyAction(action, phase: phase)
             }
         }
     }
 
-    private func handleHotkeyAction(_ action: HotkeyAction) {
+    private func handleHotkeyAction(_ action: HotkeyAction, phase: HotkeyPhase) {
         switch action {
         case .toggle:
+            guard phase == .pressed, !momentaryHold.isActive else { return }
             toggleFromUser()
         case .mute:
+            guard phase == .pressed, !momentaryHold.isActive else { return }
             guard !mic.isMuted else { return }
             mic.setMuted(true)
             handleMuteChanged(showHUD: true)
         case .unmute:
+            guard phase == .pressed, !momentaryHold.isActive else { return }
             guard mic.isMuted else { return }
             mic.setMuted(false)
             handleMuteChanged(showHUD: true)
+        case .pushToTalk:
+            handlePushToTalk(phase: phase)
+        case .pushToMute:
+            handlePushToMute(phase: phase)
+        }
+    }
+
+    private func handlePushToTalk(phase: HotkeyPhase) {
+        switch phase {
+        case .pressed:
+            guard case .none = momentaryHold else { return }
+            let wasMuted = mic.desiredMuted || mic.isMuted
+            momentaryHold = .pushToTalk(wasMuted: wasMuted)
+            if wasMuted {
+                mic.setMuted(false)
+                handleMuteChanged(showHUD: true)
+            }
+        case .released:
+            guard case .pushToTalk(let wasMuted) = momentaryHold else { return }
+            momentaryHold = .none
+            if wasMuted {
+                mic.setMuted(true)
+                handleMuteChanged(showHUD: true)
+            }
+        }
+    }
+
+    private func handlePushToMute(phase: HotkeyPhase) {
+        switch phase {
+        case .pressed:
+            guard case .none = momentaryHold else { return }
+            let wasMuted = mic.desiredMuted || mic.isMuted
+            momentaryHold = .pushToMute(wasMuted: wasMuted)
+            if !wasMuted {
+                mic.setMuted(true)
+                handleMuteChanged(showHUD: true)
+            }
+        case .released:
+            guard case .pushToMute(let wasMuted) = momentaryHold else { return }
+            momentaryHold = .none
+            if !wasMuted {
+                mic.setMuted(false)
+                handleMuteChanged(showHUD: true)
+            }
         }
     }
 
@@ -282,8 +342,8 @@ final class StatusItemController {
             let window = NSWindow(contentViewController: hosting)
             window.title = "LockMic Preferences"
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-            window.minSize = NSSize(width: 500, height: 340)
-            window.setContentSize(NSSize(width: 540, height: 380))
+            window.minSize = NSSize(width: 520, height: 380)
+            window.setContentSize(NSSize(width: 560, height: 460))
             window.isOpaque = false
             window.backgroundColor = .clear
             window.center()

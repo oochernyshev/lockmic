@@ -19,6 +19,22 @@ enum HotkeyAction: String, Sendable {
     case toggle
     case mute
     case unmute
+    /// Hold to temporarily unmute; release restores prior mute state.
+    case pushToTalk
+    /// Hold to temporarily mute; release restores prior mute state.
+    case pushToMute
+
+    var isMomentary: Bool {
+        switch self {
+        case .pushToTalk, .pushToMute: return true
+        default: return false
+        }
+    }
+}
+
+enum HotkeyPhase: String, Sendable {
+    case pressed
+    case released
 }
 
 struct HotkeyBinding: Equatable, Sendable {
@@ -32,21 +48,25 @@ struct HotkeyBinding: Equatable, Sendable {
 }
 
 /// Global hotkeys via Carbon + NSEvent monitors.
+/// Momentary actions (push-to-talk / push-to-mute) receive both press and release.
 final class HotkeyManager {
     private var hotKeyRefs: [EventHotKeyRef] = []
     private var carbonIDs: [UInt32] = []
     private var bindings: [HotkeyBinding] = []
-    private var actionHandler: ((HotkeyAction) -> Void)?
+    private var actionHandler: ((HotkeyAction, HotkeyPhase) -> Void)?
 
     private var localMonitor: Any?
     private var globalMonitor: Any?
 
     private var lastFireTime: CFAbsoluteTime = 0
     private var lastFireAction: HotkeyAction?
+    private var lastFirePhase: HotkeyPhase?
 
     private static let signature = OSType(0x4C4D4831) // 'LMH1'
     private static var nextID: UInt32 = 1
-    private static var carbonHandlers: [UInt32: () -> Void] = [:]
+    /// id → (action, handlesRelease)
+    private static var carbonHandlers: [UInt32: (HotkeyAction, Bool)] = [:]
+    private static var sharedEventSink: ((HotkeyAction, HotkeyPhase) -> Void)?
     private static var handlerInstalled = false
     private static var handlerRef: EventHandlerRef?
 
@@ -54,19 +74,27 @@ final class HotkeyManager {
         unregister()
     }
 
-    func register(bindings: [HotkeyBinding], onAction: @escaping (HotkeyAction) -> Void) {
+    func register(bindings: [HotkeyBinding], onAction: @escaping (HotkeyAction, HotkeyPhase) -> Void) {
         unregister()
         self.bindings = bindings.filter(\.isActive)
-        self.actionHandler = { [weak self] action in
+        self.actionHandler = { [weak self] action, phase in
             guard let self else { return }
             let now = CFAbsoluteTimeGetCurrent()
-            // Debounce same action; allow mute then unmute quickly.
-            if action == self.lastFireAction, now - self.lastFireTime < 0.2 { return }
+            // Debounce same action+phase for latching shortcuts; momentary uses its own guards.
+            if !action.isMomentary,
+               action == self.lastFireAction,
+               phase == self.lastFirePhase,
+               now - self.lastFireTime < 0.2
+            {
+                return
+            }
             self.lastFireTime = now
             self.lastFireAction = action
-            NSLog("LockMic: hotkey fired action=%@", action.rawValue)
-            onAction(action)
+            self.lastFirePhase = phase
+            NSLog("LockMic: hotkey fired action=%@ phase=%@", action.rawValue, phase.rawValue)
+            onAction(action, phase)
         }
+        HotkeyManager.sharedEventSink = self.actionHandler
 
         for binding in self.bindings {
             installCarbonHotKey(binding)
@@ -96,6 +124,7 @@ final class HotkeyManager {
 
         bindings = []
         actionHandler = nil
+        HotkeyManager.sharedEventSink = nil
     }
 
     // MARK: - Carbon
@@ -106,6 +135,7 @@ final class HotkeyManager {
         let id = HotkeyManager.nextID
         HotkeyManager.nextID += 1
         let action = binding.action
+        let handlesRelease = action.isMomentary
 
         var eventHotKeyID = EventHotKeyID(signature: HotkeyManager.signature, id: id)
         var ref: EventHotKeyRef?
@@ -121,13 +151,12 @@ final class HotkeyManager {
         if status == noErr, let ref {
             hotKeyRefs.append(ref)
             carbonIDs.append(id)
-            HotkeyManager.carbonHandlers[id] = { [weak self] in
-                self?.actionHandler?(action)
-            }
+            HotkeyManager.carbonHandlers[id] = (action, handlesRelease)
             NSLog(
-                "LockMic: Carbon hotkey OK %@ → %@",
+                "LockMic: Carbon hotkey OK %@ → %@%@",
                 binding.chord.displayString,
-                action.rawValue
+                action.rawValue,
+                handlesRelease ? " (momentary)" : ""
             )
         } else {
             NSLog(
@@ -139,16 +168,20 @@ final class HotkeyManager {
     }
 
     private static func installSharedHandlerIfNeeded() {
-        guard !handlerInstalled else { return }
+        if handlerInstalled {
+            // Ensure both press + release are observed (upgrade from press-only installs).
+            return
+        }
 
         var eventTypes = [
             EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
+            EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased)),
         ]
 
         let status = InstallEventHandler(
             GetEventDispatcherTarget(),
             lockMicHotKeyEventHandler,
-            1,
+            2,
             &eventTypes,
             nil,
             &handlerRef
@@ -177,14 +210,28 @@ final class HotkeyManager {
         guard err == noErr, hkID.signature == signature else {
             return OSStatus(eventNotHandledErr)
         }
-        guard let handler = carbonHandlers[hkID.id] else {
+        guard let (action, handlesRelease) = carbonHandlers[hkID.id] else {
             return OSStatus(eventNotHandledErr)
         }
 
-        if Thread.isMainThread {
-            handler()
+        let kind = GetEventKind(event)
+        let phase: HotkeyPhase
+        if kind == UInt32(kEventHotKeyPressed) {
+            phase = .pressed
+        } else if kind == UInt32(kEventHotKeyReleased) {
+            guard handlesRelease else { return noErr }
+            phase = .released
         } else {
-            DispatchQueue.main.async(execute: handler)
+            return OSStatus(eventNotHandledErr)
+        }
+
+        let deliver: () -> Void = {
+            sharedEventSink?(action, phase)
+        }
+        if Thread.isMainThread {
+            deliver()
+        } else {
+            DispatchQueue.main.async(execute: deliver)
         }
         return noErr
     }
@@ -193,39 +240,65 @@ final class HotkeyManager {
 
     private func installEventMonitors() {
         let bindings = self.bindings
+        let mask: NSEvent.EventTypeMask = [.keyDown, .keyUp]
 
-        localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        localMonitor = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
             guard let self else { return event }
-            if let action = Self.action(for: event, bindings: bindings) {
-                self.actionHandler?(action)
-                return nil
+            if let (action, phase) = Self.match(event: event, bindings: bindings) {
+                self.actionHandler?(action, phase)
+                // Swallow only keyDown for latching shortcuts; let keyUp through for system.
+                if event.type == .keyDown {
+                    return nil
+                }
             }
             return event
         }
 
-        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask) { [weak self] event in
             guard let self else { return }
-            if let action = Self.action(for: event, bindings: bindings) {
+            if let (action, phase) = Self.match(event: event, bindings: bindings) {
                 DispatchQueue.main.async {
-                    self.actionHandler?(action)
+                    self.actionHandler?(action, phase)
                 }
             }
         }
     }
 
-    private static func action(for event: NSEvent, bindings: [HotkeyBinding]) -> HotkeyAction? {
+    private static func match(event: NSEvent, bindings: [HotkeyBinding]) -> (HotkeyAction, HotkeyPhase)? {
+        let phase: HotkeyPhase = (event.type == .keyUp) ? .released : .pressed
+        if event.type == .keyDown, event.isARepeat {
+            // Only ignore repeats for momentary PTT; latching shortcuts already debounced.
+            // Still ignore PTT key-repeat so we don't re-enter.
+        }
+
         for binding in bindings {
+            if phase == .released, !binding.action.isMomentary {
+                continue
+            }
+            if phase == .pressed, event.isARepeat, binding.action.isMomentary {
+                continue
+            }
+
             let nsMods = nsEventModifiers(fromCarbon: binding.chord.modifiers)
-            if eventMatches(event, keyCode: UInt16(binding.chord.keyCode), modifiers: nsMods) {
-                return binding.action
+            if eventMatches(event, keyCode: UInt16(binding.chord.keyCode), modifiers: nsMods, phase: phase) {
+                return (binding.action, phase)
             }
         }
         return nil
     }
 
-    private static func eventMatches(_ event: NSEvent, keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> Bool {
+    private static func eventMatches(
+        _ event: NSEvent,
+        keyCode: UInt16,
+        modifiers: NSEvent.ModifierFlags,
+        phase: HotkeyPhase
+    ) -> Bool {
         guard event.keyCode == keyCode else { return false }
         let relevant: NSEvent.ModifierFlags = [.control, .option, .command, .shift]
+        // On key-up, modifiers may already be released — match key code only for release.
+        if phase == .released {
+            return true
+        }
         return event.modifierFlags.intersection(relevant) == modifiers.intersection(relevant)
     }
 

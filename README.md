@@ -1,19 +1,32 @@
 # LockMic
 
-System-wide microphone mute for macOS — menu bar icon, global hotkey, on-screen HUD. Works in Zoom, Teams, Meet, and every other app by muting the input device via Core Audio.
+System-wide microphone mute for macOS — menu bar icon, global hotkeys, and an on-screen HUD. Works in Zoom, Teams, Meet, FaceTime, browsers, and every other app by muting input devices via Core Audio.
 
-**Homebrew-first** distribution (App Store planned later). See [ARCHITECTURE.md](./ARCHITECTURE.md).
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** [MIT](./LICENSE) · **Version:** 1.1.2
 
-## Features (v0.1)
+**Homebrew-first** distribution (App Store planned later). See [ARCHITECTURE.md](./ARCHITECTURE.md) for design details.
 
-- Mute / unmute default input at the **system** level
-- **Menu bar** icon (click = toggle, right-click = menu)
-- Global hotkeys **⌘⇧M** and **⌘F5**
-- On-screen **HUD** when state changes
-- Mutes **all input devices** by default (optional: default input only)
-- Re-applies mute when devices change
-- Customizable shortcuts: toggle / mute / unmute (each can be disabled)
-- Preferences: HUD, sound, launch at login, devices, keyboard
+## Features
+
+- **System-level mute** via Core Audio (not app-specific mute buttons)
+- **Mute all input devices** by default (optional: default input only)
+- Virtual devices (e.g. BlackHole) are listed but **ignored** for mute control
+- **Menu bar** icon — click to toggle, right-click for menu
+- Global hotkeys (customizable):
+  - **Toggle:** ⌘⇧M (and optional ⌘F5)
+  - **Mute only / Unmute only** (off by default)
+  - **Push to talk:** hold to unmute, release to restore (off by default; default ⌥Space)
+  - **Push to mute:** hold to mute, release to restore (off by default; default ⇧Space)
+  - **Conflict warnings** when two enabled shortcuts share the same keys
+- **On-screen HUD** on mute/unmute (optional toast)
+- **Floating HUD** (optional): always visible on each display
+  - Drag to reposition (per display, remembered)
+  - Click to toggle mute
+  - Right-click to hide/show on a display (also in menu bar)
+- Sound feedback on mute/unmute (optional)
+- Launch at login (optional)
+- Preferences: General, Devices, Keyboard, About
+- Re-applies mute when devices or the default input change
 
 ## Requirements
 
@@ -21,9 +34,9 @@ System-wide microphone mute for macOS — menu bar icon, global hotkey, on-scree
 - Xcode 15+ (to build)
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
 
-## Build & run (local / Homebrew package)
+## Build & run
 
-Start or restart (kills any running instance, builds if missing):
+Start or restart (kills any running instance; builds if the app is missing):
 
 ```bash
 ./Scripts/start.sh
@@ -35,14 +48,14 @@ Rebuild then restart:
 ./Scripts/start.sh --build
 ```
 
-Or build only:
+Build only:
 
 ```bash
 ./Scripts/build_homebrew.sh
 open build/LockMic.app
 ```
 
-Optional zip/DMG for releases:
+Package a release zip/DMG:
 
 ```bash
 ./Scripts/package_dmg.sh
@@ -54,19 +67,17 @@ Optional zip/DMG for releases:
 Point the cask at your GitHub release, then:
 
 ```bash
-# From a personal tap (example)
 brew tap <you>/lockmic https://github.com/<you>/LockMic
 brew install --cask lockmic
 ```
 
-Cask template: [`homebrew/Casks/lockmic.rb`](./homebrew/Casks/lockmic.rb).
+Cask template: [`homebrew/Casks/lockmic.rb`](./homebrew/Casks/lockmic.rb)  
+Homepage in the cask: [https://wixee.ai](https://wixee.ai)
 
-### Install a local build with Homebrew
+### Local build without a public release
 
 ```bash
 ./Scripts/build_homebrew.sh
-./Scripts/package_dmg.sh
-# Then either open the app directly, or host the zip and fill sha256 in the cask.
 open build/LockMic.app
 ```
 
@@ -74,31 +85,48 @@ open build/LockMic.app
 
 | Action | How |
 |--------|-----|
-| Toggle mute | Click menu bar icon, or **⌘⇧M** / **⌘F5** |
-| Menu / Preferences | Right-click (or Control-click) menu bar icon |
+| Toggle mute | Click menu bar icon, **⌘⇧M**, **⌘F5**, or click the floating HUD |
+| Push to talk | Hold PTT shortcut (Preferences → Keyboard; off by default) |
+| Push to mute | Hold PTM shortcut (Preferences → Keyboard; off by default) |
+| Menu / Preferences | Right-click (or Control-click) the menu bar icon |
+| Floating HUD move | Drag the indicator (each display is independent) |
+| Floating HUD hide/show | Right-click the indicator, or menu bar → **Floating HUD** |
 | Quit | Menu → Quit LockMic |
+
+### Preferences
+
+| Section | Options |
+|---------|---------|
+| **General** | Status, HUD toast, floating HUD, sound, launch at login |
+| **Devices** | Mute-all vs default-only, live input list (virtual = ignored) |
+| **Keyboard** | Toggle / mute / unmute / PTT / PTM; optional ⌘F5; conflict warnings; reset |
+| **About** | Logo, version, WIXEE.AI, website, MIT license |
 
 ## Development in VS Code
 
 1. Install Xcode + `xcodegen`
-2. Optional: [SweetPad](https://marketplace.visualstudio.com/items?itemName=sweetpad.sweetpad) extension
-3. Generate & build: `./Scripts/build_homebrew.sh`
+2. Optional: [SweetPad](https://marketplace.visualstudio.com/items?itemName=sweetpad.sweetpad)
+3. Generate & build: `./Scripts/build_homebrew.sh` or `./Scripts/start.sh --build`
 4. Edit sources under `Sources/LockMic/`
 
 ## Project layout
 
 ```
-Sources/LockMic/   Swift app (App, Core, UI)
-Resources/         Info.plist, entitlements, assets
-Scripts/           Homebrew build & package
-homebrew/Casks/    Cask formula template
-ARCHITECTURE.md    System design
+Sources/LockMic/     Swift app (App, Core, UI)
+Resources/           Info.plist, entitlements, Assets (AppIcon, AppLogo)
+Scripts/             start, build, package
+homebrew/Casks/      Cask formula template
+LICENSE              MIT
+ARCHITECTURE.md      System design
+logo.png             Source artwork (generates icon sizes)
 ```
 
 ## Privacy
 
-Core mute uses Core Audio only and does **not** require microphone permission. A future “suggest unmute while speaking” feature will request mic access optionally and process audio on-device only.
+LockMic mutes devices through Core Audio only. It does **not** record audio and does **not** require microphone permission.
 
 ## License
 
-[MIT](./LICENSE) — Copyright © 2026 WIXEE.AI
+[MIT](./LICENSE) — Copyright © 2026 [WIXEE.AI](https://wixee.ai)
+
+Open-core: this free app is MIT-licensed. Future Pro features may be offered separately by WIXEE.AI under different terms.
