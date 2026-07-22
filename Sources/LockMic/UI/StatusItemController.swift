@@ -6,11 +6,14 @@ final class StatusItemController {
     private let mic: MicController
     private let preferences: PreferencesStore
     private let hud = HUDOverlay()
+    private let sounds = SoundFeedback()
     private let hotkeys = HotkeyManager()
 
     private var statusItem: NSStatusItem?
     private var preferencesWindow: NSWindow?
     private var cancellables: [NSObjectProtocol] = []
+    /// Tracks last applied floating preference so we only hide on a true off transition.
+    private var lastHudFloating: Bool?
 
     init(mic: MicController, preferences: PreferencesStore) {
         self.mic = mic
@@ -18,10 +21,12 @@ final class StatusItemController {
     }
 
     func start() {
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        item.isVisible = true
         if let button = item.button {
-            button.image = statusImage(for: mic.state)
+            button.image = statusImage(symbolName: symbolName(for: mic.state))
             button.imagePosition = .imageOnly
+            button.imageScaling = .scaleProportionallyDown
             button.toolTip = "LockMic"
             button.target = self
             button.action = #selector(statusItemClicked(_:))
@@ -30,17 +35,24 @@ final class StatusItemController {
         item.menu = nil
         statusItem = item
 
-        rebuildMenu()
-        registerHotkey()
+        hud.onToggle = { [weak self] in
+            self?.toggleFromUser()
+        }
+
+        updateIcon()
+        registerHotkeys()
         observeMic()
+        observePreferenceHotkeys()
+        syncFloatingHUD()
     }
 
     private func observeMic() {
-        // Poll published changes via Combine-less simple observation on main after actions.
-        // Also refresh icon when app becomes active.
-        let center = NotificationCenter.default
         cancellables.append(
-            center.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            NotificationCenter.default.addObserver(
+                forName: NSApplication.didBecomeActiveNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
                 Task { @MainActor in
                     self?.mic.refreshFromHardware(applyDesired: false)
                     self?.updateIcon()
@@ -49,28 +61,78 @@ final class StatusItemController {
         )
     }
 
+    private func observePreferenceHotkeys() {
+        // Re-register shortcuts and sync floating HUD when Preferences change.
+        cancellables.append(
+            NotificationCenter.default.addObserver(
+                forName: UserDefaults.didChangeNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.registerHotkeys()
+                    self?.syncFloatingHUD()
+                }
+            }
+        )
+    }
+
     func handleMuteChanged(showHUD: Bool) {
         updateIcon()
-        rebuildMenu()
-        if showHUD, preferences.hudEnabled {
-            let displayMuted: Bool = {
-                switch mic.state {
-                case .muted: return true
-                case .unmuted: return false
-                default: return mic.desiredMuted
-                }
-            }()
-            hud.show(muted: displayMuted, deviceName: mic.deviceName)
+
+        let displayMuted = currentDisplayMuted()
+
+        if showHUD, preferences.soundEnabled {
+            sounds.play(muted: displayMuted)
+        }
+
+        if preferences.hudFloating {
+            hud.show(muted: displayMuted, deviceName: mic.deviceName, persistent: true)
+        } else if showHUD, preferences.hudEnabled {
+            hud.show(muted: displayMuted, deviceName: mic.deviceName, persistent: false)
         }
     }
 
-    private func registerHotkey() {
-        let chords = preferences.activeHotkeys
-        NSLog("LockMic: registering shortcuts %@", preferences.hotkeyDisplayString)
-        hotkeys.register(chords: chords) { [weak self] in
+    /// Show or hide the always-on floating mute indicator based on preference.
+    func syncFloatingHUD() {
+        let floating = preferences.hudFloating
+        if floating {
+            hud.show(muted: currentDisplayMuted(), deviceName: mic.deviceName, persistent: true)
+        } else if lastHudFloating == true {
+            // Only dismiss when floating is turned off — don't cancel toast HUDs.
+            hud.hide()
+        }
+        lastHudFloating = floating
+    }
+
+    private func currentDisplayMuted() -> Bool {
+        switch mic.state {
+        case .muted: return true
+        case .unmuted: return false
+        default: return mic.desiredMuted
+        }
+    }
+
+    private func registerHotkeys() {
+        hotkeys.register(bindings: preferences.activeBindings) { [weak self] action in
             DispatchQueue.main.async {
-                self?.toggleFromUser()
+                self?.handleHotkeyAction(action)
             }
+        }
+    }
+
+    private func handleHotkeyAction(_ action: HotkeyAction) {
+        switch action {
+        case .toggle:
+            toggleFromUser()
+        case .mute:
+            guard !mic.isMuted else { return }
+            mic.setMuted(true)
+            handleMuteChanged(showHUD: true)
+        case .unmute:
+            guard mic.isMuted else { return }
+            mic.setMuted(false)
+            handleMuteChanged(showHUD: true)
         }
     }
 
@@ -85,20 +147,20 @@ final class StatusItemController {
             return
         }
         if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
-            statusItem?.menu = buildMenu()
-            statusItem?.button?.performClick(nil)
-            // Clear menu after so left-click remains toggle
-            DispatchQueue.main.async { [weak self] in
-                self?.statusItem?.menu = nil
-            }
+            showMenuFromStatusItem()
         } else {
             toggleFromUser()
         }
     }
 
-    private func rebuildMenu() {
-        // Menu is attached on right-click only; keep icon in sync.
-        updateIcon()
+    private func showMenuFromStatusItem() {
+        guard let button = statusItem?.button else { return }
+        let menu = buildMenu()
+        statusItem?.menu = menu
+        button.performClick(nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.statusItem?.menu = nil
+        }
     }
 
     private func buildMenu() -> NSMenu {
@@ -112,9 +174,9 @@ final class StatusItemController {
             case .unsupported(let name): return "Status: Can’t mute (\(name))"
             }
         }()
-        let statusItem = NSMenuItem(title: statusTitle, action: nil, keyEquivalent: "")
-        statusItem.isEnabled = false
-        menu.addItem(statusItem)
+        let statusLine = NSMenuItem(title: statusTitle, action: nil, keyEquivalent: "")
+        statusLine.isEnabled = false
+        menu.addItem(statusLine)
 
         let deviceItem = NSMenuItem(title: "Device: \(mic.deviceName)", action: nil, keyEquivalent: "")
         deviceItem.isEnabled = false
@@ -147,6 +209,35 @@ final class StatusItemController {
         muteAll.state = preferences.muteAllInputs ? .on : .off
         menu.addItem(muteAll)
 
+        if preferences.hudFloating {
+            menu.addItem(.separator())
+            let floatingHeader = NSMenuItem(title: "Floating HUD", action: nil, keyEquivalent: "")
+            floatingHeader.isEnabled = false
+            menu.addItem(floatingHeader)
+
+            for screen in hud.screenVisibilities() {
+                let item = NSMenuItem(
+                    title: screen.name,
+                    action: #selector(toggleFloatingHUDOnDisplay(_:)),
+                    keyEquivalent: ""
+                )
+                item.target = self
+                item.representedObject = screen.id
+                item.state = screen.isVisible ? .on : .off
+                menu.addItem(item)
+            }
+
+            if hud.hasAnyHiddenDisplay() {
+                let showAll = NSMenuItem(
+                    title: "Show on All Displays",
+                    action: #selector(showFloatingHUDOnAllDisplays),
+                    keyEquivalent: ""
+                )
+                showAll.target = self
+                menu.addItem(showAll)
+            }
+        }
+
         menu.addItem(.separator())
 
         let prefs = NSMenuItem(title: "Preferences…", action: #selector(openPreferences), keyEquivalent: ",")
@@ -172,14 +263,29 @@ final class StatusItemController {
         handleMuteChanged(showHUD: false)
     }
 
+    @objc private func toggleFloatingHUDOnDisplay(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        let currentlyVisible = sender.state == .on
+        hud.setDisplayHidden(id, hidden: currentlyVisible)
+    }
+
+    @objc private func showFloatingHUDOnAllDisplays() {
+        hud.setAllDisplaysHidden(false)
+    }
+
     @objc private func openPreferences() {
         if preferencesWindow == nil {
             let view = PreferencesView(preferences: preferences, mic: mic)
             let hosting = NSHostingController(rootView: view)
+            hosting.view.wantsLayer = true
+            hosting.view.layer?.backgroundColor = NSColor.clear.cgColor
             let window = NSWindow(contentViewController: hosting)
             window.title = "LockMic Preferences"
-            window.styleMask = [.titled, .closable, .miniaturizable]
-            window.setContentSize(NSSize(width: 440, height: 380))
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+            window.minSize = NSSize(width: 500, height: 340)
+            window.setContentSize(NSSize(width: 540, height: 380))
+            window.isOpaque = false
+            window.backgroundColor = .clear
             window.center()
             window.isReleasedWhenClosed = false
             preferencesWindow = window
@@ -193,24 +299,23 @@ final class StatusItemController {
     }
 
     private func updateIcon() {
-        statusItem?.button?.image = statusImage(for: mic.state)
+        statusItem?.button?.image = statusImage(symbolName: symbolName(for: mic.state))
         statusItem?.button?.toolTip = tooltip(for: mic.state)
+        statusItem?.isVisible = true
     }
 
-    private func statusImage(for state: MicState) -> NSImage {
-        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
-        let name: String
+    private func symbolName(for state: MicState) -> String {
         switch state {
-        case .muted:
-            name = "mic.slash.fill"
-        case .unmuted:
-            name = "mic.fill"
-        case .unknown:
-            name = "mic"
-        case .unsupported:
-            name = "exclamationmark.triangle.fill"
+        case .muted: return "mic.slash.fill"
+        case .unmuted: return "mic.fill"
+        case .unknown: return "mic"
+        case .unsupported: return "exclamationmark.triangle.fill"
         }
-        let image = NSImage(systemSymbolName: name, accessibilityDescription: "LockMic")?
+    }
+
+    private func statusImage(symbolName: String) -> NSImage {
+        let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+        let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "LockMic")?
             .withSymbolConfiguration(config) ?? NSImage()
         image.isTemplate = true
         return image

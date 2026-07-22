@@ -11,16 +11,16 @@
 # Before publishing: set version, url, and sha256 from Scripts/package_dmg.sh output.
 
 cask "lockmic" do
-  version "0.1.0"
+  version "1.1.2"
   # After first GitHub Release, set sha256 from:
-  #   shasum -a 256 build/dist/LockMic-0.1.0.zip
+  #   shasum -a 256 build/dist/LockMic-1.1.2.zip
   sha256 :no_check
 
   # Point this at your GitHub Releases asset (or a file:// path while testing):
   url "https://github.com/lockmic/LockMic/releases/download/v#{version}/LockMic-#{version}.zip"
   name "LockMic"
   desc "System-wide microphone mute from the menu bar"
-  homepage "https://github.com/lockmic/LockMic"
+  homepage "https://wixee.ai"
 
   depends_on macos: ">= :sonoma"
 

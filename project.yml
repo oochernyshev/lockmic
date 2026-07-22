@@ -9,8 +9,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "1.1.2"
+    CURRENT_PROJECT_VERSION: "112"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     ENABLE_HARDENED_RUNTIME: YES
@@ -21,16 +21,16 @@ targets:
     platform: macOS
     sources:
       - path: Sources/LockMic
-    resources:
       - path: Resources/Assets.xcassets
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lockmic.app
         INFOPLIST_FILE: Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: Resources/LockMic.entitlements
         GENERATE_INFOPLIST_FILE: false
-        MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "1"
+        MARKETING_VERSION: "1.1.2"
+        CURRENT_PROJECT_VERSION: "112"
         LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
         COMBINE_HIDPI_IMAGES: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

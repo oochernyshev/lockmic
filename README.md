@@ -12,7 +12,8 @@ System-wide microphone mute for macOS — menu bar icon, global hotkey, on-scree
 - On-screen **HUD** when state changes
 - Mutes **all input devices** by default (optional: default input only)
 - Re-applies mute when devices change
-- Preferences: HUD, launch at login, mute scope
+- Customizable shortcuts: toggle / mute / unmute (each can be disabled)
+- Preferences: HUD, sound, launch at login, devices, keyboard
 
 ## Requirements
 
@@ -45,7 +46,7 @@ Optional zip/DMG for releases:
 
 ```bash
 ./Scripts/package_dmg.sh
-# → build/dist/LockMic-0.1.0.zip (+ .dmg, sha256)
+# → build/dist/LockMic-1.1.2.zip (+ .dmg, sha256)
 ```
 
 ## Install via Homebrew (after a release exists)
@@ -100,4 +101,4 @@ Core mute uses Core Audio only and does **not** require microphone permission. A
 
 ## License
 
-TBD
+[MIT](./LICENSE) — Copyright © 2026 WIXEE.AI

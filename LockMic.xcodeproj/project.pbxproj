@@ -9,11 +9,14 @@
 /* Begin PBXBuildFile section */
 		3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9531C60032267EFA1757D1BC /* AppDelegate.swift */; };
 		34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47A7A118040E6EF54FF7752 /* MicController.swift */; };
+		555CB82D8EE959038378C244 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85D3C494D4898BA8C2268DB1 /* Assets.xcassets */; };
+		881AA270D666437B1903E384 /* SoundFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */; };
 		8CF0A20DF5BC136F3B034052 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C3675125FEA46D7196900C /* HotkeyManager.swift */; };
 		BA20006664889BFA032B547D /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402280C03971421D5FC37176 /* PreferencesStore.swift */; };
 		D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C7D193AC5B7126335223E /* LockMicApp.swift */; };
 		D2858916A735CF2E761476C5 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */; };
 		DF99A9504527B6B0E6F48478 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D93F1024B71207F8831FB2E /* PreferencesView.swift */; };
+		E20244D2F3506734EB9D15D9 /* HotkeyRecorderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40771CE30E43CEE7B2690B08 /* HotkeyRecorderButton.swift */; };
 		ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */; };
 		FEE8EBDBBF2899014964D9EB /* HUDOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */; };
 /* End PBXBuildFile section */
@@ -21,12 +24,15 @@
 /* Begin PBXFileReference section */
 		23C3675125FEA46D7196900C /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
 		402280C03971421D5FC37176 /* PreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStore.swift; sourceTree = "<group>"; };
+		40771CE30E43CEE7B2690B08 /* HotkeyRecorderButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRecorderButton.swift; sourceTree = "<group>"; };
 		6D93F1024B71207F8831FB2E /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
+		85D3C494D4898BA8C2268DB1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9531C60032267EFA1757D1BC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A4DE69CE589C220C182F7AAD /* LockMic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LockMic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A51C7D193AC5B7126335223E /* LockMicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockMicApp.swift; sourceTree = "<group>"; };
 		B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceService.swift; sourceTree = "<group>"; };
 		C47A7A118040E6EF54FF7752 /* MicController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicController.swift; sourceTree = "<group>"; };
+		CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedback.swift; sourceTree = "<group>"; };
 		D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDOverlay.swift; sourceTree = "<group>"; };
 		F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -45,6 +51,7 @@
 		2A39A4658C15CE0E459475FE = {
 			isa = PBXGroup;
 			children = (
+				4B82F3C0BBC89768CAF74B18 /* Resources */,
 				B7AA8551C1E3BA12AAC362E6 /* Sources */,
 				3F3CABF53EA52C35F4B55CA6 /* Products */,
 			);
@@ -58,6 +65,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		4B82F3C0BBC89768CAF74B18 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				85D3C494D4898BA8C2268DB1 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		5412D2728D3BC6B022FF6D94 /* Core */ = {
 			isa = PBXGroup;
 			children = (
@@ -65,6 +80,7 @@
 				23C3675125FEA46D7196900C /* HotkeyManager.swift */,
 				C47A7A118040E6EF54FF7752 /* MicController.swift */,
 				402280C03971421D5FC37176 /* PreferencesStore.swift */,
+				CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -72,6 +88,7 @@
 		7ED25CE35A9A6424C2DFF368 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				40771CE30E43CEE7B2690B08 /* HotkeyRecorderButton.swift */,
 				D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */,
 				6D93F1024B71207F8831FB2E /* PreferencesView.swift */,
 				F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */,
@@ -104,6 +121,7 @@
 			buildConfigurationList = 5266119FE794EA54E207E636 /* Build configuration list for PBXNativeTarget "LockMic" */;
 			buildPhases = (
 				5C483B2BCCCD98FB9AA074D8 /* Sources */,
+				FC1B24A7FC61F0E68A6CCC6F /* Resources */,
 			);
 			buildRules = (
 			);
@@ -150,6 +168,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		FC1B24A7FC61F0E68A6CCC6F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				555CB82D8EE959038378C244 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		5C483B2BCCCD98FB9AA074D8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -159,10 +188,12 @@
 				ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */,
 				FEE8EBDBBF2899014964D9EB /* HUDOverlay.swift in Sources */,
 				8CF0A20DF5BC136F3B034052 /* HotkeyManager.swift in Sources */,
+				E20244D2F3506734EB9D15D9 /* HotkeyRecorderButton.swift in Sources */,
 				D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */,
 				34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */,
 				BA20006664889BFA032B547D /* PreferencesStore.swift in Sources */,
 				DF99A9504527B6B0E6F48478 /* PreferencesView.swift in Sources */,
+				881AA270D666437B1903E384 /* SoundFeedback.swift in Sources */,
 				D2858916A735CF2E761476C5 /* StatusItemController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -205,7 +236,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 112;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -226,7 +257,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.1.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -244,11 +275,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 112;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -290,7 +321,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 112;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -305,7 +336,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.1.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = LockMic;
@@ -322,11 +353,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 112;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;

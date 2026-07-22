@@ -12,12 +12,14 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.0</string>
+	<string>1.1.2</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>112</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
@@ -26,7 +28,8 @@
 	<true/>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>LockMic can optionally listen for speech while you are muted to suggest unmuting. Audio never leaves your Mac.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 WIXEE.AI</string>
 </dict>
 </plist>
+
