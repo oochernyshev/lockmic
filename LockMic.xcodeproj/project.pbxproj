@@ -1,0 +1,360 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9531C60032267EFA1757D1BC /* AppDelegate.swift */; };
+		34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47A7A118040E6EF54FF7752 /* MicController.swift */; };
+		8CF0A20DF5BC136F3B034052 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C3675125FEA46D7196900C /* HotkeyManager.swift */; };
+		BA20006664889BFA032B547D /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402280C03971421D5FC37176 /* PreferencesStore.swift */; };
+		D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C7D193AC5B7126335223E /* LockMicApp.swift */; };
+		D2858916A735CF2E761476C5 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */; };
+		DF99A9504527B6B0E6F48478 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D93F1024B71207F8831FB2E /* PreferencesView.swift */; };
+		ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */; };
+		FEE8EBDBBF2899014964D9EB /* HUDOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		23C3675125FEA46D7196900C /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+		402280C03971421D5FC37176 /* PreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStore.swift; sourceTree = "<group>"; };
+		6D93F1024B71207F8831FB2E /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
+		9531C60032267EFA1757D1BC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A4DE69CE589C220C182F7AAD /* LockMic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LockMic.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A51C7D193AC5B7126335223E /* LockMicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockMicApp.swift; sourceTree = "<group>"; };
+		B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceService.swift; sourceTree = "<group>"; };
+		C47A7A118040E6EF54FF7752 /* MicController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicController.swift; sourceTree = "<group>"; };
+		D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDOverlay.swift; sourceTree = "<group>"; };
+		F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		16C3D7119294CBB92A7F40CA /* LockMic */ = {
+			isa = PBXGroup;
+			children = (
+				A7A3AA5801FCF8825B85E7A5 /* App */,
+				5412D2728D3BC6B022FF6D94 /* Core */,
+				7ED25CE35A9A6424C2DFF368 /* UI */,
+			);
+			path = LockMic;
+			sourceTree = "<group>";
+		};
+		2A39A4658C15CE0E459475FE = {
+			isa = PBXGroup;
+			children = (
+				B7AA8551C1E3BA12AAC362E6 /* Sources */,
+				3F3CABF53EA52C35F4B55CA6 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3F3CABF53EA52C35F4B55CA6 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A4DE69CE589C220C182F7AAD /* LockMic.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		5412D2728D3BC6B022FF6D94 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */,
+				23C3675125FEA46D7196900C /* HotkeyManager.swift */,
+				C47A7A118040E6EF54FF7752 /* MicController.swift */,
+				402280C03971421D5FC37176 /* PreferencesStore.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		7ED25CE35A9A6424C2DFF368 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */,
+				6D93F1024B71207F8831FB2E /* PreferencesView.swift */,
+				F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		A7A3AA5801FCF8825B85E7A5 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				9531C60032267EFA1757D1BC /* AppDelegate.swift */,
+				A51C7D193AC5B7126335223E /* LockMicApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B7AA8551C1E3BA12AAC362E6 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				16C3D7119294CBB92A7F40CA /* LockMic */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		661F2FDF89B5F9C70A61A0B7 /* LockMic */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5266119FE794EA54E207E636 /* Build configuration list for PBXNativeTarget "LockMic" */;
+			buildPhases = (
+				5C483B2BCCCD98FB9AA074D8 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LockMic;
+			packageProductDependencies = (
+			);
+			productName = LockMic;
+			productReference = A4DE69CE589C220C182F7AAD /* LockMic.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		56B6648B20EB096606E9BDA3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					661F2FDF89B5F9C70A61A0B7 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = B8F756E302A6029099FAA85E /* Build configuration list for PBXProject "LockMic" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2A39A4658C15CE0E459475FE;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 3F3CABF53EA52C35F4B55CA6 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				661F2FDF89B5F9C70A61A0B7 /* LockMic */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5C483B2BCCCD98FB9AA074D8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */,
+				ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */,
+				FEE8EBDBBF2899014964D9EB /* HUDOverlay.swift in Sources */,
+				8CF0A20DF5BC136F3B034052 /* HotkeyManager.swift in Sources */,
+				D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */,
+				34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */,
+				BA20006664889BFA032B547D /* PreferencesStore.swift in Sources */,
+				DF99A9504527B6B0E6F48478 /* PreferencesView.swift in Sources */,
+				D2858916A735CF2E761476C5 /* StatusItemController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		20F84DEB0DE46FB5D82C88A3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = LockMic;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		83D0A38C054B76736AD7A335 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		8C8E6906F79D9E17FDCB6162 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = LockMic;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		A79D8053AA2E14EBF82B38F1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5266119FE794EA54E207E636 /* Build configuration list for PBXNativeTarget "LockMic" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A79D8053AA2E14EBF82B38F1 /* Debug */,
+				83D0A38C054B76736AD7A335 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B8F756E302A6029099FAA85E /* Build configuration list for PBXProject "LockMic" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				20F84DEB0DE46FB5D82C88A3 /* Debug */,
+				8C8E6906F79D9E17FDCB6162 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 56B6648B20EB096606E9BDA3 /* Project object */;
+}

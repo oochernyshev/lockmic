@@ -1,0 +1,35 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserdata
+*.xcworkspace/xcuserdata/
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Generated project (regenerate with xcodegen)
+# Keep project.yml as source of truth; optional: commit xcodeproj for convenience
+# LockMic.xcodeproj/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# SwiftPM
+.swiftpm/
+.build/
+Package.resolved
+
+# Secrets / signing
+*.p12
+*.mobileprovision
+AuthKey_*.p8
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

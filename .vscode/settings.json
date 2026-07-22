@@ -1,0 +1,6 @@
+{
+  "sweetpad.build.xcodeWorkspacePath": "LockMic.xcodeproj",
+  "files.exclude": {
+    "**/build/DerivedData": true
+  }
+}
