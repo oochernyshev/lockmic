@@ -75,8 +75,11 @@ Single source of truth for mute:
 enum MicState: muted | unmuted | unknown | unsupported(deviceName)
 ```
 
-- Holds **desired** mute state (what the user asked for)
-- Reads **actual** hardware state after changes
+- Holds **desired** mute state (sticky user intent, re-applied on device change)
+- Reads **actual** hardware state after changes into `state`
+- **`effectiveMuted`** (alias `isMuted`): one notion for UI / hotkeys / HUD  
+  - `.muted` → true, `.unmuted` → false  
+  - `.unknown` / `.unsupported` → `desiredMuted`
 - Scope: **all controllable inputs** or **default only** (preference)
 - Skips **virtual** devices (loopbacks, etc.)
 - On device change: re-apply desired state to devices in scope

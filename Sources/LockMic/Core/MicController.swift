@@ -50,6 +50,7 @@ final class MicController: ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var inputDevices: [InputDeviceRow] = []
 
+    /// Sticky user intent, re-applied when devices change.
     private(set) var desiredMuted: Bool = false
 
     private let audio: AudioDeviceService
@@ -76,17 +77,21 @@ final class MicController: ObservableObject {
         }
     }
 
-    var isMuted: Bool {
-        if case .muted = state { return true }
-        return false
+    /// Single source of truth for “is the mic muted?” for UI, hotkeys, and HUD.
+    /// Uses HAL state when known; falls back to `desiredMuted` when unknown/unsupported.
+    var effectiveMuted: Bool {
+        switch state {
+        case .muted: return true
+        case .unmuted: return false
+        case .unknown, .unsupported: return desiredMuted
+        }
     }
 
+    /// Alias of `effectiveMuted` for call sites that read “is muted?”.
+    var isMuted: Bool { effectiveMuted }
+
     func toggle() {
-        switch state {
-        case .muted: setMuted(false)
-        case .unmuted, .unknown: setMuted(true)
-        case .unsupported: setMuted(!desiredMuted)
-        }
+        setMuted(!effectiveMuted)
     }
 
     func setMuted(_ muted: Bool) {

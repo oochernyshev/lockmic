@@ -106,13 +106,13 @@ final class StatusItemController {
     func handleMuteChanged(showHUD: Bool) {
         updateIcon()
 
-        let displayMuted = currentDisplayMuted()
+        let muted = mic.effectiveMuted
 
         if showHUD, preferences.soundEnabled {
-            sounds.play(muted: displayMuted)
+            sounds.play(muted: muted)
         }
 
-        presentHUD(muted: displayMuted, userInitiated: showHUD)
+        presentHUD(muted: muted, userInitiated: showHUD)
     }
 
     /// Floating = always interactive; momentary hold keeps toast HUD up without auto-hide.
@@ -154,7 +154,7 @@ final class StatusItemController {
 
         if floating {
             hud.show(
-                muted: currentDisplayMuted(),
+                muted: mic.effectiveMuted,
                 deviceName: mic.deviceName,
                 persistent: true,
                 interactive: true,
@@ -165,14 +165,6 @@ final class StatusItemController {
             hud.hide()
         }
         lastHudFloating = floating
-    }
-
-    private func currentDisplayMuted() -> Bool {
-        switch mic.state {
-        case .muted: return true
-        case .unmuted: return false
-        default: return mic.desiredMuted
-        }
     }
 
     private func registerHotkeys() {
@@ -197,12 +189,12 @@ final class StatusItemController {
             toggleFromUser()
         case .mute:
             guard phase == .pressed, !momentaryHold.isActive else { return }
-            guard !mic.isMuted else { return }
+            guard !mic.effectiveMuted else { return }
             mic.setMuted(true)
             handleMuteChanged(showHUD: true)
         case .unmute:
             guard phase == .pressed, !momentaryHold.isActive else { return }
-            guard mic.isMuted else { return }
+            guard mic.effectiveMuted else { return }
             mic.setMuted(false)
             handleMuteChanged(showHUD: true)
         case .pushToTalk:
@@ -224,7 +216,7 @@ final class StatusItemController {
         switch phase {
         case .pressed:
             guard case .none = momentaryHold else { return }
-            let wasMuted = mic.desiredMuted || mic.isMuted
+            let wasMuted = mic.effectiveMuted
             let targetMuted: Bool
             switch mode {
             case .talk:
@@ -237,8 +229,7 @@ final class StatusItemController {
                 momentaryHold = .pushToToggle(wasMuted: wasMuted)
                 targetMuted = !wasMuted
             }
-            let changed = (mic.isMuted || mic.desiredMuted) != targetMuted
-            if changed {
+            if mic.effectiveMuted != targetMuted {
                 mic.setMuted(targetMuted)
             }
             // Always present HUD for hold (stays up until release when not floating).
@@ -255,15 +246,14 @@ final class StatusItemController {
             }
             guard let wasMuted else { return }
             momentaryHold = .none
-            let currentlyMuted = mic.isMuted || mic.desiredMuted
-            if currentlyMuted != wasMuted {
+            if mic.effectiveMuted != wasMuted {
                 mic.setMuted(wasMuted)
                 // Toast shows restored state then auto-hides (hold already cleared).
                 handleMuteChanged(showHUD: true)
             } else if !preferences.hudFloating, preferences.hudEnabled {
                 // End hold-visible HUD with a short toast (no second sound if state unchanged).
                 updateIcon()
-                presentHUD(muted: currentDisplayMuted(), userInitiated: true)
+                presentHUD(muted: mic.effectiveMuted, userInitiated: true)
             }
         }
     }
@@ -325,7 +315,7 @@ final class StatusItemController {
         menu.addItem(.separator())
 
         let toggle = NSMenuItem(
-            title: mic.isMuted ? "Unmute Microphone" : "Mute Microphone",
+            title: mic.effectiveMuted ? "Unmute Microphone" : "Mute Microphone",
             action: #selector(menuToggle),
             keyEquivalent: ""
         )
@@ -408,10 +398,13 @@ final class StatusItemController {
     @objc private func openPreferences() {
         if preferencesWindow == nil {
             let view = PreferencesView(preferences: preferences, mic: mic)
+                .onExitCommand { [weak self] in
+                    self?.preferencesWindow?.performClose(nil)
+                }
             let hosting = NSHostingController(rootView: view)
             hosting.view.wantsLayer = true
             hosting.view.layer?.backgroundColor = NSColor.clear.cgColor
-            let window = NSWindow(contentViewController: hosting)
+            let window = EscapeToCloseWindow(contentViewController: hosting)
             window.title = "LockMic Preferences"
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
             window.minSize = NSSize(width: 520, height: 380)
@@ -478,5 +471,12 @@ final class StatusItemController {
             return "\(base)\n\(holdLine)"
         }
         return base
+    }
+}
+
+/// Preferences window that closes on Esc (standard `cancelOperation`).
+private final class EscapeToCloseWindow: NSWindow {
+    override func cancelOperation(_ sender: Any?) {
+        performClose(sender)
     }
 }
