@@ -164,21 +164,13 @@ final class AudioDeviceService: @unchecked Sendable {
             guard inputChannelCount(id) > 0 else { return nil }
             let name = deviceName(id)
             let uid = deviceUID(id) ?? "\(id)"
-            let lower = name.lowercased()
-            if lower.contains("speaker"), !lower.contains("microphone") { return nil }
-
-            let isVirtual = lower.contains("blackhole")
-                || lower.contains("loopback")
-                || lower.contains("teams audio")
-                || uid.contains("MSLoopback")
-                || uid.contains("BlackHole")
 
             return AudioInputDevice(
                 id: id,
                 uid: uid,
                 name: name,
                 supportsMute: supportsMute(id),
-                isVirtual: isVirtual
+                isVirtual: isVirtualInput(deviceID: id)
             )
         }
     }
@@ -196,6 +188,28 @@ final class AudioDeviceService: @unchecked Sendable {
         lock.lock()
         onDevicesChangedHandlers.removeValue(forKey: token)
         lock.unlock()
+    }
+
+    // MARK: - Virtual device detection
+
+    /// Virtual inputs are those Core Audio reports with transport type `Virtual` only.
+    /// No name/UID heuristics — drivers that mis-report transport will be treated as normal devices.
+    private func isVirtualInput(deviceID: AudioDeviceID) -> Bool {
+        transportType(deviceID) == kAudioDeviceTransportTypeVirtual
+    }
+
+    private func transportType(_ deviceID: AudioDeviceID) -> UInt32? {
+        var address = propertyAddress(
+            kAudioDevicePropertyTransportType,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMain
+        )
+        guard AudioObjectHasProperty(deviceID, &address) else { return nil }
+        var transport: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &transport)
+        guard status == noErr else { return nil }
+        return transport
     }
 
     // MARK: - Private

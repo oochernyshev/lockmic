@@ -243,7 +243,7 @@ struct PreferencesView: View {
     private func deviceSubtitle(_ device: InputDeviceRow) -> String {
         switch device.controlStatus {
         case .virtualIgnored:
-            return "Virtual loopback — not a physical mic; LockMic ignores it"
+            return "Virtual transport (Core Audio) — ignored for mute control"
         case .notControllable:
             return "Driver does not support system mute"
         case .outsideScope:

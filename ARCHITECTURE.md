@@ -63,7 +63,8 @@ LockMic is a native macOS menu-bar utility that mutes system microphone input at
 
 - Resolve **default input device** (`kAudioHardwarePropertyDefaultInputDevice`)
 - Get/set **mute** (`kAudioDevicePropertyMute`, input scope)
-- Enumerate inputs; detect mute support and virtual devices
+- Enumerate inputs; detect mute support and **virtual devices**
+  - Only `kAudioDevicePropertyTransportType == Virtual` (no name/UID heuristics)
 - Listen for **device list / default device** changes via property listeners
 - Never records audio → no microphone TCC for mute alone
 
