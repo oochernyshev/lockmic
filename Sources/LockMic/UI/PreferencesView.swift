@@ -30,6 +30,10 @@ struct PreferencesView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 4) {
+            sidebarBrand
+                .padding(.horizontal, 6)
+                .padding(.bottom, 10)
+
             ForEach(PreferencesTab.allCases) { tab in
                 sidebarRow(tab)
             }
@@ -38,6 +42,30 @@ struct PreferencesView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 12)
         .background(.thinMaterial)
+    }
+
+    private var sidebarBrand: some View {
+        HStack(spacing: 10) {
+            Image("AppLogo")
+                .resizable()
+                .interpolation(.high)
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 28, height: 28)
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("LockMic")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text("Preferences")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
     }
 
     private func sidebarRow(_ tab: PreferencesTab) -> some View {
@@ -84,6 +112,7 @@ struct PreferencesView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .topLeading)
+            .thinScrollIndicators()
         }
     }
 }

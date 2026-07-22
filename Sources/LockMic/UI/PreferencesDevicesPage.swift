@@ -5,46 +5,58 @@ struct PreferencesDevicesPage: View {
     @ObservedObject var mic: MicController
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            PreferencesChrome.sectionHeader("Mute scope")
-            Toggle("Mute all input devices", isOn: $preferences.muteAllInputs)
-                .onChange(of: preferences.muteAllInputs) { _, _ in
-                    mic.preferenceMuteScopeChanged()
-                }
-            Text(
-                preferences.muteAllInputs
-                    ? "Mutes every controllable input (recommended for Zoom/Meet)."
-                    : "Only mutes the system default input."
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-
-            Divider().padding(.vertical, 2)
-
-            HStack {
-                PreferencesChrome.sectionHeader("Detected inputs")
-                Spacer()
-                Button {
-                    mic.refreshDeviceList()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .buttonStyle(.borderless)
-                .help("Refresh device list")
-                .focusable(false)
-                .focusEffectDisabled()
+        VStack(alignment: .leading, spacing: PreferencesChrome.pageSpacing) {
+            PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader("Mute scope")
+                Toggle("Mute all input devices", isOn: $preferences.muteAllInputs)
+                    .onChange(of: preferences.muteAllInputs) { _, _ in
+                        mic.preferenceMuteScopeChanged()
+                    }
+                PreferencesChrome.caption(
+                    preferences.muteAllInputs
+                        ? "Mutes every controllable input (recommended for Zoom/Meet)."
+                        : "Only mutes the system default input."
+                )
             }
 
-            if mic.inputDevices.isEmpty {
-                Text("No input devices found.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(mic.inputDevices) { device in
-                        deviceRow(device)
+            PreferencesChrome.sectionCard {
+                HStack {
+                    PreferencesChrome.sectionHeader("Detected inputs")
+                    Spacer()
+                    Button {
+                        mic.refreshDeviceList()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
                     }
+                    .buttonStyle(.borderless)
+                    .help("Refresh device list")
+                    .focusable(false)
+                    .focusEffectDisabled()
+                }
+
+                if mic.inputDevices.isEmpty {
+                    PreferencesChrome.caption("No input devices found.")
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(mic.inputDevices.enumerated()), id: \.element.id) { index, device in
+                            deviceRow(device)
+                            if index < mic.inputDevices.count - 1 {
+                                Divider()
+                                    .padding(.leading, 26)
+                                    .opacity(0.55)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color.primary.opacity(0.035))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                    )
                 }
             }
         }
@@ -90,7 +102,7 @@ struct PreferencesDevicesPage: View {
                 .font(.caption.weight(.medium))
                 .foregroundStyle(deviceStatusColor(device))
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 8)
     }
 
     private func deviceIcon(_ device: InputDeviceRow) -> String {

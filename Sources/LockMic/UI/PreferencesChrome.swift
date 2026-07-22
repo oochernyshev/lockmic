@@ -1,10 +1,47 @@
 import SwiftUI
 
 enum PreferencesChrome {
+    /// Vertical gap between section cards on a preferences page.
+    static let pageSpacing: CGFloat = 12
+    /// Internal spacing inside a section card.
+    static let contentSpacing: CGFloat = 10
+    /// Corner radius for section cards and inset lists.
+    static let cardCornerRadius: CGFloat = 10
+
+    static let windowMinSize = CGSize(width: 520, height: 380)
+    static let windowIdealSize = CGSize(width: 560, height: 460)
+
     static func sectionHeader(_ title: String) -> some View {
         Text(title)
             .font(.headline)
             .foregroundStyle(.secondary)
+    }
+
+    /// System Settings–style inset card.
+    static func sectionCard<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: contentSpacing) {
+            content()
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+                .fill(Color.primary.opacity(0.045))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+    }
+
+    /// Soft caption under a control.
+    static func caption(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     static func gridRow(_ title: String, _ value: String) -> some View {
@@ -16,6 +53,40 @@ enum PreferencesChrome {
                 .multilineTextAlignment(.trailing)
                 .lineLimit(2)
                 .truncationMode(.middle)
+        }
+    }
+
+    /// Status value with a colored live indicator.
+    static func statusRow(title: String, text: String, color: Color) -> some View {
+        HStack(alignment: .center) {
+            Text(title)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 12)
+            statusBadge(text: text, color: color)
+        }
+    }
+
+    static func statusBadge(text: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color)
+                .frame(width: 7, height: 7)
+            Text(text)
+                .font(.body.weight(.medium))
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 4)
+        .background(color.opacity(0.14))
+        .clipShape(Capsule())
+    }
+
+    static func statusColor(for state: MicState) -> Color {
+        switch state {
+        case .muted: return .orange
+        case .unmuted: return .green
+        case .unknown: return .secondary
+        case .unsupported: return .red
         }
     }
 
@@ -34,7 +105,4 @@ enum PreferencesChrome {
             HotkeyRecorderButton(chord: chord, isEnabled: enabled.wrappedValue)
         }
     }
-
-    static let windowMinSize = CGSize(width: 520, height: 380)
-    static let windowIdealSize = CGSize(width: 560, height: 460)
 }

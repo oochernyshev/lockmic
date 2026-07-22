@@ -28,6 +28,7 @@
 		DD37177C68DB7C1169F1C46D /* PreferencesGeneralPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C96E6DE500850364A23E1BF /* PreferencesGeneralPage.swift */; };
 		DF99A9504527B6B0E6F48478 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D93F1024B71207F8831FB2E /* PreferencesView.swift */; };
 		E20244D2F3506734EB9D15D9 /* HotkeyRecorderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40771CE30E43CEE7B2690B08 /* HotkeyRecorderButton.swift */; };
+		E21C796C5F395CFDEC878645 /* ThinTransparentScroller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCBF140C7338A9FBDC5EA31 /* ThinTransparentScroller.swift */; };
 		ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */; };
 		FEE8EBDBBF2899014964D9EB /* HUDOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */; };
 /* End PBXBuildFile section */
@@ -44,6 +45,7 @@
 		500AF84D4D16D9AFA3D3F98C /* HUDHoldKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDHoldKind.swift; sourceTree = "<group>"; };
 		6C96E6DE500850364A23E1BF /* PreferencesGeneralPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesGeneralPage.swift; sourceTree = "<group>"; };
 		6D93F1024B71207F8831FB2E /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
+		6DCBF140C7338A9FBDC5EA31 /* ThinTransparentScroller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinTransparentScroller.swift; sourceTree = "<group>"; };
 		85D3C494D4898BA8C2268DB1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9531C60032267EFA1757D1BC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A4DE69CE589C220C182F7AAD /* LockMic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LockMic.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -125,6 +127,7 @@
 				200E9D59454FF5C42F0D7ECB /* PreferencesTab.swift */,
 				6D93F1024B71207F8831FB2E /* PreferencesView.swift */,
 				F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */,
+				6DCBF140C7338A9FBDC5EA31 /* ThinTransparentScroller.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -247,6 +250,7 @@
 				DF99A9504527B6B0E6F48478 /* PreferencesView.swift in Sources */,
 				881AA270D666437B1903E384 /* SoundFeedback.swift in Sources */,
 				D2858916A735CF2E761476C5 /* StatusItemController.swift in Sources */,
+				E21C796C5F395CFDEC878645 /* ThinTransparentScroller.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

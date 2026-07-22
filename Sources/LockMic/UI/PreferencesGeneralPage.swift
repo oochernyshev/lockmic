@@ -5,31 +5,35 @@ struct PreferencesGeneralPage: View {
     @ObservedObject var mic: MicController
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            PreferencesChrome.sectionHeader("Status")
-            PreferencesChrome.gridRow("Microphone", statusText)
-            PreferencesChrome.gridRow("Device", mic.deviceName)
-            if let error = mic.lastError {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
+        VStack(alignment: .leading, spacing: PreferencesChrome.pageSpacing) {
+            PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader("Status")
+                PreferencesChrome.statusRow(
+                    title: "Microphone",
+                    text: statusText,
+                    color: PreferencesChrome.statusColor(for: mic.state)
+                )
+                PreferencesChrome.gridRow("Device", mic.deviceName)
+                if let error = mic.lastError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
             }
 
-            Divider().padding(.vertical, 2)
-
-            PreferencesChrome.sectionHeader("Options")
-            Toggle("Show on-screen HUD when muting", isOn: $preferences.hudEnabled)
-            Text("Brief indicator on mute/unmute, and while holding talk / mute / flip.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Toggle("Keep HUD indicator floating", isOn: $preferences.hudFloating)
-            Text("Always-on indicator · drag to move · click to toggle · right-click to hide per display.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Toggle("Play sound when muting / unmuting", isOn: $preferences.soundEnabled)
-            Toggle("Launch at login", isOn: $preferences.launchAtLogin)
+            PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader("Options")
+                Toggle("Show on-screen HUD when muting", isOn: $preferences.hudEnabled)
+                PreferencesChrome.caption(
+                    "Brief indicator on mute/unmute, and while holding talk / mute / flip."
+                )
+                Toggle("Keep HUD indicator floating", isOn: $preferences.hudFloating)
+                PreferencesChrome.caption(
+                    "Always-on indicator · drag to move · click to toggle · right-click to hide per display."
+                )
+                Toggle("Play sound when muting / unmuting", isOn: $preferences.soundEnabled)
+                Toggle("Launch at login", isOn: $preferences.launchAtLogin)
+            }
         }
     }
 
