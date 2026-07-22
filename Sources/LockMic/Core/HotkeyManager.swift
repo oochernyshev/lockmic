@@ -1,6 +1,9 @@
 import AppKit
 import Carbon
 import Foundation
+import os.log
+
+private let log = Logger(subsystem: "com.lockmic.app", category: "Hotkey")
 
 struct HotkeyChord: Equatable, Sendable, Hashable {
     let keyCode: UInt32
@@ -95,7 +98,7 @@ final class HotkeyManager {
             self.lastFireTime = now
             self.lastFireAction = action
             self.lastFirePhase = phase
-            NSLog("LockMic: hotkey fired action=%@ phase=%@", action.rawValue, phase.rawValue)
+            log.debug("fired \(action.rawValue, privacy: .public) \(phase.rawValue, privacy: .public)")
             onAction(action, phase)
         }
         HotkeyManager.sharedEventSink = self.actionHandler
@@ -109,7 +112,7 @@ final class HotkeyManager {
         fallbackBindings = fallback
         if !fallback.isEmpty {
             installEventMonitors(for: fallback)
-            NSLog("LockMic: NSEvent fallback for %d hotkey(s)", fallback.count)
+            log.notice("NSEvent fallback for \(fallback.count) hotkey(s)")
         }
     }
 
@@ -165,19 +168,14 @@ final class HotkeyManager {
             hotKeyRefs.append(ref)
             carbonIDs.append(id)
             HotkeyManager.carbonHandlers[id] = (action, handlesRelease)
-            NSLog(
-                "LockMic: Carbon hotkey OK %@ → %@%@",
-                binding.chord.displayString,
-                action.rawValue,
-                handlesRelease ? " (momentary)" : ""
+            log.debug(
+                "Carbon OK \(binding.chord.displayString, privacy: .public) → \(action.rawValue, privacy: .public)"
             )
             return true
         }
 
-        NSLog(
-            "LockMic: Carbon RegisterEventHotKey failed for %@ status=%d — using NSEvent fallback",
-            binding.chord.displayString,
-            status
+        log.error(
+            "Carbon RegisterEventHotKey failed for \(binding.chord.displayString, privacy: .public) status=\(status) — NSEvent fallback"
         )
         return false
     }
@@ -202,7 +200,7 @@ final class HotkeyManager {
         if status == noErr {
             handlerInstalled = true
         } else {
-            NSLog("LockMic: InstallEventHandler failed status=%d", status)
+            log.error("InstallEventHandler failed status=\(status)")
         }
     }
 

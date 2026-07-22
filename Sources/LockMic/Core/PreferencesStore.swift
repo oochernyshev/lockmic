@@ -1,5 +1,8 @@
 import Foundation
+import os.log
 import ServiceManagement
+
+private let log = Logger(subsystem: "com.lockmic.app", category: "Preferences")
 
 @MainActor
 final class PreferencesStore: ObservableObject {
@@ -370,7 +373,7 @@ final class PreferencesStore: ObservableObject {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            NSLog("Launch at login update failed: \(error.localizedDescription)")
+            log.error("Launch at login update failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

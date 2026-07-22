@@ -197,7 +197,7 @@ final class MicController: ObservableObject {
                 }
             }
         }
-        log.info("\(muted ? "Muted" : "Unmuted", privacy: .public)")
+        log.debug("\(muted ? "Muted" : "Unmuted", privacy: .public)")
         refreshDeviceList()
     }
 

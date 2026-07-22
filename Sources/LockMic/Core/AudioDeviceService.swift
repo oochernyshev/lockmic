@@ -1,8 +1,5 @@
 import CoreAudio
 import Foundation
-import os.log
-
-private let log = Logger(subsystem: "com.lockmic.app", category: "AudioDevice")
 
 struct AudioInputDevice: Identifiable, Equatable, Sendable {
     let id: AudioDeviceID
@@ -116,8 +113,7 @@ final class AudioDeviceService: @unchecked Sendable {
 
     func setAllInputsMuted(_ muted: Bool) -> MuteBatchResult {
         var result = MuteBatchResult()
-        // Skip virtual loopbacks (BlackHole, Teams Audio, etc.) — they often expose a
-        // mute flag that does nothing or isn't a real microphone path.
+        // Skip Virtual transport devices — mute is often meaningless on software loopbacks.
         for device in listInputDevices() where !device.isVirtual {
             do {
                 try setMuted(muted, deviceID: device.id)

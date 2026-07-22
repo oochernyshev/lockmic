@@ -79,8 +79,16 @@ final class StatusItemController {
                 queue: .main
             ) { [weak self] _ in
                 Task { @MainActor in
-                    self?.mic.refreshFromHardware(applyDesired: false)
-                    self?.updateIcon()
+                    guard let self else { return }
+                    // Mid PTT/PTM/flip: do not re-read HAL into desiredMuted — that
+                    // would desync restore-on-release. Device list only is safe.
+                    if self.momentaryHold.isActive {
+                        self.mic.refreshDeviceList()
+                        self.updateIcon()
+                        return
+                    }
+                    self.mic.refreshFromHardware(applyDesired: false)
+                    self.updateIcon()
                 }
             }
         )
