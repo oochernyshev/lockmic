@@ -240,10 +240,11 @@
         <div class="code-block" role="region" aria-label="Homebrew install">
           <div class="code-header">
             <span>Homebrew</span>
-            <button type="button" class="copy-btn" data-copy="brew install --cask lockmic" aria-label="Copy install command">Copy</button>
+            <button type="button" class="copy-btn" data-copy="brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew install --cask lockmic" aria-label="Copy install command">Copy</button>
           </div>
-          <pre><code>brew install --cask lockmic</code></pre>
-          <p class="code-note">After the first public release and tap are published. Until then, build from source or use a release DMG.</p>
+          <pre><code>brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
+brew install --cask lockmic</code></pre>
+          <p class="code-note">Custom tap (not in core Homebrew yet). First launch may need right‑click → Open until the app is notarized.</p>
         </div>
         <p class="download-req">Requires macOS 14+ · Xcode not needed to run</p>
       </div>

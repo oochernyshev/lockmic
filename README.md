@@ -84,18 +84,28 @@ Package a release zip/DMG:
 # → build/dist/LockMic-1.2.0.zip (+ .dmg, sha256)
 ```
 
-## Install via Homebrew (after a release exists)
+## Install via Homebrew
 
-Point the cask at your GitHub release, then:
+LockMic is **not** in the official Homebrew core cask list yet. Install from this repo’s tap:
 
 ```bash
 brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew install --cask lockmic
 ```
 
-Repo: [github.com/oochernyshev/lockmic](https://github.com/oochernyshev/lockmic)  
-Cask template: [`homebrew/Casks/lockmic.rb`](./homebrew/Casks/lockmic.rb)  
-Homepage in the cask: [https://wixee.ai](https://wixee.ai)
+From a local clone (no tap):
+
+```bash
+brew install --cask ./Casks/lockmic.rb
+```
+
+Cask: [`Casks/lockmic.rb`](./Casks/lockmic.rb) (must stay under root `Casks/` for the tap to work).
+
+**Gatekeeper:** until Developer ID + notarization, first open may need right‑click → **Open**, or:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/LockMic.app
+```
 
 ### Local build without a public release
 
