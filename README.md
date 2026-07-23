@@ -89,10 +89,11 @@ Package a release zip/DMG:
 Point the cask at your GitHub release, then:
 
 ```bash
-brew tap <you>/lockmic https://github.com/<you>/LockMic
+brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew install --cask lockmic
 ```
 
+Repo: [github.com/oochernyshev/lockmic](https://github.com/oochernyshev/lockmic)  
 Cask template: [`homebrew/Casks/lockmic.rb`](./homebrew/Casks/lockmic.rb)  
 Homepage in the cask: [https://wixee.ai](https://wixee.ai)
 

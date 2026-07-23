@@ -1,35 +1,71 @@
-# Xcode
+# --- Xcode / build products ---
 build/
 DerivedData/
 *.xcuserdata
+**/xcuserdata/
 *.xcworkspace/xcuserdata/
-xcuserdata/
 *.moved-aside
 *.hmap
 *.ipa
 *.dSYM.zip
 *.dSYM
 
-# Generated project (regenerate with xcodegen)
-# Keep project.yml as source of truth; optional: commit xcodeproj for convenience
+# Generated project (regenerate with xcodegen from project.yml)
+# Uncomment to stop tracking the project; currently committed for convenience:
 # LockMic.xcodeproj/
 
-# macOS
+# --- macOS ---
 .DS_Store
 **/.DS_Store
+.AppleDouble
+.LSOverride
+._*
 
-# SwiftPM
+# --- SwiftPM ---
 .swiftpm/
 .build/
-Package.resolved
+# Prefer committing Package.resolved once you add SPM dependencies.
 
-# Secrets / signing
+# --- Secrets / signing / env ---
 *.p12
 *.mobileprovision
+*.provisionprofile
 AuthKey_*.p8
+*.pem
+.env
+.env.*
+!.env.example
+credentials.json
+service-account*.json
+*-firebase-adminsdk-*.json
 
-# IDE
+# --- Firebase / Cloud ---
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+ui-debug.log
+.firebaserc.local
+
+# --- Node (local firebase-tools installs, etc.) ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# --- Logs / temp ---
+*.log
+*.tmp
+*.temp
+*.swp
+*~
+
+# --- IDE / editors ---
 .idea/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+*.code-workspace
+.cursor/
+.grok/
+
+# --- Local packaging leftovers (release artifacts live under build/, already ignored) ---
+*.dmg

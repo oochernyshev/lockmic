@@ -60,7 +60,7 @@ In Firebase Console → Hosting → **Add custom domain** (e.g. `lockmic.wixee.a
 
 ## Download links
 
-- **DMG**: GitHub Releases latest (`https://github.com/lockmic/LockMic/releases/latest`)
+- **DMG**: GitHub Releases latest (`https://github.com/oochernyshev/lockmic/releases/latest`)
 - **Homebrew**: `brew install --cask lockmic` (after the cask is published)
 
-Update the GitHub org/repo URLs in `index.html` if your remote differs.
+Repo: https://github.com/oochernyshev/lockmic

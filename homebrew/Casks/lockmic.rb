@@ -1,7 +1,7 @@
 # Homebrew Cask for LockMic (direct / GitHub Releases).
 #
 # Local tap install (after publishing a release):
-#   brew tap <your-github-user>/lockmic https://github.com/<your-github-user>/LockMic
+#   brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 #   brew install --cask lockmic
 #
 # Or install from a local path while developing:
@@ -17,7 +17,7 @@ cask "lockmic" do
   sha256 :no_check
 
   # Point this at your GitHub Releases asset (or a file:// path while testing):
-  url "https://github.com/lockmic/LockMic/releases/download/v#{version}/LockMic-#{version}.zip"
+  url "https://github.com/oochernyshev/lockmic/releases/download/v#{version}/LockMic-#{version}.zip"
   name "LockMic"
   desc "System-wide microphone mute from the menu bar"
   homepage "https://wixee.ai"
