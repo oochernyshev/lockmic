@@ -101,7 +101,13 @@ In Firebase Console → Hosting → **Add custom domain** (e.g. `lockmic.wixee.a
 
 - **DMG (direct file)**: `https://github.com/oochernyshev/lockmic/releases/download/vX.Y.Z/LockMic-X.Y.Z.dmg`  
   The landing page resolves the latest `.dmg` asset via the GitHub API (not the releases HTML page).
-- **Homebrew**: `brew install --cask lockmic` (after the cask is published)
+- **Homebrew**:
+  ```bash
+  brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
+  brew install --cask lockmic
+  xattr -dr com.apple.quarantine /Applications/LockMic.app
+  open /Applications/LockMic.app
+  ```
 
 Publish a release with the DMG attached:
 

@@ -3,12 +3,14 @@
 # Install:
 #   brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 #   brew install --cask lockmic
+#   xattr -dr com.apple.quarantine /Applications/LockMic.app
+#   open /Applications/LockMic.app
 #
 # Or from a local clone (no tap):
 #   brew install --cask ./Casks/lockmic.rb
+#   xattr -dr com.apple.quarantine /Applications/LockMic.app
 #
-# Note: app is not Developer ID notarized yet — first launch may need
-# right-click → Open (or xattr -dr com.apple.quarantine).
+# xattr clears Gatekeeper quarantine until Developer ID + notarization.
 
 cask "lockmic" do
   version "1.2.0"
@@ -22,7 +24,7 @@ cask "lockmic" do
   desc "System-wide microphone mute from the menu bar"
   homepage "https://wixee.ai"
 
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "LockMic.app"
 

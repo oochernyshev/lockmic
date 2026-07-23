@@ -91,22 +91,20 @@ LockMic is **not** in the official Homebrew core cask list yet. Install from thi
 ```bash
 brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew install --cask lockmic
+xattr -dr com.apple.quarantine /Applications/LockMic.app
+open /Applications/LockMic.app
 ```
 
 From a local clone (no tap):
 
 ```bash
 brew install --cask ./Casks/lockmic.rb
+xattr -dr com.apple.quarantine /Applications/LockMic.app
 ```
 
 Cask: [`Casks/lockmic.rb`](./Casks/lockmic.rb) (must stay under root `Casks/` for the tap to work).
 
-**Gatekeeper:** until Developer ID + notarization, first open may need right‑click → **Open**, or:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/LockMic.app
-```
-
+`xattr` clears Gatekeeper quarantine until the app is Developer ID–notarized.
 ### Local build without a public release
 
 ```bash
