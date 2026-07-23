@@ -701,13 +701,16 @@ kbd {
 
 .download-card {
   text-align: center;
-  padding: 48px 32px;
+  padding: 48px clamp(16px, 4vw, 32px);
   border-radius: 24px;
   border: 1px solid var(--border-strong);
   background:
     radial-gradient(ellipse 80% 80% at 50% 0%, rgba(124, 156, 255, 0.12), transparent 55%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
   box-shadow: var(--shadow);
+  /* Allow nested pre/code to shrink and wrap instead of overflowing */
+  min-width: 0;
+  overflow: hidden;
 }
 
 .download-icon {
@@ -735,7 +738,8 @@ kbd {
 }
 
 .code-block {
-  max-width: 520px;
+  width: 100%;
+  max-width: 640px;
   margin: 0 auto 18px;
   text-align: left;
   border-radius: 14px;
@@ -748,6 +752,7 @@ kbd {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   font-size: 0.8rem;
@@ -756,6 +761,7 @@ kbd {
 }
 
 .copy-btn {
+  flex-shrink: 0;
   padding: 4px 10px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.06);
@@ -775,11 +781,19 @@ kbd {
   margin: 0;
   padding: 16px 18px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 .code-block code {
+  display: block;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.9rem;
+  font-size: clamp(0.72rem, 2.4vw, 0.85rem);
+  line-height: 1.55;
   color: #d4e0ff;
+  /* Full command visible: wrap long URLs instead of clipping */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .code-note {
@@ -787,6 +801,7 @@ kbd {
   padding: 0 16px 14px;
   font-size: 0.78rem;
   color: var(--text-dim);
+  overflow-wrap: anywhere;
   line-height: 1.45;
 }
 
