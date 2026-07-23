@@ -99,7 +99,19 @@ In Firebase Console → Hosting → **Add custom domain** (e.g. `lockmic.wixee.a
 
 ## Download links
 
-- **DMG**: GitHub Releases latest (`https://github.com/oochernyshev/lockmic/releases/latest`)
+- **DMG (direct file)**: `https://github.com/oochernyshev/lockmic/releases/download/vX.Y.Z/LockMic-X.Y.Z.dmg`  
+  The landing page resolves the latest `.dmg` asset via the GitHub API (not the releases HTML page).
 - **Homebrew**: `brew install --cask lockmic` (after the cask is published)
+
+Publish a release with the DMG attached:
+
+```bash
+./Scripts/package_dmg.sh
+gh release create v1.2.0 \
+  build/dist/LockMic-1.2.0.dmg \
+  build/dist/LockMic-1.2.0.zip \
+  --title "LockMic 1.2.0" \
+  --notes "System-wide mic mute for macOS."
+```
 
 Repo: https://github.com/oochernyshev/lockmic

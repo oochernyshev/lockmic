@@ -76,12 +76,37 @@
     });
   });
 
-  // Prefer latest release URL if available (best-effort; falls back to /releases/latest)
-  const dmg = document.getElementById("downloadDmg");
-  if (dmg) {
-    // Keep GitHub latest page — DMG asset name may change per version.
-    // Optional: pin a direct asset when publishing.
-    dmg.setAttribute("rel", "noopener noreferrer");
-    dmg.setAttribute("target", "_blank");
+  // Resolve latest .dmg asset so "Download DMG" starts a file download (not the releases page).
+  const dmgLink = document.getElementById("downloadDmg");
+  if (dmgLink) {
+    const REPO = "oochernyshev/lockmic";
+    const applyDmg = (url, name) => {
+      dmgLink.href = url;
+      dmgLink.setAttribute("download", name || "LockMic.dmg");
+      // Same-tab navigation → browser downloads the binary from GitHub
+      dmgLink.removeAttribute("target");
+    };
+
+    // Fallback already set in HTML (versioned asset URL).
+    // Prefer whatever is on the latest GitHub Release.
+    fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
+      headers: { Accept: "application/vnd.github+json" },
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((release) => {
+        const assets = Array.isArray(release.assets) ? release.assets : [];
+        const dmg =
+          assets.find((a) => /\.dmg$/i.test(a.name)) ||
+          assets.find((a) => /LockMic.*\.dmg/i.test(a.name));
+        if (dmg && dmg.browser_download_url) {
+          applyDmg(dmg.browser_download_url, dmg.name);
+          const title = document.querySelector(".download-card h2");
+          const ver = (release.tag_name || "").replace(/^v/, "");
+          if (title && ver) title.textContent = `Get LockMic ${ver}`;
+        }
+      })
+      .catch(() => {
+        /* keep static href from HTML */
+      });
   }
 })();
