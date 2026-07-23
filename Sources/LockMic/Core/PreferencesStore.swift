@@ -328,13 +328,13 @@ final class PreferencesStore: ObservableObject {
     /// Named rows used for registration and conflict detection.
     private var namedShortcutRows: [(title: String, enabled: Bool, chord: HotkeyChord, action: HotkeyAction)] {
         [
-            ("Toggle mute", toggleShortcutEnabled, toggleChord, .toggle),
-            ("⌘F5 toggle", f5ToggleEnabled, Self.defaultToggleAlt, .toggle),
-            ("Mute", muteShortcutEnabled, muteChord, .mute),
-            ("Unmute", unmuteShortcutEnabled, unmuteChord, .unmute),
-            ("Push to flip", pushToToggleEnabled, pushToToggleChord, .pushToToggle),
-            ("Push to talk", pushToTalkEnabled, pushToTalkChord, .pushToTalk),
-            ("Push to mute", pushToMuteEnabled, pushToMuteChord, .pushToMute),
+            (L10n.keyboardToggle, toggleShortcutEnabled, toggleChord, .toggle),
+            (L10n.keyboardF5Toggle, f5ToggleEnabled, Self.defaultToggleAlt, .toggle),
+            (L10n.keyboardMute, muteShortcutEnabled, muteChord, .mute),
+            (L10n.keyboardUnmute, unmuteShortcutEnabled, unmuteChord, .unmute),
+            (L10n.keyboardPushFlip, pushToToggleEnabled, pushToToggleChord, .pushToToggle),
+            (L10n.keyboardPushTalk, pushToTalkEnabled, pushToTalkChord, .pushToTalk),
+            (L10n.keyboardPushMute, pushToMuteEnabled, pushToMuteChord, .pushToMute),
         ]
     }
 
@@ -356,7 +356,7 @@ final class PreferencesStore: ObservableObject {
         return groups
             .filter { $0.value.count > 1 }
             .map { chord, titles in
-                "\(chord.displayString) is used by \(titles.joined(separator: ", "))"
+                L10n.keyboardConflict(chord: chord.displayString, titles: titles.joined(separator: ", "))
             }
             .sorted()
     }

@@ -10,10 +10,10 @@ enum PreferencesTab: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .general: return "General"
-        case .devices: return "Devices"
-        case .keyboard: return "Keyboard"
-        case .about: return "About"
+        case .general: return L10n.tabGeneral
+        case .devices: return L10n.tabDevices
+        case .keyboard: return L10n.tabKeyboard
+        case .about: return L10n.tabAbout
         }
     }
 

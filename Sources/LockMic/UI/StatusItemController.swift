@@ -359,7 +359,7 @@ final class StatusItemController {
 
         if !featuresEnabled {
             let disabled = NSMenuItem(
-                title: "Status: Disabled — agreement required",
+                title: L10n.menuStatusDisabled,
                 action: nil,
                 keyEquivalent: ""
             )
@@ -367,7 +367,7 @@ final class StatusItemController {
             menu.addItem(disabled)
 
             let hint = NSMenuItem(
-                title: "Agree to anonymous stats to enable mute control",
+                title: L10n.menuAgreeHint,
                 action: nil,
                 keyEquivalent: ""
             )
@@ -377,20 +377,20 @@ final class StatusItemController {
             menu.addItem(.separator())
 
             let agree = NSMenuItem(
-                title: "Agree & Enable LockMic",
+                title: L10n.menuAgreeEnable,
                 action: #selector(agreeAndEnable),
                 keyEquivalent: ""
             )
             agree.target = self
             menu.addItem(agree)
 
-            let prefs = NSMenuItem(title: "Preferences…", action: #selector(openPreferences), keyEquivalent: ",")
+            let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: ",")
             prefs.target = self
             menu.addItem(prefs)
 
             menu.addItem(.separator())
 
-            let quit = NSMenuItem(title: "Quit LockMic", action: #selector(quit), keyEquivalent: "q")
+            let quit = NSMenuItem(title: L10n.menuQuit, action: #selector(quit), keyEquivalent: "q")
             quit.target = self
             menu.addItem(quit)
             return menu
@@ -398,22 +398,22 @@ final class StatusItemController {
 
         let statusTitle: String = {
             switch mic.state {
-            case .muted: return "Status: Muted"
-            case .unmuted: return "Status: Unmuted"
-            case .unknown: return "Status: Unknown"
-            case .unsupported(let name): return "Status: Can’t mute (\(name))"
+            case .muted: return L10n.menuStatusMuted
+            case .unmuted: return L10n.menuStatusUnmuted
+            case .unknown: return L10n.menuStatusUnknown
+            case .unsupported(let name): return L10n.menuStatusCantMute(name)
             }
         }()
         let statusLine = NSMenuItem(title: statusTitle, action: nil, keyEquivalent: "")
         statusLine.isEnabled = false
         menu.addItem(statusLine)
 
-        let deviceItem = NSMenuItem(title: "Device: \(mic.deviceName)", action: nil, keyEquivalent: "")
+        let deviceItem = NSMenuItem(title: L10n.menuDevice(mic.deviceName), action: nil, keyEquivalent: "")
         deviceItem.isEnabled = false
         menu.addItem(deviceItem)
 
         let scopeItem = NSMenuItem(
-            title: preferences.muteAllInputs ? "Scope: All input devices" : "Scope: Default input only",
+            title: preferences.muteAllInputs ? L10n.menuScopeAll : L10n.menuScopeDefault,
             action: nil,
             keyEquivalent: ""
         )
@@ -423,7 +423,7 @@ final class StatusItemController {
         menu.addItem(.separator())
 
         let toggle = NSMenuItem(
-            title: mic.effectiveMuted ? "Unmute Microphone" : "Mute Microphone",
+            title: mic.effectiveMuted ? L10n.menuUnmuteMic : L10n.menuMuteMic,
             action: #selector(menuToggle),
             keyEquivalent: ""
         )
@@ -431,7 +431,7 @@ final class StatusItemController {
         menu.addItem(toggle)
 
         let muteAll = NSMenuItem(
-            title: "Mute All Input Devices",
+            title: L10n.menuMuteAll,
             action: #selector(toggleMuteAllInputs),
             keyEquivalent: ""
         )
@@ -441,7 +441,7 @@ final class StatusItemController {
 
         if preferences.hudFloating {
             menu.addItem(.separator())
-            let floatingHeader = NSMenuItem(title: "Floating HUD", action: nil, keyEquivalent: "")
+            let floatingHeader = NSMenuItem(title: L10n.menuFloatingHUD, action: nil, keyEquivalent: "")
             floatingHeader.isEnabled = false
             menu.addItem(floatingHeader)
 
@@ -459,7 +459,7 @@ final class StatusItemController {
 
             if hud.hasAnyHiddenDisplay() {
                 let showAll = NSMenuItem(
-                    title: "Show on All Displays",
+                    title: L10n.menuShowAllDisplays,
                     action: #selector(showFloatingHUDOnAllDisplays),
                     keyEquivalent: ""
                 )
@@ -470,13 +470,13 @@ final class StatusItemController {
 
         menu.addItem(.separator())
 
-        let prefs = NSMenuItem(title: "Preferences…", action: #selector(openPreferences), keyEquivalent: ",")
+        let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: ",")
         prefs.target = self
         menu.addItem(prefs)
 
         menu.addItem(.separator())
 
-        let quit = NSMenuItem(title: "Quit LockMic", action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: L10n.menuQuit, action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
 

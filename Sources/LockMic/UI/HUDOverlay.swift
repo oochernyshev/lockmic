@@ -264,7 +264,7 @@ final class HUDOverlay: NSObject {
 
         let thisID = displayID(for: screen)
         let hideItem = NSMenuItem(
-            title: "Hide on This Display",
+            title: L10n.menuHideThisDisplay,
             action: #selector(contextHideThisDisplay(_:)),
             keyEquivalent: ""
         )
@@ -277,7 +277,7 @@ final class HUDOverlay: NSObject {
             menu.addItem(.separator())
             for screenInfo in hiddenOthers {
                 let item = NSMenuItem(
-                    title: "Show on \(screenInfo.name)",
+                    title: L10n.menuShowOnDisplay(screenInfo.name),
                     action: #selector(contextShowDisplay(_:)),
                     keyEquivalent: ""
                 )
@@ -290,7 +290,7 @@ final class HUDOverlay: NSObject {
         if hasAnyHiddenDisplay() {
             menu.addItem(.separator())
             let showAll = NSMenuItem(
-                title: "Show on All Displays",
+                title: L10n.menuShowAllDisplays,
                 action: #selector(contextShowAllDisplays(_:)),
                 keyEquivalent: ""
             )

@@ -16,36 +16,34 @@ struct PreferencesAboutPage: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("LockMic")
                             .font(.title2.weight(.semibold))
-                        Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—")")
+                        Text(L10n.aboutVersion(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                        Text("by WIXEE.AI")
+                        Text(L10n.aboutBy)
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 0)
                 }
 
-                PreferencesChrome.caption(
-                    "LockMic mutes your input at the system level so it works in every app."
-                )
+                PreferencesChrome.caption(L10n.aboutCaption)
             }
 
             PreferencesChrome.sectionCard {
                 VStack(alignment: .leading, spacing: 8) {
-                    aboutMetaRow(label: "Website") {
+                    aboutMetaRow(label: L10n.aboutWebsite) {
                         Link("wixee.ai", destination: URL(string: "https://wixee.ai")!)
                             .font(.body)
                             .focusable(false)
                             .focusEffectDisabled()
                     }
-                    aboutMetaRow(label: "Owner") {
+                    aboutMetaRow(label: L10n.aboutOwner) {
                         Text("WIXEE.AI")
                     }
-                    aboutMetaRow(label: "License") {
-                        Text("MIT License")
+                    aboutMetaRow(label: L10n.aboutLicense) {
+                        Text(L10n.aboutLicenseValue)
                     }
-                    Text("Copyright © 2026 WIXEE.AI")
+                    Text(L10n.aboutCopyright)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.top, 2)

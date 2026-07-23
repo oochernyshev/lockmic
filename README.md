@@ -35,6 +35,16 @@ System-wide microphone mute for macOS — menu bar icon, global hotkeys, and an 
 - Xcode 15+ (to build)
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
 
+## Languages
+
+UI follows the macOS system language. Bundled localizations:
+
+**23 languages** — English (default) plus Czech, Danish, German, Greek, Spanish, Finnish, French, Hungarian, Italian, Japanese, Korean, Norwegian (Bokmål), Dutch, Polish, Portuguese, Romanian, Russian, Serbian (Latinica), Swedish, Turkish, Ukrainian, Chinese (Simplified).
+
+One file per language under [`Resources/Localization/`](./Resources/Localization/) (`xx.lproj/Localizable.strings`). See that folder’s README for the full table.
+
+Code looks up keys via `L10n` (`Sources/LockMic/Util/L10n.swift`). To test: Xcode scheme → **Options → App Language**, or **System Settings → Language & Region**.
+
 ## Build & run
 
 Start or restart (kills any running instance; builds if the app is missing):

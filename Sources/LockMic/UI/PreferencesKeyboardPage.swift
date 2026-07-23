@@ -6,14 +6,12 @@ struct PreferencesKeyboardPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: PreferencesChrome.pageSpacing) {
             PreferencesChrome.sectionCard {
-                PreferencesChrome.sectionHeader("Shortcuts")
-                PreferencesChrome.caption(
-                    "Click a field, then press keys · Esc cancels · Delete clears"
-                )
+                PreferencesChrome.sectionHeader(L10n.keyboardShortcutsHeader)
+                PreferencesChrome.caption(L10n.keyboardShortcutsCaption)
 
                 if !preferences.shortcutConflictMessages.isEmpty {
                     VStack(alignment: .leading, spacing: 3) {
-                        Label("Shortcut conflicts", systemImage: "exclamationmark.triangle.fill")
+                        Label(L10n.keyboardConflicts, systemImage: "exclamationmark.triangle.fill")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.orange)
                             .labelStyle(.titleAndIcon)
@@ -33,51 +31,49 @@ struct PreferencesKeyboardPage: View {
                 }
 
                 PreferencesChrome.shortcutRow(
-                    title: "Toggle mute",
+                    title: L10n.keyboardToggle,
                     enabled: $preferences.toggleShortcutEnabled,
                     chord: $preferences.toggleChord
                 )
                 PreferencesChrome.shortcutRow(
-                    title: "Mute",
+                    title: L10n.keyboardMute,
                     enabled: $preferences.muteShortcutEnabled,
                     chord: $preferences.muteChord
                 )
                 PreferencesChrome.shortcutRow(
-                    title: "Unmute",
+                    title: L10n.keyboardUnmute,
                     enabled: $preferences.unmuteShortcutEnabled,
                     chord: $preferences.unmuteChord
                 )
 
-                Toggle("Also toggle with ⌘F5", isOn: $preferences.f5ToggleEnabled)
+                Toggle(L10n.keyboardF5, isOn: $preferences.f5ToggleEnabled)
                     .focusable(false)
                     .focusEffectDisabled()
             }
 
             PreferencesChrome.sectionCard {
-                PreferencesChrome.sectionHeader("Momentary")
-                PreferencesChrome.caption(
-                    "Hold to change mute · release restores previous state"
-                )
+                PreferencesChrome.sectionHeader(L10n.keyboardMomentaryHeader)
+                PreferencesChrome.caption(L10n.keyboardMomentaryCaption)
 
                 PreferencesChrome.shortcutRow(
-                    title: "Push to flip",
+                    title: L10n.keyboardPushFlip,
                     enabled: $preferences.pushToToggleEnabled,
                     chord: $preferences.pushToToggleChord
                 )
                 PreferencesChrome.shortcutRow(
-                    title: "Push to talk",
+                    title: L10n.keyboardPushTalk,
                     enabled: $preferences.pushToTalkEnabled,
                     chord: $preferences.pushToTalkChord
                 )
                 PreferencesChrome.shortcutRow(
-                    title: "Push to mute",
+                    title: L10n.keyboardPushMute,
                     enabled: $preferences.pushToMuteEnabled,
                     chord: $preferences.pushToMuteChord
                 )
 
                 HStack {
                     Spacer(minLength: 0)
-                    Button("Reset to Defaults") {
+                    Button(L10n.keyboardReset) {
                         preferences.resetShortcutsToDefaults()
                     }
                     .focusable(false)

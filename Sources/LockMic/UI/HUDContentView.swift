@@ -92,7 +92,7 @@ final class HUDContentView: NSView {
         if let holdCaption = hold.caption {
             captionLabel.stringValue = holdCaption
         } else {
-            captionLabel.stringValue = muted ? "Muted" : "Unmuted"
+            captionLabel.stringValue = muted ? L10n.hudMuted : L10n.hudUnmuted
         }
 
         let holding = hold != .none
@@ -108,9 +108,9 @@ final class HUDContentView: NSView {
         }
 
         if isInteractive {
-            toolTip = "Click to toggle · drag to move · right-click to hide"
+            toolTip = L10n.hudTooltipInteractive
         } else if holding {
-            toolTip = "Key held — release to restore"
+            toolTip = L10n.hudTooltipHolding
         } else {
             toolTip = nil
         }

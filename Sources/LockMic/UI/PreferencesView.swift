@@ -58,7 +58,7 @@ struct PreferencesView: View {
                 Text("LockMic")
                     .font(.headline)
                     .foregroundStyle(.primary)
-                Text("Preferences")
+                Text(L10n.preferencesTitle)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

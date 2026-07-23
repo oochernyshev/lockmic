@@ -18,7 +18,7 @@ struct HotkeyRecorderButton: View {
                 startRecording()
             }
         } label: {
-            Text(isRecording ? "Type shortcut…" : chord.displayString)
+            Text(isRecording ? L10n.keyboardTypeShortcut : chord.displayString)
                 .font(.body.monospaced())
                 .frame(minWidth: 110, alignment: .center)
                 .padding(.horizontal, 10)
@@ -40,7 +40,7 @@ struct HotkeyRecorderButton: View {
         .opacity(isEnabled ? 1 : 0.45)
         .focusable(false)
         .focusEffectDisabled()
-        .help(isRecording ? "Press a key combo · Esc to cancel · Delete to clear" : "Click to change shortcut")
+        .help(isRecording ? L10n.keyboardHelpRecording : L10n.keyboardHelpClick)
         .onDisappear {
             stopRecording(keep: true)
         }

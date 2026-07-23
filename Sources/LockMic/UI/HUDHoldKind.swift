@@ -10,9 +10,9 @@ enum HUDHoldKind: Equatable, Sendable {
     var caption: String? {
         switch self {
         case .none: return nil
-        case .talk: return "Talking"
-        case .mute: return "Hold mute"
-        case .flip: return "Holding"
+        case .talk: return L10n.hudTalking
+        case .mute: return L10n.hudHoldMute
+        case .flip: return L10n.hudHolding
         }
     }
 }
