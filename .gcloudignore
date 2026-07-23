@@ -1,0 +1,17 @@
+# Keep Cloud Build uploads small (only needed for firebase deploy of static site)
+.git
+.github
+build
+DerivedData
+**/.DS_Store
+Sources
+LockMic.xcodeproj
+Resources
+Scripts
+homebrew
+*.md
+!website/README.md
+**/*.xcuserstate
+**/*.xcuserdata
+.swiftpm
+node_modules

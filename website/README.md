@@ -33,6 +33,18 @@ cloudbuild.yaml   # CI deploy
 
 ## Deploy
 
+### Why “No buildpack groups passed detection”?
+
+That error means CI used **Node buildpacks** (auto-detect), not our static deploy.
+This site is plain HTML/CSS/JS under `website/public` — **no `package.json`**, so
+buildpacks correctly fail with exit **21**.
+
+**Fix:** use one of the paths below (GitHub Actions recommended, or Cloud Build with
+`cloudbuild.yaml` only — never “Autodetected / Buildpacks”).
+
+Also use **Firebase Hosting**, not **Firebase App Hosting** (App Hosting expects
+Next/Angular/etc. frameworks).
+
 ### Manual
 
 ```bash
@@ -41,18 +53,45 @@ firebase login
 firebase deploy --only hosting
 ```
 
-### Cloud Build
+### GitHub Actions (recommended for this repo)
 
-1. Create/link a Firebase project; enable Hosting.
-2. Update `.firebaserc` → `projects.default`.
-3. Create a CI token: `firebase login:ci`
-4. Store as Secret Manager secret named `FIREBASE_TOKEN`.
-5. Create a Cloud Build trigger on `main` using `cloudbuild.yaml`.
-6. Grant the Cloud Build SA **Firebase Hosting Admin** + **Secret Manager Secret Accessor**.
+1. Firebase project + Hosting enabled; set `.firebaserc`.
+2. Create a service-account JSON (Firebase Console → Project settings → Service accounts),
+   **or** run: `firebase init hosting:github`
+3. GitHub → **Settings → Secrets and variables → Actions**
+   - Secret `FIREBASE_SERVICE_ACCOUNT` = full JSON key
+   - Optional variable `FIREBASE_PROJECT_ID` = your project id (default `lockmic-11c1a`)
+4. Push to `main` (or run workflow **Deploy Firebase Hosting** manually).
+
+Workflow file: [`.github/workflows/firebase-hosting.yml`](../.github/workflows/firebase-hosting.yml)
+
+### Cloud Build (auto-deploy on push to `main`)
+
+This is the supported CI path for this repo.
 
 ```bash
+# One-time IAM/APIs (owner on lockmic-11c1a)
+./Scripts/setup_cloudbuild_hosting.sh lockmic-11c1a
+```
+
+Then in **Google Cloud Console** (project **lockmic-11c1a**):
+
+1. **Cloud Build → Repositories** → Connect repository → GitHub → `oochernyshev/lockmic`
+2. **Cloud Build → Triggers → Create trigger**
+   - Event: **Push to a branch**
+   - Branch: `^main$`
+   - Configuration: **Cloud Build configuration file**
+   - File: **`cloudbuild.yaml`** (never Buildpacks / Autodetect)
+3. Push to `main` or test:
+
+```bash
+gcloud config set project lockmic-11c1a
 gcloud builds submit --config cloudbuild.yaml .
 ```
+
+Live URL: `https://lockmic-11c1a.web.app`
+
+GitHub Actions workflow is **manual-only** so it does not double-deploy with Cloud Build.
 
 ## Custom domain
 

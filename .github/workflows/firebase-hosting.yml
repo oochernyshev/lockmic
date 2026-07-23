@@ -1,0 +1,39 @@
+# Optional alternative to Cloud Build.
+# Disabled on push so Cloud Build is the only auto-deploy on main.
+# Run manually: Actions → Deploy Firebase Hosting → Run workflow
+#
+# Setup if you switch to Actions later:
+#   Secret FIREBASE_SERVICE_ACCOUNT = Firebase service account JSON
+
+name: Deploy Firebase Hosting
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: firebase-hosting-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify static site
+        run: |
+          test -f website/public/index.html
+          test -f website/public/styles.css
+          test -f website/public/main.js
+          test -d website/public/assets
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          channelId: live
+          projectId: ${{ vars.FIREBASE_PROJECT_ID || 'lockmic-11c1a' }}
