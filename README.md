@@ -45,6 +45,17 @@ One file per language under [`Resources/Localization/`](./Resources/Localization
 
 Code looks up keys via `L10n` (`Sources/LockMic/Util/L10n.swift`). To test: Xcode scheme → **Options → App Language**, or **System Settings → Language & Region**.
 
+## Website
+
+Marketing site lives in [`website/public/`](./website/public/) and deploys to **Firebase Hosting** via **Cloud Build** (`cloudbuild.yaml`, `firebase.json`).
+
+```bash
+# Local preview
+cd website/public && python3 -m http.server 8080
+```
+
+See [`website/README.md`](./website/README.md) for Firebase setup and CI deploy.
+
 ## Build & run
 
 Start or restart (kills any running instance; builds if the app is missing):

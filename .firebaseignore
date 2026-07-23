@@ -1,0 +1,11 @@
+**/node_modules/**
+**/build/**
+**/.git/**
+**/DerivedData/**
+**/*.xcactivitylog
+**/Sources/**
+**/LockMic.xcodeproj/**
+**/Scripts/**
+**/Resources/**
+**/homebrew/**
+**/.DS_Store

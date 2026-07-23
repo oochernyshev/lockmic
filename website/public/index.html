@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LockMic — System-wide microphone mute for macOS</title>
+  <meta name="description" content="Mute your mic at the system level from the menu bar. Global hotkeys, HUD, and works in Zoom, Teams, Meet, FaceTime — every app. Free &amp; open source by WIXEE.AI." />
+  <meta name="theme-color" content="#0b0d12" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="LockMic — System-wide mic mute for macOS" />
+  <meta property="og:description" content="Menu bar mute that works everywhere. Hotkeys, HUD, mute all inputs. MIT open source by WIXEE.AI." />
+  <meta property="og:image" content="assets/og.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="LockMic for macOS" />
+  <meta name="twitter:description" content="System-wide microphone mute from the menu bar." />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a class="brand" href="#top" aria-label="LockMic home">
+        <img src="assets/logo.png" width="36" height="36" alt="" class="brand-logo" />
+        <span class="brand-name">LockMic</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#download">Download</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="nav-actions">
+        <a class="btn btn-ghost" href="https://github.com/lockmic/LockMic" rel="noopener noreferrer" target="_blank">GitHub</a>
+        <a class="btn btn-primary" href="#download">Get LockMic</a>
+      </div>
+      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navDrawer" aria-label="Open menu">
+        <span></span><span></span>
+      </button>
+    </div>
+    <div class="nav-drawer" id="navDrawer" hidden>
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#download">Download</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/lockmic/LockMic" rel="noopener noreferrer" target="_blank">GitHub</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <div class="hero-inner">
+        <p class="eyebrow reveal">
+          <span class="pill">macOS 14+</span>
+          <span class="pill pill-soft">MIT · Open source</span>
+          <span class="pill pill-soft">by WIXEE.AI</span>
+        </p>
+        <h1 class="hero-title reveal">
+          Mute your mic<br />
+          <span class="gradient-text">for every app.</span>
+        </h1>
+        <p class="hero-lead reveal">
+          System-wide microphone mute from the menu bar. Global hotkeys, on-screen HUD,
+          and Core Audio control that works in Zoom, Teams, Meet, FaceTime, browsers — everywhere.
+        </p>
+        <div class="hero-cta reveal">
+          <a class="btn btn-primary btn-lg" href="#download">Download free</a>
+          <a class="btn btn-secondary btn-lg" href="#features">See features</a>
+        </div>
+        <p class="hero-meta reveal">
+          <span>⌘⇧M toggle</span>
+          <span class="dot"></span>
+          <span>Mute all inputs</span>
+          <span class="dot"></span>
+          <span>23 languages</span>
+        </p>
+
+        <div class="hero-stage reveal" aria-hidden="true">
+          <div class="stage-glow"></div>
+          <div class="menu-mock">
+            <div class="menu-bar-fake">
+              <span class="mb-dot"></span>
+              <span class="mb-dot"></span>
+              <span class="mb-dot"></span>
+              <span class="mb-spacer"></span>
+              <span class="mb-mic" title="LockMic">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M5 5l14 14" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </span>
+            </div>
+            <div class="hud-card">
+              <div class="hud-icon muted">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke="white" stroke-width="1.6"/>
+                  <path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                  <path d="M4 4l16 16" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <p class="hud-label">Muted</p>
+            </div>
+            <div class="app-icon-float">
+              <img src="assets/icon-512.png" width="120" height="120" alt="" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Social proof strip -->
+    <section class="strip" aria-label="Highlights">
+      <div class="strip-inner">
+        <div class="strip-item reveal"><strong>System-level</strong><span>Core Audio, not app buttons</span></div>
+        <div class="strip-item reveal"><strong>Every app</strong><span>Zoom · Teams · Meet · more</span></div>
+        <div class="strip-item reveal"><strong>Menu bar</strong><span>One click, always ready</span></div>
+        <div class="strip-item reveal"><strong>Free forever</strong><span>MIT open source</span></div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section" id="features">
+      <div class="section-head reveal">
+        <p class="eyebrow">Features</p>
+        <h2>Built for calls you can’t miss.</h2>
+        <p class="section-lead">Everything you need to control the mic without hunting for the right mute button in the right app.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">🎙</div>
+          <h3>Mute all inputs</h3>
+          <p>By default LockMic mutes every controllable input device — ideal when Zoom and Meet disagree about which mic is “the” mic.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">⌘</div>
+          <h3>Global hotkeys</h3>
+          <p>Toggle with ⌘⇧M (and optional ⌘F5). Add mute-only, unmute-only, push-to-talk, push-to-mute, and push-to-flip. Conflict warnings included.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">◈</div>
+          <h3>On-screen HUD</h3>
+          <p>Brief toast on mute/unmute. Optional floating indicator on each display — drag to move, click to toggle, right-click to hide.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">☰</div>
+          <h3>Menu bar control</h3>
+          <p>Click the icon to toggle. Right-click for status, mute scope, floating HUD per display, and Preferences.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">◎</div>
+          <h3>Smart devices</h3>
+          <p>Virtual Core Audio devices are listed but ignored for mute control. Re-applies mute when devices or the default input change.</p>
+        </article>
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">🌐</div>
+          <h3>23 languages</h3>
+          <p>Follows your macOS language automatically — English, German, French, Spanish, Japanese, Chinese, Korean, and many more.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section section-alt" id="how">
+      <div class="section-head reveal">
+        <p class="eyebrow">How it works</p>
+        <h2>Three steps. Zero friction.</h2>
+      </div>
+      <ol class="steps">
+        <li class="step reveal">
+          <span class="step-num">01</span>
+          <div>
+            <h3>Install</h3>
+            <p>Homebrew cask or drag from the DMG into Applications. macOS 14 Sonoma or later.</p>
+          </div>
+        </li>
+        <li class="step reveal">
+          <span class="step-num">02</span>
+          <div>
+            <h3>Agree once</h3>
+            <p>Optional anonymous usage stats (version + actions only — no mic audio, no personal data). Required to enable mute control.</p>
+          </div>
+        </li>
+        <li class="step reveal">
+          <span class="step-num">03</span>
+          <div>
+            <h3>Mute anywhere</h3>
+            <p>Menu bar, ⌘⇧M, or the floating HUD. Your mic stays under control across every call app.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Hotkeys -->
+    <section class="section" id="hotkeys">
+      <div class="hotkeys-layout">
+        <div class="section-head left reveal">
+          <p class="eyebrow">Keyboard</p>
+          <h2>Shortcuts that stay out of the way.</h2>
+          <p class="section-lead">Defaults you can change in Preferences → Keyboard. Momentary shortcuts restore state when you release.</p>
+        </div>
+        <div class="keys-panel reveal">
+          <div class="key-row"><span>Toggle mute</span><kbd>⌘</kbd><kbd>⇧</kbd><kbd>M</kbd></div>
+          <div class="key-row"><span>Also toggle</span><kbd>⌘</kbd><kbd>F5</kbd></div>
+          <div class="key-row muted-row"><span>Push to talk</span><kbd>⇧</kbd><kbd>Space</kbd><em>off by default</em></div>
+          <div class="key-row muted-row"><span>Push to mute</span><kbd>⇧</kbd><kbd>⌥</kbd><kbd>Space</kbd><em>off by default</em></div>
+          <div class="key-row muted-row"><span>Push to flip</span><kbd>⌥</kbd><kbd>Space</kbd><em>off by default</em></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download -->
+    <section class="section section-download" id="download">
+      <div class="download-card reveal">
+        <img src="assets/icon-512.png" width="88" height="88" alt="LockMic icon" class="download-icon" />
+        <h2>Get LockMic 1.2.0</h2>
+        <p>Free for macOS 14 Sonoma and later. Homebrew-first; DMG for direct install.</p>
+        <div class="download-actions">
+          <a class="btn btn-primary btn-lg" id="downloadDmg" href="https://github.com/lockmic/LockMic/releases/latest">
+            Download DMG
+          </a>
+          <a class="btn btn-secondary btn-lg" href="https://github.com/lockmic/LockMic" rel="noopener noreferrer" target="_blank">
+            View on GitHub
+          </a>
+        </div>
+        <div class="code-block" role="region" aria-label="Homebrew install">
+          <div class="code-header">
+            <span>Homebrew</span>
+            <button type="button" class="copy-btn" data-copy="brew install --cask lockmic" aria-label="Copy install command">Copy</button>
+          </div>
+          <pre><code>brew install --cask lockmic</code></pre>
+          <p class="code-note">After the first public release and tap are published. Until then, build from source or use a release DMG.</p>
+        </div>
+        <p class="download-req">Requires macOS 14+ · Xcode not needed to run</p>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq">
+      <div class="section-head reveal">
+        <p class="eyebrow">FAQ</p>
+        <h2>Quick answers</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item reveal">
+          <summary>How is this different from Zoom’s mute button?</summary>
+          <p>App mute only silences that app. LockMic mutes the input device in Core Audio, so every app sees a muted mic — including ones without a good mute control.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>Does it work with virtual mics?</summary>
+          <p>Virtual devices (Core Audio transport type Virtual) appear in the list but are ignored for mute control, so software mixers and virtual cables aren’t thrashing.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>What data is sent?</summary>
+          <p>If you agree: app version and anonymous action events (toggle, mute/unmute, holds). No microphone audio, no personal data. Mute control stays off until you agree.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>Is it free?</summary>
+          <p>Yes. LockMic is MIT-licensed open source from WIXEE.AI. Optional paid Pro modules may appear later; the core stays open.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- CTA footer band -->
+    <section class="cta-band">
+      <div class="cta-inner reveal">
+        <h2>Stay in control of the mic.</h2>
+        <p>One menu bar icon. Every app. Free forever.</p>
+        <a class="btn btn-primary btn-lg" href="#download">Download LockMic</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="assets/logo.png" width="28" height="28" alt="" />
+        <div>
+          <strong>LockMic</strong>
+          <p>System-wide mic mute for macOS</p>
+        </div>
+      </div>
+      <div class="footer-links">
+        <a href="https://wixee.ai" rel="noopener noreferrer" target="_blank">WIXEE.AI</a>
+        <a href="https://github.com/lockmic/LockMic" rel="noopener noreferrer" target="_blank">GitHub</a>
+        <a href="https://github.com/lockmic/LockMic/blob/main/LICENSE" rel="noopener noreferrer" target="_blank">MIT License</a>
+      </div>
+      <p class="footer-copy">© 2026 WIXEE.AI · LockMic is open source under the MIT License.</p>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>
