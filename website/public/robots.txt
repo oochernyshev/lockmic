@@ -1,5 +1,30 @@
+# https://lockmic.com/robots.txt
 User-agent: *
 Allow: /
 
-# Sitemap optional once domain is fixed:
-# Sitemap: https://your-domain.example/sitemap.xml
+# AI / search crawlers (explicit allow)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://lockmic.com/sitemap.xml

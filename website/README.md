@@ -1,6 +1,12 @@
 # LockMic website
 
-Modern single-page marketing site for **LockMic**, published via **Firebase Hosting** and **Google Cloud Build**.
+Modern single-page marketing site for **LockMic** at **[https://lockmic.com](https://lockmic.com)**, published via **Firebase Hosting** and **Google Cloud Build**.
+
+## SEO / AI
+
+- Canonical + absolute Open Graph / Twitter tags → `https://lockmic.com/`
+- JSON-LD: `SoftwareApplication`, `FAQPage`, `WebSite`, `WebPage`, `Organization`
+- `sitemap.xml`, `robots.txt`, `llms.txt`
 
 ## Local preview
 

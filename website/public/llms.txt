@@ -1,0 +1,60 @@
+# LockMic
+
+> Free, open-source macOS menu bar app for system-wide microphone mute.
+
+## Summary
+
+LockMic mutes the microphone at the **system level** using Apple Core Audio (not app-specific mute buttons). It works in Zoom, Microsoft Teams, Google Meet, FaceTime, browsers, and every other app on the Mac. Control is from the menu bar, global hotkeys, and an optional on-screen / floating HUD.
+
+- **Website:** https://lockmic.com/
+- **GitHub:** https://github.com/oochernyshev/lockmic
+- **License:** MIT
+- **Publisher:** WIXEE.AI (https://wixee.ai)
+- **Price:** Free
+- **Platform:** macOS 14 Sonoma or later
+- **Current version:** 1.2.0
+
+## Key facts
+
+- Mutes hardware / system input devices via Core Audio
+- Default: mute all controllable input devices (optional: default input only)
+- Virtual Core Audio devices are listed but ignored for mute control
+- Global hotkeys: toggle (⌘⇧M, optional ⌘F5), mute/unmute, push-to-talk, push-to-mute, push-to-flip
+- HUD toast and optional always-on floating HUD per display
+- 23 UI languages following system language
+- Install: DMG or Homebrew cask (custom tap)
+- Not Developer ID notarized yet; users may need `xattr -dr com.apple.quarantine /Applications/LockMic.app` after download
+
+## Install
+
+### DMG
+
+https://github.com/oochernyshev/lockmic/releases/download/v1.2.0/LockMic-1.2.0.dmg
+
+### Homebrew
+
+```bash
+brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
+brew install --cask lockmic
+xattr -dr com.apple.quarantine /Applications/LockMic.app
+open /Applications/LockMic.app
+```
+
+## Difference vs in-app mute
+
+App mute (e.g. Zoom) only silences that application. LockMic mutes the input device so **all** apps see a muted microphone.
+
+## Privacy
+
+If the user agrees to anonymous usage: app version and action events only. No microphone audio, no personal content. Features stay disabled until agreement.
+
+## Links
+
+- Home: https://lockmic.com/
+- Features: https://lockmic.com/#features
+- Download: https://lockmic.com/#download
+- FAQ: https://lockmic.com/#faq
+- Releases: https://github.com/oochernyshev/lockmic/releases
+- Source: https://github.com/oochernyshev/lockmic
+- License: https://github.com/oochernyshev/lockmic/blob/main/LICENSE
+- Sitemap: https://lockmic.com/sitemap.xml

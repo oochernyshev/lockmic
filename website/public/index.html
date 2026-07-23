@@ -4,21 +4,191 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LockMic — System-wide microphone mute for macOS</title>
-  <meta name="description" content="Mute your mic at the system level from the menu bar. Global hotkeys, HUD, and works in Zoom, Teams, Meet, FaceTime — every app. Free &amp; open source by WIXEE.AI." />
+  <meta name="description" content="LockMic is a free macOS menu bar app for system-wide microphone mute. Works in Zoom, Teams, Meet, FaceTime, and every app via Core Audio. Global hotkeys, HUD, open source (MIT) by WIXEE.AI." />
+  <meta name="keywords" content="LockMic, macOS mic mute, system-wide microphone mute, menu bar mute, Zoom mute, Teams mute, Meet mute, Core Audio, push to talk, Homebrew, WIXEE.AI" />
+  <meta name="author" content="WIXEE.AI" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
   <meta name="theme-color" content="#0b0d12" />
+  <meta name="application-name" content="LockMic" />
+  <link rel="canonical" href="https://lockmic.com/" />
+
+  <!-- Open Graph -->
   <meta property="og:type" content="website" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:site_name" content="LockMic" />
+  <meta property="og:url" content="https://lockmic.com/" />
   <meta property="og:title" content="LockMic — System-wide mic mute for macOS" />
-  <meta property="og:description" content="Menu bar mute that works everywhere. Hotkeys, HUD, mute all inputs. MIT open source by WIXEE.AI." />
-  <meta property="og:image" content="assets/og.png" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="LockMic for macOS" />
-  <meta name="twitter:description" content="System-wide microphone mute from the menu bar." />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <meta property="og:description" content="Mute your mic at the system level from the menu bar. Hotkeys, HUD, mute all inputs. Works in Zoom, Teams, Meet, and every app. Free & open source by WIXEE.AI." />
+  <meta property="og:image" content="https://lockmic.com/assets/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="LockMic — system-wide microphone mute for macOS" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="LockMic — System-wide mic mute for macOS" />
+  <meta name="twitter:description" content="Menu bar mute that works everywhere. Global hotkeys, HUD, MIT open source by WIXEE.AI." />
+  <meta name="twitter:image" content="https://lockmic.com/assets/og.png" />
+  <meta name="twitter:image:alt" content="LockMic — system-wide microphone mute for macOS" />
+
+  <link rel="icon" type="image/png" sizes="32x32" href="https://lockmic.com/assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="https://lockmic.com/assets/apple-touch-icon.png" />
+  <link rel="alternate" type="text/plain" title="LLM summary" href="https://lockmic.com/llms.txt" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Structured data: SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "LockMic",
+    "alternateName": "LockMic for macOS",
+    "description": "System-wide microphone mute for macOS from the menu bar. Global hotkeys, on-screen HUD, mute all input devices via Core Audio. Works in Zoom, Teams, Google Meet, FaceTime, browsers, and every other app.",
+    "url": "https://lockmic.com/",
+    "image": "https://lockmic.com/assets/og.png",
+    "screenshot": "https://lockmic.com/assets/og.png",
+    "applicationCategory": "UtilitiesApplication",
+    "applicationSubCategory": "Audio",
+    "operatingSystem": "macOS 14.0 or later",
+    "softwareVersion": "1.2.0",
+    "downloadUrl": "https://github.com/oochernyshev/lockmic/releases/download/v1.2.0/LockMic-1.2.0.dmg",
+    "installUrl": "https://lockmic.com/#download",
+    "softwareHelp": "https://github.com/oochernyshev/lockmic",
+    "releaseNotes": "https://github.com/oochernyshev/lockmic/releases/tag/v1.2.0",
+    "license": "https://github.com/oochernyshev/lockmic/blob/main/LICENSE",
+    "codeRepository": "https://github.com/oochernyshev/lockmic",
+    "isAccessibleForFree": true,
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "WIXEE.AI",
+      "url": "https://wixee.ai"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "WIXEE.AI",
+      "url": "https://wixee.ai"
+    },
+    "featureList": [
+      "System-wide microphone mute via Core Audio",
+      "Mute all input devices or default input only",
+      "Menu bar control",
+      "Global hotkeys including push-to-talk and push-to-mute",
+      "On-screen and floating HUD",
+      "23 languages",
+      "Homebrew and DMG install"
+    ],
+    "keywords": "macOS microphone mute, system-wide mic mute, menu bar, Zoom, Teams, Meet, Core Audio, open source"
+  }
+  </script>
+
+  <!-- Structured data: WebSite + WebPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "LockMic",
+    "url": "https://lockmic.com/",
+    "description": "Official site for LockMic — system-wide microphone mute for macOS.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "WIXEE.AI",
+      "url": "https://wixee.ai"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "LockMic — System-wide microphone mute for macOS",
+    "url": "https://lockmic.com/",
+    "description": "Download LockMic, a free open-source macOS app for system-wide mic mute from the menu bar.",
+    "isPartOf": { "@type": "WebSite", "url": "https://lockmic.com/" },
+    "about": { "@type": "SoftwareApplication", "name": "LockMic" },
+    "inLanguage": "en"
+  }
+  </script>
+
+  <!-- Structured data: FAQPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is LockMic?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "LockMic is a free, open-source macOS menu bar app that mutes your microphone at the system level using Core Audio. It works in Zoom, Microsoft Teams, Google Meet, FaceTime, browsers, and every other app—not just inside one app’s mute button."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How is this different from Zoom’s mute button?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "App mute only silences that app. LockMic mutes the input device in Core Audio, so every app sees a muted mic—including ones without a good mute control."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does LockMic work with virtual microphones?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Virtual devices (Core Audio transport type Virtual) appear in the list but are ignored for mute control, so software mixers and virtual cables are not thrashing."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What data does LockMic send?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "If you agree: app version and anonymous action events (toggle, mute/unmute, holds). No microphone audio and no personal data. Mute control stays off until you agree."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is LockMic free?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. LockMic is MIT-licensed open source from WIXEE.AI. Optional paid Pro modules may appear later; the core stays open."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I install LockMic?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Download the DMG from lockmic.com or GitHub Releases and drag LockMic to Applications, or install with Homebrew: brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew install --cask lockmic. Requires macOS 14 Sonoma or later. Until the app is notarized, run: xattr -dr com.apple.quarantine /Applications/LockMic.app"
+        }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Organization -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "WIXEE.AI",
+    "url": "https://wixee.ai",
+    "sameAs": [
+      "https://github.com/oochernyshev/lockmic"
+    ]
+  }
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -28,8 +198,8 @@
 
   <header class="nav" id="nav">
     <div class="nav-inner">
-      <a class="brand" href="#top" aria-label="LockMic home">
-        <img src="assets/logo.png" width="36" height="36" alt="" class="brand-logo" />
+      <a class="brand" href="https://lockmic.com/" aria-label="LockMic home">
+        <img src="assets/logo.png" width="36" height="36" alt="LockMic logo" class="brand-logo" />
         <span class="brand-name">LockMic</span>
       </a>
       <nav class="nav-links" aria-label="Primary">
@@ -69,8 +239,9 @@
           <span class="gradient-text">for every app.</span>
         </h1>
         <p class="hero-lead reveal">
-          System-wide microphone mute from the menu bar. Global hotkeys, on-screen HUD,
-          and Core Audio control that works in Zoom, Teams, Meet, FaceTime, browsers — everywhere.
+          <strong>LockMic</strong> is a free macOS menu bar app for <strong>system-wide microphone mute</strong>.
+          It uses Core Audio—not in-app mute buttons—so Zoom, Teams, Meet, FaceTime, browsers, and every other app see a muted mic.
+          Global hotkeys, on-screen HUD, and optional floating indicator included.
         </p>
         <div class="hero-cta reveal">
           <a class="btn btn-primary btn-lg" href="#download">Download free</a>
@@ -125,6 +296,19 @@
         <div class="strip-item reveal"><strong>Every app</strong><span>Zoom · Teams · Meet · more</span></div>
         <div class="strip-item reveal"><strong>Menu bar</strong><span>One click, always ready</span></div>
         <div class="strip-item reveal"><strong>Free forever</strong><span>MIT open source</span></div>
+      </div>
+    </section>
+
+    <!-- What is -->
+    <section class="section" id="about" aria-labelledby="about-heading">
+      <div class="section-head reveal">
+        <p class="eyebrow">What is LockMic?</p>
+        <h2 id="about-heading">A system-wide mic mute for macOS.</h2>
+        <p class="section-lead">
+          LockMic runs in the menu bar and mutes your microphone hardware (or all inputs) through Core Audio.
+          Unlike Zoom or Meet mute—which only affect that app—LockMic blocks capture for everything on your Mac.
+          Ideal for calls, streaming, and privacy when you need one reliable mute.
+        </p>
       </div>
     </section>
 
@@ -221,7 +405,7 @@
     <!-- Download -->
     <section class="section section-download" id="download">
       <div class="download-card reveal">
-        <img src="assets/icon-512.png" width="88" height="88" alt="LockMic icon" class="download-icon" />
+        <img src="assets/icon-512.png" width="88" height="88" alt="LockMic app icon" class="download-icon" />
         <h2>Get LockMic 1.2.0</h2>
         <p>Free for macOS 14 Sonoma and later. Homebrew-first; DMG for direct install.</p>
         <div class="download-actions">
@@ -260,6 +444,10 @@ open /Applications/LockMic.app</code></pre>
       </div>
       <div class="faq-list">
         <details class="faq-item reveal">
+          <summary>What is LockMic?</summary>
+          <p>LockMic is a free, open-source macOS menu bar app that mutes your microphone at the system level using Core Audio. It works in Zoom, Microsoft Teams, Google Meet, FaceTime, browsers, and every other app—not just inside one app’s mute button.</p>
+        </details>
+        <details class="faq-item reveal">
           <summary>How is this different from Zoom’s mute button?</summary>
           <p>App mute only silences that app. LockMic mutes the input device in Core Audio, so every app sees a muted mic — including ones without a good mute control.</p>
         </details>
@@ -274,6 +462,10 @@ open /Applications/LockMic.app</code></pre>
         <details class="faq-item reveal">
           <summary>Is it free?</summary>
           <p>Yes. LockMic is MIT-licensed open source from WIXEE.AI. Optional paid Pro modules may appear later; the core stays open.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>How do I install LockMic?</summary>
+          <p>Download the DMG from this site or GitHub Releases and drag LockMic to Applications, or use Homebrew (see Download above). Requires macOS 14+. Until notarized, run <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code> after install.</p>
         </details>
       </div>
     </section>
@@ -291,18 +483,20 @@ open /Applications/LockMic.app</code></pre>
   <footer class="footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <img src="assets/logo.png" width="28" height="28" alt="" />
+        <img src="assets/logo.png" width="28" height="28" alt="LockMic logo" />
         <div>
           <strong>LockMic</strong>
           <p>System-wide mic mute for macOS</p>
         </div>
       </div>
       <div class="footer-links">
+        <a href="https://lockmic.com/">Home</a>
+        <a href="https://lockmic.com/llms.txt">llms.txt</a>
         <a href="https://wixee.ai" rel="noopener noreferrer" target="_blank">WIXEE.AI</a>
         <a href="https://github.com/oochernyshev/lockmic" rel="noopener noreferrer" target="_blank">GitHub</a>
         <a href="https://github.com/oochernyshev/lockmic/blob/main/LICENSE" rel="noopener noreferrer" target="_blank">MIT License</a>
       </div>
-      <p class="footer-copy">© 2026 WIXEE.AI · LockMic is open source under the MIT License.</p>
+      <p class="footer-copy">© 2026 WIXEE.AI · LockMic is open source under the MIT License. · <a href="https://lockmic.com/">lockmic.com</a></p>
     </div>
   </footer>
 
