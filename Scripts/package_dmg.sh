@@ -8,6 +8,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="${ROOT}/build/LockMic.app"
 BG_PNG="${ROOT}/Resources/dmg/background.png"
+# Optional override: Resources/dmg/VolumeIcon.icns — otherwise use the app icon
+VOL_ICNS_SRC="${ROOT}/Resources/dmg/VolumeIcon.icns"
 VERSION="${VERSION:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist" 2>/dev/null || echo "1.2.0")}"
 OUT_DIR="${ROOT}/build/dist"
 STAGE="${OUT_DIR}/stage"
@@ -106,6 +108,37 @@ if command -v SetFile >/dev/null 2>&1; then
 fi
 chflags hidden "$MOUNT_POINT/.background" 2>/dev/null || true
 
+# Volume icon (mounted disk on Desktop / sidebar)
+resolve_volume_icns() {
+  if [[ -f "$VOL_ICNS_SRC" ]]; then
+    echo "$VOL_ICNS_SRC"
+    return
+  fi
+  local app_icns="${APP}/Contents/Resources/AppIcon.icns"
+  if [[ -f "$app_icns" ]]; then
+    echo "$app_icns"
+    return
+  fi
+  # Build .icns from asset catalog PNGs
+  local iconset="${OUT_DIR}/.VolumeIcon.iconset"
+  local out_icns="${OUT_DIR}/.VolumeIcon.icns"
+  local srcset="${ROOT}/Resources/Assets.xcassets/AppIcon.appiconset"
+  local at="@"
+  rm -rf "$iconset"
+  mkdir -p "$iconset"
+  local size
+  for size in 16x16 32x32 128x128 256x256 512x512; do
+    cp "${srcset}/icon_${size}.png" "${iconset}/icon_${size}.png"
+    cp "${srcset}/icon_${size}${at}2x.png" "${iconset}/icon_${size}${at}2x.png"
+  done
+  iconutil -c icns "$iconset" -o "$out_icns"
+  rm -rf "$iconset"
+  echo "$out_icns"
+}
+
+VOL_ICNS="$(resolve_volume_icns)"
+echo "    Volume icon source: $VOL_ICNS"
+
 if [[ ! -L "$MOUNT_POINT/Applications" ]]; then
   echo "error: failed to create Applications symlink on volume" >&2
   exit 1
@@ -170,16 +203,76 @@ if [[ "$layout_ok" -ne 1 ]]; then
   echo "warning: could not fully configure Finder layout; Applications link is still present" >&2
 fi
 
+# Volume icon AFTER Finder layout (Finder can clobber/remove it if set earlier)
+echo "    Installing volume icon…"
+cp "$VOL_ICNS" "$MOUNT_POINT/.VolumeIcon.icns"
+if command -v SetFile >/dev/null 2>&1; then
+  SetFile -c icnC "$MOUNT_POINT/.VolumeIcon.icns" 2>/dev/null || true
+  SetFile -a V "$MOUNT_POINT/.VolumeIcon.icns" 2>/dev/null || true
+  SetFile -a C "$MOUNT_POINT" 2>/dev/null || true
+fi
+if [[ ! -f "$MOUNT_POINT/.VolumeIcon.icns" ]]; then
+  echo "error: .VolumeIcon.icns missing on volume before unmount" >&2
+  exit 1
+fi
+
 # Give Finder time to flush .DS_Store before unmount
 sync
 sleep 1.5
+# Make sure nothing still holds the volume
+osascript -e "tell application \"Finder\" to eject disk \"${VOLNAME}\"" 2>/dev/null || true
+sleep 0.5
 cleanup_mount
 trap - EXIT
+
+# Sanity-check RW image still contains the volume icon before compress
+ATTACH_CHK="$(hdiutil attach -readonly -noverify -noautoopen "$TMP_DMG")"
+CHK_MNT="$(echo "$ATTACH_CHK" | awk -F'\t' '/\/Volumes\// { print $NF; exit }')"
+if [[ ! -f "$CHK_MNT/.VolumeIcon.icns" ]]; then
+  echo "error: .VolumeIcon.icns lost after detach (before compress)" >&2
+  hdiutil detach "$CHK_MNT" -quiet 2>/dev/null || true
+  exit 1
+fi
+echo "    Volume icon OK on RW image ($(stat -f%z "$CHK_MNT/.VolumeIcon.icns") bytes)"
+hdiutil detach "$CHK_MNT" -quiet 2>/dev/null || true
+sleep 0.3
 
 # Compress
 hdiutil convert "$TMP_DMG" -format UDZO -imagekey zlib-level=9 -o "$DMG" >/dev/null
 rm -f "$TMP_DMG"
 
+# Also set the .dmg *file* icon in Finder (not just the mounted volume)
+if [[ -f "$VOL_ICNS" ]]; then
+  if [[ "$VOL_ICNS" != /* ]]; then
+    VOL_ICNS="$(cd "$(dirname "$VOL_ICNS")" && pwd)/$(basename "$VOL_ICNS")"
+  fi
+  DMG_ABS="$DMG"
+  [[ "$DMG_ABS" != /* ]] && DMG_ABS="$(cd "$(dirname "$DMG")" && pwd)/$(basename "$DMG")"
+
+  if command -v fileicon >/dev/null 2>&1; then
+    fileicon set "$DMG_ABS" "$VOL_ICNS" 2>/dev/null || true
+  else
+    # AppKit via Swift — no extra deps
+    if ! swift -e "
+import AppKit
+let icns = \"${VOL_ICNS//\"/\\\"}\"
+let dmg = \"${DMG_ABS//\"/\\\"}\"
+guard let img = NSImage(contentsOfFile: icns) else {
+  fputs(\"warning: could not load icns\\n\", stderr)
+  exit(0)
+}
+NSWorkspace.shared.setIcon(img, forFile: dmg)
+" 2>/dev/null; then
+      echo "    (could not set .dmg file icon; mounted volume icon is still set)"
+    fi
+  fi
+fi
+rm -f "${OUT_DIR}/.VolumeIcon.icns"
+
+# Touch so Finder refreshes icon cache
+touch "$DMG" 2>/dev/null || true
+
 echo "==> Created $DMG"
 shasum -a 256 "$DMG" | tee "${DMG}.sha256"
 echo "    Open the DMG → drag LockMic.app onto Applications (follow the arrow)."
+echo "    Volume / file icon: LockMic app icon (override with Resources/dmg/VolumeIcon.icns)."
