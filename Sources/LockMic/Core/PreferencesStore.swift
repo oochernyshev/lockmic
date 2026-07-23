@@ -12,6 +12,7 @@ final class PreferencesStore: ObservableObject {
         static let soundEnabled = "soundEnabled"
         static let launchAtLogin = "launchAtLogin"
         static let muteAllInputs = "muteAllInputs"
+        static let shareAnonymousUsage = "shareAnonymousUsage"
 
         static let toggleEnabled = "hotkeyToggleEnabled"
         static let toggleKeyCode = "hotkeyToggleKeyCode"
@@ -82,6 +83,17 @@ final class PreferencesStore: ObservableObject {
             updateLoginItem()
         }
     }
+
+    /// Required opt-in: anonymous GA4 usage. When false, LockMic features stay disabled.
+    @Published var shareAnonymousUsage: Bool {
+        didSet {
+            UserDefaults.standard.set(shareAnonymousUsage, forKey: Keys.shareAnonymousUsage)
+            UsageReporter.setShareEnabled(shareAnonymousUsage)
+        }
+    }
+
+    /// App mute/hotkey/HUD features are only active after stats agreement.
+    var featuresEnabled: Bool { shareAnonymousUsage }
 
     // MARK: - Shortcut bindings
 
@@ -183,6 +195,12 @@ final class PreferencesStore: ObservableObject {
         muteAllInputs = defaults.bool(forKey: Keys.muteAllInputs)
 
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
+
+        // Opt-in only — unset key means not agreed (features disabled).
+        if defaults.object(forKey: Keys.shareAnonymousUsage) == nil {
+            defaults.set(false, forKey: Keys.shareAnonymousUsage)
+        }
+        shareAnonymousUsage = defaults.bool(forKey: Keys.shareAnonymousUsage)
 
         // Toggle shortcut (migrate legacy if needed)
         if defaults.object(forKey: Keys.toggleEnabled) == nil {

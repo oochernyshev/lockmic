@@ -16,6 +16,7 @@
 		49AEAEFADFABB85941650D16 /* PreferencesAboutPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F8F61DC24A2F34968588493 /* PreferencesAboutPage.swift */; };
 		555CB82D8EE959038378C244 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85D3C494D4898BA8C2268DB1 /* Assets.xcassets */; };
 		624805273EFDB53BAC0EA7E0 /* PreferencesChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = E14F0285BCCAF4D12DE4858F /* PreferencesChrome.swift */; };
+		7AFC779B76AEA8179B52B8D0 /* UsageReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B05802BA0C62099286E966 /* UsageReporter.swift */; };
 		853BF2D0ACA89BE82704BD63 /* PreferencesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200E9D59454FF5C42F0D7ECB /* PreferencesTab.swift */; };
 		881AA270D666437B1903E384 /* SoundFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */; };
 		8CF0A20DF5BC136F3B034052 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C3675125FEA46D7196900C /* HotkeyManager.swift */; };
@@ -46,6 +47,7 @@
 		6C96E6DE500850364A23E1BF /* PreferencesGeneralPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesGeneralPage.swift; sourceTree = "<group>"; };
 		6D93F1024B71207F8831FB2E /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
 		6DCBF140C7338A9FBDC5EA31 /* ThinTransparentScroller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinTransparentScroller.swift; sourceTree = "<group>"; };
+		83B05802BA0C62099286E966 /* UsageReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageReporter.swift; sourceTree = "<group>"; };
 		85D3C494D4898BA8C2268DB1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9531C60032267EFA1757D1BC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A4DE69CE589C220C182F7AAD /* LockMic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LockMic.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -107,6 +109,7 @@
 				C47A7A118040E6EF54FF7752 /* MicController.swift */,
 				402280C03971421D5FC37176 /* PreferencesStore.swift */,
 				CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */,
+				83B05802BA0C62099286E966 /* UsageReporter.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -251,6 +254,7 @@
 				881AA270D666437B1903E384 /* SoundFeedback.swift in Sources */,
 				D2858916A735CF2E761476C5 /* StatusItemController.swift in Sources */,
 				E21C796C5F395CFDEC878645 /* ThinTransparentScroller.swift in Sources */,
+				7AFC779B76AEA8179B52B8D0 /* UsageReporter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

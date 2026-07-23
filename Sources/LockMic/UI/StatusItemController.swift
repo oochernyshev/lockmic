@@ -39,6 +39,10 @@ final class StatusItemController {
     }
 
     private var momentaryHold: MomentaryHold = .none
+    /// Last known consent so we only re-apply the feature gate on a real change.
+    private var lastFeaturesEnabled: Bool?
+
+    private var featuresEnabled: Bool { preferences.featuresEnabled }
 
     init(mic: MicController, preferences: PreferencesStore) {
         self.mic = mic
@@ -64,11 +68,9 @@ final class StatusItemController {
             self?.toggleFromUser()
         }
 
-        updateIcon()
-        registerHotkeys()
+        applyFeatureAvailability(force: true)
         observeMic()
         observePreferenceHotkeys()
-        syncFloatingHUD()
     }
 
     private func observeMic() {
@@ -104,6 +106,7 @@ final class StatusItemController {
                 queue: .main
             ) { [weak self] _ in
                 Task { @MainActor in
+                    self?.applyFeatureAvailability()
                     self?.registerHotkeysIfNeeded()
                     self?.syncFloatingHUDIfNeeded()
                 }
@@ -111,11 +114,37 @@ final class StatusItemController {
         )
     }
 
+    /// Enable or disable mute/hotkeys/HUD based on anonymous-stats agreement.
+    private func applyFeatureAvailability(force: Bool = false) {
+        let enabled = featuresEnabled
+        guard force || lastFeaturesEnabled != enabled else { return }
+        lastFeaturesEnabled = enabled
+
+        if !enabled {
+            endMomentaryHoldForDisable()
+            lastRegisteredBindings = []
+            hotkeys.register(bindings: []) { _, _ in }
+            hud.hide()
+            lastHudFloating = false
+        } else {
+            registerHotkeysIfNeeded(force: true)
+            syncFloatingHUDIfNeeded(force: true)
+        }
+        updateIcon()
+    }
+
+    private func endMomentaryHoldForDisable() {
+        guard momentaryHold.isActive else { return }
+        momentaryHold = .none
+        mic.suppressDeviceResync = false
+    }
+
     /// - Parameters:
     ///   - showHUD: present toast/floating update when appropriate.
     ///   - playSound: defaults to `showHUD`. Pass `false` for hold UI with no mute change.
     func handleMuteChanged(showHUD: Bool, playSound: Bool? = nil) {
         updateIcon()
+        guard featuresEnabled else { return }
 
         let muted = mic.effectiveMuted
         let shouldPlay = playSound ?? showHUD
@@ -161,6 +190,14 @@ final class StatusItemController {
     }
 
     private func syncFloatingHUDIfNeeded(force: Bool = false) {
+        guard featuresEnabled else {
+            if lastHudFloating != false {
+                hud.hide()
+                lastHudFloating = false
+            }
+            return
+        }
+
         let floating = preferences.hudFloating
         guard force || floating != lastHudFloating else { return }
 
@@ -179,12 +216,8 @@ final class StatusItemController {
         lastHudFloating = floating
     }
 
-    private func registerHotkeys() {
-        registerHotkeysIfNeeded(force: true)
-    }
-
     private func registerHotkeysIfNeeded(force: Bool = false) {
-        let bindings = preferences.activeBindings
+        let bindings = featuresEnabled ? preferences.activeBindings : []
         guard force || bindings != lastRegisteredBindings else { return }
         lastRegisteredBindings = bindings
         hotkeys.register(bindings: bindings) { [weak self] action, phase in
@@ -195,6 +228,7 @@ final class StatusItemController {
     }
 
     private func handleHotkeyAction(_ action: HotkeyAction, phase: HotkeyPhase) {
+        guard featuresEnabled else { return }
         switch action {
         case .toggle:
             guard phase == .pressed, !momentaryHold.isActive else { return }
@@ -202,11 +236,13 @@ final class StatusItemController {
         case .mute:
             guard phase == .pressed, !momentaryHold.isActive else { return }
             guard !mic.effectiveMuted else { return }
+            UsageReporter.record(.mute)
             mic.setMuted(true)
             handleMuteChanged(showHUD: true)
         case .unmute:
             guard phase == .pressed, !momentaryHold.isActive else { return }
             guard mic.effectiveMuted else { return }
+            UsageReporter.record(.unmute)
             mic.setMuted(false)
             handleMuteChanged(showHUD: true)
         case .pushToTalk:
@@ -225,6 +261,7 @@ final class StatusItemController {
     }
 
     private func handleMomentary(phase: HotkeyPhase, mode: MomentaryMode) {
+        guard featuresEnabled else { return }
         switch phase {
         case .pressed:
             guard case .none = momentaryHold else { return }
@@ -232,12 +269,15 @@ final class StatusItemController {
             let targetMuted: Bool
             switch mode {
             case .talk:
+                UsageReporter.record(.pushToTalk)
                 momentaryHold = .pushToTalk(wasMuted: wasMuted)
                 targetMuted = false
             case .mute:
+                UsageReporter.record(.pushToMute)
                 momentaryHold = .pushToMute(wasMuted: wasMuted)
                 targetMuted = true
             case .toggle:
+                UsageReporter.record(.pushToFlip)
                 momentaryHold = .pushToToggle(wasMuted: wasMuted)
                 targetMuted = !wasMuted
             }
@@ -276,19 +316,31 @@ final class StatusItemController {
     }
 
     private func toggleFromUser() {
+        guard featuresEnabled else {
+            openPreferences()
+            return
+        }
+        UsageReporter.record(.toggle)
         mic.toggle()
         handleMuteChanged(showHUD: true)
     }
 
     @objc private func statusItemClicked(_ sender: Any?) {
         guard let event = NSApp.currentEvent else {
-            toggleFromUser()
+            if featuresEnabled {
+                toggleFromUser()
+            } else {
+                showMenuFromStatusItem()
+            }
             return
         }
         if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
             showMenuFromStatusItem()
-        } else {
+        } else if featuresEnabled {
             toggleFromUser()
+        } else {
+            // Left-click while disabled: open menu so agreement is one click away.
+            showMenuFromStatusItem()
         }
     }
 
@@ -304,6 +356,45 @@ final class StatusItemController {
 
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
+
+        if !featuresEnabled {
+            let disabled = NSMenuItem(
+                title: "Status: Disabled — agreement required",
+                action: nil,
+                keyEquivalent: ""
+            )
+            disabled.isEnabled = false
+            menu.addItem(disabled)
+
+            let hint = NSMenuItem(
+                title: "Agree to anonymous stats to enable mute control",
+                action: nil,
+                keyEquivalent: ""
+            )
+            hint.isEnabled = false
+            menu.addItem(hint)
+
+            menu.addItem(.separator())
+
+            let agree = NSMenuItem(
+                title: "Agree & Enable LockMic",
+                action: #selector(agreeAndEnable),
+                keyEquivalent: ""
+            )
+            agree.target = self
+            menu.addItem(agree)
+
+            let prefs = NSMenuItem(title: "Preferences…", action: #selector(openPreferences), keyEquivalent: ",")
+            prefs.target = self
+            menu.addItem(prefs)
+
+            menu.addItem(.separator())
+
+            let quit = NSMenuItem(title: "Quit LockMic", action: #selector(quit), keyEquivalent: "q")
+            quit.target = self
+            menu.addItem(quit)
+            return menu
+        }
 
         let statusTitle: String = {
             switch mic.state {
@@ -392,11 +483,17 @@ final class StatusItemController {
         return menu
     }
 
+    @objc private func agreeAndEnable() {
+        preferences.shareAnonymousUsage = true
+        applyFeatureAvailability(force: true)
+    }
+
     @objc private func menuToggle() {
         toggleFromUser()
     }
 
     @objc private func toggleMuteAllInputs() {
+        guard featuresEnabled else { return }
         preferences.muteAllInputs.toggle()
         mic.preferenceMuteScopeChanged()
         handleMuteChanged(showHUD: false)
@@ -413,6 +510,9 @@ final class StatusItemController {
     }
 
     @objc private func openPreferences() {
+        if featuresEnabled {
+            UsageReporter.record(.openPreferences)
+        }
         if preferencesWindow == nil {
             let view = PreferencesView(preferences: preferences, mic: mic)
                 .onExitCommand { [weak self] in
@@ -447,7 +547,11 @@ final class StatusItemController {
     }
 
     private func updateIcon() {
-        statusItem?.button?.image = statusImage(symbolName: symbolName(for: mic.state))
+        // Never use appearsDisabled — it greys/shrinks the menu-bar glyph and looks broken.
+        statusItem?.button?.appearsDisabled = false
+        statusItem?.button?.image = featuresEnabled
+            ? statusImage(symbolName: symbolName(for: mic.state))
+            : disabledStatusImage()
         statusItem?.button?.toolTip = tooltip(for: mic.state)
         statusItem?.isVisible = true
     }
@@ -461,15 +565,64 @@ final class StatusItemController {
         }
     }
 
+    /// Menu-bar template icon sized to match system status items (~18pt cell).
     private func statusImage(symbolName: String) -> NSImage {
-        let config = NSImage.SymbolConfiguration(pointSize: 15, weight: .medium)
-        let image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "LockMic")?
-            .withSymbolConfiguration(config) ?? NSImage()
+        menuBarSymbolImage(systemName: symbolName, accessibilityDescription: "LockMic")
+    }
+
+    /// Full-size “needs agreement” icon — same visual weight as mute/unmute, not a tiny nested glyph.
+    private func disabledStatusImage() -> NSImage {
+        // Distinct from mute (mic.slash): raised hand = permission / agreement required.
+        menuBarSymbolImage(
+            systemName: "hand.raised.fill",
+            accessibilityDescription: "LockMic disabled — agreement required",
+            weight: .semibold
+        )
+    }
+
+    private func menuBarSymbolImage(
+        systemName: String,
+        accessibilityDescription: String,
+        weight: NSFont.Weight = .medium
+    ) -> NSImage {
+        let pointSize: CGFloat = 16
+        let canvas = NSSize(width: 18, height: 18)
+        let config = NSImage.SymbolConfiguration(pointSize: pointSize, weight: weight)
+            .applying(NSImage.SymbolConfiguration(scale: .large))
+
+        guard let symbol = NSImage(systemSymbolName: systemName, accessibilityDescription: accessibilityDescription)?
+            .withSymbolConfiguration(config) else {
+            return NSImage(size: canvas)
+        }
+
+        // Draw into a fixed canvas so compound SF Symbols don’t shrink in the status item.
+        let image = NSImage(size: canvas, flipped: false) { bounds in
+            let symbolSize = symbol.size
+            let scale = min(bounds.width / max(symbolSize.width, 1), bounds.height / max(symbolSize.height, 1))
+            let drawSize = NSSize(width: symbolSize.width * scale, height: symbolSize.height * scale)
+            let origin = NSPoint(
+                x: bounds.midX - drawSize.width / 2,
+                y: bounds.midY - drawSize.height / 2
+            )
+            symbol.draw(
+                in: NSRect(origin: origin, size: drawSize),
+                from: .zero,
+                operation: .sourceOver,
+                fraction: 1,
+                respectFlipped: true,
+                hints: [.interpolation: NSImageInterpolation.high]
+            )
+            return true
+        }
         image.isTemplate = true
         return image
     }
 
     private func tooltip(for state: MicState) -> String {
+        if !featuresEnabled {
+            return "LockMic: Disabled\nAgree to anonymous usage statistics to enable\nClick for menu · Preferences to agree"
+        }
+
         let holdLine: String? = {
             switch momentaryHold {
             case .none: return nil

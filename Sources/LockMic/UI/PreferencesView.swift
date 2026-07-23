@@ -104,8 +104,12 @@ struct PreferencesView: View {
                     PreferencesGeneralPage(preferences: preferences, mic: mic)
                 case .devices:
                     PreferencesDevicesPage(preferences: preferences, mic: mic)
+                        .disabled(!preferences.featuresEnabled)
+                        .opacity(preferences.featuresEnabled ? 1 : 0.45)
                 case .keyboard:
                     PreferencesKeyboardPage(preferences: preferences)
+                        .disabled(!preferences.featuresEnabled)
+                        .opacity(preferences.featuresEnabled ? 1 : 0.45)
                 case .about:
                     PreferencesAboutPage()
                 }

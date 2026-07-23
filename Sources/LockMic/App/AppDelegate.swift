@@ -16,6 +16,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Initial icon/HUD sync without toast
         status.handleMuteChanged(showHUD: false)
+
+        UsageReporter.start(shareEnabled: preferences.shareAnonymousUsage)
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        UsageReporter.flush()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
