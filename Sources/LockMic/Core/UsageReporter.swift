@@ -3,9 +3,29 @@ import os.log
 
 private let log = Logger(subsystem: "com.lockmic.app", category: "Usage")
 
-/// Anonymous GA4 Measurement Protocol — one network hit per action (and on launch).
+/// Anonymous GA4 Measurement Protocol — one network hit per action (and on launch/quit).
 @MainActor
 enum UsageReporter {
+    /// How the HUD is configured at report time.
+    enum HUDMode: String {
+        /// No toast and no floating indicator.
+        case hidden
+        /// Toast HUD on mute actions (not always on).
+        case visible
+        /// Always-on floating HUD.
+        case persistent
+    }
+
+    /// How a user action was triggered.
+    enum ActivationSource: String {
+        case keyboard
+        case hud
+        /// Left-click on the menu bar status item.
+        case menuBar = "menu_bar"
+        /// Item in the status-item context menu.
+        case menu
+    }
+
     enum Action: String, CaseIterable {
         case toggle
         case mute
@@ -51,13 +71,16 @@ enum UsageReporter {
     // MARK: - Public API
 
     /// Call once at launch after preferences are loaded.
-    static func start(shareEnabled: Bool) {
+    static func start(shareEnabled: Bool, hudMode: HUDMode) {
         self.shareEnabled = shareEnabled
         guard shareEnabled else {
             log.debug("Usage reporting disabled by preference")
             return
         }
-        send(events: [event(name: "app_start", params: baseParams())])
+
+        var params = baseParams()
+        params["hud_mode"] = hudMode.rawValue
+        send(events: [event(name: "app_start", params: params)])
     }
 
     static func setShareEnabled(_ enabled: Bool) {
@@ -65,11 +88,12 @@ enum UsageReporter {
     }
 
     /// Fire-and-forget: send this action to GA4 immediately.
-    static func record(_ action: Action) {
+    static func record(_ action: Action, source: ActivationSource) {
         guard shareEnabled else { return }
 
         var params = baseParams()
         params["action"] = action.rawValue
+        params["activation_source"] = source.rawValue
         send(events: [event(name: action.eventName, params: params)])
     }
 
@@ -77,6 +101,13 @@ enum UsageReporter {
     static func flush() {
         guard shareEnabled else { return }
         send(events: [event(name: "app_quit", params: baseParams())], waitUpTo: 2)
+    }
+
+    /// Map preference flags to a single HUD mode for analytics.
+    static func hudMode(enabled: Bool, floating: Bool) -> HUDMode {
+        if floating { return .persistent }
+        if enabled { return .visible }
+        return .hidden
     }
 
     // MARK: - Network

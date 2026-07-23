@@ -65,7 +65,7 @@ final class StatusItemController {
         statusItem = item
 
         hud.onToggle = { [weak self] in
-            self?.toggleFromUser()
+            self?.toggleFromUser(source: .hud)
         }
 
         applyFeatureAvailability(force: true)
@@ -232,17 +232,17 @@ final class StatusItemController {
         switch action {
         case .toggle:
             guard phase == .pressed, !momentaryHold.isActive else { return }
-            toggleFromUser()
+            toggleFromUser(source: .keyboard)
         case .mute:
             guard phase == .pressed, !momentaryHold.isActive else { return }
             guard !mic.effectiveMuted else { return }
-            UsageReporter.record(.mute)
+            UsageReporter.record(.mute, source: .keyboard)
             mic.setMuted(true)
             handleMuteChanged(showHUD: true)
         case .unmute:
             guard phase == .pressed, !momentaryHold.isActive else { return }
             guard mic.effectiveMuted else { return }
-            UsageReporter.record(.unmute)
+            UsageReporter.record(.unmute, source: .keyboard)
             mic.setMuted(false)
             handleMuteChanged(showHUD: true)
         case .pushToTalk:
@@ -269,15 +269,15 @@ final class StatusItemController {
             let targetMuted: Bool
             switch mode {
             case .talk:
-                UsageReporter.record(.pushToTalk)
+                UsageReporter.record(.pushToTalk, source: .keyboard)
                 momentaryHold = .pushToTalk(wasMuted: wasMuted)
                 targetMuted = false
             case .mute:
-                UsageReporter.record(.pushToMute)
+                UsageReporter.record(.pushToMute, source: .keyboard)
                 momentaryHold = .pushToMute(wasMuted: wasMuted)
                 targetMuted = true
             case .toggle:
-                UsageReporter.record(.pushToFlip)
+                UsageReporter.record(.pushToFlip, source: .keyboard)
                 momentaryHold = .pushToToggle(wasMuted: wasMuted)
                 targetMuted = !wasMuted
             }
@@ -315,12 +315,12 @@ final class StatusItemController {
         }
     }
 
-    private func toggleFromUser() {
+    private func toggleFromUser(source: UsageReporter.ActivationSource) {
         guard featuresEnabled else {
-            openPreferences()
+            presentPreferences(source: .menuBar)
             return
         }
-        UsageReporter.record(.toggle)
+        UsageReporter.record(.toggle, source: source)
         mic.toggle()
         handleMuteChanged(showHUD: true)
     }
@@ -328,7 +328,7 @@ final class StatusItemController {
     @objc private func statusItemClicked(_ sender: Any?) {
         guard let event = NSApp.currentEvent else {
             if featuresEnabled {
-                toggleFromUser()
+                toggleFromUser(source: .menuBar)
             } else {
                 showMenuFromStatusItem()
             }
@@ -337,7 +337,7 @@ final class StatusItemController {
         if event.type == .rightMouseUp || event.modifierFlags.contains(.control) {
             showMenuFromStatusItem()
         } else if featuresEnabled {
-            toggleFromUser()
+            toggleFromUser(source: .menuBar)
         } else {
             // Left-click while disabled: open menu so agreement is one click away.
             showMenuFromStatusItem()
@@ -489,7 +489,7 @@ final class StatusItemController {
     }
 
     @objc private func menuToggle() {
-        toggleFromUser()
+        toggleFromUser(source: .menu)
     }
 
     @objc private func toggleMuteAllInputs() {
@@ -510,8 +510,12 @@ final class StatusItemController {
     }
 
     @objc private func openPreferences() {
+        presentPreferences(source: .menu)
+    }
+
+    private func presentPreferences(source: UsageReporter.ActivationSource) {
         if featuresEnabled {
-            UsageReporter.record(.openPreferences)
+            UsageReporter.record(.openPreferences, source: source)
         }
         if preferencesWindow == nil {
             let view = PreferencesView(preferences: preferences, mic: mic)

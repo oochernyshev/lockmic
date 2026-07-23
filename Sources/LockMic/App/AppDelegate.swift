@@ -17,7 +17,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Initial icon/HUD sync without toast
         status.handleMuteChanged(showHUD: false)
 
-        UsageReporter.start(shareEnabled: preferences.shareAnonymousUsage)
+        UsageReporter.start(
+            shareEnabled: preferences.shareAnonymousUsage,
+            hudMode: UsageReporter.hudMode(
+                enabled: preferences.hudEnabled,
+                floating: preferences.hudFloating
+            )
+        )
     }
 
     func applicationWillTerminate(_ notification: Notification) {
