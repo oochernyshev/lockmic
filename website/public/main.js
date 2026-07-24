@@ -200,6 +200,9 @@
   };
 
   // ── Votes ───────────────────────────────────────────────────────────
+  // Counts come only from CounterAPI. Until then we show a loading indicator
+  // (no hardcoded seeds). Session high-water marks only prevent a drop when
+  // a stale GET follows a successful /up in the same page life.
   const likeBtn = document.getElementById("voteLike");
   const dislikeBtn = document.getElementById("voteDislike");
   const likeCountEl = document.getElementById("likeCount");
@@ -210,23 +213,45 @@
     const VOTE_KEY = "lockmic_vote_v1";
     const NS = "lockmic-com";
 
-    // High-water marks: never paint a lower number after a successful vote
-    // (CounterAPI GET can lag or return stale values right after /up).
-    const known = {
-      likes: Number(likeCountEl.getAttribute("data-seed")) || 0,
-      dislikes: Number(dislikeCountEl.getAttribute("data-seed")) || 0,
-    };
+    const known = { likes: null, dislikes: null };
+    let countsReady = false;
 
     const setStatus = (msg) => {
       if (voteStatus) voteStatus.textContent = msg || "";
     };
 
+    const setCountLoading = (el, label) => {
+      el.classList.add("is-loading");
+      el.classList.remove("is-empty");
+      el.removeAttribute("data-value");
+      el.removeAttribute("data-value-formatted");
+      delete el.dataset.valueFormatted;
+      delete el.dataset.value;
+      el.setAttribute("aria-busy", "true");
+      el.setAttribute("aria-label", label);
+      el.innerHTML = '<span class="rate-count-loading" aria-hidden="true"></span>';
+    };
+
+    const setCountUnavailable = (el, label) => {
+      el.classList.remove("is-loading");
+      el.classList.add("is-empty");
+      el.removeAttribute("aria-busy");
+      el.setAttribute("aria-label", label);
+      el.textContent = "—";
+      delete el.dataset.valueFormatted;
+      delete el.dataset.value;
+    };
+
     const showCount = (el, key, n, animate = true) => {
       const incoming = Math.max(0, Math.floor(Number(n) || 0));
-      const value = Math.max(known[key], incoming);
+      // Never drop below a value already shown this session (stale GET after /up)
+      const prev = known[key];
+      const value = prev == null ? incoming : Math.max(prev, incoming);
       known[key] = value;
-      // Keep data-seed in sync so later math never drags us backward
-      el.setAttribute("data-seed", String(value));
+
+      el.classList.remove("is-loading", "is-empty");
+      el.removeAttribute("aria-busy");
+      el.setAttribute("aria-label", formatCount(value));
 
       const first = !el.dataset.valueFormatted;
       if (first && animate && !prefersReducedMotion) {
@@ -254,33 +279,32 @@
       setFlipValue(el, value, { animate });
     };
 
-    showCount(likeCountEl, "likes", known.likes, true);
-    showCount(dislikeCountEl, "dislikes", known.dislikes, true);
-
     const parseCount = (data) => {
       if (!data || typeof data !== "object") return null;
-      if (data.code === 400 || data.code === "404") return null;
+      if (data.code === 400 || data.code === 404 || data.code === "400" || data.code === "404") {
+        return null;
+      }
+      if (typeof data.message === "string" && /not found/i.test(data.message)) return null;
       if (typeof data.count === "number" && Number.isFinite(data.count)) return data.count;
       if (typeof data.value === "number" && Number.isFinite(data.value)) return data.value;
       return null;
     };
 
+    // Trailing slash only — without it the API 301/404s and wastes rate limit
+    const apiGet = (name) =>
+      `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/?_=${Date.now()}`;
+    const apiUp = (name) =>
+      `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/up/?_=${Date.now()}`;
+
     const fetchCount = async (name) => {
       try {
-        const urls = [
-          `https://api.counterapi.dev/v1/${NS}/${name}`,
-          `https://api.counterapi.dev/v1/${NS}/${name}/`,
-        ];
-        for (const url of urls) {
-          const r = await fetch(url, { method: "GET", mode: "cors", cache: "no-store" });
-          const data = await r.json().catch(() => null);
-          const n = parseCount(data);
-          if (n != null) return n;
-        }
+        const r = await fetch(apiGet(name), { method: "GET", mode: "cors", cache: "no-store" });
+        const data = await r.json().catch(() => null);
+        return parseCount(data);
       } catch (e) {
         console.warn("count fetch failed", name, e);
+        return null;
       }
-      return null; // null = leave known value alone
     };
 
     const applyLocalVote = (choice) => {
@@ -295,11 +319,28 @@
       }
     };
 
+    const setVotingEnabled = (enabled) => {
+      if (localStorage.getItem(VOTE_KEY)) return;
+      likeBtn.disabled = !enabled;
+      dislikeBtn.disabled = !enabled;
+    };
+
+    // Start: loading dots only (already in HTML; re-apply if script re-runs cleanly)
+    setCountLoading(likeCountEl, "Loading likes");
+    setCountLoading(dislikeCountEl, "Loading dislikes");
+    setVotingEnabled(false);
+
     const refreshCounts = async () => {
       const [likes, dislikes] = await Promise.all([fetchCount("likes"), fetchCount("dislikes")]);
-      // Only apply remote values when present; showCount never decreases known[]
+
       if (likes != null) showCount(likeCountEl, "likes", likes, true);
+      else if (known.likes == null) setCountUnavailable(likeCountEl, "Likes unavailable");
+
       if (dislikes != null) showCount(dislikeCountEl, "dislikes", dislikes, true);
+      else if (known.dislikes == null) setCountUnavailable(dislikeCountEl, "Dislikes unavailable");
+
+      countsReady = known.likes != null || known.dislikes != null;
+      setVotingEnabled(countsReady);
     };
 
     const existing = localStorage.getItem(VOTE_KEY);
@@ -308,49 +349,34 @@
     refreshCounts();
 
     const castVote = async (choice) => {
-      if (localStorage.getItem(VOTE_KEY)) return;
+      if (localStorage.getItem(VOTE_KEY) || !countsReady) return;
       const name = choice === "like" ? "likes" : "dislikes";
       const el = choice === "like" ? likeCountEl : dislikeCountEl;
       const key = name;
+      if (known[key] == null) return;
+
       likeBtn.disabled = true;
       dislikeBtn.disabled = true;
       setStatus("Saving…");
 
-      // Optimistic +1 so UI never snaps backward if GET is stale
-      const optimistic = known[key] + 1;
+      const before = known[key];
+      const optimistic = before + 1;
       showCount(el, key, optimistic, true);
 
       try {
-        const urls = [
-          `https://api.counterapi.dev/v1/${NS}/${name}/up`,
-          `https://api.counterapi.dev/v1/${NS}/${name}/up/`,
-        ];
-        let data = null;
-        let ok = false;
-        for (const url of urls) {
-          const r = await fetch(url, { method: "GET", mode: "cors", cache: "no-store" });
-          data = await r.json().catch(() => null);
-          if (r.ok && parseCount(data) != null) {
-            ok = true;
-            break;
-          }
-        }
-        if (!ok) throw new Error("vote request failed");
-
-        localStorage.setItem(VOTE_KEY, choice);
+        const r = await fetch(apiUp(name), { method: "GET", mode: "cors", cache: "no-store" });
+        const data = await r.json().catch(() => null);
         const n = parseCount(data);
-        if (n != null) showCount(el, key, n, true);
+        if (!r.ok || n == null) throw new Error((data && data.message) || "vote failed");
+
+        // Prefer /up body, but never below optimistic (API sometimes returns stale lower)
+        showCount(el, key, Math.max(n, optimistic), true);
+        localStorage.setItem(VOTE_KEY, choice);
         applyLocalVote(choice);
-        // Delayed refresh only raises counts; never lowers
-        setTimeout(() => {
-          refreshCounts();
-        }, 800);
       } catch (err) {
         console.warn("vote failed", err);
-        // Roll back optimistic +1 only if vote failed and we didn't lock in
-        known[key] = Math.max(0, known[key] - 1);
-        el.setAttribute("data-seed", String(known[key]));
-        setFlipValue(el, known[key], { animate: true });
+        known[key] = before;
+        setFlipValue(el, before, { animate: true });
         likeBtn.disabled = false;
         dislikeBtn.disabled = false;
         setStatus("Could not save vote. Try again later.");

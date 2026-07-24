@@ -781,10 +781,49 @@ kbd {
   letter-spacing: -0.03em;
   line-height: 1;
   color: var(--text);
-  min-height: 1.15em;
+  min-height: 1.28em;
+  min-width: 3.2em;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+.rate-count.is-loading,
+.rate-count.is-empty {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  min-width: 3.2em;
+}
+/* Three-dot loading indicator (centered under the label) */
+.rate-count-loading {
+  display: inline-block;
+  width: 0.38em;
+  height: 0.38em;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow:
+    0.72em 0 0 currentColor,
+    1.44em 0 0 currentColor;
+  margin-right: 1.44em;
+  animation: rate-dot-pulse 1s ease-in-out infinite;
+  opacity: 0.55;
+}
+@keyframes rate-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rate-count-loading {
+    animation: none;
+    opacity: 0.5;
+  }
 }
 .rate-btn.is-selected .rate-label {
   color: var(--text);

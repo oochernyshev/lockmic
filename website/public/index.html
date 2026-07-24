@@ -483,23 +483,21 @@ open /Applications/LockMic.app</code></pre>
             <span class="rate-emoji" aria-hidden="true">👍</span>
             <span class="rate-label">Like</span>
             <span
-              class="rate-count flip-counter"
+              class="rate-count flip-counter is-loading"
               id="likeCount"
-              data-seed="1397"
-              data-value="1397"
-              aria-label="1397 likes"
-            ></span>
+              aria-busy="true"
+              aria-label="Loading likes"
+            ><span class="rate-count-loading" aria-hidden="true"></span></span>
           </button>
           <button type="button" class="rate-btn rate-dislike" id="voteDislike" aria-pressed="false">
             <span class="rate-emoji" aria-hidden="true">👎</span>
             <span class="rate-label">Dislike</span>
             <span
-              class="rate-count flip-counter"
+              class="rate-count flip-counter is-loading"
               id="dislikeCount"
-              data-seed="43"
-              data-value="43"
-              aria-label="43 dislikes"
-            ></span>
+              aria-busy="true"
+              aria-label="Loading dislikes"
+            ><span class="rate-count-loading" aria-hidden="true"></span></span>
           </button>
         </div>
         <p class="rate-status" id="voteStatus" role="status" aria-live="polite"></p>
@@ -542,6 +540,6 @@ open /Applications/LockMic.app</code></pre>
     </div>
   </footer>
 
-  <script src="main.js?v=1.2.1-odo2" defer></script>
+  <script src="main.js?v=1.2.1-odo4" defer></script>
 </body>
 </html>
