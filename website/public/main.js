@@ -201,12 +201,13 @@
 
   // ── Votes ───────────────────────────────────────────────────────────
   // Counts come only from CounterAPI. Loading indicator until first fetch.
-  // Vote UI updates only after /up succeeds and a follow-up GET confirms.
+  // Vote UI updates only after /up (or /down on remove) and a follow-up GET.
   const likeBtn = document.getElementById("voteLike");
   const dislikeBtn = document.getElementById("voteDislike");
   const likeCountEl = document.getElementById("likeCount");
   const dislikeCountEl = document.getElementById("dislikeCount");
   const voteStatus = document.getElementById("voteStatus");
+  const removeBtn = document.getElementById("voteRemove");
 
   if (likeBtn && dislikeBtn && likeCountEl && dislikeCountEl) {
     const VOTE_KEY = "lockmic_vote_v1";
@@ -214,9 +215,16 @@
 
     const known = { likes: null, dislikes: null };
     let countsReady = false;
+    let voteBusy = false;
 
     const setStatus = (msg) => {
       if (voteStatus) voteStatus.textContent = msg || "";
+    };
+
+    const setRemoveVisible = (visible) => {
+      if (!removeBtn) return;
+      if (visible) removeBtn.removeAttribute("hidden");
+      else removeBtn.setAttribute("hidden", "");
     };
 
     const skeletonHtml = (digits) => {
@@ -246,11 +254,13 @@
       delete el.dataset.value;
     };
 
-    const showCount = (el, key, n, animate = true) => {
+    // force: trust remote even if lower (used after /down remove)
+    const showCount = (el, key, n, animate = true, { force = false } = {}) => {
       const incoming = Math.max(0, Math.floor(Number(n) || 0));
       // Never drop below a value already shown this session (stale GET after /up)
+      // unless force (intentional remove via /down).
       const prev = known[key];
-      const value = prev == null ? incoming : Math.max(prev, incoming);
+      const value = force || prev == null ? incoming : Math.max(prev, incoming);
       known[key] = value;
 
       el.classList.remove("is-loading", "is-empty");
@@ -295,12 +305,15 @@
     };
 
     // CounterAPI is picky about trailing slashes (301s drop CORS headers in browsers):
-    //   GET  → .../likes/     (slash required)
-    //   /up  → .../likes/up   (no slash)
+    //   GET   → .../likes/       (slash required)
+    //   /up   → .../likes/up     (no slash)
+    //   /down → .../likes/down   (no slash)
     const apiGet = (name) =>
       `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/?_=${Date.now()}`;
     const apiUp = (name) =>
       `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/up?_=${Date.now()}`;
+    const apiDown = (name) =>
+      `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/down?_=${Date.now()}`;
 
     const fetchCount = async (name) => {
       try {
@@ -318,6 +331,15 @@
       }
     };
 
+    const clearLocalVote = () => {
+      likeBtn.classList.remove("is-selected");
+      dislikeBtn.classList.remove("is-selected");
+      likeBtn.setAttribute("aria-pressed", "false");
+      dislikeBtn.setAttribute("aria-pressed", "false");
+      setRemoveVisible(false);
+      if (removeBtn) removeBtn.disabled = false;
+    };
+
     const applyLocalVote = (choice) => {
       likeBtn.classList.toggle("is-selected", choice === "like");
       dislikeBtn.classList.toggle("is-selected", choice === "dislike");
@@ -326,12 +348,16 @@
       if (choice) {
         likeBtn.disabled = true;
         dislikeBtn.disabled = true;
+        setRemoveVisible(true);
+        if (removeBtn) removeBtn.disabled = false;
         setStatus(choice === "like" ? "Thanks — you liked LockMic." : "Thanks — you voted dislike.");
+      } else {
+        clearLocalVote();
       }
     };
 
     const setVotingEnabled = (enabled) => {
-      if (localStorage.getItem(VOTE_KEY)) return;
+      if (localStorage.getItem(VOTE_KEY) || voteBusy) return;
       likeBtn.disabled = !enabled;
       dislikeBtn.disabled = !enabled;
     };
@@ -340,6 +366,7 @@
     setCountLoading(likeCountEl, "Loading likes", 4);
     setCountLoading(dislikeCountEl, "Loading dislikes", 2);
     setVotingEnabled(false);
+    setRemoveVisible(false);
 
     const refreshCounts = async () => {
       const [likes, dislikes] = await Promise.all([fetchCount("likes"), fetchCount("dislikes")]);
@@ -360,14 +387,16 @@
     refreshCounts();
 
     const castVote = async (choice) => {
-      if (localStorage.getItem(VOTE_KEY) || !countsReady) return;
+      if (voteBusy || localStorage.getItem(VOTE_KEY) || !countsReady) return;
       const name = choice === "like" ? "likes" : "dislikes";
       const el = choice === "like" ? likeCountEl : dislikeCountEl;
       const key = name;
       if (known[key] == null) return;
 
+      voteBusy = true;
       likeBtn.disabled = true;
       dislikeBtn.disabled = true;
+      if (removeBtn) removeBtn.disabled = true;
       setStatus("Saving…");
 
       try {
@@ -398,10 +427,57 @@
           dislikeBtn.disabled = false;
         }
         setStatus("Could not save vote. Try again later.");
+      } finally {
+        voteBusy = false;
+      }
+    };
+
+    const removeVote = async () => {
+      const choice = localStorage.getItem(VOTE_KEY);
+      if (voteBusy || (choice !== "like" && choice !== "dislike") || !countsReady) return;
+      const name = choice === "like" ? "likes" : "dislikes";
+      const el = choice === "like" ? likeCountEl : dislikeCountEl;
+      const key = name;
+      if (known[key] == null) return;
+
+      voteBusy = true;
+      likeBtn.disabled = true;
+      dislikeBtn.disabled = true;
+      if (removeBtn) removeBtn.disabled = true;
+      setStatus("Removing…");
+
+      try {
+        const r = await fetch(apiDown(name), {
+          method: "GET",
+          mode: "cors",
+          cache: "no-store",
+          redirect: "error",
+        });
+        const data = await r.json().catch(() => null);
+        const saved = parseCount(data);
+        if (!r.ok || saved == null) throw new Error((data && data.message) || "remove failed");
+
+        const retrieved = await fetchCount(name);
+        if (retrieved == null) throw new Error("could not read updated count");
+
+        // Prefer the lower of the two remotes after /down (GET can lag)
+        showCount(el, key, Math.min(saved, retrieved), true, { force: true });
+        localStorage.removeItem(VOTE_KEY);
+        clearLocalVote();
+        setStatus("Vote removed.");
+        setVotingEnabled(true);
+      } catch (err) {
+        console.warn("remove vote failed", err);
+        // Keep selection; re-enable remove so the user can retry
+        if (removeBtn) removeBtn.disabled = false;
+        setStatus("Could not remove vote. Try again later.");
+      } finally {
+        voteBusy = false;
       }
     };
 
     likeBtn.addEventListener("click", () => castVote("like"));
     dislikeBtn.addEventListener("click", () => castVote("dislike"));
+    if (removeBtn) removeBtn.addEventListener("click", () => removeVote());
   }
 })();

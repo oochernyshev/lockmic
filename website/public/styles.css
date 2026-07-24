@@ -988,9 +988,38 @@ kbd {
     transition: none;
   }
 }
+.rate-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px auto 0;
+  padding: 8px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s var(--ease);
+}
+.rate-remove:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+.rate-remove:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.rate-remove[hidden] {
+  display: none;
+}
 .rate-status {
   min-height: 1.5em;
-  margin: 22px 0 0;
+  margin: 14px 0 0;
   font-size: 1rem;
   font-weight: 600;
   color: var(--accent);
