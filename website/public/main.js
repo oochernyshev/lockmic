@@ -210,12 +210,130 @@
   const removeBtn = document.getElementById("voteRemove");
 
   if (likeBtn && dislikeBtn && likeCountEl && dislikeCountEl) {
-    const VOTE_KEY = "lockmic_vote_v1";
+    // Opaque storage slot. Value is a fresh client-minted JWT each vote
+    // (unique jti), not a fixed like/dislike string.
+    // Not a security boundary: the signing material ships in this file.
+    // Stops casual localStorage edits / makes values non-constant.
+    const VOTE_KEY = "lm_c7a91e2b4f0d8e3a";
+    // Client-only HMAC material (obfuscation, not auth)
+    const VOTE_JWT_SECRET = "lm.v1.k.7f3c9a1e2b8d4f0a6c5e9b2d";
     const NS = "lockmic-com";
 
     const known = { likes: null, dislikes: null };
     let countsReady = false;
     let voteBusy = false;
+    /** @type {"like"|"dislike"|null} */
+    let localChoice = null;
+
+    const te = new TextEncoder();
+    const td = new TextDecoder();
+
+    const bytesToB64url = (bytes) => {
+      const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+      let bin = "";
+      for (let i = 0; i < arr.length; i++) bin += String.fromCharCode(arr[i]);
+      return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    };
+
+    const strToB64url = (str) => bytesToB64url(te.encode(str));
+
+    const b64urlToBytes = (s) => {
+      const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
+      const b64 = s.replace(/-/g, "+").replace(/_/g, "/") + pad;
+      const bin = atob(b64);
+      const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+      return out;
+    };
+
+    const b64urlToStr = (s) => td.decode(b64urlToBytes(s));
+
+    const randomJti = () => {
+      const buf = new Uint8Array(16);
+      if (globalThis.crypto && crypto.getRandomValues) crypto.getRandomValues(buf);
+      else for (let i = 0; i < buf.length; i++) buf[i] = (Math.random() * 256) | 0;
+      return Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
+    };
+
+    let hmacKeyPromise = null;
+    const getHmacKey = () => {
+      if (!hmacKeyPromise) {
+        if (!globalThis.crypto || !crypto.subtle) {
+          hmacKeyPromise = Promise.reject(new Error("no WebCrypto"));
+        } else {
+          hmacKeyPromise = crypto.subtle.importKey(
+            "raw",
+            te.encode(VOTE_JWT_SECRET),
+            { name: "HMAC", hash: "SHA-256" },
+            false,
+            ["sign", "verify"]
+          );
+        }
+      }
+      return hmacKeyPromise;
+    };
+
+    /** HS256 JWT: header.payload.sig — payload { v: 0|1, iat, jti } */
+    const mintVoteJwt = async (choice) => {
+      if (choice !== "like" && choice !== "dislike") throw new Error("bad choice");
+      const header = strToB64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+      const payload = strToB64url(
+        JSON.stringify({
+          v: choice === "like" ? 1 : 0,
+          iat: Math.floor(Date.now() / 1000),
+          jti: randomJti(),
+        })
+      );
+      const data = `${header}.${payload}`;
+      const key = await getHmacKey();
+      const sig = await crypto.subtle.sign("HMAC", key, te.encode(data));
+      return `${data}.${bytesToB64url(sig)}`;
+    };
+
+    const parseVoteJwt = async (token) => {
+      if (typeof token !== "string") return null;
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      try {
+        const [h, p, s] = parts;
+        const key = await getHmacKey();
+        const ok = await crypto.subtle.verify("HMAC", key, b64urlToBytes(s), te.encode(`${h}.${p}`));
+        if (!ok) return null;
+        const claims = JSON.parse(b64urlToStr(p));
+        if (claims.v === 1) return "like";
+        if (claims.v === 0) return "dislike";
+        return null;
+      } catch {
+        return null;
+      }
+    };
+
+    const readStoredVote = async () => {
+      try {
+        const raw = localStorage.getItem(VOTE_KEY);
+        if (!raw) return null;
+        return parseVoteJwt(raw);
+      } catch {
+        return null;
+      }
+    };
+
+    const writeStoredVote = async (choice) => {
+      if (choice !== "like" && choice !== "dislike") return;
+      try {
+        localStorage.setItem(VOTE_KEY, await mintVoteJwt(choice));
+      } catch {
+        /* ignore quota / private mode / crypto */
+      }
+    };
+
+    const clearStoredVote = () => {
+      try {
+        localStorage.removeItem(VOTE_KEY);
+      } catch {
+        /* ignore */
+      }
+    };
 
     const setStatus = (msg) => {
       if (voteStatus) voteStatus.textContent = msg || "";
@@ -357,7 +475,7 @@
     };
 
     const setVotingEnabled = (enabled) => {
-      if (localStorage.getItem(VOTE_KEY) || voteBusy) return;
+      if (localChoice || voteBusy) return;
       likeBtn.disabled = !enabled;
       dislikeBtn.disabled = !enabled;
     };
@@ -381,13 +499,16 @@
       setVotingEnabled(countsReady);
     };
 
-    const existing = localStorage.getItem(VOTE_KEY);
-    if (existing === "like" || existing === "dislike") applyLocalVote(existing);
-
+    // Restore prior vote (JWT or legacy), then load public counts
+    readStoredVote().then((existing) => {
+      localChoice = existing;
+      if (existing) applyLocalVote(existing);
+      else setVotingEnabled(countsReady);
+    });
     refreshCounts();
 
     const castVote = async (choice) => {
-      if (voteBusy || localStorage.getItem(VOTE_KEY) || !countsReady) return;
+      if (voteBusy || localChoice || !countsReady) return;
       const name = choice === "like" ? "likes" : "dislikes";
       const el = choice === "like" ? likeCountEl : dislikeCountEl;
       const key = name;
@@ -417,12 +538,13 @@
 
         // Use the higher of the two remote values (GET can lag behind /up)
         showCount(el, key, Math.max(saved, retrieved), true);
-        localStorage.setItem(VOTE_KEY, choice);
+        await writeStoredVote(choice);
+        localChoice = choice;
         applyLocalVote(choice);
       } catch (err) {
         console.warn("vote failed", err);
         // Count unchanged — only re-enable if this browser has not already voted
-        if (!localStorage.getItem(VOTE_KEY)) {
+        if (!localChoice) {
           likeBtn.disabled = false;
           dislikeBtn.disabled = false;
         }
@@ -433,8 +555,8 @@
     };
 
     const removeVote = async () => {
-      const choice = localStorage.getItem(VOTE_KEY);
-      if (voteBusy || (choice !== "like" && choice !== "dislike") || !countsReady) return;
+      const choice = localChoice;
+      if (voteBusy || !choice || !countsReady) return;
       const name = choice === "like" ? "likes" : "dislikes";
       const el = choice === "like" ? likeCountEl : dislikeCountEl;
       const key = name;
@@ -462,7 +584,8 @@
 
         // Prefer the lower of the two remotes after /down (GET can lag)
         showCount(el, key, Math.min(saved, retrieved), true, { force: true });
-        localStorage.removeItem(VOTE_KEY);
+        clearStoredVote();
+        localChoice = null;
         clearLocalVote();
         setStatus("Vote removed.");
         setVotingEnabled(true);
