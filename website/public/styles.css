@@ -1068,23 +1068,28 @@ kbd {
   font-weight: 800;
   letter-spacing: -0.02em;
 }
-.rate-like .odo-digit {
+.rate-like .odo-digit:not(.is-comma) {
   --odo-face: #101a16;
 }
-.rate-dislike .odo-digit {
+.rate-dislike .odo-digit:not(.is-comma) {
   --odo-face: #1a1214;
 }
-.rate-btn.is-selected.rate-like .odo-digit {
+/* Digit tiles only — commas must stay borderless (selected state used to paint a green box on ",") */
+.rate-btn.is-selected.rate-like .odo-digit:not(.is-comma) {
   --odo-ink: #ecfdf5;
   box-shadow:
     0 8px 20px rgba(16, 185, 129, 0.2),
     inset 0 0 0 1px rgba(52, 211, 153, 0.25);
 }
-.rate-btn.is-selected.rate-dislike .odo-digit {
+.rate-btn.is-selected.rate-dislike .odo-digit:not(.is-comma) {
   --odo-ink: #fef2f2;
   box-shadow:
     0 8px 20px rgba(248, 113, 113, 0.18),
     inset 0 0 0 1px rgba(248, 113, 113, 0.22);
+}
+.rate-btn.is-selected .odo-digit.is-comma {
+  background: transparent;
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
