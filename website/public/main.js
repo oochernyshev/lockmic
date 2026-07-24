@@ -449,6 +449,11 @@
       }
     };
 
+    const setVoteButtonsDisabled = (disabled) => {
+      likeBtn.disabled = disabled;
+      dislikeBtn.disabled = disabled;
+    };
+
     const clearLocalVote = () => {
       likeBtn.classList.remove("is-selected");
       dislikeBtn.classList.remove("is-selected");
@@ -464,8 +469,7 @@
       likeBtn.setAttribute("aria-pressed", choice === "like" ? "true" : "false");
       dislikeBtn.setAttribute("aria-pressed", choice === "dislike" ? "true" : "false");
       if (choice) {
-        likeBtn.disabled = true;
-        dislikeBtn.disabled = true;
+        setVoteButtonsDisabled(true);
         setRemoveVisible(true);
         if (removeBtn) removeBtn.disabled = false;
         setStatus(choice === "like" ? "Thanks — you liked LockMic." : "Thanks — you voted dislike.");
@@ -476,8 +480,7 @@
 
     const setVotingEnabled = (enabled) => {
       if (localChoice || voteBusy) return;
-      likeBtn.disabled = !enabled;
-      dislikeBtn.disabled = !enabled;
+      setVoteButtonsDisabled(!enabled);
     };
 
     // Start: shimmering digit shells until CounterAPI responds
@@ -515,8 +518,7 @@
       if (known[key] == null) return;
 
       voteBusy = true;
-      likeBtn.disabled = true;
-      dislikeBtn.disabled = true;
+      setVoteButtonsDisabled(true);
       if (removeBtn) removeBtn.disabled = true;
       setStatus("Saving…");
 
@@ -544,10 +546,7 @@
       } catch (err) {
         console.warn("vote failed", err);
         // Count unchanged — only re-enable if this browser has not already voted
-        if (!localChoice) {
-          likeBtn.disabled = false;
-          dislikeBtn.disabled = false;
-        }
+        if (!localChoice) setVoteButtonsDisabled(false);
         setStatus("Could not save vote. Try again later.");
       } finally {
         voteBusy = false;
@@ -563,8 +562,7 @@
       if (known[key] == null) return;
 
       voteBusy = true;
-      likeBtn.disabled = true;
-      dislikeBtn.disabled = true;
+      setVoteButtonsDisabled(true);
       if (removeBtn) removeBtn.disabled = true;
       setStatus("Removing…");
 
@@ -588,7 +586,9 @@
         localChoice = null;
         clearLocalVote();
         setStatus("Vote removed.");
-        setVotingEnabled(true);
+        // Re-enable now — do not use setVotingEnabled while voteBusy is still true
+        // (that helper no-ops when voteBusy, which left buttons stuck disabled).
+        setVoteButtonsDisabled(false);
       } catch (err) {
         console.warn("remove vote failed", err);
         // Keep selection; re-enable remove so the user can retry
