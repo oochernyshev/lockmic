@@ -38,7 +38,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1.2.1-flip" />
+  <link rel="stylesheet" href="styles.css?v=1.2.1-odo2" />
 
   <!-- Structured data: SoftwareApplication -->
   <script type="application/ld+json">
@@ -314,44 +314,6 @@
       </div>
     </section>
 
-    <!-- Rate / like-dislike -->
-    <section class="section" id="rate" aria-labelledby="rate-heading">
-      <div class="rate-card reveal">
-        <p class="eyebrow">Community</p>
-        <h2 id="rate-heading">Do you like LockMic?</h2>
-        <p class="section-lead rate-lead">Tap once — one vote per browser. Counts update for everyone.</p>
-        <div class="rate-actions" role="group" aria-label="Like or dislike LockMic">
-          <button type="button" class="rate-btn rate-like" id="voteLike" aria-pressed="false">
-            <span class="rate-emoji" aria-hidden="true">👍</span>
-            <span class="rate-label">Like</span>
-            <span
-              class="rate-count flip-counter"
-              id="likeCount"
-              data-seed="1397"
-              data-value="1397"
-              aria-label="1397 likes"
-            ></span>
-          </button>
-          <button type="button" class="rate-btn rate-dislike" id="voteDislike" aria-pressed="false">
-            <span class="rate-emoji" aria-hidden="true">👎</span>
-            <span class="rate-label">Dislike</span>
-            <span
-              class="rate-count flip-counter"
-              id="dislikeCount"
-              data-seed="43"
-              data-value="43"
-              aria-label="43 dislikes"
-            ></span>
-          </button>
-        </div>
-        <p class="rate-status" id="voteStatus" role="status" aria-live="polite"></p>
-        <p class="rate-note">
-          Want to say more?
-          <a href="https://github.com/oochernyshev/lockmic/issues/new?template=feedback.yml" rel="noopener noreferrer" target="_blank">Send feedback on GitHub</a>
-        </p>
-      </div>
-    </section>
-
     <!-- Features -->
     <section class="section" id="features">
       <div class="section-head reveal">
@@ -510,6 +472,44 @@ open /Applications/LockMic.app</code></pre>
       </div>
     </section>
 
+    <!-- Rate / like-dislike (after FAQ) -->
+    <section class="section" id="rate" aria-labelledby="rate-heading">
+      <div class="rate-card reveal">
+        <p class="eyebrow">Community</p>
+        <h2 id="rate-heading">Do you like LockMic?</h2>
+        <p class="section-lead rate-lead">Tap once — one vote per browser. Counts update for everyone.</p>
+        <div class="rate-actions" role="group" aria-label="Like or dislike LockMic">
+          <button type="button" class="rate-btn rate-like" id="voteLike" aria-pressed="false">
+            <span class="rate-emoji" aria-hidden="true">👍</span>
+            <span class="rate-label">Like</span>
+            <span
+              class="rate-count flip-counter"
+              id="likeCount"
+              data-seed="1397"
+              data-value="1397"
+              aria-label="1397 likes"
+            ></span>
+          </button>
+          <button type="button" class="rate-btn rate-dislike" id="voteDislike" aria-pressed="false">
+            <span class="rate-emoji" aria-hidden="true">👎</span>
+            <span class="rate-label">Dislike</span>
+            <span
+              class="rate-count flip-counter"
+              id="dislikeCount"
+              data-seed="43"
+              data-value="43"
+              aria-label="43 dislikes"
+            ></span>
+          </button>
+        </div>
+        <p class="rate-status" id="voteStatus" role="status" aria-live="polite"></p>
+        <p class="rate-note">
+          Want to say more?
+          <a href="https://github.com/oochernyshev/lockmic/issues/new?template=feedback.yml" rel="noopener noreferrer" target="_blank">Send feedback on GitHub</a>
+        </p>
+      </div>
+    </section>
+
     <!-- CTA footer band -->
     <section class="cta-band">
       <div class="cta-inner reveal">
@@ -542,6 +542,6 @@ open /Applications/LockMic.app</code></pre>
     </div>
   </footer>
 
-  <script src="main.js?v=1.2.1-flip" defer></script>
+  <script src="main.js?v=1.2.1-odo2" defer></script>
 </body>
 </html>

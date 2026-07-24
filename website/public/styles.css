@@ -790,178 +790,124 @@ kbd {
   color: var(--text);
 }
 
-/* Split-flap / flip digits */
+/* Odometer-style digit rollers (full digits, smooth flip) */
 .flip-counter {
-  --flip-h: 1.2em;
-  --flip-w: 0.72em;
-  --flip-gap: 0.14em;
-  --flip-radius: 0.18em;
-  --flip-face: #12151e;
-  --flip-face-edge: #1c2130;
-  --flip-ink: #f4f6fb;
-  --flip-line: rgba(255, 255, 255, 0.1);
+  --odo-h: 1.28em;
+  --odo-w: 0.78em;
+  --odo-gap: 0.12em;
+  --odo-radius: 0.2em;
+  --odo-face: #141824;
+  --odo-ink: #f4f6fb;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--flip-gap);
-  perspective: 600px;
+  gap: var(--odo-gap);
   font-family: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Monaco, Consolas, monospace;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   user-select: none;
+  line-height: 1;
 }
-.flip-digit {
+.odo-digit {
   position: relative;
-  width: var(--flip-w);
-  height: var(--flip-h);
-  font-size: 1em;
-  border-radius: var(--flip-radius);
+  width: var(--odo-w);
+  height: var(--odo-h);
+  border-radius: var(--odo-radius);
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.35)),
+    var(--odo-face);
   box-shadow:
-    0 6px 14px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  background: var(--flip-face);
+    0 8px 18px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
-.flip-digit.is-comma {
-  width: 0.32em;
+.odo-digit.is-comma {
+  width: 0.34em;
   background: transparent;
   box-shadow: none;
+  overflow: visible;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 0.12em;
+  padding-bottom: 0.08em;
   color: var(--text-muted);
-  font-size: 0.75em;
+  font-size: 0.78em;
   font-weight: 800;
 }
-.flip-card {
+/* subtle vignette so digits read cleanly */
+.odo-digit:not(.is-comma)::before {
+  content: "";
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.25) 0%,
+    transparent 18%,
+    transparent 82%,
+    rgba(0, 0, 0, 0.35) 100%
+  );
 }
-.flip-card > span {
+/* center hairline for “mechanical” look */
+.odo-digit:not(.is-comma)::after {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 50%;
+  height: 1px;
+  z-index: 3;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+.odo-ribbon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transition: transform 0.7s cubic-bezier(0.2, 0.85, 0.25, 1);
+  color: var(--odo-ink);
+  z-index: 1;
+}
+.odo-ribbon span {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: absolute;
-  left: 0;
   width: 100%;
-  height: 50%;
-  overflow: hidden;
-  color: var(--flip-ink);
-  background: linear-gradient(180deg, var(--flip-face-edge), var(--flip-face));
-  backface-visibility: hidden;
+  height: var(--odo-h);
+  flex: 0 0 var(--odo-h);
+  font-size: 0.92em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
-.flip-top,
-.flip-back-top {
-  top: 0;
-  border-radius: var(--flip-radius) var(--flip-radius) 0 0;
+.rate-like .odo-digit {
+  --odo-face: #101a16;
 }
-.flip-top::after,
-.flip-back-top::after {
-  content: attr(data-digit);
-  display: block;
-  width: 100%;
-  height: 200%;
-  line-height: var(--flip-h);
-  text-align: center;
+.rate-dislike .odo-digit {
+  --odo-face: #1a1214;
 }
-.flip-bottom,
-.flip-back-bottom {
-  bottom: 0;
-  border-radius: 0 0 var(--flip-radius) var(--flip-radius);
-}
-.flip-bottom::after,
-.flip-back-bottom::after {
-  content: attr(data-digit);
-  display: block;
-  width: 100%;
-  height: 200%;
-  margin-top: -100%;
-  line-height: var(--flip-h);
-  text-align: center;
-}
-/* hinge line */
-.flip-digit::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 1px;
-  background: var(--flip-line);
-  z-index: 5;
-  pointer-events: none;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
-}
-.flip-back-top,
-.flip-back-bottom {
-  z-index: 2;
-}
-.flip-top {
-  z-index: 3;
-  transform-origin: bottom center;
-  background: linear-gradient(180deg, #1a1f2c, #141824);
-}
-.flip-bottom {
-  z-index: 1;
-  background: linear-gradient(180deg, #0e1118, #151a26);
-}
-.flip-back-top {
-  transform-origin: bottom center;
-  transform: rotateX(180deg);
-  background: linear-gradient(180deg, #1a1f2c, #141824);
-}
-.flip-back-bottom {
-  transform-origin: top center;
-  transform: rotateX(180deg);
-  background: linear-gradient(180deg, #0e1118, #151a26);
-  z-index: 4;
-}
-
-/* animate: top half folds down, bottom half folds up */
-.flip-digit.flipping .flip-top {
-  animation: flipTop 0.45s ease-in forwards;
-  z-index: 6;
-}
-.flip-digit.flipping .flip-back-bottom {
-  animation: flipBottom 0.45s ease-out forwards;
-  z-index: 6;
-}
-
-@keyframes flipTop {
-  0% { transform: rotateX(0deg); }
-  100% { transform: rotateX(-90deg); }
-}
-@keyframes flipBottom {
-  0% { transform: rotateX(90deg); }
-  100% { transform: rotateX(0deg); }
-}
-
-.rate-like .flip-digit {
-  --flip-face: #101820;
-  --flip-face-edge: #15241c;
-}
-.rate-dislike .flip-digit {
-  --flip-face: #1a1214;
-  --flip-face-edge: #241518;
-}
-.rate-btn.is-selected.rate-like .flip-digit {
-  --flip-ink: #ecfdf5;
+.rate-btn.is-selected.rate-like .odo-digit {
+  --odo-ink: #ecfdf5;
   box-shadow:
-    0 6px 16px rgba(16, 185, 129, 0.18),
-    inset 0 0 0 1px rgba(52, 211, 153, 0.2);
+    0 8px 20px rgba(16, 185, 129, 0.2),
+    inset 0 0 0 1px rgba(52, 211, 153, 0.25);
 }
-.rate-btn.is-selected.rate-dislike .flip-digit {
-  --flip-ink: #fef2f2;
+.rate-btn.is-selected.rate-dislike .odo-digit {
+  --odo-ink: #fef2f2;
   box-shadow:
-    0 6px 16px rgba(248, 113, 113, 0.16),
-    inset 0 0 0 1px rgba(248, 113, 113, 0.2);
+    0 8px 20px rgba(248, 113, 113, 0.18),
+    inset 0 0 0 1px rgba(248, 113, 113, 0.22);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .flip-digit.flipping .flip-top,
-  .flip-digit.flipping .flip-back-bottom {
-    animation: none;
+  .odo-ribbon {
+    transition: none;
   }
 }
 .rate-status {

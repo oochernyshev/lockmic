@@ -92,7 +92,7 @@
       .catch(() => {});
   }
 
-  // ── Split-flap flip counters ─────────────────────────────────────────
+  // ── Odometer flip counters ──────────────────────────────────────────
   const prefersReducedMotion =
     typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -101,98 +101,101 @@
     return new Intl.NumberFormat("en-US").format(v);
   };
 
-  /** Build / update a flip-counter element to show `value`. */
+  const DIGITS = "0123456789";
+
+  const buildDigit = (digitChar) => {
+    const wrap = document.createElement("span");
+    wrap.className = "odo-digit";
+    wrap.setAttribute("aria-hidden", "true");
+    const ribbon = document.createElement("span");
+    ribbon.className = "odo-ribbon";
+    for (let i = 0; i < DIGITS.length; i++) {
+      const s = document.createElement("span");
+      s.textContent = DIGITS[i];
+      ribbon.appendChild(s);
+    }
+    // start at 0
+    const d = Number(digitChar);
+    ribbon.style.transform = `translateY(${-d * 10}%)`;
+    ribbon.dataset.digit = String(d);
+    wrap.appendChild(ribbon);
+    return wrap;
+  };
+
+  const buildComma = () => {
+    const comma = document.createElement("span");
+    comma.className = "odo-digit is-comma";
+    comma.textContent = ",";
+    comma.setAttribute("aria-hidden", "true");
+    return comma;
+  };
+
+  /** Render / animate odometer to `value`. */
   const setFlipValue = (root, value, { animate = true } = {}) => {
     if (!root) return;
     const next = Math.max(0, Math.floor(Number(value) || 0));
-    const nextStr = formatCount(next); // e.g. "1,397"
+    const nextStr = formatCount(next);
     const prevStr = root.dataset.valueFormatted || "";
     root.dataset.value = String(next);
     root.dataset.valueFormatted = nextStr;
     root.setAttribute("aria-label", nextStr);
 
-    const reduce = prefersReducedMotion || !animate;
     const chars = nextStr.split("");
     const prevChars = prevStr ? prevStr.split("") : [];
+    const reduce = prefersReducedMotion || !animate;
 
-    // Rebuild structure when length changes
+    // Rebuild when length / shape changes
     if (root.childElementCount !== chars.length) {
       root.textContent = "";
       chars.forEach((ch) => {
-        if (ch === ",") {
-          const comma = document.createElement("span");
-          comma.className = "flip-digit is-comma";
-          comma.textContent = ",";
-          comma.setAttribute("aria-hidden", "true");
-          root.appendChild(comma);
-          return;
-        }
-        const digit = document.createElement("span");
-        digit.className = "flip-digit";
-        digit.setAttribute("aria-hidden", "true");
-        digit.innerHTML = `
-          <span class="flip-card">
-            <span class="flip-top" data-digit="${ch}"></span>
-            <span class="flip-bottom" data-digit="${ch}"></span>
-            <span class="flip-back-top" data-digit="${ch}"></span>
-            <span class="flip-back-bottom" data-digit="${ch}"></span>
-          </span>`;
-        root.appendChild(digit);
+        root.appendChild(ch === "," ? buildComma() : buildDigit(ch === "," ? "0" : ch));
+      });
+      // set positions
+      Array.from(root.children).forEach((child, i) => {
+        if (child.classList.contains("is-comma")) return;
+        const ribbon = child.querySelector(".odo-ribbon");
+        const d = Number(chars[i]);
+        if (!ribbon || !Number.isFinite(d)) return;
+        ribbon.style.transition = reduce ? "none" : "";
+        ribbon.style.transform = `translateY(${-d * 10}%)`;
+        ribbon.dataset.digit = String(d);
       });
       return;
     }
 
-    // Same structure — flip digits that changed (right-to-left cascade)
+    // Same shape — roll digits that changed (cascade from right)
     const children = Array.from(root.children);
     let delay = 0;
     for (let i = children.length - 1; i >= 0; i--) {
-      const el = children[i];
-      if (el.classList.contains("is-comma")) continue;
+      const child = children[i];
+      if (child.classList.contains("is-comma")) continue;
       const ch = chars[i];
-      const oldCh = prevChars[i];
-      const top = el.querySelector(".flip-top");
-      const bottom = el.querySelector(".flip-bottom");
-      const backTop = el.querySelector(".flip-back-top");
-      const backBottom = el.querySelector(".flip-back-bottom");
-      if (!top || !bottom || !backTop || !backBottom) continue;
+      const d = Number(ch);
+      if (!Number.isFinite(d)) continue;
+      const ribbon = child.querySelector(".odo-ribbon");
+      if (!ribbon) continue;
+      const old = ribbon.dataset.digit;
+      if (old === String(d) && prevStr) continue;
 
-      if (reduce || oldCh === ch || oldCh == null) {
-        top.dataset.digit = ch;
-        bottom.dataset.digit = ch;
-        backTop.dataset.digit = ch;
-        backBottom.dataset.digit = ch;
-        continue;
-      }
-
-      // Prepare: current on top/bottom, new on back faces
-      top.dataset.digit = oldCh;
-      bottom.dataset.digit = oldCh;
-      backTop.dataset.digit = ch;
-      backBottom.dataset.digit = ch;
-
-      const runFlip = () => {
-        el.classList.remove("flipping");
-        // force reflow
-        void el.offsetWidth;
-        el.classList.add("flipping");
-        const done = () => {
-          top.dataset.digit = ch;
-          bottom.dataset.digit = ch;
-          backTop.dataset.digit = ch;
-          backBottom.dataset.digit = ch;
-          el.classList.remove("flipping");
-          el.removeEventListener("animationend", onEnd);
-        };
-        const onEnd = (e) => {
-          if (e.animationName === "flipBottom" || e.target === backBottom) done();
-        };
-        el.addEventListener("animationend", onEnd);
-        // fallback
-        setTimeout(done, 500);
+      const apply = () => {
+        if (reduce) {
+          ribbon.style.transition = "none";
+          ribbon.style.transform = `translateY(${-d * 10}%)`;
+          ribbon.dataset.digit = String(d);
+          return;
+        }
+        // Longer spin when jumping many steps (e.g. intro 0 → 9)
+        const from = old != null ? Number(old) : 0;
+        const dist = Math.abs(d - from);
+        const ms = 450 + dist * 40;
+        ribbon.style.transition = `transform ${ms}ms cubic-bezier(0.2, 0.85, 0.25, 1)`;
+        ribbon.style.transform = `translateY(${-d * 10}%)`;
+        ribbon.dataset.digit = String(d);
       };
 
-      setTimeout(runFlip, delay);
-      delay += 70;
+      if (delay === 0 || reduce) apply();
+      else setTimeout(apply, delay);
+      delay += 55;
     }
   };
 
@@ -207,58 +210,52 @@
     const VOTE_KEY = "lockmic_vote_v1";
     const NS = "lockmic-com";
 
+    // High-water marks: never paint a lower number after a successful vote
+    // (CounterAPI GET can lag or return stale values right after /up).
+    const known = {
+      likes: Number(likeCountEl.getAttribute("data-seed")) || 0,
+      dislikes: Number(dislikeCountEl.getAttribute("data-seed")) || 0,
+    };
+
     const setStatus = (msg) => {
       if (voteStatus) voteStatus.textContent = msg || "";
     };
 
-    const seedOf = (el) => {
-      const n = Number(el.getAttribute("data-seed"));
-      return Number.isFinite(n) ? n : 0;
-    };
+    const showCount = (el, key, n, animate = true) => {
+      const incoming = Math.max(0, Math.floor(Number(n) || 0));
+      const value = Math.max(known[key], incoming);
+      known[key] = value;
+      // Keep data-seed in sync so later math never drags us backward
+      el.setAttribute("data-seed", String(value));
 
-    const showCount = (el, n, animate = true) => {
-      const value = Math.max(0, Math.floor(n));
       const first = !el.dataset.valueFormatted;
       if (first && animate && !prefersReducedMotion) {
-        // Build digit slots as zeros (same shape as final number), then flip into place
         const formatted = formatCount(value);
         const zeroStr = formatted.replace(/[0-9]/g, "0");
-        el.dataset.valueFormatted = "";
-        setFlipValue(el, 0, { animate: false });
-        // Force same digit layout as target (including commas)
         el.textContent = "";
         el.dataset.valueFormatted = zeroStr;
         el.dataset.value = "0";
         zeroStr.split("").forEach((ch) => {
           if (ch === ",") {
-            const comma = document.createElement("span");
-            comma.className = "flip-digit is-comma";
-            comma.textContent = ",";
-            comma.setAttribute("aria-hidden", "true");
-            el.appendChild(comma);
-            return;
+            const c = document.createElement("span");
+            c.className = "odo-digit is-comma";
+            c.textContent = ",";
+            c.setAttribute("aria-hidden", "true");
+            el.appendChild(c);
+          } else {
+            el.appendChild(buildDigit("0"));
           }
-          const digit = document.createElement("span");
-          digit.className = "flip-digit";
-          digit.setAttribute("aria-hidden", "true");
-          digit.innerHTML = `
-            <span class="flip-card">
-              <span class="flip-top" data-digit="0"></span>
-              <span class="flip-bottom" data-digit="0"></span>
-              <span class="flip-back-top" data-digit="0"></span>
-              <span class="flip-back-bottom" data-digit="0"></span>
-            </span>`;
-          el.appendChild(digit);
         });
-        requestAnimationFrame(() => setFlipValue(el, value, { animate: true }));
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => setFlipValue(el, value, { animate: true }));
+        });
         return;
       }
       setFlipValue(el, value, { animate });
     };
 
-    // Immediate seed display
-    showCount(likeCountEl, seedOf(likeCountEl), true);
-    showCount(dislikeCountEl, seedOf(dislikeCountEl), true);
+    showCount(likeCountEl, "likes", known.likes, true);
+    showCount(dislikeCountEl, "dislikes", known.dislikes, true);
 
     const parseCount = (data) => {
       if (!data || typeof data !== "object") return null;
@@ -268,7 +265,7 @@
       return null;
     };
 
-    const fetchCount = async (name, seed) => {
+    const fetchCount = async (name) => {
       try {
         const urls = [
           `https://api.counterapi.dev/v1/${NS}/${name}`,
@@ -283,7 +280,7 @@
       } catch (e) {
         console.warn("count fetch failed", name, e);
       }
-      return seed;
+      return null; // null = leave known value alone
     };
 
     const applyLocalVote = (choice) => {
@@ -299,14 +296,10 @@
     };
 
     const refreshCounts = async () => {
-      const likeSeed = seedOf(likeCountEl);
-      const dislikeSeed = seedOf(dislikeCountEl);
-      const [likes, dislikes] = await Promise.all([
-        fetchCount("likes", likeSeed),
-        fetchCount("dislikes", dislikeSeed),
-      ]);
-      showCount(likeCountEl, Math.max(likes, likeSeed), true);
-      showCount(dislikeCountEl, Math.max(dislikes, dislikeSeed), true);
+      const [likes, dislikes] = await Promise.all([fetchCount("likes"), fetchCount("dislikes")]);
+      // Only apply remote values when present; showCount never decreases known[]
+      if (likes != null) showCount(likeCountEl, "likes", likes, true);
+      if (dislikes != null) showCount(dislikeCountEl, "dislikes", dislikes, true);
     };
 
     const existing = localStorage.getItem(VOTE_KEY);
@@ -318,9 +311,14 @@
       if (localStorage.getItem(VOTE_KEY)) return;
       const name = choice === "like" ? "likes" : "dislikes";
       const el = choice === "like" ? likeCountEl : dislikeCountEl;
+      const key = name;
       likeBtn.disabled = true;
       dislikeBtn.disabled = true;
       setStatus("Saving…");
+
+      // Optimistic +1 so UI never snaps backward if GET is stale
+      const optimistic = known[key] + 1;
+      showCount(el, key, optimistic, true);
 
       try {
         const urls = [
@@ -341,11 +339,18 @@
 
         localStorage.setItem(VOTE_KEY, choice);
         const n = parseCount(data);
-        if (n != null) showCount(el, Math.max(n, seedOf(el)), true);
+        if (n != null) showCount(el, key, n, true);
         applyLocalVote(choice);
-        refreshCounts();
+        // Delayed refresh only raises counts; never lowers
+        setTimeout(() => {
+          refreshCounts();
+        }, 800);
       } catch (err) {
         console.warn("vote failed", err);
+        // Roll back optimistic +1 only if vote failed and we didn't lock in
+        known[key] = Math.max(0, known[key] - 1);
+        el.setAttribute("data-seed", String(known[key]));
+        setFlipValue(el, known[key], { animate: true });
         likeBtn.disabled = false;
         dislikeBtn.disabled = false;
         setStatus("Could not save vote. Try again later.");
