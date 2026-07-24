@@ -557,6 +557,11 @@ main {
 }
 .hud-icon svg {
   display: block;
+  grid-area: 1 / 1; /* stack in same cell when swapping */
+}
+/* .hud-icon svg { display:block } outranks bare [hidden] — keep hide working */
+.hud-icon svg[hidden] {
+  display: none;
 }
 .hud-label {
   display: block;
