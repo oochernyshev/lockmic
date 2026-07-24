@@ -10,6 +10,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - **GitHub:** https://github.com/oochernyshev/lockmic
 - **License:** MIT
 - **Publisher:** WIXEE.AI (https://wixee.ai)
+- **Partnerships / press:** info@wixee.ai
 - **Price:** Free
 - **Platform:** macOS 14 Sonoma or later
 - **Current version:** 1.2.1
@@ -47,6 +48,11 @@ App mute (e.g. Zoom) only silences that application. LockMic mutes the input dev
 ## Privacy
 
 If the user agrees to anonymous usage: app version and action events only. No microphone audio, no personal content. Features stay disabled until agreement.
+
+## Contact
+
+- Partnerships, distribution, OEM, press: info@wixee.ai (subject: LockMic partnership)
+- Product feedback / bugs: GitHub Issues on https://github.com/oochernyshev/lockmic
 
 ## Links
 

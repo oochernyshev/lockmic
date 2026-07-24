@@ -1347,6 +1347,20 @@ kbd {
   color: var(--text-muted);
   margin: 0 0 24px;
 }
+.cta-partners {
+  margin: 20px 0 0 !important;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+.cta-partners a {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.cta-partners a:hover {
+  color: var(--text);
+}
 
 /* Footer */
 .footer {
@@ -1395,6 +1409,14 @@ kbd {
   margin: 0;
   font-size: 0.8rem;
   color: var(--text-dim);
+}
+.footer-copy a {
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.footer-copy a:hover {
+  color: var(--text-muted);
 }
 
 /* Reveal on scroll */
