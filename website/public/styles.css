@@ -696,89 +696,284 @@ kbd {
 
 /* Rate / like-dislike */
 .rate-card {
-  max-width: 560px;
+  max-width: 720px;
   margin: 0 auto;
   text-align: center;
-  padding: 40px clamp(16px, 4vw, 32px);
-  border-radius: 24px;
+  padding: clamp(36px, 6vw, 56px) clamp(20px, 5vw, 48px);
+  border-radius: 28px;
   border: 1px solid var(--border-strong);
   background:
-    radial-gradient(ellipse 80% 70% at 50% 0%, rgba(124, 156, 255, 0.1), transparent 55%),
-    var(--bg-card);
+    radial-gradient(ellipse 90% 80% at 50% -10%, rgba(124, 156, 255, 0.16), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, rgba(167, 139, 250, 0.08), transparent 50%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: var(--shadow);
 }
 .rate-card .eyebrow {
   justify-content: center;
 }
+.rate-card h2 {
+  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+  margin-bottom: 10px;
+}
 .rate-lead {
-  margin: 0 auto 24px;
-  max-width: 400px;
+  margin: 0 auto 32px;
+  max-width: 420px;
+  font-size: 1.05rem;
 }
 .rate-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 20px;
   justify-content: center;
 }
 .rate-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  min-width: 132px;
-  padding: 18px 22px 14px;
-  border-radius: 16px;
+  justify-content: center;
+  gap: 10px;
+  min-width: min(200px, 42vw);
+  min-height: 168px;
+  padding: 28px 32px 24px;
+  border-radius: 22px;
   border: 1px solid var(--border-strong);
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.35);
   color: var(--text);
   cursor: pointer;
-  transition: transform 0.2s var(--ease), border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  transition: transform 0.22s var(--ease), border-color 0.22s, background 0.22s, box-shadow 0.22s;
 }
 .rate-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-4px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
 }
 .rate-btn:disabled {
   cursor: default;
-  opacity: 0.85;
 }
 .rate-btn.is-selected.rate-like {
-  border-color: rgba(52, 211, 153, 0.55);
-  background: rgba(52, 211, 153, 0.12);
-  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.65);
+  background: linear-gradient(165deg, rgba(52, 211, 153, 0.18), rgba(52, 211, 153, 0.06));
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.2), 0 12px 36px rgba(52, 211, 153, 0.12);
 }
 .rate-btn.is-selected.rate-dislike {
-  border-color: rgba(248, 113, 113, 0.5);
-  background: rgba(248, 113, 113, 0.1);
-  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.6);
+  background: linear-gradient(165deg, rgba(248, 113, 113, 0.16), rgba(248, 113, 113, 0.05));
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.18), 0 12px 36px rgba(248, 113, 113, 0.1);
 }
 .rate-emoji {
-  font-size: 1.6rem;
+  font-size: clamp(2.4rem, 5vw, 3rem);
   line-height: 1;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
 }
 .rate-label {
-  font-weight: 600;
-  font-size: 0.95rem;
+  font-weight: 700;
+  font-size: 1.05rem;
   letter-spacing: -0.02em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
 }
 .rate-count {
   font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: var(--text-muted);
+  font-weight: 800;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text);
+  min-height: 1.15em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.rate-btn.is-selected .rate-count {
+.rate-btn.is-selected .rate-label {
   color: var(--text);
 }
+
+/* Split-flap / flip digits */
+.flip-counter {
+  --flip-h: 1.2em;
+  --flip-w: 0.72em;
+  --flip-gap: 0.14em;
+  --flip-radius: 0.18em;
+  --flip-face: #12151e;
+  --flip-face-edge: #1c2130;
+  --flip-ink: #f4f6fb;
+  --flip-line: rgba(255, 255, 255, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--flip-gap);
+  perspective: 600px;
+  font-family: ui-monospace, "SF Mono", "Roboto Mono", Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.flip-digit {
+  position: relative;
+  width: var(--flip-w);
+  height: var(--flip-h);
+  font-size: 1em;
+  border-radius: var(--flip-radius);
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  background: var(--flip-face);
+}
+.flip-digit.is-comma {
+  width: 0.32em;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0.12em;
+  color: var(--text-muted);
+  font-size: 0.75em;
+  font-weight: 800;
+}
+.flip-card {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+.flip-card > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  color: var(--flip-ink);
+  background: linear-gradient(180deg, var(--flip-face-edge), var(--flip-face));
+  backface-visibility: hidden;
+}
+.flip-top,
+.flip-back-top {
+  top: 0;
+  border-radius: var(--flip-radius) var(--flip-radius) 0 0;
+}
+.flip-top::after,
+.flip-back-top::after {
+  content: attr(data-digit);
+  display: block;
+  width: 100%;
+  height: 200%;
+  line-height: var(--flip-h);
+  text-align: center;
+}
+.flip-bottom,
+.flip-back-bottom {
+  bottom: 0;
+  border-radius: 0 0 var(--flip-radius) var(--flip-radius);
+}
+.flip-bottom::after,
+.flip-back-bottom::after {
+  content: attr(data-digit);
+  display: block;
+  width: 100%;
+  height: 200%;
+  margin-top: -100%;
+  line-height: var(--flip-h);
+  text-align: center;
+}
+/* hinge line */
+.flip-digit::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--flip-line);
+  z-index: 5;
+  pointer-events: none;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+.flip-back-top,
+.flip-back-bottom {
+  z-index: 2;
+}
+.flip-top {
+  z-index: 3;
+  transform-origin: bottom center;
+  background: linear-gradient(180deg, #1a1f2c, #141824);
+}
+.flip-bottom {
+  z-index: 1;
+  background: linear-gradient(180deg, #0e1118, #151a26);
+}
+.flip-back-top {
+  transform-origin: bottom center;
+  transform: rotateX(180deg);
+  background: linear-gradient(180deg, #1a1f2c, #141824);
+}
+.flip-back-bottom {
+  transform-origin: top center;
+  transform: rotateX(180deg);
+  background: linear-gradient(180deg, #0e1118, #151a26);
+  z-index: 4;
+}
+
+/* animate: top half folds down, bottom half folds up */
+.flip-digit.flipping .flip-top {
+  animation: flipTop 0.45s ease-in forwards;
+  z-index: 6;
+}
+.flip-digit.flipping .flip-back-bottom {
+  animation: flipBottom 0.45s ease-out forwards;
+  z-index: 6;
+}
+
+@keyframes flipTop {
+  0% { transform: rotateX(0deg); }
+  100% { transform: rotateX(-90deg); }
+}
+@keyframes flipBottom {
+  0% { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+.rate-like .flip-digit {
+  --flip-face: #101820;
+  --flip-face-edge: #15241c;
+}
+.rate-dislike .flip-digit {
+  --flip-face: #1a1214;
+  --flip-face-edge: #241518;
+}
+.rate-btn.is-selected.rate-like .flip-digit {
+  --flip-ink: #ecfdf5;
+  box-shadow:
+    0 6px 16px rgba(16, 185, 129, 0.18),
+    inset 0 0 0 1px rgba(52, 211, 153, 0.2);
+}
+.rate-btn.is-selected.rate-dislike .flip-digit {
+  --flip-ink: #fef2f2;
+  box-shadow:
+    0 6px 16px rgba(248, 113, 113, 0.16),
+    inset 0 0 0 1px rgba(248, 113, 113, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-digit.flipping .flip-top,
+  .flip-digit.flipping .flip-back-bottom {
+    animation: none;
+  }
+}
 .rate-status {
-  min-height: 1.4em;
-  margin: 16px 0 0;
-  font-size: 0.9rem;
-  font-weight: 500;
+  min-height: 1.5em;
+  margin: 22px 0 0;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--accent);
 }
 .rate-note {
-  margin: 14px 0 0;
-  font-size: 0.85rem;
+  margin: 16px 0 0;
+  font-size: 0.9rem;
   color: var(--text-dim);
 }
 .rate-note a {
@@ -788,6 +983,18 @@ kbd {
 }
 .rate-note a:hover {
   color: var(--text);
+}
+
+@media (max-width: 480px) {
+  .rate-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rate-btn {
+    min-width: 0;
+    width: 100%;
+    min-height: 140px;
+  }
 }
 
 /* Download */

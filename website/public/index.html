@@ -38,7 +38,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=1.2.1-flip" />
 
   <!-- Structured data: SoftwareApplication -->
   <script type="application/ld+json">
@@ -319,17 +319,29 @@
       <div class="rate-card reveal">
         <p class="eyebrow">Community</p>
         <h2 id="rate-heading">Do you like LockMic?</h2>
-        <p class="section-lead rate-lead">One vote per browser. Public counts — no account required.</p>
+        <p class="section-lead rate-lead">Tap once — one vote per browser. Counts update for everyone.</p>
         <div class="rate-actions" role="group" aria-label="Like or dislike LockMic">
           <button type="button" class="rate-btn rate-like" id="voteLike" aria-pressed="false">
             <span class="rate-emoji" aria-hidden="true">👍</span>
             <span class="rate-label">Like</span>
-            <span class="rate-count" id="likeCount">—</span>
+            <span
+              class="rate-count flip-counter"
+              id="likeCount"
+              data-seed="1397"
+              data-value="1397"
+              aria-label="1397 likes"
+            ></span>
           </button>
           <button type="button" class="rate-btn rate-dislike" id="voteDislike" aria-pressed="false">
             <span class="rate-emoji" aria-hidden="true">👎</span>
             <span class="rate-label">Dislike</span>
-            <span class="rate-count" id="dislikeCount">—</span>
+            <span
+              class="rate-count flip-counter"
+              id="dislikeCount"
+              data-seed="43"
+              data-value="43"
+              aria-label="43 dislikes"
+            ></span>
           </button>
         </div>
         <p class="rate-status" id="voteStatus" role="status" aria-live="polite"></p>
@@ -530,6 +542,6 @@ open /Applications/LockMic.app</code></pre>
     </div>
   </footer>
 
-  <script src="main.js" defer></script>
+  <script src="main.js?v=1.2.1-flip" defer></script>
 </body>
 </html>
