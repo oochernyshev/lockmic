@@ -38,7 +38,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1.2.1-odo2" />
+  <link rel="stylesheet" href="styles.css?v=1.2.1-odo7" />
 
   <!-- Structured data: SoftwareApplication -->
   <script type="application/ld+json">
@@ -487,7 +487,14 @@ open /Applications/LockMic.app</code></pre>
               id="likeCount"
               aria-busy="true"
               aria-label="Loading likes"
-            ><span class="rate-count-loading" aria-hidden="true"></span></span>
+            >
+              <span class="rate-count-skeleton" aria-hidden="true">
+                <span class="rate-skel-digit"></span>
+                <span class="rate-skel-digit"></span>
+                <span class="rate-skel-digit"></span>
+                <span class="rate-skel-digit"></span>
+              </span>
+            </span>
           </button>
           <button type="button" class="rate-btn rate-dislike" id="voteDislike" aria-pressed="false">
             <span class="rate-emoji" aria-hidden="true">👎</span>
@@ -497,7 +504,12 @@ open /Applications/LockMic.app</code></pre>
               id="dislikeCount"
               aria-busy="true"
               aria-label="Loading dislikes"
-            ><span class="rate-count-loading" aria-hidden="true"></span></span>
+            >
+              <span class="rate-count-skeleton" aria-hidden="true">
+                <span class="rate-skel-digit"></span>
+                <span class="rate-skel-digit"></span>
+              </span>
+            </span>
           </button>
         </div>
         <p class="rate-status" id="voteStatus" role="status" aria-live="polite"></p>
@@ -540,6 +552,6 @@ open /Applications/LockMic.app</code></pre>
     </div>
   </footer>
 
-  <script src="main.js?v=1.2.1-odo5" defer></script>
+  <script src="main.js?v=1.2.1-odo7" defer></script>
 </body>
 </html>

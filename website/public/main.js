@@ -219,7 +219,12 @@
       if (voteStatus) voteStatus.textContent = msg || "";
     };
 
-    const setCountLoading = (el, label) => {
+    const skeletonHtml = (digits) => {
+      const cells = Array.from({ length: digits }, () => '<span class="rate-skel-digit"></span>').join("");
+      return `<span class="rate-count-skeleton" aria-hidden="true">${cells}</span>`;
+    };
+
+    const setCountLoading = (el, label, digits = 4) => {
       el.classList.add("is-loading");
       el.classList.remove("is-empty");
       el.removeAttribute("data-value");
@@ -228,7 +233,7 @@
       delete el.dataset.value;
       el.setAttribute("aria-busy", "true");
       el.setAttribute("aria-label", label);
-      el.innerHTML = '<span class="rate-count-loading" aria-hidden="true"></span>';
+      el.innerHTML = skeletonHtml(digits);
     };
 
     const setCountUnavailable = (el, label) => {
@@ -289,15 +294,22 @@
       return null;
     };
 
-    // Trailing slash only — without it the API 301/404s and wastes rate limit
+    // CounterAPI is picky about trailing slashes (301s drop CORS headers in browsers):
+    //   GET  → .../likes/     (slash required)
+    //   /up  → .../likes/up   (no slash)
     const apiGet = (name) =>
       `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/?_=${Date.now()}`;
     const apiUp = (name) =>
-      `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/up/?_=${Date.now()}`;
+      `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/up?_=${Date.now()}`;
 
     const fetchCount = async (name) => {
       try {
-        const r = await fetch(apiGet(name), { method: "GET", mode: "cors", cache: "no-store" });
+        const r = await fetch(apiGet(name), {
+          method: "GET",
+          mode: "cors",
+          cache: "no-store",
+          redirect: "error", // fail loud if we hit a slash redirect again
+        });
         const data = await r.json().catch(() => null);
         return parseCount(data);
       } catch (e) {
@@ -324,9 +336,9 @@
       dislikeBtn.disabled = !enabled;
     };
 
-    // Start: loading dots only (already in HTML; re-apply if script re-runs cleanly)
-    setCountLoading(likeCountEl, "Loading likes");
-    setCountLoading(dislikeCountEl, "Loading dislikes");
+    // Start: shimmering digit shells until CounterAPI responds
+    setCountLoading(likeCountEl, "Loading likes", 4);
+    setCountLoading(dislikeCountEl, "Loading dislikes", 2);
     setVotingEnabled(false);
 
     const refreshCounts = async () => {
@@ -359,8 +371,13 @@
       setStatus("Saving…");
 
       try {
-        // 1) Confirm save via /up
-        const r = await fetch(apiUp(name), { method: "GET", mode: "cors", cache: "no-store" });
+        // 1) Confirm save via /up (final URL, no redirect — redirects break CORS)
+        const r = await fetch(apiUp(name), {
+          method: "GET",
+          mode: "cors",
+          cache: "no-store",
+          redirect: "error",
+        });
         const data = await r.json().catch(() => null);
         const saved = parseCount(data);
         if (!r.ok || saved == null) throw new Error((data && data.message) || "vote failed");

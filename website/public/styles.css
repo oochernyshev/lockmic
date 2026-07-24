@@ -789,40 +789,79 @@ kbd {
 }
 .rate-count.is-loading,
 .rate-count.is-empty {
+  min-width: 3.6em;
+}
+.rate-count.is-empty {
   font-family: inherit;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1.25rem;
   letter-spacing: 0.04em;
   color: var(--text-dim);
-  min-width: 3.2em;
 }
-/* Three-dot loading indicator (centered under the label) */
-.rate-count-loading {
-  display: inline-block;
-  width: 0.38em;
-  height: 0.38em;
-  border-radius: 50%;
-  background: currentColor;
+
+/* Odometer-shaped skeleton while counts load */
+.rate-count-skeleton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--odo-gap, 0.12em);
+}
+.rate-skel-digit {
+  width: var(--odo-w, 0.78em);
+  height: var(--odo-h, 1.28em);
+  border-radius: var(--odo-radius, 0.2em);
+  background:
+    linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0.04) 20%,
+      rgba(255, 255, 255, 0.16) 45%,
+      rgba(255, 255, 255, 0.04) 70%
+    ),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 30%, transparent 70%, rgba(0, 0, 0, 0.3)),
+    #141824;
+  background-size: 220% 100%, 100% 100%, 100% 100%;
+  background-position: 100% 0, 0 0, 0 0;
   box-shadow:
-    0.72em 0 0 currentColor,
-    1.44em 0 0 currentColor;
-  margin-right: 1.44em;
-  animation: rate-dot-pulse 1s ease-in-out infinite;
-  opacity: 0.55;
+    0 8px 18px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: rate-skel-shimmer 1.15s ease-in-out infinite;
 }
-@keyframes rate-dot-pulse {
-  0%,
-  100% {
-    opacity: 0.25;
+.rate-like .rate-skel-digit {
+  background-color: #101a16;
+}
+.rate-dislike .rate-skel-digit {
+  background-color: #1a1214;
+}
+.rate-skel-digit:nth-child(2) {
+  animation-delay: 0.12s;
+}
+.rate-skel-digit:nth-child(3) {
+  animation-delay: 0.24s;
+}
+.rate-skel-digit:nth-child(4) {
+  animation-delay: 0.36s;
+}
+@keyframes rate-skel-shimmer {
+  0% {
+    background-position: 120% 0, 0 0, 0 0;
+    opacity: 0.55;
+    transform: translateY(0);
   }
   50% {
-    opacity: 0.9;
+    background-position: -20% 0, 0 0, 0 0;
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+  100% {
+    background-position: -120% 0, 0 0, 0 0;
+    opacity: 0.55;
+    transform: translateY(0);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .rate-count-loading {
+  .rate-skel-digit {
     animation: none;
-    opacity: 0.5;
+    opacity: 0.65;
   }
 }
 .rate-btn.is-selected .rate-label {
