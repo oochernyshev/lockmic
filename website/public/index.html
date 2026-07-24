@@ -40,6 +40,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=1.2.1-odo7" />
 
+  <!-- Same GA4 property as the macOS app (G-0ZRQC93T49). Web page views only; app uses Measurement Protocol. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZRQC93T49"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js", new Date());
+    gtag("set", { platform: "web", product: "lockmic_website" });
+    gtag("config", "G-0ZRQC93T49", {
+      anonymize_ip: true,
+      send_page_view: true
+    });
+  </script>
+
   <!-- Structured data: SoftwareApplication -->
   <script type="application/ld+json">
   {
@@ -154,7 +167,7 @@
         "name": "What data does LockMic send?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "If you agree: app version and anonymous action events (toggle, mute/unmute, holds). No microphone audio and no personal data. Mute control stays off until you agree."
+          "text": "In the app, if you agree: version and anonymous action events (toggle, mute/unmute, holds). No microphone audio and no personal data. Mute control stays off until you agree. The marketing website uses the same Google Analytics property for anonymous page views and optional download clicks."
         }
       },
       {
@@ -480,7 +493,7 @@ open /Applications/LockMic.app</code></pre>
         </details>
         <details class="faq-item reveal">
           <summary>What data is sent?</summary>
-          <p>If you agree: app version and anonymous action events (toggle, mute/unmute, holds). No microphone audio, no personal data. Mute control stays off until you agree.</p>
+          <p>In the <strong>app</strong>, if you agree: version and anonymous action events (toggle, mute/unmute, holds). No microphone audio, no personal data. Mute control stays off until you agree. This <strong>website</strong> uses the same Google Analytics property for anonymous page views (and optional download clicks) so we can improve the product and site.</p>
         </details>
         <details class="faq-item reveal">
           <summary>Is it free?</summary>

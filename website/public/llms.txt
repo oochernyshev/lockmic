@@ -47,7 +47,9 @@ App mute (e.g. Zoom) only silences that application. LockMic mutes the input dev
 
 ## Privacy
 
-If the user agrees to anonymous usage: app version and action events only. No microphone audio, no personal content. Features stay disabled until agreement.
+If the user agrees to anonymous usage in the app: app version and action events only. No microphone audio, no personal content. Features stay disabled until agreement.
+
+The marketing website (lockmic.com) uses the same Google Analytics 4 property (`G-0ZRQC93T49`) for anonymous page views and download clicks.
 
 ## Contact
 

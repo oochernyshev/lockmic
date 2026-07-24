@@ -1,6 +1,39 @@
 (() => {
   "use strict";
 
+  /** GA4 (same property as the macOS app: G-0ZRQC93T49). No-op if gtag missing. */
+  const track = (name, params) => {
+    if (typeof gtag !== "function") return;
+    gtag("event", name, Object.assign({ platform: "web", product: "lockmic_website" }, params || {}));
+  };
+
+  const linkLocation = (el) => {
+    if (!el || !el.closest) return "page";
+    if (el.closest(".nav-drawer")) return "drawer";
+    if (el.closest(".nav-links") || el.closest(".nav-inner")) return "nav";
+    if (el.closest(".hero")) return "hero";
+    if (el.closest(".cta-band")) return "cta";
+    if (el.closest(".footer")) return "footer";
+    if (el.closest("#download") || el.closest(".download-card")) return "download";
+    if (el.closest("#rate")) return "rate";
+    if (el.closest("#faq")) return "faq";
+    return "page";
+  };
+
+  // In-page section links (#features, #download, …)
+  document.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener("click", () => {
+      const href = a.getAttribute("href") || "";
+      const sectionId = href.replace(/^#/, "") || "top";
+      if (!sectionId || sectionId === "main") return; // skip “Skip to content”
+      track("section_click", {
+        section_id: sectionId,
+        link_text: (a.textContent || "").trim().slice(0, 48),
+        link_location: linkLocation(a),
+      });
+    });
+  });
+
   const nav = document.getElementById("nav");
   const toggle = document.getElementById("navToggle");
   const drawer = document.getElementById("navDrawer");
@@ -175,6 +208,10 @@
   // Latest DMG
   const dmgLink = document.getElementById("downloadDmg");
   if (dmgLink) {
+    dmgLink.addEventListener("click", () => {
+      track("download_click", { link_id: "download_dmg", outbound: true });
+    });
+
     const REPO = "oochernyshev/lockmic";
     fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
       headers: { Accept: "application/vnd.github+json" },
@@ -646,11 +683,13 @@
         await writeStoredVote(choice);
         localChoice = choice;
         applyLocalVote(choice);
+        track("vote", { vote_choice: choice, section_id: "rate" });
       } catch (err) {
         console.warn("vote failed", err);
         // Count unchanged — only re-enable if this browser has not already voted
         if (!localChoice) setVoteButtonsDisabled(false);
         setStatus("Could not save vote. Try again later.");
+        track("vote_failed", { vote_choice: choice, section_id: "rate" });
       } finally {
         voteBusy = false;
       }
@@ -692,11 +731,13 @@
         // Re-enable now — do not use setVotingEnabled while voteBusy is still true
         // (that helper no-ops when voteBusy, which left buttons stuck disabled).
         setVoteButtonsDisabled(false);
+        track("vote_remove", { vote_choice: choice, section_id: "rate" });
       } catch (err) {
         console.warn("remove vote failed", err);
         // Keep selection; re-enable remove so the user can retry
         if (removeBtn) removeBtn.disabled = false;
         setStatus("Could not remove vote. Try again later.");
+        track("vote_remove_failed", { vote_choice: choice, section_id: "rate" });
       } finally {
         voteBusy = false;
       }
