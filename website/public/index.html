@@ -257,36 +257,50 @@
           <span>23 languages</span>
         </p>
 
-        <div class="hero-stage reveal" aria-hidden="true">
-          <div class="stage-glow"></div>
+        <div class="hero-stage reveal">
+          <div class="stage-glow" aria-hidden="true"></div>
           <div class="menu-mock">
-            <div class="menu-bar-fake">
+            <div class="menu-bar-fake" aria-hidden="true">
               <span class="mb-dot"></span>
               <span class="mb-dot"></span>
               <span class="mb-dot"></span>
               <span class="mb-spacer"></span>
-              <span class="mb-mic" title="LockMic">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <button type="button" class="mb-mic is-muted" id="hudDemoMenubar" title="LockMic — click to toggle mute" aria-label="Menu bar mute toggle demo">
+                <svg class="mb-mic-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8"/>
                   <path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                  <path d="M5 5l14 14" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
+                  <path class="mb-mic-slash" d="M5 5l14 14" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-              </span>
+              </button>
             </div>
-            <div class="hud-card">
-              <div class="hud-icon muted">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke="white" stroke-width="1.6"/>
-                  <path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
-                  <path d="M4 4l16 16" stroke="white" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </div>
-              <p class="hud-label">Muted</p>
+            <div class="hud-float-wrap">
+              <button
+                type="button"
+                class="hud-card is-muted"
+                id="hudDemo"
+                aria-pressed="true"
+                aria-label="Floating HUD demo: muted. Click to unmute."
+              >
+                <span class="hud-icon" id="hudDemoIcon" aria-hidden="true">
+                  <svg class="hud-svg-muted" width="48" height="48" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke="white" stroke-width="1.6"/>
+                    <path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M4 4l16 16" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  <svg class="hud-svg-unmuted" width="48" height="48" viewBox="0 0 24 24" fill="none" hidden>
+                    <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke="white" stroke-width="1.6"/>
+                    <path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                </span>
+                <span class="hud-label" id="hudDemoLabel">Muted</span>
+                <span class="hud-hint">Click to toggle</span>
+              </button>
             </div>
-            <div class="app-icon-float">
+            <div class="app-icon-float" aria-hidden="true">
               <img src="assets/icon-512.png" width="120" height="120" alt="" />
             </div>
           </div>
+          <p class="hud-demo-caption">Try the floating HUD — click to mute or unmute</p>
         </div>
       </div>
     </section>

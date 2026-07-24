@@ -48,6 +48,100 @@
     reveals.forEach((el) => el.classList.add("visible"));
   }
 
+  // ── Hero HUD mute demo ──────────────────────────────────────────────
+  // Click the floating HUD (or menu-bar mic) to toggle mute/unmute with
+  // short Web Audio cues (inspired by macOS Tink / Pop feedback).
+  const hudDemo = document.getElementById("hudDemo");
+  const hudDemoMenubar = document.getElementById("hudDemoMenubar");
+  const hudDemoLabel = document.getElementById("hudDemoLabel");
+  const hudDemoIcon = document.getElementById("hudDemoIcon");
+
+  if (hudDemo && hudDemoLabel && hudDemoIcon) {
+    let muted = true;
+    let audioCtx = null;
+
+    const ensureAudio = () => {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+      return audioCtx;
+    };
+
+    /** Short click cues — mute ≈ Tink, unmute ≈ Pop. */
+    const playMuteCue = (nowMuted) => {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (nowMuted) {
+        // Higher metallic “tink”
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1900, t0);
+        osc.frequency.exponentialRampToValueAtTime(980, t0 + 0.07);
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.2, t0 + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.11);
+        osc.start(t0);
+        osc.stop(t0 + 0.12);
+      } else {
+        // Softer lower “pop”
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(480, t0);
+        osc.frequency.exponentialRampToValueAtTime(160, t0 + 0.1);
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.26, t0 + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.13);
+        osc.start(t0);
+        osc.stop(t0 + 0.14);
+      }
+    };
+
+    const setHudMuted = (next, { play = true } = {}) => {
+      muted = !!next;
+      hudDemo.classList.toggle("is-muted", muted);
+      hudDemo.setAttribute("aria-pressed", muted ? "true" : "false");
+      hudDemo.setAttribute(
+        "aria-label",
+        muted ? "Floating HUD demo: muted. Click to unmute." : "Floating HUD demo: unmuted. Click to mute."
+      );
+      hudDemoLabel.textContent = muted ? "Muted" : "Unmuted";
+
+      const mutedSvg = hudDemoIcon.querySelector(".hud-svg-muted");
+      const unmutedSvg = hudDemoIcon.querySelector(".hud-svg-unmuted");
+      if (mutedSvg) mutedSvg.hidden = !muted;
+      if (unmutedSvg) unmutedSvg.hidden = muted;
+
+      if (hudDemoMenubar) {
+        hudDemoMenubar.classList.toggle("is-muted", muted);
+        hudDemoMenubar.setAttribute(
+          "aria-label",
+          muted ? "Menu bar mute toggle demo: muted" : "Menu bar mute toggle demo: unmuted"
+        );
+      }
+
+      if (play) {
+        playMuteCue(muted);
+        hudDemo.classList.remove("is-flash");
+        // restart flash animation
+        void hudDemo.offsetWidth;
+        hudDemo.classList.add("is-flash");
+      }
+    };
+
+    const toggleHud = () => setHudMuted(!muted, { play: true });
+
+    hudDemo.addEventListener("click", toggleHud);
+    if (hudDemoMenubar) hudDemoMenubar.addEventListener("click", toggleHud);
+
+    // Initial paint (no sound)
+    setHudMuted(true, { play: false });
+  }
+
   document.querySelectorAll(".copy-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const text = btn.getAttribute("data-copy") || "";
