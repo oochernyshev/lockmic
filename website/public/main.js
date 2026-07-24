@@ -200,9 +200,8 @@
   };
 
   // ── Votes ───────────────────────────────────────────────────────────
-  // Counts come only from CounterAPI. Until then we show a loading indicator
-  // (no hardcoded seeds). Session high-water marks only prevent a drop when
-  // a stale GET follows a successful /up in the same page life.
+  // Counts come only from CounterAPI. Loading indicator until first fetch.
+  // Vote UI updates only after /up succeeds and a follow-up GET confirms.
   const likeBtn = document.getElementById("voteLike");
   const dislikeBtn = document.getElementById("voteDislike");
   const likeCountEl = document.getElementById("likeCount");
@@ -359,26 +358,28 @@
       dislikeBtn.disabled = true;
       setStatus("Saving…");
 
-      const before = known[key];
-      const optimistic = before + 1;
-      showCount(el, key, optimistic, true);
-
       try {
+        // 1) Confirm save via /up
         const r = await fetch(apiUp(name), { method: "GET", mode: "cors", cache: "no-store" });
         const data = await r.json().catch(() => null);
-        const n = parseCount(data);
-        if (!r.ok || n == null) throw new Error((data && data.message) || "vote failed");
+        const saved = parseCount(data);
+        if (!r.ok || saved == null) throw new Error((data && data.message) || "vote failed");
 
-        // Prefer /up body, but never below optimistic (API sometimes returns stale lower)
-        showCount(el, key, Math.max(n, optimistic), true);
+        // 2) Confirm retrieval via fresh GET (do not bump the UI until both succeed)
+        const retrieved = await fetchCount(name);
+        if (retrieved == null) throw new Error("could not read updated count");
+
+        // Use the higher of the two remote values (GET can lag behind /up)
+        showCount(el, key, Math.max(saved, retrieved), true);
         localStorage.setItem(VOTE_KEY, choice);
         applyLocalVote(choice);
       } catch (err) {
         console.warn("vote failed", err);
-        known[key] = before;
-        setFlipValue(el, before, { animate: true });
-        likeBtn.disabled = false;
-        dislikeBtn.disabled = false;
+        // Count unchanged — only re-enable if this browser has not already voted
+        if (!localStorage.getItem(VOTE_KEY)) {
+          likeBtn.disabled = false;
+          dislikeBtn.disabled = false;
+        }
         setStatus("Could not save vote. Try again later.");
       }
     };
