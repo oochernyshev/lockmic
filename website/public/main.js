@@ -83,12 +83,9 @@
     const applyDmg = (url, name) => {
       dmgLink.href = url;
       dmgLink.setAttribute("download", name || "LockMic.dmg");
-      // Same-tab navigation → browser downloads the binary from GitHub
       dmgLink.removeAttribute("target");
     };
 
-    // Fallback already set in HTML (versioned asset URL).
-    // Prefer whatever is on the latest GitHub Release.
     fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
       headers: { Accept: "application/vnd.github+json" },
     })
@@ -108,5 +105,98 @@
       .catch(() => {
         /* keep static href from HTML */
       });
+  }
+
+  // ── Like / dislike ───────────────────────────────────────────────────
+  // Firebase Hosting = static files only (no database).
+  // Counts use free CounterAPI over HTTPS — no Firebase DB / no account.
+  const likeBtn = document.getElementById("voteLike");
+  const dislikeBtn = document.getElementById("voteDislike");
+  const likeCountEl = document.getElementById("likeCount");
+  const dislikeCountEl = document.getElementById("dislikeCount");
+  const voteStatus = document.getElementById("voteStatus");
+
+  if (likeBtn && dislikeBtn) {
+    const VOTE_KEY = "lockmic_vote_v1";
+    const NS = "lockmic-com";
+    const counterUrl = (name, action) => {
+      let path = `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/`;
+      if (action) path += `${action}/`;
+      return path;
+    };
+
+    const setStatus = (msg) => {
+      if (voteStatus) voteStatus.textContent = msg || "";
+    };
+
+    const formatCount = (n) => {
+      if (typeof n !== "number" || !Number.isFinite(n)) return "0";
+      return new Intl.NumberFormat().format(Math.max(0, Math.floor(n)));
+    };
+
+    const parseCount = (data) => {
+      if (data == null || data.code === 400) return 0;
+      if (typeof data.count === "number") return data.count;
+      if (typeof data.value === "number") return data.value;
+      return 0;
+    };
+
+    const fetchCount = (name) =>
+      fetch(counterUrl(name))
+        .then((r) => r.json().catch(() => ({})))
+        .then(parseCount)
+        .catch(() => 0);
+
+    const applyLocalVote = (choice) => {
+      likeBtn.classList.toggle("is-selected", choice === "like");
+      dislikeBtn.classList.toggle("is-selected", choice === "dislike");
+      likeBtn.setAttribute("aria-pressed", choice === "like" ? "true" : "false");
+      dislikeBtn.setAttribute("aria-pressed", choice === "dislike" ? "true" : "false");
+      if (choice) {
+        likeBtn.disabled = true;
+        dislikeBtn.disabled = true;
+        setStatus(choice === "like" ? "Thanks — you liked LockMic." : "Thanks — you voted dislike.");
+      }
+    };
+
+    const refreshCounts = () =>
+      Promise.all([fetchCount("likes"), fetchCount("dislikes")]).then(([likes, dislikes]) => {
+        if (likeCountEl) likeCountEl.textContent = formatCount(likes);
+        if (dislikeCountEl) dislikeCountEl.textContent = formatCount(dislikes);
+      });
+
+    const existing = localStorage.getItem(VOTE_KEY);
+    if (existing === "like" || existing === "dislike") {
+      applyLocalVote(existing);
+    }
+
+    refreshCounts();
+
+    const castVote = (choice) => {
+      if (localStorage.getItem(VOTE_KEY)) return;
+      const name = choice === "like" ? "likes" : "dislikes";
+      likeBtn.disabled = true;
+      dislikeBtn.disabled = true;
+      setStatus("Saving…");
+      fetch(counterUrl(name, "up"))
+        .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+          if (!ok && data && data.code) throw new Error(data.message || "vote failed");
+          localStorage.setItem(VOTE_KEY, choice);
+          const el = choice === "like" ? likeCountEl : dislikeCountEl;
+          if (el) el.textContent = formatCount(parseCount(data));
+          applyLocalVote(choice);
+          refreshCounts();
+        })
+        .catch((err) => {
+          console.warn("vote failed", err);
+          likeBtn.disabled = false;
+          dislikeBtn.disabled = false;
+          setStatus("Could not save vote. Try again later.");
+        });
+    };
+
+    likeBtn.addEventListener("click", () => castVote("like"));
+    dislikeBtn.addEventListener("click", () => castVote("dislike"));
   }
 })();

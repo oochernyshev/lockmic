@@ -107,6 +107,7 @@ enum L10n {
     static var aboutFeedbackSend: String { tr("about.feedback.send") }
     static var aboutFeedbackBug: String { tr("about.feedback.bug") }
     static var aboutFeedbackFeature: String { tr("about.feedback.feature") }
+    static var aboutRateOnWeb: String { tr("about.feedback.rate_web") }
     static var aboutGitHub: String { tr("about.github") }
 
     // MARK: - Menu

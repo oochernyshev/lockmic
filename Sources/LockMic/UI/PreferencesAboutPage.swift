@@ -8,6 +8,7 @@ struct PreferencesAboutPage: View {
         static let feedback = URL(string: "https://github.com/oochernyshev/lockmic/issues/new?template=feedback.yml")!
         static let bug = URL(string: "https://github.com/oochernyshev/lockmic/issues/new?template=bug.yml")!
         static let feature = URL(string: "https://github.com/oochernyshev/lockmic/issues/new?template=feature.yml")!
+        static let rate = URL(string: "https://lockmic.com/#rate")!
     }
 
     var body: some View {
@@ -45,6 +46,7 @@ struct PreferencesAboutPage: View {
                     feedbackButton(title: L10n.aboutFeedbackSend, systemImage: "bubble.left.and.bubble.right", url: Links.feedback)
                     feedbackButton(title: L10n.aboutFeedbackBug, systemImage: "ladybug", url: Links.bug)
                     feedbackButton(title: L10n.aboutFeedbackFeature, systemImage: "lightbulb", url: Links.feature)
+                    feedbackButton(title: L10n.aboutRateOnWeb, systemImage: "hand.thumbsup", url: Links.rate)
                 }
                 .padding(.top, 2)
             }
