@@ -96,3 +96,9 @@
 "tab.devices" = "Urządzenia";
 "tab.general" = "Ogólne";
 "tab.keyboard" = "Klawiatura";
+"about.feedback.header" = "Opinie";
+"about.feedback.caption" = "Zgłaszaj błędy, proś o funkcje lub zostaw opinię na GitHubie (darmowe konto).";
+"about.feedback.send" = "Wyślij opinię";
+"about.feedback.bug" = "Zgłoś błąd";
+"about.feedback.feature" = "Zaproponuj funkcję";
+"about.github" = "GitHub";

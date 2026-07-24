@@ -96,3 +96,9 @@
 "tab.devices" = "デバイス";
 "tab.general" = "一般";
 "tab.keyboard" = "キーボード";
+"about.feedback.header" = "フィードバック";
+"about.feedback.caption" = "GitHub（無料アカウント）で不具合報告・機能要望・レビューを送れます。";
+"about.feedback.send" = "フィードバックを送る";
+"about.feedback.bug" = "不具合を報告";
+"about.feedback.feature" = "機能をリクエスト";
+"about.github" = "GitHub";

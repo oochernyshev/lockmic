@@ -96,3 +96,9 @@
 "tab.devices" = "Apparaten";
 "tab.general" = "Algemeen";
 "tab.keyboard" = "Toetsenbord";
+"about.feedback.header" = "Feedback";
+"about.feedback.caption" = "Meld bugs, vraag functies aan of deel een review op GitHub (gratis account).";
+"about.feedback.send" = "Feedback sturen";
+"about.feedback.bug" = "Bug melden";
+"about.feedback.feature" = "Functie aanvragen";
+"about.github" = "GitHub";

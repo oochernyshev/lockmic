@@ -96,3 +96,9 @@
 "tab.devices" = "Enheder";
 "tab.general" = "Generelt";
 "tab.keyboard" = "Tastatur";
+"about.feedback.header" = "Feedback";
+"about.feedback.caption" = "Rapportér fejl, anmod om funktioner eller del en anmeldelse på GitHub (gratis konto).";
+"about.feedback.send" = "Send feedback";
+"about.feedback.bug" = "Rapportér en fejl";
+"about.feedback.feature" = "Anmod om en funktion";
+"about.github" = "GitHub";

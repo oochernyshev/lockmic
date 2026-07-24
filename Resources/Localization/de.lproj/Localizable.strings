@@ -96,3 +96,9 @@
 "tab.devices" = "Geräte";
 "tab.general" = "Allgemein";
 "tab.keyboard" = "Tastatur";
+"about.feedback.header" = "Feedback";
+"about.feedback.caption" = "Melde Fehler, schlage Funktionen vor oder hinterlasse eine Bewertung auf GitHub (kostenloses Konto).";
+"about.feedback.send" = "Feedback senden";
+"about.feedback.bug" = "Fehler melden";
+"about.feedback.feature" = "Funktion vorschlagen";
+"about.github" = "GitHub";

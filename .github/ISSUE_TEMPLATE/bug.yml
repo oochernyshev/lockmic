@@ -1,0 +1,67 @@
+name: Bug report
+description: Something isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve LockMic. Please fill in what you can — more detail makes fixes faster.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Clear description of the bug.
+      placeholder: e.g. Mic stays muted after unplugging AirPods…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps if possible.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: LockMic version
+      description: Preferences → About
+      placeholder: "1.2.0"
+    validations:
+      required: false
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: "15.x Sequoia"
+    validations:
+      required: false
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install?
+      options:
+        - Homebrew cask
+        - DMG
+        - Built from source
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: extras
+    attributes:
+      label: Extra context
+      description: Devices, Zoom/Teams/Meet, virtual mics, logs, screenshots (drag & drop).
+    validations:
+      required: false

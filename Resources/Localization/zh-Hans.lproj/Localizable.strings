@@ -96,3 +96,9 @@
 "tab.devices" = "设备";
 "tab.general" = "通用";
 "tab.keyboard" = "键盘";
+"about.feedback.header" = "反馈";
+"about.feedback.caption" = "在 GitHub（免费账户）上报告问题、请求功能或分享评价。";
+"about.feedback.send" = "发送反馈";
+"about.feedback.bug" = "报告问题";
+"about.feedback.feature" = "请求功能";
+"about.github" = "GitHub";

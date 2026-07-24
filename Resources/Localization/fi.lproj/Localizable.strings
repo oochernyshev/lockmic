@@ -96,3 +96,9 @@
 "tab.devices" = "Laitteet";
 "tab.general" = "Yleiset";
 "tab.keyboard" = "Näppäimistö";
+"about.feedback.header" = "Palaute";
+"about.feedback.caption" = "Ilmoita virheistä, ehdota ominaisuuksia tai jätä arvostelu GitHubissa (ilmainen tili).";
+"about.feedback.send" = "Lähetä palaute";
+"about.feedback.bug" = "Ilmoita virheestä";
+"about.feedback.feature" = "Ehdota ominaisuutta";
+"about.github" = "GitHub";

@@ -102,6 +102,12 @@ enum L10n {
     static var aboutLicense: String { tr("about.license") }
     static var aboutLicenseValue: String { tr("about.license.value") }
     static var aboutCopyright: String { tr("about.copyright") }
+    static var aboutFeedbackHeader: String { tr("about.feedback.header") }
+    static var aboutFeedbackCaption: String { tr("about.feedback.caption") }
+    static var aboutFeedbackSend: String { tr("about.feedback.send") }
+    static var aboutFeedbackBug: String { tr("about.feedback.bug") }
+    static var aboutFeedbackFeature: String { tr("about.feedback.feature") }
+    static var aboutGitHub: String { tr("about.github") }
 
     // MARK: - Menu
 

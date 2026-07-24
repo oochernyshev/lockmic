@@ -96,3 +96,9 @@
 "tab.devices" = "Enheter";
 "tab.general" = "Allmänt";
 "tab.keyboard" = "Tangentbord";
+"about.feedback.header" = "Feedback";
+"about.feedback.caption" = "Rapportera buggar, föreslå funktioner eller lämna omdöme på GitHub (gratis konto).";
+"about.feedback.send" = "Skicka feedback";
+"about.feedback.bug" = "Rapportera en bugg";
+"about.feedback.feature" = "Föreslå en funktion";
+"about.github" = "GitHub";

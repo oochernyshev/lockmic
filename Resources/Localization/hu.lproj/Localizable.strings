@@ -96,3 +96,9 @@
 "tab.devices" = "Eszközök";
 "tab.general" = "Általános";
 "tab.keyboard" = "Billentyűzet";
+"about.feedback.header" = "Visszajelzés";
+"about.feedback.caption" = "Jelents hibákat, kérj funkciókat vagy írj értékelést a GitHubon (ingyenes fiók).";
+"about.feedback.send" = "Visszajelzés küldése";
+"about.feedback.bug" = "Hiba jelentése";
+"about.feedback.feature" = "Funkció kérése";
+"about.github" = "GitHub";

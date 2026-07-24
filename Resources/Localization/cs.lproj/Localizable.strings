@@ -96,3 +96,9 @@
 "tab.devices" = "Zařízení";
 "tab.general" = "Obecné";
 "tab.keyboard" = "Klávesnice";
+"about.feedback.header" = "Zpětná vazba";
+"about.feedback.caption" = "Nahlašujte chyby, navrhujte funkce nebo napište recenzi na GitHubu (bezplatný účet).";
+"about.feedback.send" = "Odeslat zpětnou vazbu";
+"about.feedback.bug" = "Nahlásit chybu";
+"about.feedback.feature" = "Navrhnout funkci";
+"about.github" = "GitHub";

@@ -96,3 +96,9 @@
 "tab.devices" = "Пристрої";
 "tab.general" = "Основні";
 "tab.keyboard" = "Клавіатура";
+"about.feedback.header" = "Відгуки";
+"about.feedback.caption" = "Повідомляйте про помилки, пропонуйте функції або залиште відгук на GitHub (безкоштовний акаунт).";
+"about.feedback.send" = "Надіслати відгук";
+"about.feedback.bug" = "Повідомити про помилку";
+"about.feedback.feature" = "Запропонувати функцію";
+"about.github" = "GitHub";

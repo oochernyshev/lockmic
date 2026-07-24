@@ -96,3 +96,9 @@
 "tab.devices" = "Συσκευές";
 "tab.general" = "Γενικά";
 "tab.keyboard" = "Πληκτρολόγιο";
+"about.feedback.header" = "Σχόλια";
+"about.feedback.caption" = "Αναφέρετε σφάλματα, ζητήστε δυνατότητες ή αφήστε κριτική στο GitHub (δωρεάν λογαριασμός).";
+"about.feedback.send" = "Αποστολή σχολίων";
+"about.feedback.bug" = "Αναφορά σφάλματος";
+"about.feedback.feature" = "Αίτημα δυνατότητας";
+"about.github" = "GitHub";

@@ -96,3 +96,9 @@
 "tab.devices" = "Dispozitive";
 "tab.general" = "General";
 "tab.keyboard" = "Tastatură";
+"about.feedback.header" = "Feedback";
+"about.feedback.caption" = "Raportează erori, cere funcții sau lasă o recenzie pe GitHub (cont gratuit).";
+"about.feedback.send" = "Trimite feedback";
+"about.feedback.bug" = "Raportează o eroare";
+"about.feedback.feature" = "Solicită o funcție";
+"about.github" = "GitHub";

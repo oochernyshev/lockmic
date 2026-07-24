@@ -1,0 +1,35 @@
+name: General feedback
+description: Share a review, praise, or general thoughts
+title: "[Feedback]: "
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking a moment. Reviews and general notes help prioritize the project.
+  - type: dropdown
+    id: sentiment
+    attributes:
+      label: Overall
+      options:
+        - Love it
+        - It's fine
+        - Needs work
+        - Just a note
+    validations:
+      required: true
+  - type: textarea
+    id: message
+    attributes:
+      label: Your feedback
+      description: What works well? What should change?
+      placeholder: e.g. HUD is great; wish launch-at-login were on by default…
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: LockMic version (optional)
+      placeholder: "1.2.0"
+    validations:
+      required: false

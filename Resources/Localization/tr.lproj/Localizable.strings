@@ -96,3 +96,9 @@
 "tab.devices" = "Aygıtlar";
 "tab.general" = "Genel";
 "tab.keyboard" = "Klavye";
+"about.feedback.header" = "Geri bildirim";
+"about.feedback.caption" = "GitHub’da (ücretsiz hesap) hata bildirin, özellik isteyin veya yorum bırakın.";
+"about.feedback.send" = "Geri bildirim gönder";
+"about.feedback.bug" = "Hata bildir";
+"about.feedback.feature" = "Özellik iste";
+"about.github" = "GitHub";

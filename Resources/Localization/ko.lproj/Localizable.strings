@@ -96,3 +96,9 @@
 "tab.devices" = "장치";
 "tab.general" = "일반";
 "tab.keyboard" = "키보드";
+"about.feedback.header" = "피드백";
+"about.feedback.caption" = "GitHub(무료 계정)에서 버그 신고, 기능 요청, 리뷰를 남길 수 있습니다.";
+"about.feedback.send" = "피드백 보내기";
+"about.feedback.bug" = "버그 신고";
+"about.feedback.feature" = "기능 요청";
+"about.github" = "GitHub";

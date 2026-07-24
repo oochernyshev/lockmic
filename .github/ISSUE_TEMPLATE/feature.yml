@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest an improvement or new capability
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem and your idea. Voting happens via 👍 reactions on the issue.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What are you trying to do that is hard or missing today?
+      placeholder: e.g. I want mute to follow the active meeting app only…
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should LockMic behave?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds or other apps you use today.
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: How important is this for you?
+      options:
+        - Nice to have
+        - Would use often
+        - Blocking my workflow
+    validations:
+      required: false

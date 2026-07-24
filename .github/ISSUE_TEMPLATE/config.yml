@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/oochernyshev/lockmic/discussions
+    about: Questions, ideas, and community chat (enable Discussions in repo settings if missing).
+  - name: Website
+    url: https://lockmic.com/
+    about: Product site, download, and install instructions.

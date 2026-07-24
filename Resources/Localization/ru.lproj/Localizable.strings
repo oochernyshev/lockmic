@@ -96,3 +96,9 @@
 "tab.devices" = "Устройства";
 "tab.general" = "Основные";
 "tab.keyboard" = "Клавиатура";
+"about.feedback.header" = "Обратная связь";
+"about.feedback.caption" = "Сообщайте об ошибках, предлагайте функции или оставляйте отзыв на GitHub (бесплатный аккаунт).";
+"about.feedback.send" = "Отправить отзыв";
+"about.feedback.bug" = "Сообщить об ошибке";
+"about.feedback.feature" = "Предложить функцию";
+"about.github" = "GitHub";

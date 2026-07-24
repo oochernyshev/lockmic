@@ -96,3 +96,9 @@
 "tab.devices" = "Uređaji";
 "tab.general" = "Opšte";
 "tab.keyboard" = "Tastatura";
+"about.feedback.header" = "Povratne informacije";
+"about.feedback.caption" = "Prijavite greške, predložite funkcije ili ostavite recenziju na GitHub-u (besplatan nalog).";
+"about.feedback.send" = "Pošalji povratnu informaciju";
+"about.feedback.bug" = "Prijavi grešku";
+"about.feedback.feature" = "Predloži funkciju";
+"about.github" = "GitHub";
