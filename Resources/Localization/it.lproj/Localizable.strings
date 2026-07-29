@@ -37,6 +37,8 @@
 "general.options.header" = "Opzioni";
 "general.options.hud" = "Mostra HUD a schermo quando silenzi";
 "general.options.hud.caption" = "Indicatore breve su mute/unmute e mentre tieni talk / mute / flip.";
+"general.options.dock" = "Mostra nel Dock";
+"general.options.dock.caption" = "Sempre nel Dock e in Cmd+Tab. Se disattivato, LockMic compare comunque automaticamente nel Dock quando l’icona nella barra dei menu è nascosta dalla scocca della fotocamera o da altre icone.";
 "general.options.login" = "Apri all’accesso";
 "general.options.sound" = "Riproduci suono su mute / unmute";
 "general.status.device" = "Dispositivo";

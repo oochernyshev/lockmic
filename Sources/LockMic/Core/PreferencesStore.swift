@@ -4,6 +4,11 @@ import ServiceManagement
 
 private let log = Logger(subsystem: "com.lockmic.app", category: "Preferences")
 
+extension Notification.Name {
+    /// Posted when `PreferencesStore.showInDock` changes so AppDelegate can update activation policy.
+    static let lockMicShowInDockDidChange = Notification.Name("LockMic.showInDockDidChange")
+}
+
 @MainActor
 final class PreferencesStore: ObservableObject {
     private enum Keys {
@@ -13,6 +18,8 @@ final class PreferencesStore: ObservableObject {
         static let launchAtLogin = "launchAtLogin"
         static let muteAllInputs = "muteAllInputs"
         static let shareAnonymousUsage = "shareAnonymousUsage"
+        /// When true, show a Dock icon so Preferences stay reachable if the menu bar is full.
+        static let showInDock = "showInDock"
 
         static let toggleEnabled = "hotkeyToggleEnabled"
         static let toggleKeyCode = "hotkeyToggleKeyCode"
@@ -81,6 +88,14 @@ final class PreferencesStore: ObservableObject {
         didSet {
             UserDefaults.standard.set(launchAtLogin, forKey: Keys.launchAtLogin)
             updateLoginItem()
+        }
+    }
+
+    /// Always show in Dock. When off, Dock still appears automatically if the menu bar icon is hidden.
+    @Published var showInDock: Bool {
+        didSet {
+            UserDefaults.standard.set(showInDock, forKey: Keys.showInDock)
+            NotificationCenter.default.post(name: .lockMicShowInDockDidChange, object: nil)
         }
     }
 
@@ -195,6 +210,11 @@ final class PreferencesStore: ObservableObject {
         muteAllInputs = defaults.bool(forKey: Keys.muteAllInputs)
 
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
+
+        if defaults.object(forKey: Keys.showInDock) == nil {
+            defaults.set(false, forKey: Keys.showInDock)
+        }
+        showInDock = defaults.bool(forKey: Keys.showInDock)
 
         // Opt-in only — unset key means not agreed (features disabled).
         if defaults.object(forKey: Keys.shareAnonymousUsage) == nil {

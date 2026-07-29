@@ -37,6 +37,8 @@
 "general.options.header" = "옵션";
 "general.options.hud" = "음소거 시 화면 HUD 표시";
 "general.options.hud.caption" = "음소거/해제 시 및 talk / mute / flip 길게 누르는 동안 짧은 표시.";
+"general.options.dock" = "Dock에 표시";
+"general.options.dock.caption" = "항상 Dock과 Cmd+Tab에 표시합니다. 꺼져 있어도 메뉴 막대 아이콘이 카메라 영역이나 다른 아이콘에 가려지면 Dock에 자동으로 나타납니다.";
 "general.options.login" = "로그인 시 실행";
 "general.options.sound" = "음소거/해제 시 소리 재생";
 "general.status.device" = "장치";

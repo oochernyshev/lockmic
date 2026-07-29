@@ -37,6 +37,8 @@
 "general.options.header" = "Параметри";
 "general.options.hud" = "Показувати HUD під час mute";
 "general.options.hud.caption" = "Короткий індикатор при mute/unmute та під час утримання talk / mute / flip.";
+"general.options.dock" = "Показувати в Dock";
+"general.options.dock.caption" = "Завжди в Dock і Cmd+Tab. Якщо вимкнено, LockMic усе одно з’явиться в Dock автоматично, коли іконку в рядку меню ховає виріз камери або інші значки.";
 "general.options.login" = "Запускати під час входу";
 "general.options.sound" = "Звук при mute / unmute";
 "general.status.device" = "Пристрій";

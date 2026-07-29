@@ -12,6 +12,12 @@ final class StatusItemController {
     private var statusItem: NSStatusItem?
     private var preferencesWindow: NSWindow?
     private var cancellables: [NSObjectProtocol] = []
+    private var visibilityTimer: Timer?
+    private var reportedMenuBarIconVisible: Bool?
+    private var visibilityMismatchCount = 0
+    /// Debounced: menu bar icon on-screen vs hidden (camera housing / overcrowding).
+    var onMenuBarIconVisibilityChange: ((Bool) -> Void)?
+
     /// Tracks last applied floating preference so we only hide/show on a real change.
     private var lastHudFloating: Bool?
     /// Last bindings passed to HotkeyManager (skip re-register when unchanged).
@@ -51,6 +57,8 @@ final class StatusItemController {
 
     func start() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        // Persist position so users can ⌘-drag the icon among menu bar extras.
+        item.autosaveName = "LockMicStatusItem"
         item.isVisible = true
         if let button = item.button {
             button.image = statusImage(symbolName: symbolName(for: mic.state))
@@ -71,6 +79,75 @@ final class StatusItemController {
         applyFeatureAvailability(force: true)
         observeMic()
         observePreferenceHotkeys()
+        startMenuBarVisibilityMonitoring()
+    }
+
+    /// Left-click Dock tile: toggle mute (or open Preferences when features are disabled).
+    func handleDockClick() {
+        if featuresEnabled {
+            toggleFromUser(source: .dock)
+        } else {
+            presentPreferences(source: .menu)
+        }
+    }
+
+    /// Re-apply HUD Dock art after activation-policy changes (macOS resets to bundle icon).
+    func refreshDockIcon() {
+        updateDockIcon()
+    }
+
+    // MARK: - Menu bar icon visibility
+
+    private func startMenuBarVisibilityMonitoring() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            self?.refreshMenuBarIconVisibility(force: true)
+        }
+
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshMenuBarIconVisibility(force: false)
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        visibilityTimer = timer
+
+        cancellables.append(
+            NotificationCenter.default.addObserver(
+                forName: NSApplication.didChangeScreenParametersNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.refreshMenuBarIconVisibility(force: true)
+                }
+            }
+        )
+    }
+
+    private func refreshMenuBarIconVisibility(force: Bool) {
+        let visible = StatusItemVisibility.isIconVisiblyPlaced(statusItem: statusItem)
+
+        if force || reportedMenuBarIconVisible == nil {
+            visibilityMismatchCount = 0
+            publishMenuBarIconVisibility(visible)
+            return
+        }
+        if visible == reportedMenuBarIconVisible {
+            visibilityMismatchCount = 0
+            return
+        }
+        // Two consecutive samples (~2s) before flipping Dock policy — avoids flicker.
+        visibilityMismatchCount += 1
+        if visibilityMismatchCount >= 2 {
+            visibilityMismatchCount = 0
+            publishMenuBarIconVisibility(visible)
+        }
+    }
+
+    private func publishMenuBarIconVisibility(_ visible: Bool) {
+        guard reportedMenuBarIconVisible != visible else { return }
+        reportedMenuBarIconVisible = visible
+        onMenuBarIconVisibilityChange?(visible)
     }
 
     private func observeMic() {
@@ -82,6 +159,7 @@ final class StatusItemController {
             ) { [weak self] _ in
                 Task { @MainActor in
                     guard let self else { return }
+                    self.refreshMenuBarIconVisibility(force: false)
                     // Mid PTT/PTM/flip: do not re-read HAL into desiredMuted — that
                     // would desync restore-on-release. Device list only is safe.
                     if self.momentaryHold.isActive {
@@ -346,7 +424,7 @@ final class StatusItemController {
 
     private func showMenuFromStatusItem() {
         guard let button = statusItem?.button else { return }
-        let menu = buildMenu()
+        let menu = makeContextMenu(includeQuit: true)
         statusItem?.menu = menu
         button.performClick(nil)
         DispatchQueue.main.async { [weak self] in
@@ -354,7 +432,13 @@ final class StatusItemController {
         }
     }
 
-    private func buildMenu() -> NSMenu {
+    /// Dock right-click menu (same actions as the menu bar; system already provides Quit).
+    func makeDockMenu() -> NSMenu {
+        makeContextMenu(includeQuit: false)
+    }
+
+    /// Shared menu for the status item and Dock tile.
+    private func makeContextMenu(includeQuit: Bool) -> NSMenu {
         let menu = NSMenu()
 
         if !featuresEnabled {
@@ -384,15 +468,16 @@ final class StatusItemController {
             agree.target = self
             menu.addItem(agree)
 
-            let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: ",")
+            let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: "")
             prefs.target = self
             menu.addItem(prefs)
 
-            menu.addItem(.separator())
-
-            let quit = NSMenuItem(title: L10n.menuQuit, action: #selector(quit), keyEquivalent: "q")
-            quit.target = self
-            menu.addItem(quit)
+            if includeQuit {
+                menu.addItem(.separator())
+                let quit = NSMenuItem(title: L10n.menuQuit, action: #selector(quit), keyEquivalent: "q")
+                quit.target = self
+                menu.addItem(quit)
+            }
             return menu
         }
 
@@ -470,15 +555,16 @@ final class StatusItemController {
 
         menu.addItem(.separator())
 
-        let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: ",")
+        let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: "")
         prefs.target = self
         menu.addItem(prefs)
 
-        menu.addItem(.separator())
-
-        let quit = NSMenuItem(title: L10n.menuQuit, action: #selector(quit), keyEquivalent: "q")
-        quit.target = self
-        menu.addItem(quit)
+        if includeQuit {
+            menu.addItem(.separator())
+            let quit = NSMenuItem(title: L10n.menuQuit, action: #selector(quit), keyEquivalent: "q")
+            quit.target = self
+            menu.addItem(quit)
+        }
 
         return menu
     }
@@ -558,6 +644,16 @@ final class StatusItemController {
             : disabledStatusImage()
         statusItem?.button?.toolTip = tooltip(for: mic.state)
         statusItem?.isVisible = true
+        updateDockIcon()
+    }
+
+    private func updateDockIcon() {
+        let style = DockIconRenderer.style(
+            featuresEnabled: featuresEnabled,
+            state: mic.state,
+            effectiveMuted: mic.effectiveMuted
+        )
+        NSApp.applicationIconImage = DockIconRenderer.image(style: style)
     }
 
     private func symbolName(for state: MicState) -> String {

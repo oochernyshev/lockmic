@@ -44,6 +44,9 @@ struct PreferencesGeneralPage: View {
                 }
                 .disabled(!preferences.featuresEnabled)
                 .opacity(preferences.featuresEnabled ? 1 : 0.45)
+
+                Toggle(L10n.generalOptionsDock, isOn: $preferences.showInDock)
+                PreferencesChrome.caption(L10n.generalOptionsDockCaption)
             }
         }
     }

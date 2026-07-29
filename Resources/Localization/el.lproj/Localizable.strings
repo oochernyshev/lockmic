@@ -37,6 +37,8 @@
 "general.options.header" = "Επιλογές";
 "general.options.hud" = "Εμφάνιση HUD στην οθόνη κατά τη σίγαση";
 "general.options.hud.caption" = "Σύντομη ένδειξη σε mute/unmute και κατά το κράτημα talk / mute / flip.";
+"general.options.dock" = "Εμφάνιση στο Dock";
+"general.options.dock.caption" = "Πάντα στο Dock και Cmd+Tab. Όταν είναι off, το LockMic εμφανίζεται αυτόματα στο Dock αν το εικονίδιο στη γραμμή μενού κρύβεται από την κάμερα ή άλλα εικονίδια.";
 "general.options.login" = "Εκκίνηση στη σύνδεση";
 "general.options.sound" = "Αναπαραγωγή ήχου σε mute / unmute";
 "general.status.device" = "Συσκευή";

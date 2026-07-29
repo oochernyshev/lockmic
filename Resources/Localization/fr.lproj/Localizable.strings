@@ -37,6 +37,8 @@
 "general.options.header" = "Options";
 "general.options.hud" = "Afficher le HUD à l’écran lors de la sourdine";
 "general.options.hud.caption" = "Indicateur bref à la sourdine et pendant les raccourcis maintenus (talk / mute / flip).";
+"general.options.dock" = "Afficher dans le Dock";
+"general.options.dock.caption" = "Toujours dans le Dock et Cmd+Tab. Désactivé, LockMic apparaît quand même automatiquement dans le Dock si l’icône de la barre de menus est masquée par le boîtier caméra ou d’autres icônes.";
 "general.options.login" = "Lancer à la connexion";
 "general.options.sound" = "Jouer un son à la sourdine / réactivation";
 "general.status.device" = "Appareil";

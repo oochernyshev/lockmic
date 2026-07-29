@@ -37,6 +37,8 @@
 "general.options.header" = "Opcje";
 "general.options.hud" = "Pokazuj HUD na ekranie przy wyciszaniu";
 "general.options.hud.caption" = "Krótki wskaźnik przy mute/unmute oraz podczas trzymania talk / mute / flip.";
+"general.options.dock" = "Pokaż w Docku";
+"general.options.dock.caption" = "Zawsze w Docku i Cmd+Tab. Gdy wyłączone, LockMic i tak pojawi się automatycznie w Docku, gdy ikona na pasku menu jest ukryta przez obudowę kamery lub inne ikony.";
 "general.options.login" = "Uruchom przy logowaniu";
 "general.options.sound" = "Odtwarzaj dźwięk przy mute / unmute";
 "general.status.device" = "Urządzenie";

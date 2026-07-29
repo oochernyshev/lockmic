@@ -37,6 +37,8 @@
 "general.options.header" = "Indstillinger";
 "general.options.hud" = "Vis HUD på skærmen ved mute";
 "general.options.hud.caption" = "Kort indikator ved mute/unmute og under hold af talk / mute / flip.";
+"general.options.dock" = "Vis i Dock";
+"general.options.dock.caption" = "Vis altid i Dock og Cmd+Tab. Når slået fra vises LockMic stadig automatisk i Dock, hvis menulinjeikonet er skjult af kamerahuset eller andre ikoner.";
 "general.options.login" = "Start ved login";
 "general.options.sound" = "Afspil lyd ved mute / unmute";
 "general.status.device" = "Enhed";

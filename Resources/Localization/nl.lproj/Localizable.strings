@@ -37,6 +37,8 @@
 "general.options.header" = "Opties";
 "general.options.hud" = "HUD op scherm tonen bij dempen";
 "general.options.hud.caption" = "Korte indicator bij dempen/activeren en tijdens vasthouden van talk / mute / flip.";
+"general.options.dock" = "Toon in Dock";
+"general.options.dock.caption" = "Altijd in het Dock en Cmd+Tab. Uitgeschakeld verschijnt LockMic toch automatisch in het Dock als het menubalkpictogram door de camerabehuizing of andere pictogrammen wordt verborgen.";
 "general.options.login" = "Starten bij inloggen";
 "general.options.sound" = "Geluid afspelen bij dempen / activeren";
 "general.status.device" = "Apparaat";

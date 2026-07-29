@@ -37,6 +37,8 @@
 "general.options.header" = "Beállítások";
 "general.options.hud" = "HUD megjelenítése némításkor";
 "general.options.hud.caption" = "Rövid jelző mute/unmute és talk / mute / flip lenyomva tartásakor.";
+"general.options.dock" = "Megjelenítés a Dockban";
+"general.options.dock.caption" = "Mindig a Dockban és a Cmd+Tab listában. Kikapcsolva is automatikusan megjelenik a Dockban, ha a menüsor ikonját a kameraház vagy más ikonok eltakarják.";
 "general.options.login" = "Indítás bejelentkezéskor";
 "general.options.sound" = "Hang lejátszása mute / unmute esetén";
 "general.status.device" = "Eszköz";

@@ -24,6 +24,8 @@ enum UsageReporter {
         case menuBar = "menu_bar"
         /// Item in the status-item context menu.
         case menu
+        /// Left-click on the Dock tile.
+        case dock
     }
 
     enum Action: String, CaseIterable {

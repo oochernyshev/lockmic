@@ -37,6 +37,8 @@
 "general.options.header" = "Optionen";
 "general.options.hud" = "Bildschirm-HUD beim Stummschalten anzeigen";
 "general.options.hud.caption" = "Kurzer Hinweis beim Stummschalten und während gehaltener Tastenkürzel (Talk / Mute / Flip).";
+"general.options.dock" = "Im Dock anzeigen";
+"general.options.dock.caption" = "Immer im Dock und in Cmd+Tab. Wenn aus, erscheint LockMic trotzdem automatisch im Dock, sobald das Menüleisten-Symbol durch die Kameranase oder andere Icons verdeckt ist.";
 "general.options.login" = "Bei der Anmeldung starten";
 "general.options.sound" = "Ton beim Stumm-/Aufschalten abspielen";
 "general.status.device" = "Gerät";

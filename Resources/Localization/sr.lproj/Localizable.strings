@@ -37,6 +37,8 @@
 "general.options.header" = "Opcije";
 "general.options.hud" = "Prikaži HUD na ekranu pri utišavanju";
 "general.options.hud.caption" = "Kratak indikator pri mute/unmute i tokom držanja talk / mute / flip.";
+"general.options.dock" = "Prikaži u Dock-u";
+"general.options.dock.caption" = "Uvek u Dock-u i Cmd+Tab listi. Isključeno, LockMic se i dalje automatski pojavljuje u Dock-u ako je ikona u traci menija sakrivena kućištem kamere ili drugim ikonama.";
 "general.options.login" = "Pokreni pri prijavi";
 "general.options.sound" = "Pusti zvuk pri mute / unmute";
 "general.status.device" = "Uređaj";

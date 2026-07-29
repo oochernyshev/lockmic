@@ -2,7 +2,7 @@
 
 LockMic is a native macOS menu-bar utility that mutes system microphone input at the Core Audio level so mute works in every app (Zoom, Teams, Meet, FaceTime, browsers, etc.).
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.2.1
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.3.0
 
 **Distribution priority:** Homebrew (Developer ID / notarized `.app`) first; Mac App Store later with the same codebase and a sandboxed flavor.
 
@@ -116,7 +116,9 @@ Only one momentary hold is active at a time; latching shortcuts are ignored whil
 | `HotkeyRecorderButton` | Capture custom shortcut chords |
 | `SoundFeedback` | Optional mute/unmute system sounds |
 
-Menu bar app: `LSUIElement = true` (no Dock icon).
+Menu bar app: `LSUIElement = true` (no Dock icon by default).
+
+When the status item is not in the usable menu bar (camera housing / overcrowding), LockMic shows a Dock tile automatically (`StatusItemVisibility` + activation policy). Dock left-click toggles mute; right-click reuses the status menu. Optional **Show in Dock** keeps the tile always.
 
 #### Floating HUD behavior
 
@@ -137,7 +139,7 @@ Preferences window: resizable, frosted material background (`regularMaterial` / 
 
 `UserDefaults`-backed `@Published` settings:
 
-- HUD toast, floating HUD, sound, launch at login, mute-all
+- HUD toast, floating HUD, sound, launch at login, show in Dock, mute-all
 - Shortcut enable flags + chords (toggle / mute / unmute / F5 / flip / talk / mute-hold)
 - Defaults: mute-all on; toast + sound on; floating off; mute/unmute shortcuts off
 
@@ -274,6 +276,7 @@ Local:
 | **HB-1.x** | Mute-all, devices list, custom shortcuts, branding, floating HUD (drag / click / per-screen hide) | Done |
 | **1.2.0** | Momentary hotkeys (flip/talk/mute), hold HUD, prefs polish, virtual transport detection | Done |
 | **1.2.1** | About feedback (GitHub issues), localization for feedback strings | Done |
+| **1.3.0** | Auto Dock when menu bar icon is hidden (camera housing / overcrowding); Dock mute toggle + HUD-style icon; Show in Dock preference | Done |
 | **HB-1.x** | Push-to-talk / push-to-mute, shortcut conflict warnings | Done |
 | **HB-2** | Richer status, polish, notarized releases | Planned |
 | **Pro** (optional) | Paid add-ons in separate closed modules (open core remains MIT) | Future |
