@@ -10,6 +10,10 @@ final class HUDContentView: NSView {
     /// Screen this HUD instance belongs to (drag stays within it).
     weak var assignedScreen: NSScreen?
 
+    /// Matches the visible rounded pill (panel is slightly larger for padding).
+    private static let backdropSize: CGFloat = 140
+    private static let cornerRadius: CGFloat = 36
+
     private let backdrop = NSView()
     private let iconView = NSImageView()
     private let captionLabel = NSTextField(labelWithString: "")
@@ -18,6 +22,9 @@ final class HUDContentView: NSView {
     private var windowOriginAtDown: NSPoint?
     private var isDragging = false
 
+    /// True between left mouseDown and mouseUp (keep the panel interactive while dragging).
+    var isHandlingMouseSession: Bool { mouseDownScreenPoint != nil }
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
@@ -25,7 +32,7 @@ final class HUDContentView: NSView {
 
         backdrop.wantsLayer = true
         backdrop.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.55).cgColor
-        backdrop.layer?.cornerRadius = 36
+        backdrop.layer?.cornerRadius = Self.cornerRadius
         backdrop.layer?.masksToBounds = true
         backdrop.translatesAutoresizingMaskIntoConstraints = false
         addSubview(backdrop)
@@ -35,7 +42,7 @@ final class HUDContentView: NSView {
         material.blendingMode = .withinWindow
         material.state = .active
         material.wantsLayer = true
-        material.layer?.cornerRadius = 36
+        material.layer?.cornerRadius = Self.cornerRadius
         material.layer?.masksToBounds = true
         material.alphaValue = 0.35
         material.translatesAutoresizingMaskIntoConstraints = false
@@ -56,8 +63,8 @@ final class HUDContentView: NSView {
         NSLayoutConstraint.activate([
             backdrop.centerXAnchor.constraint(equalTo: centerXAnchor),
             backdrop.centerYAnchor.constraint(equalTo: centerYAnchor),
-            backdrop.widthAnchor.constraint(equalToConstant: 140),
-            backdrop.heightAnchor.constraint(equalToConstant: 140),
+            backdrop.widthAnchor.constraint(equalToConstant: Self.backdropSize),
+            backdrop.heightAnchor.constraint(equalToConstant: Self.backdropSize),
 
             material.leadingAnchor.constraint(equalTo: backdrop.leadingAnchor),
             material.trailingAnchor.constraint(equalTo: backdrop.trailingAnchor),
@@ -118,24 +125,42 @@ final class HUDContentView: NSView {
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
+    /// Global screen point on the visible rounded pill?
+    func containsInteractiveScreenPoint(_ screenPoint: NSPoint) -> Bool {
+        guard let window, window.isVisible, window.frame.contains(screenPoint) else { return false }
+        let local = convert(window.convertPoint(fromScreen: screenPoint), from: nil)
+        return roundedPillPath.contains(local)
+    }
+
+    private var roundedPillBounds: NSRect {
+        let s = Self.backdropSize
+        return NSRect(
+            x: (bounds.width - s) / 2,
+            y: (bounds.height - s) / 2,
+            width: s,
+            height: s
+        )
+    }
+
+    private var roundedPillPath: NSBezierPath {
+        NSBezierPath(roundedRect: roundedPillBounds, xRadius: Self.cornerRadius, yRadius: Self.cornerRadius)
+    }
+
     override func resetCursorRects() {
         if isInteractive {
-            addCursorRect(bounds, cursor: .openHand)
+            addCursorRect(roundedPillBounds, cursor: .openHand)
         }
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         guard isInteractive else { return super.hitTest(point) }
-        let local = convert(point, from: superview)
-        return bounds.contains(local) ? self : nil
+        // Content view is the window root (no superview); point is already local.
+        // Own the whole pill so icon/caption don’t steal the drag.
+        return roundedPillPath.contains(point) ? self : nil
     }
 
     override func mouseDown(with event: NSEvent) {
-        guard isInteractive, let window else {
-            super.mouseDown(with: event)
-            return
-        }
-        guard event.type == .leftMouseDown else {
+        guard isInteractive, let window, event.type == .leftMouseDown else {
             super.mouseDown(with: event)
             return
         }
@@ -172,11 +197,11 @@ final class HUDContentView: NSView {
     }
 
     override func mouseUp(with event: NSEvent) {
-        if isInteractive, event.type == .leftMouseUp {
+        if isInteractive, event.type == .leftMouseUp, mouseDownScreenPoint != nil {
             NSCursor.pop()
             if isDragging, let window {
                 onDragEnded?(window)
-            } else if !isDragging {
+            } else {
                 onToggle?()
             }
             mouseDownScreenPoint = nil

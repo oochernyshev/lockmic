@@ -2,7 +2,7 @@
 
 LockMic is a native macOS menu-bar utility that mutes system microphone input at the Core Audio level so mute works in every app (Zoom, Teams, Meet, FaceTime, browsers, etc.).
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.3.1
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.3.2
 
 **Distribution priority:** Homebrew (Developer ID / notarized `.app`) first; Mac App Store later with the same codebase and a sandboxed flavor.
 
@@ -278,6 +278,7 @@ Local:
 | **1.2.1** | About feedback (GitHub issues), localization for feedback strings | Done |
 | **1.3.0** | Auto Dock when menu bar icon is hidden (camera housing / overcrowding); Dock mute toggle + HUD-style icon; Show in Dock preference | Done |
 | **1.3.1** | Re-assert system mute every 2s while intent is muted (fixes Meet/Chrome starting capture after mute) | Done |
+| **1.3.2** | Floating HUD: clicks outside the rounded pill pass through to apps underneath | Done |
 | **HB-1.x** | Push-to-talk / push-to-mute, shortcut conflict warnings | Done |
 | **HB-2** | Richer status, polish, notarized releases | Planned |
 | **Pro** (optional) | Paid add-ons in separate closed modules (open core remains MIT) | Future |

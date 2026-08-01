@@ -15,6 +15,10 @@ final class HUDOverlay: NSObject {
     private var lastHold: HUDHoldKind = .none
     private var lastInteractive = false
     private var screenObserver: NSObjectProtocol?
+    /// Mouse-move monitors: toggle `ignoresMouseEvents` so only the rounded pill is interactive.
+    /// Event-driven (not a timer) — runs only when the cursor actually moves.
+    private var clickThroughLocalMonitor: Any?
+    private var clickThroughGlobalMonitor: Any?
 
     private let panelSize = NSSize(width: 160, height: 160)
     private let bottomMargin: CGFloat = 48
@@ -36,6 +40,12 @@ final class HUDOverlay: NSObject {
     deinit {
         if let screenObserver {
             NotificationCenter.default.removeObserver(screenObserver)
+        }
+        if let clickThroughLocalMonitor {
+            NSEvent.removeMonitor(clickThroughLocalMonitor)
+        }
+        if let clickThroughGlobalMonitor {
+            NSEvent.removeMonitor(clickThroughGlobalMonitor)
         }
     }
 
@@ -69,7 +79,10 @@ final class HUDOverlay: NSObject {
                 hold: hold,
                 screen: entry.screen
             )
-            entry.panel.ignoresMouseEvents = !isInteractive
+            // Default: toast never receives clicks; floating starts ignoring until mouse is on the pill.
+            entry.panel.ignoresMouseEvents = true
+            // Needed so local mouseMoved monitors fire while our app is active.
+            entry.panel.acceptsMouseMovedEvents = isInteractive
 
             // Per-display hide only applies to interactive floating HUD.
             if isInteractive, isDisplayHidden(displayID(for: entry.screen)) {
@@ -84,6 +97,13 @@ final class HUDOverlay: NSObject {
                 positionAtBottom(entry.panel, on: entry.screen)
             }
             present(entry.panel, animated: entry.panel.alphaValue < 0.95 || !entry.panel.isVisible)
+        }
+
+        if isInteractive {
+            startClickThroughTrackingIfNeeded()
+            updateClickThroughState()
+        } else {
+            stopClickThroughTracking()
         }
 
         if persistent {
@@ -105,12 +125,14 @@ final class HUDOverlay: NSObject {
         hideWorkItem = nil
         isPersistent = false
         stopObservingScreenChanges()
+        stopClickThroughTracking()
 
         for entry in panels.values {
             if let content = entry.panel.contentView as? HUDContentView {
                 content.isInteractive = false
             }
             entry.panel.ignoresMouseEvents = true
+            entry.panel.acceptsMouseMovedEvents = false
             NSAnimationContext.runAnimationGroup({ ctx in
                 ctx.duration = 0.25
                 ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
@@ -245,12 +267,58 @@ final class HUDOverlay: NSObject {
         content.assignedScreen = screen
         content.onToggle = { [weak self] in
             self?.onToggle?()
+            self?.updateClickThroughState()
         }
         content.onDragEnded = { [weak self] window in
             self?.persistPosition(from: window)
+            self?.updateClickThroughState()
         }
         content.onShowContextMenu = { [weak self] view, event in
             self?.showContextMenu(for: view, event: event)
+        }
+    }
+
+    // MARK: - Click-through (rounded pill only)
+
+    private func startClickThroughTrackingIfNeeded() {
+        guard clickThroughLocalMonitor == nil else { return }
+        // hitTest:nil cannot pass clicks through an NSWindow — flip ignoresMouseEvents instead.
+        let mask: NSEvent.EventTypeMask = .mouseMoved
+        clickThroughLocalMonitor = NSEvent.addLocalMonitorForEvents(matching: mask) { [weak self] event in
+            self?.updateClickThroughState()
+            return event
+        }
+        clickThroughGlobalMonitor = NSEvent.addGlobalMonitorForEvents(matching: mask) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateClickThroughState()
+            }
+        }
+    }
+
+    private func stopClickThroughTracking() {
+        if let clickThroughLocalMonitor {
+            NSEvent.removeMonitor(clickThroughLocalMonitor)
+            self.clickThroughLocalMonitor = nil
+        }
+        if let clickThroughGlobalMonitor {
+            NSEvent.removeMonitor(clickThroughGlobalMonitor)
+            self.clickThroughGlobalMonitor = nil
+        }
+    }
+
+    /// Mouse only over the visible pill (or mid-drag).
+    private func updateClickThroughState() {
+        guard lastInteractive else { return }
+        let mouse = NSEvent.mouseLocation
+        for entry in panels.values {
+            guard let content = entry.panel.contentView as? HUDContentView else { continue }
+            let overPill = entry.panel.isVisible
+                && entry.panel.alphaValue >= 0.05
+                && (content.isHandlingMouseSession || content.containsInteractiveScreenPoint(mouse))
+            let ignore = !overPill
+            if entry.panel.ignoresMouseEvents != ignore {
+                entry.panel.ignoresMouseEvents = ignore
+            }
         }
     }
 
