@@ -11,8 +11,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var dockPreferenceObserver: NSObjectProtocol?
     /// Optimistic until the first menu-bar geometry sample.
     private var menuBarIconVisible = true
+    /// Relaunch when the user replaces the .app on disk while we are still running.
+    private var bundleReplacementWatcher: BundleReplacementWatcher?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // If Finder replaced us on disk before this process fully started, hop to the new binary.
+        if AppInstanceGuard.relaunchIfOutdatedOnDisk() {
+            return
+        }
+
+        bundleReplacementWatcher = BundleReplacementWatcher {
+            AppInstanceGuard.relaunchIfOutdatedOnDisk()
+        }
+        bundleReplacementWatcher?.start()
+
         let status = StatusItemController(mic: mic, preferences: preferences)
         status.onMenuBarIconVisibilityChange = { [weak self] visible in
             self?.setMenuBarIconVisible(visible)
@@ -42,14 +54,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        bundleReplacementWatcher?.stop()
+        bundleReplacementWatcher = nil
         if let dockPreferenceObserver {
             NotificationCenter.default.removeObserver(dockPreferenceObserver)
         }
         UsageReporter.flush()
     }
 
+    func applicationDidBecomeActive(_ notification: Notification) {
+        _ = AppInstanceGuard.relaunchIfOutdatedOnDisk()
+    }
+
     /// Dock left-click: toggle mute (Preferences via right-click menu).
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if AppInstanceGuard.relaunchIfOutdatedOnDisk() {
+            return false
+        }
         statusItemController?.handleDockClick()
         return true
     }
