@@ -63,6 +63,11 @@ final class MicController: ObservableObject {
     private var isApplyingMute = false
     private var deviceChangeWorkItem: DispatchWorkItem?
 
+    /// While user intent is muted, re-check HAL periodically and re-apply if a new
+    /// capture client (e.g. Meet/Chrome) or the driver cleared mute without a device-list event.
+    private var muteEnforceTimer: Timer?
+    private static let muteEnforceInterval: TimeInterval = 2.0
+
     init(audio: AudioDeviceService = AudioDeviceService(), preferences: PreferencesStore) {
         self.audio = audio
         self.preferences = preferences
@@ -72,10 +77,11 @@ final class MicController: ObservableObject {
             }
         }
         refreshFromHardware(applyDesired: false)
-        refreshDeviceList()
+        // refreshFromHardware already rebuilds the list and starts mute enforcement if needed.
     }
 
     deinit {
+        muteEnforceTimer?.invalidate()
         if let devicesToken {
             audio.removeDevicesChangedHandler(devicesToken)
         }
@@ -101,6 +107,7 @@ final class MicController: ObservableObject {
     func setMuted(_ muted: Bool) {
         desiredMuted = muted
         applyMute(muted)
+        syncMuteEnforcementTimer()
     }
 
     func preferenceMuteScopeChanged() {
@@ -114,6 +121,7 @@ final class MicController: ObservableObject {
     func refreshFromHardware(applyDesired: Bool) {
         if applyDesired {
             applyMute(desiredMuted)
+            syncMuteEnforcementTimer()
             return
         }
         do {
@@ -132,6 +140,7 @@ final class MicController: ObservableObject {
             state = .unknown
         }
         refreshDeviceList()
+        syncMuteEnforcementTimer()
     }
 
     /// Rebuild the Preferences device table from Core Audio.
@@ -202,6 +211,47 @@ final class MicController: ObservableObject {
         }
         log.debug("\(muted ? "Muted" : "Unmuted", privacy: .public)")
         refreshDeviceList()
+    }
+
+    /// Start/stop the background re-assert timer based on `desiredMuted`.
+    private func syncMuteEnforcementTimer() {
+        if desiredMuted {
+            guard muteEnforceTimer == nil else { return }
+            let timer = Timer(timeInterval: Self.muteEnforceInterval, repeats: true) { [weak self] _ in
+                Task { @MainActor in
+                    self?.enforceDesiredMuteIfNeeded()
+                }
+            }
+            RunLoop.main.add(timer, forMode: .common)
+            muteEnforceTimer = timer
+        } else {
+            muteEnforceTimer?.invalidate()
+            muteEnforceTimer = nil
+        }
+    }
+
+    /// If intent is muted but HAL (or a driver) dropped mute, write it again quietly.
+    private func enforceDesiredMuteIfNeeded() {
+        guard desiredMuted, !suppressDeviceResync, !isApplyingMute else { return }
+        guard !isHardwareRespectingDesiredMute() else { return }
+        log.debug("Re-asserting mute (hardware or capture client cleared it)")
+        applyMute(true)
+    }
+
+    /// True when every in-scope controllable input still reports muted.
+    private func isHardwareRespectingDesiredMute() -> Bool {
+        if preferences.muteAllInputs {
+            for device in audio.listInputDevices() where !device.isVirtual && device.supportsMute {
+                if let muted = try? audio.isMuted(device.id), !muted {
+                    return false
+                }
+            }
+            return true
+        }
+        guard let id = try? audio.defaultInputDeviceID(), audio.supportsMute(id) else {
+            return true
+        }
+        return (try? audio.isMuted(id)) ?? true
     }
 
     private func scheduleHandleDevicesChanged() {
