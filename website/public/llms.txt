@@ -59,8 +59,8 @@ open /Applications/LockMic.app
 
 1. Download the latest DMG from https://lockmic.com/#download or GitHub Releases
 2. Drag LockMic to Applications and choose Replace
-3. Open LockMic (from 1.3.3 onward, the new build quits any older instance still running)
-4. If Gatekeeper blocks it: `xattr -dr com.apple.quarantine /Applications/LockMic.app`
+3. Open LockMic from Applications
+4. If macOS blocks it: `xattr -dr com.apple.quarantine /Applications/LockMic.app`
 
 ## Difference vs in-app mute
 

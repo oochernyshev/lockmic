@@ -159,7 +159,7 @@
         "name": "Does LockMic work with virtual microphones?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Virtual devices (Core Audio transport type Virtual) appear in the list but are ignored for mute control, so software mixers and virtual cables are not thrashing."
+          "text": "Virtual microphones appear in the list but are not muted by LockMic, so virtual mixers and cables keep working as expected."
         }
       },
       {
@@ -183,7 +183,7 @@
         "name": "How do I install LockMic?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Download the DMG from lockmic.com or GitHub Releases and drag LockMic to Applications, or install with Homebrew: brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew trust --cask oochernyshev/lockmic/lockmic && brew install --cask lockmic. Requires macOS 14 Sonoma or later. Until the app is notarized, run: xattr -dr com.apple.quarantine /Applications/LockMic.app"
+          "text": "Download the DMG from lockmic.com and drag LockMic to Applications, or install with Homebrew (see the Download section). Requires macOS 14 or later. If macOS blocks the app, run: xattr -dr com.apple.quarantine /Applications/LockMic.app"
         }
       },
       {
@@ -191,7 +191,7 @@
         "name": "How do I update LockMic?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Homebrew: brew update && brew upgrade --cask --yes lockmic, then xattr -dr com.apple.quarantine /Applications/LockMic.app and open the app. DMG: download the latest DMG, drag LockMic to Applications and choose Replace, then open the app. From 1.3.3 onward, opening a new install quits any older LockMic instance still running."
+          "text": "Homebrew: brew update && brew upgrade --cask --yes lockmic, then xattr -dr com.apple.quarantine /Applications/LockMic.app and open the app. DMG: download the latest DMG, replace the app in Applications, then open it."
         }
       },
       {
@@ -451,7 +451,7 @@
       <div class="download-card reveal">
         <img src="assets/icon-512.png" width="88" height="88" alt="LockMic app icon" class="download-icon" />
         <h2>Get LockMic 1.3.5</h2>
-        <p>Free for macOS 14 Sonoma and later. Homebrew-first; DMG for direct install.</p>
+        <p>Free for macOS 14 Sonoma and later.</p>
         <div class="download-actions">
           <a
             class="btn btn-primary btn-lg"
@@ -490,13 +490,13 @@ open /Applications/LockMic.app</code></pre>
         <div class="update-dmg">
           <p class="update-dmg-title">DMG — update</p>
           <ol class="update-dmg-steps">
-            <li>Download the latest DMG above (or from <a href="https://github.com/oochernyshev/lockmic/releases" rel="noopener noreferrer" target="_blank">GitHub Releases</a>).</li>
-            <li>Open the DMG and drag <strong>LockMic</strong> to Applications — choose <strong>Replace</strong> when macOS asks.</li>
-            <li>Open LockMic from Applications (or Spotlight). From 1.3.3 onward, the new build quits any older instance still running.</li>
-            <li>If Gatekeeper blocks it, run:<br /><code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code></li>
+            <li>Download the latest DMG above.</li>
+            <li>Open it and drag <strong>LockMic</strong> to Applications (choose <strong>Replace</strong> if asked).</li>
+            <li>Open LockMic from Applications.</li>
+            <li>If macOS blocks it, run:<br /><code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code></li>
           </ol>
         </div>
-        <p class="download-req">Requires macOS 14+ · Xcode not needed to run</p>
+        <p class="download-req">Requires macOS 14 or later</p>
       </div>
     </section>
 
@@ -517,7 +517,7 @@ open /Applications/LockMic.app</code></pre>
         </details>
         <details class="faq-item reveal">
           <summary>Does it work with virtual mics?</summary>
-          <p>Virtual devices (Core Audio transport type Virtual) appear in the list but are ignored for mute control, so software mixers and virtual cables aren’t thrashing.</p>
+          <p>Virtual microphones show up in the list but LockMic doesn’t mute them, so virtual mixers and cables keep working as expected.</p>
         </details>
         <details class="faq-item reveal">
           <summary>What data is sent?</summary>
@@ -529,16 +529,15 @@ open /Applications/LockMic.app</code></pre>
         </details>
         <details class="faq-item reveal">
           <summary>How do I install LockMic?</summary>
-          <p>Download the DMG from this site or GitHub Releases and drag LockMic to Applications, or use Homebrew (see Download above). Requires macOS 14+. Until notarized, run <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code> after install.</p>
+          <p>Download the DMG and drag LockMic to Applications, or use Homebrew (see Download above). Requires macOS 14+. If macOS blocks the app, run <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code>.</p>
         </details>
         <details class="faq-item reveal">
           <summary>How do I update to the latest version?</summary>
           <p>
-            <strong>Homebrew:</strong> run <code>brew update && brew upgrade --cask --yes lockmic</code>, then
+            <strong>Homebrew:</strong> <code>brew update && brew upgrade --cask --yes lockmic</code>, then
             <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code> and open LockMic.
-            <strong>DMG:</strong> download the latest DMG, drag LockMic to Applications (choose Replace), then open the app.
-            From 1.3.3 onward, opening the new build quits any older instance still running. Full steps are under
-            <a href="#download">Download</a>.
+            <strong>DMG:</strong> download the latest DMG, replace the app in Applications, then open it.
+            See <a href="#download">Download</a>.
           </p>
         </details>
         <details class="faq-item reveal">
