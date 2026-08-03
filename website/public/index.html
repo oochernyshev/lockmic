@@ -38,7 +38,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1.3.4.1" />
+  <link rel="stylesheet" href="styles.css?v=1.3.4.2" />
 
   <!-- Same GA4 property as the macOS app (G-0ZRQC93T49). Web page views only; app uses Measurement Protocol. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZRQC93T49"></script>
@@ -191,7 +191,7 @@
         "name": "How do I update LockMic?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Homebrew: brew update && brew upgrade --cask lockmic, then xattr -dr com.apple.quarantine /Applications/LockMic.app and open the app. DMG: download the latest DMG, drag LockMic to Applications and choose Replace, then open the app. From 1.3.3 onward, opening a new install quits any older LockMic instance still running."
+          "text": "Homebrew: brew update && brew upgrade --cask --yes lockmic, then xattr -dr com.apple.quarantine /Applications/LockMic.app and open the app. The --yes flag skips the confirmation prompt. DMG: download the latest DMG, drag LockMic to Applications and choose Replace, then open the app. From 1.3.3 onward, opening a new install quits any older LockMic instance still running."
         }
       },
       {
@@ -479,13 +479,13 @@ open /Applications/LockMic.app</code></pre>
         <div class="code-block" role="region" aria-label="Homebrew update">
           <div class="code-header">
             <span>Homebrew — update</span>
-            <button type="button" class="copy-btn" data-copy="brew update && brew upgrade --cask lockmic && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app" aria-label="Copy update command">Copy</button>
+            <button type="button" class="copy-btn" data-copy="brew update && brew upgrade --cask --yes lockmic && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app" aria-label="Copy update command">Copy</button>
           </div>
           <pre><code>brew update
-brew upgrade --cask lockmic
+brew upgrade --cask --yes lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app</code></pre>
-          <p class="code-note">Already tapped? You can skip <code>brew tap</code> / <code>brew trust</code> on later upgrades.</p>
+          <p class="code-note"><code>--yes</code> skips Homebrew’s confirmation prompt. Already tapped? You can skip <code>brew tap</code> / <code>brew trust</code> on later upgrades.</p>
         </div>
         <div class="update-dmg">
           <p class="update-dmg-title">DMG — update</p>
@@ -534,8 +534,9 @@ open /Applications/LockMic.app</code></pre>
         <details class="faq-item reveal">
           <summary>How do I update to the latest version?</summary>
           <p>
-            <strong>Homebrew:</strong> run <code>brew update && brew upgrade --cask lockmic</code>, then
+            <strong>Homebrew:</strong> run <code>brew update && brew upgrade --cask --yes lockmic</code>, then
             <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code> and open LockMic.
+            <code>--yes</code> skips the confirmation prompt.
             <strong>DMG:</strong> download the latest DMG, drag LockMic to Applications (choose Replace), then open the app.
             From 1.3.3 onward, opening the new build quits any older instance still running. Full steps are under
             <a href="#download">Download</a>.
@@ -643,6 +644,6 @@ open /Applications/LockMic.app</code></pre>
     </div>
   </footer>
 
-  <script src="main.js?v=1.3.4.1" defer></script>
+  <script src="main.js?v=1.3.4.2" defer></script>
 </body>
 </html>

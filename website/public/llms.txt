@@ -50,10 +50,12 @@ Homebrew 6+ requires trusting third-party casks once; `brew trust --cask` only t
 
 ```bash
 brew update
-brew upgrade --cask lockmic
+brew upgrade --cask --yes lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
+
+`--yes` skips Homebrew’s confirmation prompt.
 
 ### DMG
 
