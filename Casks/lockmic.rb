@@ -1,7 +1,8 @@
 # Homebrew Cask for LockMic (must live at repo-root Casks/ for `brew tap`).
 #
-# Install:
+# Install (Homebrew 6+ needs brew trust for third-party casks):
 #   brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
+#   brew trust --cask oochernyshev/lockmic/lockmic
 #   brew install --cask lockmic
 #   xattr -dr com.apple.quarantine /Applications/LockMic.app
 #   open /Applications/LockMic.app

@@ -90,10 +90,13 @@ LockMic is **not** in the official Homebrew core cask list yet. Install from thi
 
 ```bash
 brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
+brew trust --cask oochernyshev/lockmic/lockmic
 brew install --cask lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
+
+Homebrew 6+ requires trusting third-party casks once (`brew trust --cask …` trusts only LockMic, not every package in the tap).
 
 From a local clone (no tap):
 

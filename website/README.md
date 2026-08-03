@@ -110,10 +110,12 @@ In Firebase Console → Hosting → **Add custom domain** (e.g. `lockmic.wixee.a
 - **Homebrew**:
   ```bash
   brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
+  brew trust --cask oochernyshev/lockmic/lockmic
   brew install --cask lockmic
   xattr -dr com.apple.quarantine /Applications/LockMic.app
   open /Applications/LockMic.app
   ```
+  Homebrew 6+ requires trusting third-party casks once (`brew trust --cask` trusts only LockMic).
 
 Publish a release with the DMG attached:
 

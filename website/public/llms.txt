@@ -36,10 +36,13 @@ https://github.com/oochernyshev/lockmic/releases/download/v1.3.3/LockMic-1.3.3.d
 
 ```bash
 brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
+brew trust --cask oochernyshev/lockmic/lockmic
 brew install --cask lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
+
+Homebrew 6+ requires trusting third-party casks once; `brew trust --cask` only trusts LockMic.
 
 ## Difference vs in-app mute
 
