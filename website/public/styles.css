@@ -359,6 +359,16 @@ main {
   color: var(--text-muted);
 }
 
+a.pill {
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+a.pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .gradient-text {
   background: linear-gradient(120deg, #e8eeff 10%, #7c9cff 45%, #c4b5fd 75%, #fdba74 100%);
   -webkit-background-clip: text;
