@@ -191,7 +191,7 @@
         "name": "How do I update LockMic?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Homebrew: brew update && brew upgrade --cask --yes lockmic, then xattr -dr com.apple.quarantine /Applications/LockMic.app and open the app. The --yes flag skips the confirmation prompt. DMG: download the latest DMG, drag LockMic to Applications and choose Replace, then open the app. From 1.3.3 onward, opening a new install quits any older LockMic instance still running."
+          "text": "Homebrew: brew update && brew upgrade --cask --yes lockmic, then xattr -dr com.apple.quarantine /Applications/LockMic.app and open the app. DMG: download the latest DMG, drag LockMic to Applications and choose Replace, then open the app. From 1.3.3 onward, opening a new install quits any older LockMic instance still running."
         }
       },
       {
@@ -485,7 +485,7 @@ open /Applications/LockMic.app</code></pre>
 brew upgrade --cask --yes lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app</code></pre>
-          <p class="code-note"><code>--yes</code> skips Homebrew’s confirmation prompt. Already tapped? You can skip <code>brew tap</code> / <code>brew trust</code> on later upgrades.</p>
+
         </div>
         <div class="update-dmg">
           <p class="update-dmg-title">DMG — update</p>

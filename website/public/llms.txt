@@ -55,8 +55,6 @@ xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
 
-`--yes` skips Homebrew’s confirmation prompt.
-
 ### DMG
 
 1. Download the latest DMG from https://lockmic.com/#download or GitHub Releases
