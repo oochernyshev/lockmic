@@ -361,12 +361,26 @@ main {
 
 a.pill {
   text-decoration: none;
-  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  cursor: pointer;
+  transition:
+    transform 0.22s var(--ease),
+    background 0.22s var(--ease),
+    border-color 0.22s var(--ease),
+    color 0.22s var(--ease),
+    box-shadow 0.22s var(--ease);
 }
 a.pill:hover {
-  border-color: var(--border-strong);
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  color: #e8eeff;
+  background: rgba(124, 156, 255, 0.16);
+  border-color: rgba(124, 156, 255, 0.45);
+  box-shadow:
+    0 6px 18px rgba(124, 156, 255, 0.22),
+    0 0 0 1px rgba(167, 139, 250, 0.12);
+}
+a.pill:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(124, 156, 255, 0.15);
 }
 
 .gradient-text {
