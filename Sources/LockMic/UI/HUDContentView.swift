@@ -17,6 +17,8 @@ final class HUDContentView: NSView {
     private let backdrop = NSView()
     private let iconView = NSImageView()
     private let captionLabel = NSTextField(labelWithString: "")
+    /// Red “update available” badge on the top-right of the pill.
+    private let updateBadge = NSView()
 
     private var mouseDownScreenPoint: NSPoint?
     private var windowOriginAtDown: NSPoint?
@@ -60,6 +62,15 @@ final class HUDContentView: NSView {
         captionLabel.translatesAutoresizingMaskIntoConstraints = false
         addSubview(captionLabel)
 
+        updateBadge.wantsLayer = true
+        updateBadge.layer?.backgroundColor = NSColor.systemRed.cgColor
+        updateBadge.layer?.cornerRadius = 6
+        updateBadge.layer?.masksToBounds = true
+        updateBadge.isHidden = true
+        updateBadge.translatesAutoresizingMaskIntoConstraints = false
+        // Above material / icon so the red dot stays readable.
+        addSubview(updateBadge)
+
         NSLayoutConstraint.activate([
             backdrop.centerXAnchor.constraint(equalTo: centerXAnchor),
             backdrop.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -80,6 +91,11 @@ final class HUDContentView: NSView {
             captionLabel.centerXAnchor.constraint(equalTo: backdrop.centerXAnchor),
             captionLabel.leadingAnchor.constraint(greaterThanOrEqualTo: backdrop.leadingAnchor, constant: 8),
             captionLabel.trailingAnchor.constraint(lessThanOrEqualTo: backdrop.trailingAnchor, constant: -8),
+
+            updateBadge.widthAnchor.constraint(equalToConstant: 12),
+            updateBadge.heightAnchor.constraint(equalToConstant: 12),
+            updateBadge.topAnchor.constraint(equalTo: backdrop.topAnchor, constant: 12),
+            updateBadge.trailingAnchor.constraint(equalTo: backdrop.trailingAnchor, constant: -12),
         ])
     }
 
@@ -88,7 +104,7 @@ final class HUDContentView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configureToast(muted: Bool, hold: HUDHoldKind = .none) {
+    func configureToast(muted: Bool, hold: HUDHoldKind = .none, updateAvailable: Bool = false) {
         let name = muted ? "mic.slash.fill" : "mic.fill"
         let config = NSImage.SymbolConfiguration(pointSize: 58, weight: .medium)
             .applying(NSImage.SymbolConfiguration(paletteColors: [.white]))
@@ -114,6 +130,8 @@ final class HUDContentView: NSView {
             backdrop.layer?.borderColor = nil
         }
 
+        setUpdateAvailable(updateAvailable)
+
         if isInteractive {
             toolTip = L10n.hudTooltipInteractive
         } else if holding {
@@ -121,6 +139,10 @@ final class HUDContentView: NSView {
         } else {
             toolTip = nil
         }
+    }
+
+    func setUpdateAvailable(_ available: Bool) {
+        updateBadge.isHidden = !available
     }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }

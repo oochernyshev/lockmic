@@ -4,9 +4,16 @@ import SwiftUI
 struct PreferencesView: View {
     @ObservedObject var preferences: PreferencesStore
     @ObservedObject var mic: MicController
-    @State private var selection: PreferencesTab = .general
+    @State private var selection: PreferencesTab
+    @State private var updateAvailable = UpdateChecker.shared.availableUpdate != nil
 
     private let sidebarWidth: CGFloat = 168
+
+    init(preferences: PreferencesStore, mic: MicController, initialTab: PreferencesTab = .general) {
+        self.preferences = preferences
+        self.mic = mic
+        _selection = State(initialValue: initialTab)
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -26,6 +33,17 @@ struct PreferencesView: View {
             idealHeight: PreferencesChrome.windowIdealSize.height
         )
         .background(.regularMaterial)
+        .onReceive(NotificationCenter.default.publisher(for: .lockMicOpenPreferencesTab)) { note in
+            if let raw = note.object as? String, let tab = PreferencesTab(rawValue: raw) {
+                selection = tab
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .lockMicUpdatesDidChange)) { _ in
+            updateAvailable = UpdateChecker.shared.availableUpdate != nil
+        }
+        .onAppear {
+            updateAvailable = UpdateChecker.shared.availableUpdate != nil
+        }
     }
 
     private var sidebar: some View {
@@ -70,6 +88,7 @@ struct PreferencesView: View {
 
     private func sidebarRow(_ tab: PreferencesTab) -> some View {
         let selected = selection == tab
+        let showUpdateDot = tab == .about && updateAvailable
         return Button {
             selection = tab
         } label: {
@@ -80,6 +99,11 @@ struct PreferencesView: View {
                     .symbolRenderingMode(.hierarchical)
                 Text(tab.title)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                if showUpdateDot {
+                    Circle()
+                        .fill(Color.red)
+                        .frame(width: 8, height: 8)
+                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)

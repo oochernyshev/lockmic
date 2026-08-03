@@ -2,7 +2,7 @@
 
 LockMic is a native macOS menu-bar utility that mutes system microphone input at the Core Audio level so mute works in every app (Zoom, Teams, Meet, FaceTime, browsers, etc.).
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.3.4
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.3.5
 
 **Distribution priority:** Homebrew (Developer ID / notarized `.app`) first; Mac App Store later with the same codebase and a sandboxed flavor.
 
@@ -111,6 +111,7 @@ Only one momentary hold is active at a time; latching shortcuts are ignored whil
 | Piece | Role |
 |-------|------|
 | `StatusItemController` | Menu bar icon, left-click toggle, right-click menu, owns HUD + hotkeys + prefs window |
+| `UpdateChecker` | Daily GitHub release check; badges + Preferences About update section (Homebrew vs DMG) |
 | `HUDOverlay` | Multi-display panels: toast (auto-hide) or floating (persistent) |
 | `PreferencesView` | System Settings–style sidebar: General, Devices, Keyboard, About |
 | `HotkeyRecorderButton` | Capture custom shortcut chords |
@@ -281,6 +282,7 @@ Local:
 | **1.3.2** | Floating HUD: clicks outside the rounded pill pass through to apps underneath | Done |
 | **1.3.3** | On open/install: take over from older running instance; relaunch when the .app on disk is replaced | Done |
 | **1.3.4** | New app and website icon/logo artwork | Done |
+| **1.3.5** | In-app update check (GitHub), badges, Preferences update flow (Homebrew vs DMG) | Done |
 | **HB-1.x** | Push-to-talk / push-to-mute, shortcut conflict warnings | Done |
 | **HB-2** | Richer status, polish, notarized releases | Planned |
 | **Pro** (optional) | Paid add-ons in separate closed modules (open core remains MIT) | Future |

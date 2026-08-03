@@ -261,10 +261,14 @@ final class HUDOverlay: NSObject {
         screen: NSScreen
     ) {
         guard let content = panel.contentView as? HUDContentView else { return }
-        content.configureToast(muted: muted, hold: hold)
         content.isInteractive = interactive
         content.dragThreshold = dragThreshold
         content.assignedScreen = screen
+        content.configureToast(
+            muted: muted,
+            hold: hold,
+            updateAvailable: UpdateChecker.shared.availableUpdate != nil
+        )
         content.onToggle = { [weak self] in
             self?.onToggle?()
             self?.updateClickThroughState()
@@ -275,6 +279,14 @@ final class HUDOverlay: NSObject {
         }
         content.onShowContextMenu = { [weak self] view, event in
             self?.showContextMenu(for: view, event: event)
+        }
+    }
+
+    /// Refresh the red update badge on visible HUD panels.
+    func refreshUpdateBadge() {
+        let available = UpdateChecker.shared.availableUpdate != nil
+        for entry in panels.values {
+            (entry.panel.contentView as? HUDContentView)?.setUpdateAvailable(available)
         }
     }
 

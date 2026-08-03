@@ -15,6 +15,8 @@ final class StatusItemController {
     private var visibilityTimer: Timer?
     private var reportedMenuBarIconVisible: Bool?
     private var visibilityMismatchCount = 0
+    /// Red “update available” badge overlaid on the menu bar button.
+    private var updateBadgeView: NSView?
     /// Debounced: menu bar icon on-screen vs hidden (camera housing / overcrowding).
     var onMenuBarIconVisibilityChange: ((Bool) -> Void)?
 
@@ -79,7 +81,9 @@ final class StatusItemController {
         applyFeatureAvailability(force: true)
         observeMic()
         observePreferenceHotkeys()
+        observeUpdateAvailability()
         startMenuBarVisibilityMonitoring()
+        refreshUpdateBadge()
     }
 
     /// Left-click Dock tile: toggle mute (or open Preferences when features are disabled).
@@ -187,6 +191,21 @@ final class StatusItemController {
                     self?.applyFeatureAvailability()
                     self?.registerHotkeysIfNeeded()
                     self?.syncFloatingHUDIfNeeded()
+                }
+            }
+        )
+    }
+
+    private func observeUpdateAvailability() {
+        cancellables.append(
+            NotificationCenter.default.addObserver(
+                forName: .lockMicUpdatesDidChange,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.updateIcon()
+                    self?.hud.refreshUpdateBadge()
                 }
             }
         )
@@ -468,6 +487,9 @@ final class StatusItemController {
             agree.target = self
             menu.addItem(agree)
 
+            menu.addItem(.separator())
+            appendUpdateMenuItems(to: menu)
+
             let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: "")
             prefs.target = self
             menu.addItem(prefs)
@@ -555,6 +577,8 @@ final class StatusItemController {
 
         menu.addItem(.separator())
 
+        appendUpdateMenuItems(to: menu)
+
         let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: "")
         prefs.target = self
         menu.addItem(prefs)
@@ -567,6 +591,53 @@ final class StatusItemController {
         }
 
         return menu
+    }
+
+    private func appendUpdateMenuItems(to menu: NSMenu) {
+        // Only when an update is known — manual “Check for Updates…” lives in Preferences → About.
+        guard let update = UpdateChecker.shared.availableUpdate else { return }
+
+        let title = L10n.menuUpdateAvailable(update.version)
+        let updateItem = NSMenuItem(
+            title: title,
+            action: #selector(installAvailableUpdate),
+            keyEquivalent: ""
+        )
+        updateItem.target = self
+        // Dock menus ignore `NSMenuItem.image`; a red bullet in the title works
+        // for both Dock and menu-bar context menus.
+        updateItem.attributedTitle = Self.updateMenuAttributedTitle(title)
+        menu.addItem(updateItem)
+
+        let skip = NSMenuItem(
+            title: L10n.menuSkipUpdate,
+            action: #selector(skipAvailableUpdate),
+            keyEquivalent: ""
+        )
+        skip.target = self
+        menu.addItem(skip)
+        menu.addItem(.separator())
+    }
+
+    /// Red “● Update to …” — Dock menus ignore item images, so the marker lives in the title.
+    private static func updateMenuAttributedTitle(_ title: String) -> NSAttributedString {
+        let font = NSFont.menuFont(ofSize: 0)
+        let result = NSMutableAttributedString()
+        result.append(NSAttributedString(
+            string: "●  ",
+            attributes: [
+                .font: font,
+                .foregroundColor: NSColor.systemRed,
+            ]
+        ))
+        result.append(NSAttributedString(
+            string: title,
+            attributes: [
+                .font: font,
+                .foregroundColor: NSColor.labelColor,
+            ]
+        ))
+        return result
     }
 
     @objc private func agreeAndEnable() {
@@ -599,12 +670,23 @@ final class StatusItemController {
         presentPreferences(source: .menu)
     }
 
-    private func presentPreferences(source: UsageReporter.ActivationSource) {
+    @objc private func installAvailableUpdate() {
+        presentPreferences(source: .menu, tab: .about)
+    }
+
+    @objc private func skipAvailableUpdate() {
+        UpdateChecker.shared.skipAvailableUpdate()
+    }
+
+    private func presentPreferences(
+        source: UsageReporter.ActivationSource,
+        tab: PreferencesTab = .general
+    ) {
         if featuresEnabled {
             UsageReporter.record(.openPreferences, source: source)
         }
         if preferencesWindow == nil {
-            let view = PreferencesView(preferences: preferences, mic: mic)
+            let view = PreferencesView(preferences: preferences, mic: mic, initialTab: tab)
                 .onExitCommand { [weak self] in
                     self?.preferencesWindow?.performClose(nil)
                 }
@@ -627,6 +709,11 @@ final class StatusItemController {
             window.center()
             window.isReleasedWhenClosed = false
             preferencesWindow = window
+        } else {
+            NotificationCenter.default.post(
+                name: .lockMicOpenPreferencesTab,
+                object: tab.rawValue
+            )
         }
         NSApp.activate(ignoringOtherApps: true)
         preferencesWindow?.makeKeyAndOrderFront(nil)
@@ -644,6 +731,7 @@ final class StatusItemController {
             : disabledStatusImage()
         statusItem?.button?.toolTip = tooltip(for: mic.state)
         statusItem?.isVisible = true
+        refreshUpdateBadge()
         updateDockIcon()
     }
 
@@ -653,7 +741,45 @@ final class StatusItemController {
             state: mic.state,
             effectiveMuted: mic.effectiveMuted
         )
-        NSApp.applicationIconImage = DockIconRenderer.image(style: style)
+        let updateAvailable = UpdateChecker.shared.availableUpdate != nil
+        NSApp.applicationIconImage = DockIconRenderer.image(style: style, updateAvailable: updateAvailable)
+    }
+
+    /// Small red dot on the menu bar status button when a newer release exists.
+    private func refreshUpdateBadge() {
+        guard let button = statusItem?.button else { return }
+        let show = UpdateChecker.shared.availableUpdate != nil
+
+        if !show {
+            updateBadgeView?.removeFromSuperview()
+            updateBadgeView = nil
+            return
+        }
+
+        let badge: NSView
+        if let existing = updateBadgeView {
+            badge = existing
+        } else {
+            badge = NSView(frame: .zero)
+            badge.wantsLayer = true
+            badge.layer?.backgroundColor = NSColor.systemRed.cgColor
+            badge.layer?.cornerRadius = 3.5
+            badge.layer?.masksToBounds = true
+            // Keep the badge out of layout / hit-testing for the status button.
+            badge.translatesAutoresizingMaskIntoConstraints = true
+            button.addSubview(badge)
+            updateBadgeView = badge
+        }
+
+        let diameter: CGFloat = 7
+        let inset: CGFloat = 1
+        let size = button.bounds.size
+        // Status button is flipped on some systems; pin to visual top-right.
+        let isFlipped = button.isFlipped
+        let x = max(0, size.width - diameter - inset)
+        let y: CGFloat = isFlipped ? inset : max(0, size.height - diameter - inset)
+        badge.frame = NSRect(x: x, y: y, width: diameter, height: diameter)
+        badge.layer?.backgroundColor = NSColor.systemRed.cgColor
     }
 
     private func symbolName(for state: MicState) -> String {
@@ -743,9 +869,14 @@ final class StatusItemController {
         case .unsupported(let name):
             base = "LockMic: Cannot mute \(name)"
         }
+
+        var lines = [base]
         if let holdLine {
-            return "\(base)\n\(holdLine)"
+            lines.append(holdLine)
         }
-        return base
+        if let update = UpdateChecker.shared.availableUpdate {
+            lines.append(L10n.menuUpdateAvailable(update.version))
+        }
+        return lines.joined(separator: "\n")
     }
 }

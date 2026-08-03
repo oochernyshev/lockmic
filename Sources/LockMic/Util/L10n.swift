@@ -111,6 +111,24 @@ enum L10n {
     static var aboutFeedbackFeature: String { tr("about.feedback.feature") }
     static var aboutRateOnWeb: String { tr("about.feedback.rate_web") }
     static var aboutGitHub: String { tr("about.github") }
+    static var aboutUpdateHeader: String { tr("about.update.header") }
+    static func aboutUpdateAvailable(_ latest: String, _ current: String) -> String {
+        format("about.update.available", latest, current)
+    }
+    static var aboutUpdateDownloadDMG: String { tr("about.update.download_dmg") }
+    static var aboutUpdateUpToDate: String { tr("about.update.up_to_date") }
+    static var aboutUpdateChecking: String { tr("about.update.checking") }
+    static var aboutUpdateFailed: String { tr("about.update.failed") }
+    static var aboutUpdateHomebrewHeader: String { tr("about.update.homebrew.header") }
+    static var aboutUpdateHomebrewCaption: String { tr("about.update.homebrew.caption") }
+    static var aboutUpdateHomebrewLabel: String { tr("about.update.homebrew.label") }
+    static var aboutUpdateCopy: String { tr("about.update.copy") }
+    static var aboutUpdateCopied: String { tr("about.update.copied") }
+    static var aboutUpdateDetectedHomebrew: String { tr("about.update.detected.homebrew") }
+    static var aboutUpdateDetectedDirect: String { tr("about.update.detected.direct") }
+    static var aboutUpdateDetectedUnknown: String { tr("about.update.detected.unknown") }
+    static var aboutUpdateHomebrewAlternate: String { tr("about.update.homebrew.alternate") }
+    static var aboutUpdateDmgAlternate: String { tr("about.update.dmg.alternate") }
 
     // MARK: - Menu
 
@@ -139,6 +157,11 @@ enum L10n {
     static func menuShowOnDisplay(_ name: String) -> String {
         format("menu.show_on_display", name)
     }
+    static func menuUpdateAvailable(_ version: String) -> String {
+        format("menu.update.available", version)
+    }
+    static var menuCheckForUpdates: String { tr("menu.update.check") }
+    static var menuSkipUpdate: String { tr("menu.update.skip") }
 
     // MARK: - HUD
 

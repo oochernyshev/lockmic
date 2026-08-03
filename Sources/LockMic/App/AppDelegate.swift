@@ -34,6 +34,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         status.handleMuteChanged(showHUD: false)
         applyActivationPolicy()
 
+        // Periodic GitHub release check → menu-bar / Dock badge when a newer version exists.
+        UpdateChecker.shared.start()
+
         dockPreferenceObserver = NotificationCenter.default.addObserver(
             forName: .lockMicShowInDockDidChange,
             object: nil,

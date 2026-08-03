@@ -10,7 +10,7 @@ enum DockIconRenderer {
         case disabled
     }
 
-    static func image(style: Style) -> NSImage {
+    static func image(style: Style, updateAvailable: Bool = false) -> NSImage {
         let pixel = 256
         let size = NSSize(width: pixel, height: pixel)
         guard let rep = NSBitmapImageRep(
@@ -72,6 +72,20 @@ enum DockIconRenderer {
             shadow.shadowColor = NSColor.black.withAlphaComponent(0.4)
             shadow.set()
             symbol.draw(in: drawRect, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+        }
+
+        if updateAvailable {
+            // Solid red badge fully inside the rounded tile (top-right).
+            let diameter: CGFloat = 40
+            let inset: CGFloat = 22
+            let badgeRect = NSRect(
+                x: card.maxX - diameter - inset,
+                y: card.maxY - diameter - inset,
+                width: diameter,
+                height: diameter
+            )
+            NSColor.systemRed.setFill()
+            NSBezierPath(ovalIn: badgeRect).fill()
         }
 
         NSGraphicsContext.restoreGraphicsState()
