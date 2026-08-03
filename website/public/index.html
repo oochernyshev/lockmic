@@ -38,7 +38,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1.3.4" />
+  <link rel="stylesheet" href="styles.css?v=1.3.4.1" />
 
   <!-- Same GA4 property as the macOS app (G-0ZRQC93T49). Web page views only; app uses Measurement Protocol. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZRQC93T49"></script>
@@ -184,6 +184,14 @@
         "acceptedAnswer": {
           "@type": "Answer",
           "text": "Download the DMG from lockmic.com or GitHub Releases and drag LockMic to Applications, or install with Homebrew: brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew trust --cask oochernyshev/lockmic/lockmic && brew install --cask lockmic. Requires macOS 14 Sonoma or later. Until the app is notarized, run: xattr -dr com.apple.quarantine /Applications/LockMic.app"
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I update LockMic?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Homebrew: brew update && brew upgrade --cask lockmic, then xattr -dr com.apple.quarantine /Applications/LockMic.app and open the app. DMG: download the latest DMG, drag LockMic to Applications and choose Replace, then open the app. From 1.3.3 onward, opening a new install quits any older LockMic instance still running."
         }
       },
       {
@@ -459,7 +467,7 @@
         </div>
         <div class="code-block" role="region" aria-label="Homebrew install">
           <div class="code-header">
-            <span>Homebrew</span>
+            <span>Homebrew — install</span>
             <button type="button" class="copy-btn" data-copy="brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew trust --cask oochernyshev/lockmic/lockmic && brew install --cask lockmic && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app" aria-label="Copy install command">Copy</button>
           </div>
           <pre><code>brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
@@ -467,6 +475,26 @@ brew trust --cask oochernyshev/lockmic/lockmic
 brew install --cask lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app</code></pre>
+        </div>
+        <div class="code-block" role="region" aria-label="Homebrew update">
+          <div class="code-header">
+            <span>Homebrew — update</span>
+            <button type="button" class="copy-btn" data-copy="brew update && brew upgrade --cask lockmic && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app" aria-label="Copy update command">Copy</button>
+          </div>
+          <pre><code>brew update
+brew upgrade --cask lockmic
+xattr -dr com.apple.quarantine /Applications/LockMic.app
+open /Applications/LockMic.app</code></pre>
+          <p class="code-note">Already tapped? You can skip <code>brew tap</code> / <code>brew trust</code> on later upgrades.</p>
+        </div>
+        <div class="update-dmg">
+          <p class="update-dmg-title">DMG — update</p>
+          <ol class="update-dmg-steps">
+            <li>Download the latest DMG above (or from <a href="https://github.com/oochernyshev/lockmic/releases" rel="noopener noreferrer" target="_blank">GitHub Releases</a>).</li>
+            <li>Open the DMG and drag <strong>LockMic</strong> to Applications — choose <strong>Replace</strong> when macOS asks.</li>
+            <li>Open LockMic from Applications (or Spotlight). From 1.3.3 onward, the new build quits any older instance still running.</li>
+            <li>If Gatekeeper blocks it, run:<br /><code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code></li>
+          </ol>
         </div>
         <p class="download-req">Requires macOS 14+ · Xcode not needed to run</p>
       </div>
@@ -502,6 +530,16 @@ open /Applications/LockMic.app</code></pre>
         <details class="faq-item reveal">
           <summary>How do I install LockMic?</summary>
           <p>Download the DMG from this site or GitHub Releases and drag LockMic to Applications, or use Homebrew (see Download above). Requires macOS 14+. Until notarized, run <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code> after install.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>How do I update to the latest version?</summary>
+          <p>
+            <strong>Homebrew:</strong> run <code>brew update && brew upgrade --cask lockmic</code>, then
+            <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code> and open LockMic.
+            <strong>DMG:</strong> download the latest DMG, drag LockMic to Applications (choose Replace), then open the app.
+            From 1.3.3 onward, opening the new build quits any older instance still running. Full steps are under
+            <a href="#download">Download</a>.
+          </p>
         </details>
         <details class="faq-item reveal">
           <summary>Partnerships, distribution, or press?</summary>
@@ -605,6 +643,6 @@ open /Applications/LockMic.app</code></pre>
     </div>
   </footer>
 
-  <script src="main.js?v=1.3.4" defer></script>
+  <script src="main.js?v=1.3.4.1" defer></script>
 </body>
 </html>
