@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignorowane";
 "devices.status.muted" = "Wyciszone";
-"devices.status.on" = "Wł.";
+"devices.status.unmuted" = "Włączone";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Sterowane przez LockMic";
 "devices.subtitle.not_controllable" = "Sterownik nie obsługuje wyciszenia systemowego";

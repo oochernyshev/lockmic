@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Figyelmen kívül";
 "devices.status.muted" = "Némítva";
-"devices.status.on" = "Be";
+"devices.status.unmuted" = "Bekapcsolva";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "LockMic vezérli";
 "devices.subtitle.not_controllable" = "A meghajtó nem támogatja a rendszernémítást";

@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignoreret";
 "devices.status.muted" = "Slået fra";
-"devices.status.on" = "Til";
+"devices.status.unmuted" = "Aktiv";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Styret af LockMic";
 "devices.subtitle.not_controllable" = "Driver understøtter ikke systemmute";

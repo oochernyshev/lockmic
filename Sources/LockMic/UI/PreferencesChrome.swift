@@ -66,18 +66,19 @@ enum PreferencesChrome {
         }
     }
 
-    static func statusBadge(text: String, color: Color) -> some View {
-        HStack(spacing: 6) {
+    static func statusBadge(text: String, color: Color, compact: Bool = false) -> some View {
+        HStack(spacing: compact ? 5 : 6) {
             Circle()
                 .fill(color)
-                .frame(width: 7, height: 7)
+                .frame(width: compact ? 6 : 7, height: compact ? 6 : 7)
+            // Primary label (not pure green/orange) stays readable on dark wallpapers.
             Text(text)
-                .font(.body.weight(.medium))
+                .font(compact ? .caption.weight(.semibold) : .body.weight(.medium))
                 .foregroundStyle(.primary)
         }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 4)
-        .background(color.opacity(0.14))
+        .padding(.horizontal, compact ? 7 : 9)
+        .padding(.vertical, compact ? 3 : 4)
+        .background(color.opacity(compact ? 0.18 : 0.14))
         .clipShape(Capsule())
     }
 

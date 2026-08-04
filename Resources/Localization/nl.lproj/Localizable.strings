@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Genegeerd";
 "devices.status.muted" = "Gedempt";
-"devices.status.on" = "Aan";
+"devices.status.unmuted" = "Actief";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Bestuurd door LockMic";
 "devices.subtitle.not_controllable" = "Stuurprogramma ondersteunt geen systeemdemping";

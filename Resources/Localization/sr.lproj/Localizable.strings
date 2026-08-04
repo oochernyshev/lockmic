@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignor.";
 "devices.status.muted" = "Utišan";
-"devices.status.on" = "Uklj.";
+"devices.status.unmuted" = "Aktivan";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Kontroliše LockMic";
 "devices.subtitle.not_controllable" = "Drajver ne podržava sistemski mute";

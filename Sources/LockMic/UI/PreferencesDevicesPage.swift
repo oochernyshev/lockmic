@@ -98,9 +98,12 @@ struct PreferencesDevicesPage: View {
 
             Spacer(minLength: 4)
 
-            Text(deviceStatusLabel(device))
-                .font(.caption.weight(.medium))
-                .foregroundStyle(deviceStatusColor(device))
+            // Badge keeps label as primary text so On/Muted stay readable on dark desktops.
+            PreferencesChrome.statusBadge(
+                text: deviceStatusLabel(device),
+                color: deviceStatusColor(device),
+                compact: true
+            )
         }
         .padding(.vertical, 8)
     }
@@ -119,7 +122,7 @@ struct PreferencesDevicesPage: View {
             return L10n.devicesSubtitleNotControllable
         case .outsideScope:
             return L10n.devicesSubtitleOutsideScope
-        case .muted, .on:
+        case .muted, .unmuted:
             return L10n.devicesSubtitleControlled
         case .unknown:
             return L10n.devicesSubtitleUnknown
@@ -129,10 +132,10 @@ struct PreferencesDevicesPage: View {
     private func deviceStatusLabel(_ device: InputDeviceRow) -> String {
         switch device.controlStatus {
         case .muted: return L10n.devicesStatusMuted
-        case .on: return L10n.devicesStatusOn
+        case .unmuted: return L10n.devicesStatusUnmuted
         case .virtualIgnored: return L10n.devicesStatusIgnored
         case .notControllable: return L10n.devicesStatusDash
-        case .outsideScope: return L10n.devicesStatusOn
+        case .outsideScope: return L10n.devicesStatusUnmuted
         case .unknown: return L10n.devicesStatusQuestion
         }
     }
@@ -140,7 +143,7 @@ struct PreferencesDevicesPage: View {
     private func deviceStatusColor(_ device: InputDeviceRow) -> Color {
         switch device.controlStatus {
         case .muted: return .orange
-        case .on: return .green
+        case .unmuted: return .green
         case .virtualIgnored, .notControllable, .outsideScope, .unknown: return .secondary
         }
     }

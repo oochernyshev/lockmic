@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Yok sayıldı";
 "devices.status.muted" = "Sessiz";
-"devices.status.on" = "Açık";
+"devices.status.unmuted" = "Açık";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "LockMic tarafından kontrol edilir";
 "devices.subtitle.not_controllable" = "Sürücü sistem sessizini desteklemiyor";

@@ -64,7 +64,7 @@ enum L10n {
     static var devicesSubtitleControlled: String { tr("devices.subtitle.controlled") }
     static var devicesSubtitleUnknown: String { tr("devices.subtitle.unknown") }
     static var devicesStatusMuted: String { tr("devices.status.muted") }
-    static var devicesStatusOn: String { tr("devices.status.on") }
+    static var devicesStatusUnmuted: String { tr("devices.status.unmuted") }
     static var devicesStatusIgnored: String { tr("devices.status.ignored") }
     static var devicesStatusDash: String { tr("devices.status.dash") }
     static var devicesStatusQuestion: String { tr("devices.status.question") }

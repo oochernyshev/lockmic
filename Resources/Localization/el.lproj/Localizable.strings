@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Αγνοείται";
 "devices.status.muted" = "Σιγή";
-"devices.status.on" = "Ενεργό";
+"devices.status.unmuted" = "Ενεργό";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Ελέγχεται από το LockMic";
 "devices.subtitle.not_controllable" = "Ο οδηγός δεν υποστηρίζει σίγαση συστήματος";

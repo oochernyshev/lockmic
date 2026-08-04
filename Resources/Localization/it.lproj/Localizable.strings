@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignorato";
 "devices.status.muted" = "Disattivato";
-"devices.status.on" = "Attivo";
+"devices.status.unmuted" = "Attivo";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Controllato da LockMic";
 "devices.subtitle.not_controllable" = "Il driver non supporta il mute di sistema";

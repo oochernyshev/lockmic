@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignorado";
 "devices.status.muted" = "Silenciado";
-"devices.status.on" = "Activo";
+"devices.status.unmuted" = "Activo";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Controlado por LockMic";
 "devices.subtitle.not_controllable" = "El controlador no admite silencio del sistema";

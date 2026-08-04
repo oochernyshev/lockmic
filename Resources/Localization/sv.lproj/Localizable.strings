@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignorerad";
 "devices.status.muted" = "Tystad";
-"devices.status.on" = "På";
+"devices.status.unmuted" = "Aktiv";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Styrs av LockMic";
 "devices.subtitle.not_controllable" = "Drivrutinen stöder inte systemmute";

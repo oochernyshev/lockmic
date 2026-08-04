@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignorováno";
 "devices.status.muted" = "Ztlumeno";
-"devices.status.on" = "Zapnuto";
+"devices.status.unmuted" = "Zapnuto";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Ovládáno LockMic";
 "devices.subtitle.not_controllable" = "Ovladač nepodporuje systémové ztlumení";

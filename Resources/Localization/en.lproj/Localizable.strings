@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignored";
 "devices.status.muted" = "Muted";
-"devices.status.on" = "On";
+"devices.status.unmuted" = "Unmuted";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Controlled by LockMic";
 "devices.subtitle.not_controllable" = "Driver does not support system mute";

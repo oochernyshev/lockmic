@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignorat";
 "devices.status.muted" = "Oprit";
-"devices.status.on" = "Pornit";
+"devices.status.unmuted" = "Activat";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Controlat de LockMic";
 "devices.subtitle.not_controllable" = "Driverul nu suportă mute la nivel de sistem";

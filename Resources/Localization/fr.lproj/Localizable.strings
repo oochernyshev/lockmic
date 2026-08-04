@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignoré";
 "devices.status.muted" = "Muet";
-"devices.status.on" = "Activé";
+"devices.status.unmuted" = "Actif";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Contrôlé par LockMic";
 "devices.subtitle.not_controllable" = "Le pilote ne prend pas en charge la sourdine système";

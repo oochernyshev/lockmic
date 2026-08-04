@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "已忽略";
 "devices.status.muted" = "已静音";
-"devices.status.on" = "开启";
+"devices.status.unmuted" = "未静音";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "由 LockMic 控制";
 "devices.subtitle.not_controllable" = "驱动程序不支持系统静音";

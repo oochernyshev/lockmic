@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "무시됨";
 "devices.status.muted" = "음소거됨";
-"devices.status.on" = "켜짐";
+"devices.status.unmuted" = "음소거 해제";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "LockMic이 제어";
 "devices.subtitle.not_controllable" = "드라이버가 시스템 음소거를 지원하지 않음";

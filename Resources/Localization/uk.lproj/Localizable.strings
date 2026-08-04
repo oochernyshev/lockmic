@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ігнор.";
 "devices.status.muted" = "Вимк.";
-"devices.status.on" = "Увімк.";
+"devices.status.unmuted" = "Увімк.";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Керується LockMic";
 "devices.subtitle.not_controllable" = "Драйвер не підтримує системний mute";

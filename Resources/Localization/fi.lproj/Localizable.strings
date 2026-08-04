@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ohitettu";
 "devices.status.muted" = "Mykistetty";
-"devices.status.on" = "Päällä";
+"devices.status.unmuted" = "Ei mykistetty";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "LockMic hallitsee";
 "devices.subtitle.not_controllable" = "Ajuri ei tue järjestelmän mykistystä";

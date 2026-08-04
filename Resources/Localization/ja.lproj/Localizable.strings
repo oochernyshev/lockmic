@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "無視";
 "devices.status.muted" = "ミュート中";
-"devices.status.on" = "オン";
+"devices.status.unmuted" = "ミュート解除";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "LockMic が制御";
 "devices.subtitle.not_controllable" = "ドライバがシステムミュートに非対応";

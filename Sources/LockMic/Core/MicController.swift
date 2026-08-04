@@ -24,7 +24,7 @@ struct InputDeviceRow: Identifiable, Equatable, Sendable {
 
     enum ControlStatus: Equatable, Sendable {
         case muted
-        case on
+        case unmuted
         case notControllable
         case virtualIgnored
         case outsideScope
@@ -37,7 +37,7 @@ struct InputDeviceRow: Identifiable, Equatable, Sendable {
         if !isInScope { return .outsideScope }
         switch isMuted {
         case true?: return .muted
-        case false?: return .on
+        case false?: return .unmuted
         case nil: return .unknown
         }
     }

@@ -21,7 +21,7 @@
 "devices.status.dash" = "—";
 "devices.status.ignored" = "Ignoriert";
 "devices.status.muted" = "Stumm";
-"devices.status.on" = "An";
+"devices.status.unmuted" = "Aktiv";
 "devices.status.question" = "?";
 "devices.subtitle.controlled" = "Von LockMic gesteuert";
 "devices.subtitle.not_controllable" = "Treiber unterstützt keine System-Stummschaltung";
