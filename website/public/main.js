@@ -81,6 +81,298 @@
     reveals.forEach((el) => el.classList.add("visible"));
   }
 
+  // Shared motion preference (hero film, odometers, etc.)
+  const prefersReducedMotion =
+    typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ── Scroll-scrubbed product film ────────────────────────────────────
+  // The mic film is NOT a free-running loop. Scroll progress through
+  // #scrollFilmTrack maps 0→1 onto video currentTime (live → muted).
+  const heroVideo = document.getElementById("heroVideo");
+  const heroAmbientVideo = document.getElementById("heroAmbientVideo");
+  const heroMedia = document.getElementById("heroMedia");
+  const scrollFilmTrack = document.getElementById("scrollFilmTrack");
+  const scrollFilmBar = document.getElementById("scrollFilmBar");
+  const scrollFilmStateLabel = document.getElementById("scrollFilmStateLabel");
+  const scrollFilmDot = document.getElementById("scrollFilmDot");
+  const scrollFilmHint = document.getElementById("scrollFilmHint");
+  const scrollFilmCaption = document.getElementById("scrollFilmCaption");
+  const scrollFilmState = document.getElementById("scrollFilmState");
+  const heroFilms = [heroVideo, heroAmbientVideo].filter(Boolean);
+
+  const armVideo = (video) => {
+    if (!video) return;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
+    video.loop = false;
+    video.autoplay = false;
+    video.removeAttribute("autoplay");
+    video.removeAttribute("loop");
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    video.pause();
+    try {
+      video.volume = 0;
+    } catch (_) {}
+  };
+
+  const clamp01 = (n) => Math.max(0, Math.min(1, n));
+
+  /** Scroll progress through the sticky track (0 at pin start, 1 at pin end). */
+  const scrollFilmProgress = () => {
+    if (!scrollFilmTrack) return 0;
+    const rect = scrollFilmTrack.getBoundingClientRect();
+    const total = Math.max(1, scrollFilmTrack.offsetHeight - window.innerHeight);
+    // When track top is at viewport top, progress ~0; when bottom hits viewport bottom, ~1
+    return clamp01(-rect.top / total);
+  };
+
+  const stateForProgress = (p) => {
+    if (p < 0.28) return { key: "live", label: "Live", caption: "Mic open · system hears you" };
+    if (p < 0.62) return { key: "locking", label: "Locking…", caption: "Core Audio mute engaging" };
+    return { key: "muted", label: "Muted", caption: "System-wide mute locked" };
+  };
+
+  let filmDuration = 0;
+  let filmTargetTime = 0;
+  let filmRaf = 0;
+  let lastUiKey = "";
+  /** When set, HUD owns the film until the user scrolls away from that progress. */
+  let filmHudHold = false;
+  let filmHudHoldProgress = 0;
+  let filmTweenRaf = 0;
+  let filmAnimating = false;
+  /** True while HUD is programmatically moving window scroll + film together. */
+  let filmScrollSyncing = false;
+  /** Scroll/film → HUD mute (set by HUD demo init; no film re-seek). */
+  let applyHudMuteFromFilm = null;
+  let lastFilmDrivenHudMuted = null;
+
+  const filmEndTime = () => (filmDuration > 0 ? Math.max(0, filmDuration - 0.04) : 0);
+
+  /** Document Y that maps to film progress p (0 = live / track start, 1 = muted / track end). */
+  const scrollYForProgress = (p) => {
+    if (!scrollFilmTrack) return window.scrollY;
+    const trackTop = scrollFilmTrack.getBoundingClientRect().top + window.scrollY;
+    const range = Math.max(1, scrollFilmTrack.offsetHeight - window.innerHeight);
+    return trackTop + clamp01(p) * range;
+  };
+
+  const applyFilmTime = (time, { force = false } = {}) => {
+    filmTargetTime = time;
+    heroFilms.forEach((video) => {
+      if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+      // Skip while a previous seek is still decoding (prevents seek storms)
+      if (!force && video.seeking) return;
+      const next = Math.min(Math.max(0, time), Math.max(0, video.duration - 0.04));
+      if (!force && Math.abs(video.currentTime - next) < 0.025) return;
+      try {
+        video.currentTime = next;
+      } catch (_) {}
+    });
+  };
+
+  // After each seek completes, snap to latest scroll target if we drifted
+  heroFilms.forEach((video) => {
+    video.addEventListener("seeked", () => {
+      if (filmAnimating) return;
+      if (Math.abs(filmTargetTime - video.currentTime) > 0.05 && !video.seeking) {
+        try {
+          video.currentTime = Math.min(
+            Math.max(0, filmTargetTime),
+            Math.max(0, video.duration - 0.04)
+          );
+        } catch (_) {}
+      }
+    });
+  });
+
+  const updateScrollFilmUi = (p) => {
+    if (scrollFilmBar) scrollFilmBar.style.transform = `scaleX(${p})`;
+    if (heroMedia) heroMedia.style.setProperty("--scroll-p", String(p));
+    document.documentElement.style.setProperty("--film-p", String(p));
+
+    const state = stateForProgress(p);
+    if (state.key !== lastUiKey) {
+      lastUiKey = state.key;
+      if (scrollFilmStateLabel) scrollFilmStateLabel.textContent = state.label;
+      if (scrollFilmCaption) scrollFilmCaption.textContent = state.caption;
+      if (scrollFilmState) scrollFilmState.dataset.state = state.key;
+      if (scrollFilmDot) scrollFilmDot.dataset.state = state.key;
+      if (scrollFilmHint) {
+        scrollFilmHint.textContent =
+          p <= 0.02 ? "Scroll to lock the mic" : p >= 0.98 ? "Muted system-wide" : "Keep scrolling…";
+      }
+      if (heroMedia) heroMedia.dataset.filmState = state.key;
+    }
+
+    // Scroll down toward muted end → HUD shows Muted (no sound, no re-seek)
+    const wantHudMuted = p >= 0.55;
+    if (
+      typeof applyHudMuteFromFilm === "function" &&
+      lastFilmDrivenHudMuted !== wantHudMuted
+    ) {
+      lastFilmDrivenHudMuted = wantHudMuted;
+      applyHudMuteFromFilm(wantHudMuted);
+    }
+
+    const ambient = document.querySelector(".hero-ambient");
+    if (ambient && !prefersReducedMotion) {
+      ambient.style.opacity = String(0.22 + p * 0.2);
+    }
+  };
+
+  /**
+   * HUD mute ↔ film + page scroll:
+   * unmute → progress 0 (first frame + track start)
+   * mute   → progress 1 (last frame + track end)
+   * Film time and window.scrollY animate together so they stay locked.
+   */
+  const seekFilmToProgress = (targetP, { animate = true } = {}) => {
+    const to = clamp01(targetP);
+    filmHudHold = true;
+    filmHudHoldProgress = to;
+
+    const duration =
+      filmDuration > 0 ? filmDuration : (heroVideo && heroVideo.duration) || 0;
+    if (duration > 0) filmDuration = duration;
+
+    const fromP =
+      filmDuration > 0 ? clamp01(filmTargetTime / filmDuration) : scrollFilmProgress();
+    const fromY = window.scrollY;
+    const toY = scrollYForProgress(to);
+
+    if (filmTweenRaf) {
+      cancelAnimationFrame(filmTweenRaf);
+      filmTweenRaf = 0;
+    }
+
+    const root = document.documentElement;
+    const prevScrollBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = "auto";
+
+    const finish = () => {
+      filmTweenRaf = 0;
+      filmAnimating = false;
+      filmScrollSyncing = false;
+      filmHudHold = true;
+      filmHudHoldProgress = to;
+      window.scrollTo(0, toY);
+      if (filmDuration > 0) applyFilmTime(to * filmDuration, { force: true });
+      updateScrollFilmUi(to);
+      root.style.scrollBehavior = prevScrollBehavior;
+    };
+
+    const near =
+      Math.abs(to - fromP) < 0.008 && Math.abs(toY - fromY) < 4;
+
+    if (!animate || prefersReducedMotion || near) {
+      filmAnimating = false;
+      filmScrollSyncing = false;
+      finish();
+      return;
+    }
+
+    filmAnimating = true;
+    filmScrollSyncing = true;
+    const start = performance.now();
+    const animMs = 560;
+    const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+    const step = (now) => {
+      const t = clamp01((now - start) / animMs);
+      const e = easeOutCubic(t);
+      const p = fromP + (to - fromP) * e;
+      const y = fromY + (toY - fromY) * e;
+      window.scrollTo(0, y);
+      if (filmDuration > 0) applyFilmTime(p * filmDuration, { force: true });
+      updateScrollFilmUi(p);
+      if (t < 1) {
+        filmTweenRaf = requestAnimationFrame(step);
+      } else {
+        finish();
+      }
+    };
+    filmTweenRaf = requestAnimationFrame(step);
+  };
+
+  /** HUD demo → film frame + matching scroll position. */
+  const syncFilmToHudMute = (isMuted) => {
+    // muted → end of track / last frame; unmuted → start / first frame
+    seekFilmToProgress(isMuted ? 1 : 0, { animate: true });
+  };
+
+  const tickScrollFilm = () => {
+    filmRaf = 0;
+    // HUD is driving scroll+film; don't fight the tween
+    if (filmAnimating || filmScrollSyncing) return;
+
+    if (prefersReducedMotion) {
+      const p = 1;
+      updateScrollFilmUi(p);
+      if (filmDuration > 0) applyFilmTime(filmEndTime());
+      return;
+    }
+
+    const scrollP = scrollFilmProgress();
+
+    // HUD hold: keep film at live/muted until user scrolls away
+    if (filmHudHold) {
+      if (Math.abs(scrollP - filmHudHoldProgress) > 0.06) {
+        filmHudHold = false;
+      } else {
+        updateScrollFilmUi(filmHudHoldProgress);
+        if (filmDuration > 0) {
+          applyFilmTime(filmHudHoldProgress * filmDuration);
+        }
+        return;
+      }
+    }
+
+    updateScrollFilmUi(scrollP);
+    if (filmDuration > 0) applyFilmTime(scrollP * filmDuration);
+  };
+
+  const requestFilmTick = () => {
+    if (filmRaf || filmAnimating || filmScrollSyncing) return;
+    filmRaf = requestAnimationFrame(tickScrollFilm);
+  };
+
+  const initScrollFilm = () => {
+    heroFilms.forEach(armVideo);
+
+    const onMeta = () => {
+      const d = (heroVideo && heroVideo.duration) || (heroAmbientVideo && heroAmbientVideo.duration) || 0;
+      if (d > 0 && Number.isFinite(d)) {
+        filmDuration = d;
+        requestFilmTick();
+      }
+    };
+
+    if (heroVideo) {
+      if (heroVideo.readyState >= 1) onMeta();
+      heroVideo.addEventListener("loadedmetadata", onMeta);
+      // Prime first frame (some browsers need a play→pause to decode)
+      heroVideo.play().then(() => {
+        heroVideo.pause();
+        applyFilmTime(0);
+        requestFilmTick();
+      }).catch(() => {
+        requestFilmTick();
+      });
+    } else {
+      requestFilmTick();
+    }
+
+    window.addEventListener("scroll", requestFilmTick, { passive: true });
+    window.addEventListener("resize", requestFilmTick, { passive: true });
+    requestFilmTick();
+  };
+
+  if (heroVideo || scrollFilmTrack) initScrollFilm();
+
   // ── Hero HUD mute demo ──────────────────────────────────────────────
   // Click the floating HUD (or menu-bar mic) to toggle mute/unmute with
   // short Web Audio cues (inspired by macOS Tink / Pop feedback).
@@ -146,8 +438,16 @@
       }
     };
 
-    const setHudMuted = (next, { play = true } = {}) => {
-      muted = !!next;
+    const setHudMuted = (next, { play = true, syncFilm = true } = {}) => {
+      const nextMuted = !!next;
+      // Avoid redundant DOM/sound when scroll keeps reporting the same side
+      if (nextMuted === muted && !syncFilm && !play) {
+        lastFilmDrivenHudMuted = muted;
+        return;
+      }
+
+      muted = nextMuted;
+      lastFilmDrivenHudMuted = muted;
       hudDemo.classList.toggle("is-muted", muted);
       hudDemo.setAttribute("aria-pressed", muted ? "true" : "false");
       hudDemo.setAttribute(
@@ -166,6 +466,11 @@
         );
       }
 
+      // Unmute → first frame (live); mute → last frame (locked) + scroll sync
+      if (syncFilm && typeof syncFilmToHudMute === "function") {
+        syncFilmToHudMute(muted);
+      }
+
       if (play) {
         playMuteCue(muted);
         hudDemo.classList.remove("is-flash");
@@ -175,13 +480,18 @@
       }
     };
 
-    const toggleHud = () => setHudMuted(!muted, { play: true });
+    // Called from scroll/film progress — visual only (no cue, no scroll jump)
+    applyHudMuteFromFilm = (wantMuted) => {
+      setHudMuted(wantMuted, { play: false, syncFilm: false });
+    };
+
+    const toggleHud = () => setHudMuted(!muted, { play: true, syncFilm: true });
 
     hudDemo.addEventListener("click", toggleHud);
     if (hudDemoMenubar) hudDemoMenubar.addEventListener("click", toggleHud);
 
-    // Initial paint (no sound)
-    setHudMuted(true, { play: false });
+    // Match film start frame (live / unmuted). Mute click slides to end frame.
+    setHudMuted(false, { play: false, syncFilm: false });
   }
 
   document.querySelectorAll(".copy-btn").forEach((btn) => {
@@ -233,9 +543,6 @@
   }
 
   // ── Odometer flip counters ──────────────────────────────────────────
-  const prefersReducedMotion =
-    typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   const formatCount = (n) => {
     const v = typeof n === "number" && Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
     return new Intl.NumberFormat("en-US").format(v);
