@@ -647,8 +647,10 @@
   };
 
   // ── Votes ───────────────────────────────────────────────────────────
-  // Counts come only from CounterAPI. Loading indicator until first fetch.
-  // Vote UI updates only after /up (or /down on remove) and a follow-up GET.
+  // Counts from CountAPI (countapi.mileshilliard.com). CounterAPI.dev v1 was
+  // retired 2026-08-07 (410); v2 requires a registered workspace.
+  // Loading indicator until first fetch. Vote UI updates only after hit/set
+  // and a follow-up GET.
   const likeBtn = document.getElementById("voteLike");
   const dislikeBtn = document.getElementById("voteDislike");
   const likeCountEl = document.getElementById("likeCount");
@@ -664,7 +666,9 @@
     const VOTE_KEY = "lm_c7a91e2b4f0d8e3a";
     // Client-only HMAC material (obfuscation, not auth)
     const VOTE_JWT_SECRET = "lm.v1.k.7f3c9a1e2b8d4f0a6c5e9b2d";
-    const NS = "lockmic-com";
+    // Unique public keys (no namespaces on this API)
+    const COUNT_BASE = "https://countapi.mileshilliard.com/api/v1";
+    const countKey = (name) => `lockmic_com_${name}`;
 
     const known = { likes: null, dislikes: null };
     let countsReady = false;
@@ -860,25 +864,26 @@
 
     const parseCount = (data) => {
       if (!data || typeof data !== "object") return null;
-      if (data.code === 400 || data.code === 404 || data.code === "400" || data.code === "404") {
-        return null;
+      if (data.error) return null;
+      // CountAPI may return value as number or string
+      if (typeof data.value === "number" && Number.isFinite(data.value)) return Math.max(0, Math.floor(data.value));
+      if (typeof data.value === "string" && data.value.trim() !== "" && Number.isFinite(Number(data.value))) {
+        return Math.max(0, Math.floor(Number(data.value)));
       }
-      if (typeof data.message === "string" && /not found/i.test(data.message)) return null;
-      if (typeof data.count === "number" && Number.isFinite(data.count)) return data.count;
-      if (typeof data.value === "number" && Number.isFinite(data.value)) return data.value;
+      if (typeof data.count === "number" && Number.isFinite(data.count)) return Math.max(0, Math.floor(data.count));
       return null;
     };
 
-    // CounterAPI is picky about trailing slashes (301s drop CORS headers in browsers):
-    //   GET   → .../likes/       (slash required)
-    //   /up   → .../likes/up     (no slash)
-    //   /down → .../likes/down   (no slash)
+    // CountAPI (no-auth countapi.xyz revival):
+    //   GET  → /api/v1/get/:key
+    //   +1   → /api/v1/hit/:key
+    //   set  → /api/v1/set/:key?value=N  (used for remove / down)
     const apiGet = (name) =>
-      `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/?_=${Date.now()}`;
+      `${COUNT_BASE}/get/${encodeURIComponent(countKey(name))}?_=${Date.now()}`;
     const apiUp = (name) =>
-      `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/up?_=${Date.now()}`;
-    const apiDown = (name) =>
-      `https://api.counterapi.dev/v1/${encodeURIComponent(NS)}/${encodeURIComponent(name)}/down?_=${Date.now()}`;
+      `${COUNT_BASE}/hit/${encodeURIComponent(countKey(name))}?_=${Date.now()}`;
+    const apiSet = (name, value) =>
+      `${COUNT_BASE}/set/${encodeURIComponent(countKey(name))}?value=${encodeURIComponent(String(value))}&_=${Date.now()}`;
 
     const fetchCount = async (name) => {
       try {
@@ -886,14 +891,46 @@
           method: "GET",
           mode: "cors",
           cache: "no-store",
-          redirect: "error", // fail loud if we hit a slash redirect again
         });
+        // Missing key → treat as 0 so the UI can enable voting
+        if (r.status === 404) return 0;
         const data = await r.json().catch(() => null);
-        return parseCount(data);
+        if (!r.ok) return null;
+        const n = parseCount(data);
+        return n == null ? 0 : n;
       } catch (e) {
         console.warn("count fetch failed", name, e);
         return null;
       }
+    };
+
+    const bumpCount = async (name) => {
+      const r = await fetch(apiUp(name), {
+        method: "GET",
+        mode: "cors",
+        cache: "no-store",
+      });
+      const data = await r.json().catch(() => null);
+      if (!r.ok) throw new Error((data && data.error) || "vote failed");
+      const saved = parseCount(data);
+      if (saved == null) throw new Error("vote failed");
+      return saved;
+    };
+
+    const lowerCount = async (name) => {
+      // No atomic decrement — read then set (best-effort for community votes)
+      const current = (await fetchCount(name)) ?? 0;
+      const next = Math.max(0, current - 1);
+      const r = await fetch(apiSet(name, next), {
+        method: "GET",
+        mode: "cors",
+        cache: "no-store",
+      });
+      const data = await r.json().catch(() => null);
+      if (!r.ok) throw new Error((data && data.error) || "remove failed");
+      const saved = parseCount(data);
+      if (saved == null) throw new Error("remove failed");
+      return saved;
     };
 
     const setVoteButtonsDisabled = (disabled) => {
@@ -930,7 +967,7 @@
       setVoteButtonsDisabled(!enabled);
     };
 
-    // Start: shimmering digit shells until CounterAPI responds
+    // Start: shimmering digit shells until CountAPI responds
     setCountLoading(likeCountEl, "Loading likes", 4);
     setCountLoading(dislikeCountEl, "Loading dislikes", 2);
     setVotingEnabled(false);
@@ -970,22 +1007,14 @@
       setStatus("Saving…");
 
       try {
-        // 1) Confirm save via /up (final URL, no redirect — redirects break CORS)
-        const r = await fetch(apiUp(name), {
-          method: "GET",
-          mode: "cors",
-          cache: "no-store",
-          redirect: "error",
-        });
-        const data = await r.json().catch(() => null);
-        const saved = parseCount(data);
-        if (!r.ok || saved == null) throw new Error((data && data.message) || "vote failed");
+        // 1) Confirm save via /hit
+        const saved = await bumpCount(name);
 
         // 2) Confirm retrieval via fresh GET (do not bump the UI until both succeed)
         const retrieved = await fetchCount(name);
         if (retrieved == null) throw new Error("could not read updated count");
 
-        // Use the higher of the two remote values (GET can lag behind /up)
+        // Use the higher of the two remote values (GET can lag behind /hit)
         showCount(el, key, Math.max(saved, retrieved), true);
         await writeStoredVote(choice);
         localChoice = choice;
@@ -1016,20 +1045,12 @@
       setStatus("Removing…");
 
       try {
-        const r = await fetch(apiDown(name), {
-          method: "GET",
-          mode: "cors",
-          cache: "no-store",
-          redirect: "error",
-        });
-        const data = await r.json().catch(() => null);
-        const saved = parseCount(data);
-        if (!r.ok || saved == null) throw new Error((data && data.message) || "remove failed");
+        const saved = await lowerCount(name);
 
         const retrieved = await fetchCount(name);
         if (retrieved == null) throw new Error("could not read updated count");
 
-        // Prefer the lower of the two remotes after /down (GET can lag)
+        // Prefer the lower of the two remotes after decrement (GET can lag)
         showCount(el, key, Math.min(saved, retrieved), true, { force: true });
         clearStoredVote();
         localChoice = null;
