@@ -96,6 +96,7 @@
     "featureList": [
       "System-wide microphone mute via Core Audio",
       "Mute all input devices or default input only",
+      "Re-applies mute when devices change or apps try to unmute",
       "Menu bar control",
       "Global hotkeys including push-to-talk and push-to-mute",
       "On-screen and floating HUD",
@@ -465,8 +466,8 @@
               <path d="M3 14a9 9 0 0 1 18 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <h3>Smart devices</h3>
-          <p>Virtual Core Audio devices are listed but ignored for mute control. Re-applies mute when devices or the default input change.</p>
+          <h3>Stays muted</h3>
+          <p>New mics and headsets you plug in later are muted too. If an app tries to unmute the input, LockMic re-applies mute so you stay covered system-wide.</p>
         </article>
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
