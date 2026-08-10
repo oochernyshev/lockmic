@@ -647,9 +647,10 @@
   };
 
   // ── Votes ───────────────────────────────────────────────────────────
-  // Counts live in Firestore (public/votes). Security rules allow only ±1
-  // on likes/dislikes — no arbitrary set. Firebase web config is public by
-  // design; rules are the access control. Loading until first read succeeds.
+  // Counts live in Firestore (public/votes). Rules allow only ±1 and require
+  // a short-lived date-bound SHA-256 proof. Firebase web config is public by
+  // design; rules + proof raise the bar for casual API spam (not real auth —
+  // a determined reader can reverse this file). Loading until first read.
   const likeBtn = document.getElementById("voteLike");
   const dislikeBtn = document.getElementById("voteDislike");
   const likeCountEl = document.getElementById("likeCount");
@@ -667,7 +668,6 @@
     const VOTE_JWT_SECRET = "lm.v1.k.7f3c9a1e2b8d4f0a6c5e9b2d";
 
     // Public Firebase web config (lockmic-11c1a / "lockmic" web app).
-    // Safe to embed: rules enforce ±1 only.
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyAjJ8YB1a_9E7DDIPKjFq0WACvT79CABrc",
       authDomain: "lockmic-11c1a.firebaseapp.com",
@@ -678,6 +678,10 @@
     };
     const FB_SDK = "11.10.0";
     const VOTES_PATH = { collection: "public", doc: "votes" };
+
+    // Must match firestore.rules voteSalt() — split so a greppable single
+    // literal is slightly less obvious. Obscurity only.
+    const voteProofSalt = () => ["lm", "vote", "2026", "k", "a7f2c91e", "b3d8"].join(".");
 
     const known = { likes: null, dislikes: null };
     let countsReady = false;
@@ -879,6 +883,29 @@
       return Math.max(0, Math.floor(n));
     };
 
+    /** SHA-256 hex (uppercase) — must match firestore.rules toHexString(). */
+    const sha256Hex = async (str) => {
+      if (!globalThis.crypto || !crypto.subtle) throw new Error("no WebCrypto");
+      const digest = await crypto.subtle.digest("SHA-256", te.encode(str));
+      return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .toUpperCase();
+    };
+
+    /**
+     * Date-bound write proof checked by firestore.rules.
+     * payload = salt:utcDay:field:delta:prevCount
+     * (UTC day = floor(ms / 86400000); prevCount binds proof to current total)
+     */
+    const mintWriteProof = async (field, delta, prevCount) => {
+      const day = Math.floor(Date.now() / 86400000);
+      const payload = `${voteProofSalt()}:${day}:${field}:${delta}:${prevCount}`;
+      return {
+        _p: await sha256Hex(payload),
+        _t: Date.now(),
+      };
+    };
+
     /** Lazy-load Firebase modular SDK (CDN) and open the votes doc. */
     const getFirestoreApi = () => {
       if (!firestoreReady) {
@@ -913,8 +940,9 @@
               const next = Math.max(0, cur + delta);
               // Already at floor (e.g. remove when 0) — no write needed
               if (next === cur) return cur;
-              // Write only the changed field so rules see a pure ±1 update
-              tx.update(ref, { [field]: next });
+              // Mint proof inside the tx (fresh _t; bound to current count)
+              const proof = await mintWriteProof(field, delta, cur);
+              tx.update(ref, { [field]: next, _p: proof._p, _t: proof._t });
               return next;
             });
           };

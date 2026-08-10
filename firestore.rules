@@ -1,7 +1,14 @@
 rules_version = '2';
 // Community like/dislike counters for lockmic.com
-// Clients may only change likes or dislikes by exactly ±1.
-// Create/delete/seed is admin-only (Console / gcloud / Admin SDK).
+//
+// - Clients may only change likes or dislikes by exactly ±1
+// - Each write must include a short-lived proof (_p, _t):
+//     SHA-256 hex (uppercase) of salt:utcDay:field:delta:prevCount
+//   so a proof cannot be replayed after the count changes.
+// - _p and _t must be rewritten on every vote (must appear in affected keys).
+// - Blocks casual curl/scripts that only know the API key.
+//   NOT real auth: a determined reader can reverse the website JS.
+// - Create/delete/seed is admin-only (Console / gcloud / Admin SDK).
 service cloud.firestore {
   match /databases/{database}/documents {
     match /public/votes {
@@ -9,36 +16,82 @@ service cloud.firestore {
 
       allow create, delete: if false;
 
-      allow update: if
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['likes', 'dislikes'])
-        && request.resource.data.likes is int
-        && request.resource.data.dislikes is int
-        && request.resource.data.likes >= 0
-        && request.resource.data.dislikes >= 0
-        && (
-          (
-            request.resource.data.likes == resource.data.likes + 1
-            && request.resource.data.dislikes == resource.data.dislikes
-          )
-          || (
-            request.resource.data.likes == resource.data.likes - 1
-            && request.resource.data.dislikes == resource.data.dislikes
-          )
-          || (
-            request.resource.data.dislikes == resource.data.dislikes + 1
-            && request.resource.data.likes == resource.data.likes
-          )
-          || (
-            request.resource.data.dislikes == resource.data.dislikes - 1
-            && request.resource.data.likes == resource.data.likes
-          )
-        );
+      allow update: if isValidVoteUpdate();
     }
 
     // Deny everything else
     match /{document=**} {
       allow read, write: if false;
+    }
+
+    // Shared salt — rules source is not a public download, but the website
+    // JS must reassemble the same string (obscurity, not a vault).
+    function voteSalt() {
+      return 'lm.vote.2026.k.a7f2c91e.b3d8';
+    }
+
+    function utcDay() {
+      return int(request.time.toMillis() / 86400000);
+    }
+
+    // toHexString() is uppercase; client must send uppercase hex
+    function proofHex(day, field, delta, prev) {
+      return hashing.sha256(
+        (voteSalt() + ':' + string(day) + ':' + field + ':' + string(delta) + ':' + string(prev)).toUtf8()
+      ).toHexString();
+    }
+
+    function proofMatches(field, delta, prev) {
+      let p = request.resource.data._p;
+      let t = request.resource.data._t;
+      let now = request.time.toMillis();
+      let day = utcDay();
+      return p is string
+        && t is int
+        // Client clock within ~5 minutes of server
+        && t <= now + 60000
+        && now - t < 300000
+        // Must mint a new proof every write (no reusing stored _p/_t)
+        && request.resource.data.diff(resource.data).affectedKeys().hasAll(['_p', '_t'])
+        && (
+          p == proofHex(day, field, delta, prev)
+          || p == proofHex(day - 1, field, delta, prev)
+          || p == proofHex(day + 1, field, delta, prev)
+        );
+    }
+
+    function isValidVoteUpdate() {
+      let next = request.resource.data;
+      let prev = resource.data;
+      let affected = next.diff(prev).affectedKeys();
+
+      return affected.hasOnly(['likes', 'dislikes', '_p', '_t'])
+        && next.likes is int
+        && next.dislikes is int
+        && next.likes >= 0
+        && next.dislikes >= 0
+        && (
+          (
+            next.likes == prev.likes + 1
+            && next.dislikes == prev.dislikes
+            && proofMatches('likes', 1, prev.likes)
+          )
+          || (
+            next.likes == prev.likes - 1
+            && next.dislikes == prev.dislikes
+            && proofMatches('likes', -1, prev.likes)
+          )
+          || (
+            next.dislikes == prev.dislikes + 1
+            && next.likes == prev.likes
+            && proofMatches('dislikes', 1, prev.dislikes)
+          )
+          || (
+            next.dislikes == prev.dislikes - 1
+            && next.likes == prev.likes
+            && proofMatches('dislikes', -1, prev.dislikes)
+          )
+        );
     }
   }
 }

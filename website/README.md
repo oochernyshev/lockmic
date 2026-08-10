@@ -41,8 +41,15 @@ cloudbuild.yaml   # CI deploy (hosting + firestore rules)
 ### Vote counters
 
 Likes/dislikes are stored in Firestore `public/votes` (seeded to historical totals).
-Security rules allow public **read** and updates of exactly **±1** on `likes` or `dislikes`.
-Create/delete/arbitrary set require admin credentials.
+
+Security rules allow public **read** and updates of exactly **±1** on `likes` or `dislikes`,
+and require a short-lived **SHA-256 proof** (`_p` / `_t`) of:
+
+`salt:utcDay:field:delta:prevCount`
+
+That blocks casual unauthenticated API spam (no proof / replay / arbitrary set).
+It is **not** strong auth — the salt ships in the website JS (split) and can be reverse-engineered.
+Create/delete/seed still require admin credentials.
 
 ## Deploy
 
