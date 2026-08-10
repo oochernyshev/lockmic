@@ -648,9 +648,9 @@
 
   // ── Votes ───────────────────────────────────────────────────────────
   // Counts live in Firestore (public/votes). Rules allow only ±1 and require
-  // a short-lived date-bound SHA-256 proof. Firebase web config is public by
-  // design; rules + proof raise the bar for casual API spam (not real auth —
-  // a determined reader can reverse this file). Loading until first read.
+  // a short-lived date-bound SHA-256 proof. An onSnapshot listener keeps open
+  // tabs in sync when anyone votes. Firebase web config is public by design;
+  // rules + proof raise the bar for casual API spam (not real auth).
   const likeBtn = document.getElementById("voteLike");
   const dislikeBtn = document.getElementById("voteDislike");
   const likeCountEl = document.getElementById("likeCount");
@@ -688,7 +688,7 @@
     let voteBusy = false;
     /** @type {"like"|"dislike"|null} */
     let localChoice = null;
-    /** @type {Promise<{ getCounts: Function, adjust: Function }>|null} */
+    /** @type {Promise<{ subscribeCounts: Function, adjust: Function }>|null} */
     let firestoreReady = null;
 
     const te = new TextEncoder();
@@ -918,14 +918,26 @@
           const db = fs.getFirestore(app);
           const ref = fs.doc(db, VOTES_PATH.collection, VOTES_PATH.doc);
 
-          const getCounts = async () => {
-            const snap = await fs.getDoc(ref);
-            if (!snap.exists()) throw new Error("votes doc missing");
-            const data = snap.data() || {};
-            return {
-              likes: toNonNegInt(data.likes),
-              dislikes: toNonNegInt(data.dislikes),
-            };
+          /**
+           * Live counts: first snapshot + every remote change.
+           * Returns an unsubscribe function.
+           */
+          const subscribeCounts = (onData, onError) => {
+            return fs.onSnapshot(
+              ref,
+              (snap) => {
+                if (!snap.exists()) {
+                  onError(new Error("votes doc missing"));
+                  return;
+                }
+                const data = snap.data() || {};
+                onData({
+                  likes: toNonNegInt(data.likes),
+                  dislikes: toNonNegInt(data.dislikes),
+                });
+              },
+              (err) => onError(err)
+            );
           };
 
           /** Atomic ±1 on likes or dislikes; returns new field value. */
@@ -947,23 +959,13 @@
             });
           };
 
-          return { getCounts, adjust };
+          return { subscribeCounts, adjust };
         })().catch((err) => {
           firestoreReady = null;
           throw err;
         });
       }
       return firestoreReady;
-    };
-
-    const fetchCounts = async () => {
-      try {
-        const api = await getFirestoreApi();
-        return await api.getCounts();
-      } catch (e) {
-        console.warn("count fetch failed", e);
-        return null;
-      }
     };
 
     const bumpCount = async (name) => {
@@ -1010,34 +1012,48 @@
       setVoteButtonsDisabled(!enabled);
     };
 
-    // Start: shimmering digit shells until Firestore responds
+    // Start: shimmering digit shells until first Firestore snapshot
     setCountLoading(likeCountEl, "Loading likes", 4);
     setCountLoading(dislikeCountEl, "Loading dislikes", 2);
     setVotingEnabled(false);
     setRemoveVisible(false);
 
-    const refreshCounts = async () => {
-      const counts = await fetchCounts();
-
-      if (counts) {
-        showCount(likeCountEl, "likes", counts.likes, true);
-        showCount(dislikeCountEl, "dislikes", counts.dislikes, true);
-      } else {
-        if (known.likes == null) setCountUnavailable(likeCountEl, "Likes unavailable");
-        if (known.dislikes == null) setCountUnavailable(dislikeCountEl, "Dislikes unavailable");
-      }
-
+    /** Apply server counts; force=true so remote −1 (removes) can go down. */
+    const applyRemoteCounts = (counts, { animate = true } = {}) => {
+      showCount(likeCountEl, "likes", counts.likes, animate, { force: true });
+      showCount(dislikeCountEl, "dislikes", counts.dislikes, animate, { force: true });
       countsReady = known.likes != null || known.dislikes != null;
       setVotingEnabled(countsReady);
     };
 
-    // Restore prior vote (JWT or legacy), then load public counts
+    const startCountsListener = async () => {
+      try {
+        const api = await getFirestoreApi();
+        api.subscribeCounts(
+          (counts) => applyRemoteCounts(counts, { animate: true }),
+          (err) => {
+            console.warn("counts listener failed", err);
+            if (known.likes == null) setCountUnavailable(likeCountEl, "Likes unavailable");
+            if (known.dislikes == null) setCountUnavailable(dislikeCountEl, "Dislikes unavailable");
+            countsReady = known.likes != null || known.dislikes != null;
+            setVotingEnabled(countsReady);
+          }
+        );
+      } catch (e) {
+        console.warn("count subscribe failed", e);
+        setCountUnavailable(likeCountEl, "Likes unavailable");
+        setCountUnavailable(dislikeCountEl, "Dislikes unavailable");
+        setVotingEnabled(false);
+      }
+    };
+
+    // Restore prior vote (JWT or legacy), then live-subscribe to public counts
     readStoredVote().then((existing) => {
       localChoice = existing;
       if (existing) applyLocalVote(existing);
       else setVotingEnabled(countsReady);
     });
-    refreshCounts();
+    startCountsListener();
 
     const castVote = async (choice) => {
       if (voteBusy || localChoice || !countsReady) return;
@@ -1053,6 +1069,7 @@
 
       try {
         const saved = await bumpCount(name);
+        // Optimistic local update; listener will confirm for everyone (including us)
         showCount(el, key, saved, true);
         await writeStoredVote(choice);
         localChoice = choice;
@@ -1084,6 +1101,7 @@
 
       try {
         const saved = await lowerCount(name);
+        // Optimistic local update; listener confirms for other open tabs too
         showCount(el, key, saved, true, { force: true });
         clearStoredVote();
         localChoice = null;
