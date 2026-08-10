@@ -1,0 +1,44 @@
+rules_version = '2';
+// Community like/dislike counters for lockmic.com
+// Clients may only change likes or dislikes by exactly ±1.
+// Create/delete/seed is admin-only (Console / gcloud / Admin SDK).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /public/votes {
+      allow read: if true;
+
+      allow create, delete: if false;
+
+      allow update: if
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['likes', 'dislikes'])
+        && request.resource.data.likes is int
+        && request.resource.data.dislikes is int
+        && request.resource.data.likes >= 0
+        && request.resource.data.dislikes >= 0
+        && (
+          (
+            request.resource.data.likes == resource.data.likes + 1
+            && request.resource.data.dislikes == resource.data.dislikes
+          )
+          || (
+            request.resource.data.likes == resource.data.likes - 1
+            && request.resource.data.dislikes == resource.data.dislikes
+          )
+          || (
+            request.resource.data.dislikes == resource.data.dislikes + 1
+            && request.resource.data.likes == resource.data.likes
+          )
+          || (
+            request.resource.data.dislikes == resource.data.dislikes - 1
+            && request.resource.data.likes == resource.data.likes
+          )
+        );
+    }
+
+    // Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

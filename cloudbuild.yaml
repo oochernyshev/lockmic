@@ -36,7 +36,7 @@
 #        Configuration:        Cloud Build configuration file (yaml or json)
 #        Location:             Repository
 #        Cloud Build config:   cloudbuild.yaml
-#        (optional) Included files filter: website/**,firebase.json,.firebaserc,cloudbuild.yaml
+#        (optional) Included files filter: website/**,firebase.json,.firebaserc,firestore.*,cloudbuild.yaml
 #
 # 5) Test:
 #      gcloud config set project lockmic-11c1a
@@ -78,7 +78,7 @@ steps:
         npm install -g firebase-tools@13
         # ADC = Cloud Build service account (roles/firebasehosting.admin required)
         firebase deploy \
-          --only hosting \
+          --only hosting,firestore:rules \
           --project "${_FIREBASE_PROJECT}" \
           --non-interactive \
           --force

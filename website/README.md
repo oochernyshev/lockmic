@@ -30,12 +30,19 @@ firebase serve --only hosting
 website/public/
   index.html      # landing page
   styles.css
-  main.js
+  main.js         # includes Firestore vote counters
   assets/         # logo, icons, OG image
-firebase.json     # hosting config (repo root)
+firestore.rules   # ±1-only rules for public/votes
+firebase.json     # hosting + firestore config (repo root)
 .firebaserc       # default Firebase project id
-cloudbuild.yaml   # CI deploy
+cloudbuild.yaml   # CI deploy (hosting + firestore rules)
 ```
+
+### Vote counters
+
+Likes/dislikes are stored in Firestore `public/votes` (seeded to historical totals).
+Security rules allow public **read** and updates of exactly **±1** on `likes` or `dislikes`.
+Create/delete/arbitrary set require admin credentials.
 
 ## Deploy
 

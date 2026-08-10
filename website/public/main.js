@@ -647,10 +647,9 @@
   };
 
   // ── Votes ───────────────────────────────────────────────────────────
-  // Counts from CountAPI (countapi.mileshilliard.com). CounterAPI.dev v1 was
-  // retired 2026-08-07 (410); v2 requires a registered workspace.
-  // Loading indicator until first fetch. Vote UI updates only after hit/set
-  // and a follow-up GET.
+  // Counts live in Firestore (public/votes). Security rules allow only ±1
+  // on likes/dislikes — no arbitrary set. Firebase web config is public by
+  // design; rules are the access control. Loading until first read succeeds.
   const likeBtn = document.getElementById("voteLike");
   const dislikeBtn = document.getElementById("voteDislike");
   const likeCountEl = document.getElementById("likeCount");
@@ -666,15 +665,27 @@
     const VOTE_KEY = "lm_c7a91e2b4f0d8e3a";
     // Client-only HMAC material (obfuscation, not auth)
     const VOTE_JWT_SECRET = "lm.v1.k.7f3c9a1e2b8d4f0a6c5e9b2d";
-    // Unique public keys (no namespaces on this API)
-    const COUNT_BASE = "https://countapi.mileshilliard.com/api/v1";
-    const countKey = (name) => `lockmic_com_${name}`;
+
+    // Public Firebase web config (lockmic-11c1a / "lockmic" web app).
+    // Safe to embed: rules enforce ±1 only.
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyAjJ8YB1a_9E7DDIPKjFq0WACvT79CABrc",
+      authDomain: "lockmic-11c1a.firebaseapp.com",
+      projectId: "lockmic-11c1a",
+      storageBucket: "lockmic-11c1a.firebasestorage.app",
+      messagingSenderId: "258472289119",
+      appId: "1:258472289119:web:30bb8a45ad7e2934e00cea",
+    };
+    const FB_SDK = "11.10.0";
+    const VOTES_PATH = { collection: "public", doc: "votes" };
 
     const known = { likes: null, dislikes: null };
     let countsReady = false;
     let voteBusy = false;
     /** @type {"like"|"dislike"|null} */
     let localChoice = null;
+    /** @type {Promise<{ getCounts: Function, adjust: Function }>|null} */
+    let firestoreReady = null;
 
     const te = new TextEncoder();
     const td = new TextDecoder();
@@ -862,75 +873,79 @@
       setFlipValue(el, value, { animate });
     };
 
-    const parseCount = (data) => {
-      if (!data || typeof data !== "object") return null;
-      if (data.error) return null;
-      // CountAPI may return value as number or string
-      if (typeof data.value === "number" && Number.isFinite(data.value)) return Math.max(0, Math.floor(data.value));
-      if (typeof data.value === "string" && data.value.trim() !== "" && Number.isFinite(Number(data.value))) {
-        return Math.max(0, Math.floor(Number(data.value)));
-      }
-      if (typeof data.count === "number" && Number.isFinite(data.count)) return Math.max(0, Math.floor(data.count));
-      return null;
+    const toNonNegInt = (v) => {
+      const n = typeof v === "number" ? v : Number(v);
+      if (!Number.isFinite(n)) return 0;
+      return Math.max(0, Math.floor(n));
     };
 
-    // CountAPI (no-auth countapi.xyz revival):
-    //   GET  → /api/v1/get/:key
-    //   +1   → /api/v1/hit/:key
-    //   set  → /api/v1/set/:key?value=N  (used for remove / down)
-    const apiGet = (name) =>
-      `${COUNT_BASE}/get/${encodeURIComponent(countKey(name))}?_=${Date.now()}`;
-    const apiUp = (name) =>
-      `${COUNT_BASE}/hit/${encodeURIComponent(countKey(name))}?_=${Date.now()}`;
-    const apiSet = (name, value) =>
-      `${COUNT_BASE}/set/${encodeURIComponent(countKey(name))}?value=${encodeURIComponent(String(value))}&_=${Date.now()}`;
+    /** Lazy-load Firebase modular SDK (CDN) and open the votes doc. */
+    const getFirestoreApi = () => {
+      if (!firestoreReady) {
+        firestoreReady = (async () => {
+          const [{ initializeApp }, fs] = await Promise.all([
+            import(`https://www.gstatic.com/firebasejs/${FB_SDK}/firebase-app.js`),
+            import(`https://www.gstatic.com/firebasejs/${FB_SDK}/firebase-firestore.js`),
+          ]);
+          const app = initializeApp(FIREBASE_CONFIG);
+          const db = fs.getFirestore(app);
+          const ref = fs.doc(db, VOTES_PATH.collection, VOTES_PATH.doc);
 
-    const fetchCount = async (name) => {
-      try {
-        const r = await fetch(apiGet(name), {
-          method: "GET",
-          mode: "cors",
-          cache: "no-store",
+          const getCounts = async () => {
+            const snap = await fs.getDoc(ref);
+            if (!snap.exists()) throw new Error("votes doc missing");
+            const data = snap.data() || {};
+            return {
+              likes: toNonNegInt(data.likes),
+              dislikes: toNonNegInt(data.dislikes),
+            };
+          };
+
+          /** Atomic ±1 on likes or dislikes; returns new field value. */
+          const adjust = async (field, delta) => {
+            if (field !== "likes" && field !== "dislikes") throw new Error("bad field");
+            if (delta !== 1 && delta !== -1) throw new Error("bad delta");
+            return fs.runTransaction(db, async (tx) => {
+              const snap = await tx.get(ref);
+              if (!snap.exists()) throw new Error("votes doc missing");
+              const data = snap.data() || {};
+              const cur = toNonNegInt(data[field]);
+              const next = Math.max(0, cur + delta);
+              // Already at floor (e.g. remove when 0) — no write needed
+              if (next === cur) return cur;
+              // Write only the changed field so rules see a pure ±1 update
+              tx.update(ref, { [field]: next });
+              return next;
+            });
+          };
+
+          return { getCounts, adjust };
+        })().catch((err) => {
+          firestoreReady = null;
+          throw err;
         });
-        // Missing key → treat as 0 so the UI can enable voting
-        if (r.status === 404) return 0;
-        const data = await r.json().catch(() => null);
-        if (!r.ok) return null;
-        const n = parseCount(data);
-        return n == null ? 0 : n;
+      }
+      return firestoreReady;
+    };
+
+    const fetchCounts = async () => {
+      try {
+        const api = await getFirestoreApi();
+        return await api.getCounts();
       } catch (e) {
-        console.warn("count fetch failed", name, e);
+        console.warn("count fetch failed", e);
         return null;
       }
     };
 
     const bumpCount = async (name) => {
-      const r = await fetch(apiUp(name), {
-        method: "GET",
-        mode: "cors",
-        cache: "no-store",
-      });
-      const data = await r.json().catch(() => null);
-      if (!r.ok) throw new Error((data && data.error) || "vote failed");
-      const saved = parseCount(data);
-      if (saved == null) throw new Error("vote failed");
-      return saved;
+      const api = await getFirestoreApi();
+      return api.adjust(name, 1);
     };
 
     const lowerCount = async (name) => {
-      // No atomic decrement — read then set (best-effort for community votes)
-      const current = (await fetchCount(name)) ?? 0;
-      const next = Math.max(0, current - 1);
-      const r = await fetch(apiSet(name, next), {
-        method: "GET",
-        mode: "cors",
-        cache: "no-store",
-      });
-      const data = await r.json().catch(() => null);
-      if (!r.ok) throw new Error((data && data.error) || "remove failed");
-      const saved = parseCount(data);
-      if (saved == null) throw new Error("remove failed");
-      return saved;
+      const api = await getFirestoreApi();
+      return api.adjust(name, -1);
     };
 
     const setVoteButtonsDisabled = (disabled) => {
@@ -967,20 +982,22 @@
       setVoteButtonsDisabled(!enabled);
     };
 
-    // Start: shimmering digit shells until CountAPI responds
+    // Start: shimmering digit shells until Firestore responds
     setCountLoading(likeCountEl, "Loading likes", 4);
     setCountLoading(dislikeCountEl, "Loading dislikes", 2);
     setVotingEnabled(false);
     setRemoveVisible(false);
 
     const refreshCounts = async () => {
-      const [likes, dislikes] = await Promise.all([fetchCount("likes"), fetchCount("dislikes")]);
+      const counts = await fetchCounts();
 
-      if (likes != null) showCount(likeCountEl, "likes", likes, true);
-      else if (known.likes == null) setCountUnavailable(likeCountEl, "Likes unavailable");
-
-      if (dislikes != null) showCount(dislikeCountEl, "dislikes", dislikes, true);
-      else if (known.dislikes == null) setCountUnavailable(dislikeCountEl, "Dislikes unavailable");
+      if (counts) {
+        showCount(likeCountEl, "likes", counts.likes, true);
+        showCount(dislikeCountEl, "dislikes", counts.dislikes, true);
+      } else {
+        if (known.likes == null) setCountUnavailable(likeCountEl, "Likes unavailable");
+        if (known.dislikes == null) setCountUnavailable(dislikeCountEl, "Dislikes unavailable");
+      }
 
       countsReady = known.likes != null || known.dislikes != null;
       setVotingEnabled(countsReady);
@@ -1007,15 +1024,8 @@
       setStatus("Saving…");
 
       try {
-        // 1) Confirm save via /hit
         const saved = await bumpCount(name);
-
-        // 2) Confirm retrieval via fresh GET (do not bump the UI until both succeed)
-        const retrieved = await fetchCount(name);
-        if (retrieved == null) throw new Error("could not read updated count");
-
-        // Use the higher of the two remote values (GET can lag behind /hit)
-        showCount(el, key, Math.max(saved, retrieved), true);
+        showCount(el, key, saved, true);
         await writeStoredVote(choice);
         localChoice = choice;
         applyLocalVote(choice);
@@ -1046,12 +1056,7 @@
 
       try {
         const saved = await lowerCount(name);
-
-        const retrieved = await fetchCount(name);
-        if (retrieved == null) throw new Error("could not read updated count");
-
-        // Prefer the lower of the two remotes after decrement (GET can lag)
-        showCount(el, key, Math.min(saved, retrieved), true, { force: true });
+        showCount(el, key, saved, true, { force: true });
         clearStoredVote();
         localChoice = null;
         clearLocalVote();
