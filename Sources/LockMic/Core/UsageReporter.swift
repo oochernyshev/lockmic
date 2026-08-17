@@ -119,11 +119,15 @@ enum UsageReporter {
         guard !events.isEmpty else { return }
 
         let clientID = ensureClientID()
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "client_id": clientID,
             "non_personalized_ads": true,
             "events": events,
         ]
+        // Country only — MP does not geo-locate from the connecting IP.
+        if let countryID {
+            body["user_location"] = ["country_id": countryID]
+        }
 
         guard let data = try? JSONSerialization.data(withJSONObject: body) else {
             log.error("Failed to encode usage payload")
@@ -146,7 +150,7 @@ enum UsageReporter {
         }
 
         let names = events.compactMap { $0["name"] as? String }.joined(separator: ",")
-        log.debug("Sending usage events: \(names, privacy: .public)")
+        log.debug("Sending usage events: \(names, privacy: .public) country=\(countryID ?? "none", privacy: .public)")
 
         if let timeout {
             let semaphore = DispatchSemaphore(value: 0)
@@ -212,4 +216,46 @@ enum UsageReporter {
             "params": params,
         ]
     }
+
+    // MARK: - Country (ISO 3166-1 alpha-2)
+
+    /// System Region first; IANA timezone → country if Region is missing/invalid.
+    private static var countryID: String? {
+        if let fromLocale = isoCountryCode(Locale.current.region?.identifier) {
+            return fromLocale
+        }
+        return isoCountryCode(tzCountryByIdentifier[TimeZone.current.identifier])
+    }
+
+    private static func isoCountryCode(_ raw: String?) -> String? {
+        guard let raw else { return nil }
+        let code = raw.uppercased()
+        guard code.count == 2, code.unicodeScalars.allSatisfy({ $0 >= "A" && $0 <= "Z" }) else {
+            return nil
+        }
+        return code
+    }
+
+    /// Parsed once from the system `zone.tab` (one ISO country per IANA zone).
+    private static let tzCountryByIdentifier: [String: String] = {
+        let paths = [
+            "/usr/share/zoneinfo/zone.tab",
+            "/usr/share/zoneinfo.default/zone.tab",
+        ]
+        guard let path = paths.first(where: { FileManager.default.isReadableFile(atPath: $0) }),
+              let text = try? String(contentsOfFile: path, encoding: .utf8)
+        else { return [:] }
+
+        var map: [String: String] = [:]
+        for line in text.split(whereSeparator: \.isNewline) {
+            guard line.first != "#", !line.isEmpty else { continue }
+            let cols = line.split(separator: "\t", omittingEmptySubsequences: false)
+            guard cols.count >= 3 else { continue }
+            let country = String(cols[0])
+            let zone = String(cols[2])
+            guard country.count == 2, !zone.isEmpty else { continue }
+            map[zone] = country
+        }
+        return map
+    }()
 }
