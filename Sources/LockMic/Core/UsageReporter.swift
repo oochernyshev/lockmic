@@ -3,7 +3,8 @@ import os.log
 
 private let log = Logger(subsystem: "com.lockmic.app", category: "Usage")
 
-/// Anonymous GA4 Measurement Protocol — one network hit per action (and on launch/quit).
+/// Anonymous GA4 hits via the same client collect path as the website (`/g/collect`).
+/// Google geolocates from the connection (Realtime map) without an IP in the payload.
 @MainActor
 enum UsageReporter {
     /// How the HUD is configured at report time.
@@ -53,8 +54,7 @@ enum UsageReporter {
 
     private enum Config {
         static let measurementID = "G-0ZRQC93T49"
-        static let apiSecret = "FKDW0mhXTba00epDCorSbA"
-        static let collectURL = URL(string: "https://www.google-analytics.com/mp/collect")!
+        static let collectURL = URL(string: "https://www.google-analytics.com/g/collect")!
     }
 
     private enum Keys {
@@ -62,6 +62,7 @@ enum UsageReporter {
     }
 
     private static var shareEnabled = true
+    private static let sessionID = Int(Date().timeIntervalSince1970)
     /// Shared session so rapid actions reuse connections.
     private static let session: URLSession = {
         let config = URLSessionConfiguration.ephemeral
@@ -75,6 +76,9 @@ enum UsageReporter {
     /// Call once at launch after preferences are loaded.
     static func start(shareEnabled: Bool, hudMode: HUDMode) {
         self.shareEnabled = shareEnabled
+        // Drop earlier MP experiments (never released).
+        UserDefaults.standard.removeObject(forKey: "usage.maskedIP")
+        UserDefaults.standard.removeObject(forKey: "usage.maskedIPAt")
         guard shareEnabled else {
             log.debug("Usage reporting disabled by preference")
             return
@@ -116,41 +120,52 @@ enum UsageReporter {
 
     /// - Parameter waitUpTo: if non-nil, block until the request finishes or the timeout elapses (for quit).
     private static func send(events: [[String: Any]], waitUpTo timeout: TimeInterval? = nil) {
-        guard !events.isEmpty else { return }
-
-        let clientID = ensureClientID()
-        var body: [String: Any] = [
-            "client_id": clientID,
-            "non_personalized_ads": true,
-            "events": events,
-        ]
-        // Country only — MP does not geo-locate from the connecting IP.
-        if let countryID {
-            body["user_location"] = ["country_id": countryID]
+        for ev in events {
+            guard let name = ev["name"] as? String else { continue }
+            let params = ev["params"] as? [String: Any] ?? [:]
+            sendOne(name: name, params: params, waitUpTo: timeout)
         }
+    }
 
-        guard let data = try? JSONSerialization.data(withJSONObject: body) else {
-            log.error("Failed to encode usage payload")
-            return
-        }
-
+    private static func sendOne(name: String, params: [String: Any], waitUpTo timeout: TimeInterval?) {
         var components = URLComponents(url: Config.collectURL, resolvingAgainstBaseURL: false)!
-        components.queryItems = [
-            URLQueryItem(name: "measurement_id", value: Config.measurementID),
-            URLQueryItem(name: "api_secret", value: Config.apiSecret),
+        var items: [URLQueryItem] = [
+            URLQueryItem(name: "v", value: "2"),
+            URLQueryItem(name: "tid", value: Config.measurementID),
+            URLQueryItem(name: "cid", value: ensureClientID()),
+            URLQueryItem(name: "en", value: name),
+            URLQueryItem(name: "sid", value: String(sessionID)),
+            URLQueryItem(name: "sct", value: "1"),
+            URLQueryItem(name: "seg", value: "1"),
+            URLQueryItem(name: "_et", value: "1"),
+            URLQueryItem(name: "ul", value: Locale.current.identifier.replacingOccurrences(of: "_", with: "-")),
+            URLQueryItem(name: "dl", value: "https://lockmic.com/macos"),
+            URLQueryItem(name: "dt", value: "LockMic"),
         ]
+        for (key, value) in params {
+            if key == "session_id" || key == "engagement_time_msec" { continue }
+            if value is Int || value is Int64 {
+                items.append(URLQueryItem(name: "epn.\(key)", value: "\(value)"))
+            } else {
+                items.append(URLQueryItem(name: "ep.\(key)", value: "\(value)"))
+            }
+        }
+        components.queryItems = items
         guard let url = components.url else { return }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = data
+        request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
+        request.setValue(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+            forHTTPHeaderField: "User-Agent"
+        )
+        request.httpBody = Data()
         if let timeout {
             request.timeoutInterval = timeout
         }
 
-        let names = events.compactMap { $0["name"] as? String }.joined(separator: ",")
-        log.debug("Sending usage events: \(names, privacy: .public) country=\(countryID ?? "none", privacy: .public)")
+        log.debug("Sending usage events: \(name, privacy: .public)")
 
         if let timeout {
             let semaphore = DispatchSemaphore(value: 0)
@@ -180,10 +195,12 @@ enum UsageReporter {
 
     private static func ensureClientID() -> String {
         let defaults = UserDefaults.standard
-        if let existing = defaults.string(forKey: Keys.clientID), !existing.isEmpty {
+        if let existing = defaults.string(forKey: Keys.clientID),
+           existing.range(of: #"^\d+\.\d+$"#, options: .regularExpression) != nil
+        {
             return existing
         }
-        let id = UUID().uuidString.lowercased()
+        let id = "\(UInt64.random(in: 1_000_000_000...4_294_967_295)).\(UInt64(Date().timeIntervalSince1970))"
         defaults.set(id, forKey: Keys.clientID)
         return id
     }
@@ -203,6 +220,7 @@ enum UsageReporter {
         let osVersion = "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
         return [
             "engagement_time_msec": 1,
+            "session_id": sessionID,
             "app_version": version,
             "os_version": osVersion,
             "platform": "macos",
@@ -216,46 +234,4 @@ enum UsageReporter {
             "params": params,
         ]
     }
-
-    // MARK: - Country (ISO 3166-1 alpha-2)
-
-    /// System Region first; IANA timezone → country if Region is missing/invalid.
-    private static var countryID: String? {
-        if let fromLocale = isoCountryCode(Locale.current.region?.identifier) {
-            return fromLocale
-        }
-        return isoCountryCode(tzCountryByIdentifier[TimeZone.current.identifier])
-    }
-
-    private static func isoCountryCode(_ raw: String?) -> String? {
-        guard let raw else { return nil }
-        let code = raw.uppercased()
-        guard code.count == 2, code.unicodeScalars.allSatisfy({ $0 >= "A" && $0 <= "Z" }) else {
-            return nil
-        }
-        return code
-    }
-
-    /// Parsed once from the system `zone.tab` (one ISO country per IANA zone).
-    private static let tzCountryByIdentifier: [String: String] = {
-        let paths = [
-            "/usr/share/zoneinfo/zone.tab",
-            "/usr/share/zoneinfo.default/zone.tab",
-        ]
-        guard let path = paths.first(where: { FileManager.default.isReadableFile(atPath: $0) }),
-              let text = try? String(contentsOfFile: path, encoding: .utf8)
-        else { return [:] }
-
-        var map: [String: String] = [:]
-        for line in text.split(whereSeparator: \.isNewline) {
-            guard line.first != "#", !line.isEmpty else { continue }
-            let cols = line.split(separator: "\t", omittingEmptySubsequences: false)
-            guard cols.count >= 3 else { continue }
-            let country = String(cols[0])
-            let zone = String(cols[2])
-            guard country.count == 2, !zone.isEmpty else { continue }
-            map[zone] = country
-        }
-        return map
-    }()
 }
