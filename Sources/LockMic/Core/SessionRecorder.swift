@@ -85,7 +85,7 @@ final class SessionRecorder: ObservableObject {
     private var defaultMicGate = StemGate(events: [])
     private var playbackGate = StemGate(events: [])
     private var extraGates: [String: StemGate] = [:]
-    private var levelTimer: Timer?
+    private var lastMeterTime: CFTimeInterval = 0
     private var playbackScope: PlaybackRecordScope = .default
     private var selectedInputUID = ""
     private var selectedOutputUIDs: Set<String> = []
@@ -107,7 +107,6 @@ final class SessionRecorder: ObservableObject {
     }
 
     deinit {
-        levelTimer?.invalidate()
         outputChangeWork?.cancel()
         if let devicesToken {
             audio.removeDevicesChangedHandler(devicesToken)
@@ -202,7 +201,6 @@ final class SessionRecorder: ObservableObject {
             microphoneAccess = .granted
             playbackAccess = .granted
             refreshDeviceRows()
-            startLevelTimer()
             log.info("Recording started in \(folder.path, privacy: .public)")
         } catch {
             micRecorder?.stop()
@@ -287,8 +285,6 @@ final class SessionRecorder: ObservableObject {
         guard isRecording, let folder = sessionDirectory else {
             throw SessionRecorderError.notRecording
         }
-        levelTimer?.invalidate()
-        levelTimer = nil
         micRecorder?.stop()
         micRecorder = nil
         playback?.stop()
@@ -339,7 +335,7 @@ final class SessionRecorder: ObservableObject {
             }
             if #available(macOS 14.2, *), let tap = playback as? PlaybackTap {
                 do {
-                    try tap.retarget(using: audio)
+                    try tap.retarget(using: audio, scope: playbackScope)
                     playbackDeviceUID = uid
                     playbackDeviceName = audio.deviceName(outID)
                     applyOutputSelection()
@@ -400,12 +396,29 @@ final class SessionRecorder: ObservableObject {
     }
 
     private func applyOutputSelection() {
-        let wantDefault = selectedOutputUIDs.contains(playbackDeviceUID)
-        if playbackEnabled != wantDefault {
-            playbackEnabled = wantDefault
+        let anySelected = !selectedOutputUIDs.isEmpty
+        if playbackEnabled != anySelected {
+            playbackEnabled = anySelected
         }
-        playback?.captureEnabled = !selectedOutputUIDs.isEmpty
-        playbackScope = selectedOutputUIDs.contains(where: { $0 != playbackDeviceUID }) ? .all : .default
+        playback?.captureEnabled = anySelected
+        let nextScope: PlaybackRecordScope =
+            selectedOutputUIDs.contains(where: { $0 != playbackDeviceUID }) ? .all : .default
+        let scopeChanged = nextScope != playbackScope
+        playbackScope = nextScope
+        if scopeChanged {
+            rebuildPlaybackTap()
+        }
+    }
+
+    private func rebuildPlaybackTap() {
+        guard #available(macOS 14.2, *), let tap = playback as? PlaybackTap else { return }
+        do {
+            try tap.retarget(using: audio, scope: playbackScope)
+            log.info("Playback tap scope \(String(describing: self.playbackScope), privacy: .public)")
+        } catch {
+            lastError = error.localizedDescription
+            log.error("Playback retarget failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 
     private func remountInputIfNeeded() {
@@ -503,17 +516,6 @@ final class SessionRecorder: ObservableObject {
         refreshDeviceRows()
     }
 
-    private func startLevelTimer() {
-        levelTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.12, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.updateDeviceLevels()
-            }
-        }
-        RunLoop.main.add(timer, forMode: .common)
-        levelTimer = timer
-    }
-
     private func startExtraMicIfNeeded(uid: String) {
         guard extraCaptures[uid] == nil, let folder = sessionDirectory else { return }
         guard uid != currentDefaultInputUID(),
@@ -546,7 +548,6 @@ final class SessionRecorder: ObservableObject {
         rememberDeviceOrder()
         let defaultInUID = currentDefaultInputUID()
         let inputsByUID = Dictionary(uniqueKeysWithValues: audio.listInputDevices().map { ($0.uid, $0) })
-        let previousLevels = Dictionary(uniqueKeysWithValues: devices.map { ($0.id, $0.level) })
         var rows: [RecordingDeviceRow] = []
 
         for uid in inputOrder {
@@ -563,7 +564,7 @@ final class SessionRecorder: ObservableObject {
                     isVirtual: false,
                     canCapture: !failed,
                     isEnabled: selected,
-                    level: previousLevels[uid] ?? 0,
+                    level: 0,
                     detail: failed ? L10n.recordingSourceUnavailable : nil
                 )
             )
@@ -584,7 +585,7 @@ final class SessionRecorder: ObservableObject {
                     isVirtual: false,
                     canCapture: true,
                     isEnabled: selected,
-                    level: previousLevels[id] ?? 0,
+                    level: 0,
                     detail: isDefault ? L10n.recordingSourceSystemPlayback : (
                         selected ? L10n.recordingSourceIncluded : L10n.recordingSourceOutside
                     )
@@ -594,24 +595,8 @@ final class SessionRecorder: ObservableObject {
         devices = rows
     }
 
-    /// Meters only — do not re-list HAL devices on this path.
-    private func updateDeviceLevels() {
-        guard !devices.isEmpty else { return }
-        var rows = devices
-        var changed = false
-        for index in rows.indices {
-            let next = meterLevel(for: rows[index])
-            if abs(rows[index].level - next) > 0.02 {
-                rows[index].level = next
-                changed = true
-            }
-        }
-        if changed {
-            devices = rows
-        }
-    }
-
-    private func meterLevel(for row: RecordingDeviceRow) -> Float {
+    /// Live meter for the monitor. Does not publish `devices` (that rebuilt SwiftUI).
+    func meterLevel(for row: RecordingDeviceRow) -> Float {
         guard row.isEnabled else { return 0 }
         switch row.kind {
         case .input:
@@ -638,7 +623,11 @@ final class SessionRecorder: ObservableObject {
 
     private func defaultMicMeterLevel() -> Float {
         guard let mic = micRecorder, defaultMicEnabled else { return 0 }
-        mic.updateMeters()
+        let now = CACurrentMediaTime()
+        if now - lastMeterTime > 0.04 {
+            mic.updateMeters()
+            lastMeterTime = now
+        }
         // averagePower is dBFS (0 = full scale). Laptop room noise sits around
         // -45…-35 dB; mapping from -50 made hiss look like speech.
         return RecordingLevelDisplay.fromAverageDB(mic.averagePower(forChannel: 0))

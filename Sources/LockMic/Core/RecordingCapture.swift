@@ -1,3 +1,4 @@
+import Accelerate
 import AVFoundation
 import CoreAudio
 import Foundation
@@ -63,6 +64,69 @@ enum RecordingLevelDisplay {
         let p = min(1, max(0, peak))
         guard p > 0.0002 else { return 0 }
         return fromAverageDB(20 * log10(p))
+    }
+}
+
+/// Hot-path DSP for capture IO. Avoid per-sample Swift loops and extra allocations.
+enum RecordingDSP {
+    static func peak(in buffer: AVAudioPCMBuffer) -> Float {
+        guard let channels = buffer.floatChannelData else {
+            return peak(in: UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList))
+        }
+        let frames = Int(buffer.frameLength)
+        guard frames > 0 else { return 0 }
+        var peak: Float = 0
+        for ch in 0..<Int(buffer.format.channelCount) {
+            var channelPeak: Float = 0
+            vDSP_maxmgv(channels[ch], 1, &channelPeak, vDSP_Length(frames))
+            peak = max(peak, channelPeak)
+        }
+        return min(1, peak)
+    }
+
+    static func peak(in abl: UnsafeMutableAudioBufferListPointer) -> Float {
+        var peak: Float = 0
+        for buffer in abl {
+            guard let raw = buffer.mData else { continue }
+            let count = Int(buffer.mDataByteSize) / MemoryLayout<Float>.size
+            guard count > 0 else { continue }
+            var channelPeak: Float = 0
+            vDSP_maxmgv(raw.assumingMemoryBound(to: Float.self), 1, &channelPeak, vDSP_Length(count))
+            peak = max(peak, channelPeak)
+        }
+        return min(1, peak)
+    }
+
+    static func copy(_ abl: UnsafeMutableAudioBufferListPointer, into dest: AVAudioPCMBuffer) {
+        let dst = UnsafeMutableAudioBufferListPointer(dest.mutableAudioBufferList)
+        for (from, to) in zip(abl, dst) {
+            guard let source = from.mData, let destPtr = to.mData else { continue }
+            memcpy(destPtr, source, min(Int(from.mDataByteSize), Int(to.mDataByteSize)))
+        }
+    }
+
+    static func copyStrided(
+        source: UnsafePointer<Float>,
+        stride: Int,
+        frames: Int,
+        dest: UnsafeMutablePointer<Float>
+    ) {
+        guard frames > 0, stride > 0 else { return }
+        cblas_scopy(Int32(frames), source, Int32(stride), dest, 1)
+    }
+
+    static func deinterleaveStereo(
+        source: UnsafePointer<Float>,
+        sourceChannels: Int,
+        leftOffset: Int,
+        frames: Int,
+        left: UnsafeMutablePointer<Float>,
+        right: UnsafeMutablePointer<Float>
+    ) {
+        guard frames > 0, sourceChannels > 0 else { return }
+        copyStrided(source: source + leftOffset, stride: sourceChannels, frames: frames, dest: left)
+        let rightOffset = min(leftOffset + 1, sourceChannels - 1)
+        copyStrided(source: source + rightOffset, stride: sourceChannels, frames: frames, dest: right)
     }
 }
 
@@ -132,7 +196,8 @@ enum RecordingCodec {
     }
 }
 
-/// Encodes PCM to AAC on a serial queue so HAL IO is not blocked.
+/// Encodes PCM to AAC off the HAL thread. IO copies into ~170 ms batches;
+/// disabled time is one silence pad on resume or finish.
 final class CompressedStemWriter: @unchecked Sendable {
     private let queue: DispatchQueue
     private var file: AVAudioFile?
@@ -141,12 +206,19 @@ final class CompressedStemWriter: @unchecked Sendable {
     private var converterFromRate: Double = 0
     private var converterFromChannels: AVAudioChannelCount = 0
     private var leftover: AVAudioPCMBuffer?
-    private let chunkFrames: AVAudioFrameCount = 4096
+    private var convertDest: AVAudioPCMBuffer?
+    private var silenceChunk: AVAudioPCMBuffer?
+    private let chunkFrames: AVAudioFrameCount = 8192
+    private let ioLock = NSLock()
+    private var ioBatch: AVAudioPCMBuffer?
+    private var freeBatches: [AVAudioPCMBuffer] = []
+    private var ioPendingSilenceFrames: AVAudioFrameCount = 0
+    private var pendingSilenceFrames: AVAudioFrameCount = 0
 
     init(url: URL, channels: AVAudioChannelCount, bitRate: Int, sampleRate: Double = RecordingCodec.sampleRate) throws {
         let rate = RecordingCodec.aacSampleRate(nearest: sampleRate)
         writeFormat = RecordingCodec.pcmFormat(channels: channels, sampleRate: rate)
-        queue = DispatchQueue(label: "com.lockmic.stem-write.\(url.lastPathComponent)")
+        queue = DispatchQueue(label: "com.lockmic.stem-write.\(url.lastPathComponent)", qos: .userInitiated)
         try? FileManager.default.removeItem(at: url)
         file = try AVAudioFile(
             forWriting: url,
@@ -156,34 +228,121 @@ final class CompressedStemWriter: @unchecked Sendable {
         )
     }
 
-    /// Copies `buffer` (HAL memory is reused after the IO callback) and encodes it.
+    /// Copies `buffer` into a recycled batch. Safe if HAL reuses the source after return.
     func write(_ buffer: AVAudioPCMBuffer) {
-        guard let copy = Self.copy(buffer) else { return }
-        queue.async { [weak self] in
-            self?.ingest(copy)
+        guard buffer.frameLength > 0 else { return }
+        ioLock.lock()
+        var offset: AVAudioFrameCount = 0
+        while offset < buffer.frameLength {
+            if ioBatch == nil || !Self.sameProcessingFormat(ioBatch!.format, buffer.format) {
+                if let old = ioBatch, old.frameLength > 0 {
+                    enqueueBatchLocked(old)
+                }
+                ioBatch = obtainBatchLocked(format: buffer.format)
+                ioBatch?.frameLength = 0
+            }
+            guard let batch = ioBatch else {
+                ioLock.unlock()
+                return
+            }
+            let take = min(batch.frameCapacity - batch.frameLength, buffer.frameLength - offset)
+            Self.copyFrames(from: buffer, at: offset, to: batch, at: batch.frameLength, count: take)
+            batch.frameLength += take
+            offset += take
+            if batch.frameLength >= batch.frameCapacity {
+                enqueueBatchLocked(batch)
+                ioBatch = nil
+            }
         }
+        ioLock.unlock()
     }
 
     func writeSilence(seconds: TimeInterval) {
         let frames = AVAudioFrameCount((seconds * writeFormat.sampleRate).rounded(.toNearestOrAwayFromZero))
-        writeSilence(frames: frames)
+        padWriteSilence(frames: frames)
     }
 
     func writeSilence(frames: AVAudioFrameCount) {
-        guard frames > 0 else { return }
-        queue.async { [weak self] in
-            self?.appendSilence(frames: frames)
-        }
+        padWriteSilence(frames: frames)
+    }
+
+    /// Accrue HAL frames of silence at `sampleRate` without encoding them yet.
+    func padSilence(inputFrames: AVAudioFrameCount, sampleRate: Double) {
+        let seconds = Double(inputFrames) / max(1, sampleRate)
+        writeSilence(seconds: seconds)
     }
 
     /// Drain the encoder and close the file so the m4a atom is finalized.
     func finish() {
+        flushIOBatch()
+        ioLock.lock()
+        let trailingSilence = ioPendingSilenceFrames
+        ioPendingSilenceFrames = 0
+        ioLock.unlock()
         queue.sync {
+            pendingSilenceFrames += trailingSilence
+            flushPendingSilence()
             flushLeftover()
             file = nil
             converter = nil
             leftover = nil
+            convertDest = nil
+            silenceChunk = nil
         }
+    }
+
+    private func padWriteSilence(frames: AVAudioFrameCount) {
+        guard frames > 0 else { return }
+        flushIOBatch()
+        ioLock.lock()
+        ioPendingSilenceFrames += frames
+        ioLock.unlock()
+    }
+
+    private func flushIOBatch() {
+        ioLock.lock()
+        let batch = ioBatch
+        ioBatch = nil
+        if let batch, batch.frameLength > 0 {
+            enqueueBatchLocked(batch)
+        }
+        ioLock.unlock()
+    }
+
+    /// Caller must hold `ioLock`.
+    private func enqueueBatchLocked(_ batch: AVAudioPCMBuffer) {
+        let silence = ioPendingSilenceFrames
+        ioPendingSilenceFrames = 0
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.pendingSilenceFrames += silence
+            self.flushPendingSilence()
+            self.ingest(batch)
+            self.recycleBatch(batch)
+        }
+    }
+
+    private func obtainBatchLocked(format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        if let index = freeBatches.lastIndex(where: {
+            Self.sameProcessingFormat($0.format, format) && $0.frameCapacity >= self.chunkFrames
+        }) {
+            return freeBatches.remove(at: index)
+        }
+        if let first = freeBatches.first, !Self.sameProcessingFormat(first.format, format) {
+            freeBatches.removeAll(keepingCapacity: true)
+        }
+        return AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunkFrames)
+    }
+
+    private func recycleBatch(_ batch: AVAudioPCMBuffer) {
+        ioLock.lock()
+        defer { ioLock.unlock() }
+        guard freeBatches.count < 3 else { return }
+        if let first = freeBatches.first, !Self.sameProcessingFormat(first.format, batch.format) {
+            freeBatches.removeAll(keepingCapacity: true)
+        }
+        batch.frameLength = 0
+        freeBatches.append(batch)
     }
 
     private func ingest(_ buffer: AVAudioPCMBuffer) {
@@ -205,9 +364,11 @@ final class CompressedStemWriter: @unchecked Sendable {
         guard let converter else { return nil }
         let ratio = writeFormat.sampleRate / max(1, buffer.format.sampleRate)
         let capacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio + 32)
-        guard let dest = AVAudioPCMBuffer(pcmFormat: writeFormat, frameCapacity: max(1, capacity)) else {
-            return nil
+        if convertDest == nil || convertDest!.frameCapacity < capacity {
+            convertDest = AVAudioPCMBuffer(pcmFormat: writeFormat, frameCapacity: max(capacity, chunkFrames))
         }
+        guard let dest = convertDest else { return nil }
+        dest.frameLength = 0
         var error: NSError?
         var consumed = false
         // Keep the converter primed — `endOfStream` every HAL slice resets it and clicks.
@@ -237,16 +398,20 @@ final class CompressedStemWriter: @unchecked Sendable {
             offset += take
             if dest.frameLength >= dest.frameCapacity {
                 writeFile(dest)
-                leftover = nil
+                dest.frameLength = 0
             }
         }
     }
 
     private func appendSilence(frames: AVAudioFrameCount) {
-        guard frames > 0,
-              let zero = AVAudioPCMBuffer(pcmFormat: writeFormat, frameCapacity: min(frames, chunkFrames))
-        else { return }
-        RecordingSilence.zero(zero)
+        guard frames > 0 else { return }
+        if silenceChunk == nil {
+            silenceChunk = AVAudioPCMBuffer(pcmFormat: writeFormat, frameCapacity: chunkFrames)
+            if let silenceChunk {
+                RecordingSilence.zero(silenceChunk)
+            }
+        }
+        guard let zero = silenceChunk else { return }
         var remaining = frames
         while remaining > 0 {
             let chunk = min(remaining, zero.frameCapacity)
@@ -256,11 +421,19 @@ final class CompressedStemWriter: @unchecked Sendable {
         }
     }
 
+    private func flushPendingSilence() {
+        let frames = pendingSilenceFrames
+        pendingSilenceFrames = 0
+        if frames > 0 {
+            appendSilence(frames: frames)
+        }
+    }
+
     private func flushLeftover() {
         if let leftover, leftover.frameLength > 0 {
             writeFile(leftover)
+            leftover.frameLength = 0
         }
-        leftover = nil
     }
 
     private func writeFile(_ buffer: AVAudioPCMBuffer) {
@@ -286,26 +459,27 @@ final class CompressedStemWriter: @unchecked Sendable {
         at dstOff: AVAudioFrameCount,
         count: AVAudioFrameCount
     ) {
-        guard count > 0, let s = src.floatChannelData, let d = dst.floatChannelData else { return }
-        let n = Int(count)
-        let channels = min(Int(src.format.channelCount), Int(dst.format.channelCount))
-        for ch in 0..<channels {
-            (d[ch] + Int(dstOff)).update(from: s[ch] + Int(srcOff), count: n)
+        guard count > 0 else { return }
+        if let samples = src.floatChannelData, let dest = dst.floatChannelData {
+            let n = Int(count)
+            let channels = min(Int(src.format.channelCount), Int(dst.format.channelCount))
+            for ch in 0..<channels {
+                (dest[ch] + Int(dstOff)).update(from: samples[ch] + Int(srcOff), count: n)
+            }
+            return
         }
-    }
-
-    private static func copy(_ buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
-        guard let dest = AVAudioPCMBuffer(pcmFormat: buffer.format, frameCapacity: max(1, buffer.frameLength)) else {
-            return nil
-        }
-        dest.frameLength = buffer.frameLength
-        let src = UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList)
-        let dst = UnsafeMutableAudioBufferListPointer(dest.mutableAudioBufferList)
-        for (from, to) in zip(src, dst) {
+        let bytesPerFrame = Int(src.format.streamDescription.pointee.mBytesPerFrame)
+        guard bytesPerFrame > 0 else { return }
+        let source = UnsafeMutableAudioBufferListPointer(src.mutableAudioBufferList)
+        let dest = UnsafeMutableAudioBufferListPointer(dst.mutableAudioBufferList)
+        for (from, to) in zip(source, dest) {
             guard let s = from.mData, let d = to.mData else { continue }
-            memcpy(d, s, min(Int(from.mDataByteSize), Int(to.mDataByteSize)))
+            memcpy(
+                d.advanced(by: Int(dstOff) * bytesPerFrame),
+                s.advanced(by: Int(srcOff) * bytesPerFrame),
+                Int(count) * bytesPerFrame
+            )
         }
-        return dest
     }
 }
 
@@ -316,6 +490,7 @@ final class InputDeviceCapture: @unchecked Sendable {
     private var ioProcID: AudioDeviceIOProcID?
     private var writer: CompressedStemWriter?
     private var format: AVAudioFormat?
+    private var scratch: AVAudioPCMBuffer?
     private let sessionStart: CFTimeInterval
     private var didAlign = false
     private let lock = NSLock()
@@ -391,34 +566,38 @@ final class InputDeviceCapture: @unchecked Sendable {
             }
         }
 
-        let peak = Self.peak(in: abl)
+        let frames = RecordingSilence.frameCount(in: abl, format: format)
+        guard frames > 0 else { return }
+
         lock.lock()
-        _level = max(peak, _level * 0.65)
         let enabled = _enabled
         lock.unlock()
 
-        if enabled, let buffer = AVAudioPCMBuffer(pcmFormat: format, bufferListNoCopy: input, deallocator: nil) {
-            writer.write(buffer)
+        if enabled, let dest = scratchBuffer(frames: frames, format: format) {
+            RecordingDSP.copy(abl, into: dest)
+            dest.frameLength = frames
+            let peak = RecordingDSP.peak(in: dest)
+            lock.lock()
+            _level = max(peak, _level * 0.65)
+            lock.unlock()
+            writer.write(dest)
             return
         }
 
-        let frames = RecordingSilence.frameCount(in: abl, format: format)
-        guard frames > 0 else { return }
-        writer.writeSilence(seconds: Double(frames) / format.sampleRate)
+        lock.lock()
+        _level *= 0.65
+        lock.unlock()
+        writer.padSilence(inputFrames: frames, sampleRate: format.sampleRate)
     }
 
-    private static func peak(in abl: UnsafeMutableAudioBufferListPointer) -> Float {
-        var peak: Float = 0
-        for buffer in abl {
-            guard let raw = buffer.mData else { continue }
-            let count = Int(buffer.mDataByteSize) / MemoryLayout<Float>.size
-            guard count > 0 else { continue }
-            let samples = raw.bindMemory(to: Float.self, capacity: count)
-            for i in 0..<count {
-                peak = max(peak, abs(samples[i]))
-            }
+    private func scratchBuffer(frames: AVAudioFrameCount, format: AVAudioFormat) -> AVAudioPCMBuffer? {
+        if let scratch, scratch.format == format, scratch.frameCapacity >= frames {
+            scratch.frameLength = frames
+            return scratch
         }
-        return min(1, peak)
+        scratch = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: max(frames, 2048))
+        scratch?.frameLength = frames
+        return scratch
     }
 
     private static func inputStreamFormat(_ deviceID: AudioDeviceID) throws -> AudioStreamBasicDescription {

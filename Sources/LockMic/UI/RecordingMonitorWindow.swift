@@ -265,9 +265,10 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         if timer != nil, timerForRecording == recording { return }
         timer?.invalidate()
         timerForRecording = recording
-        let interval = recording ? 1.0 / 30.0 : 0.5
+        // Waveform bars are ~55 ms; 15 Hz is enough and avoids a 30 Hz MainActor hop.
+        let interval = recording ? 1.0 / 15.0 : 0.5
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 self?.tick()
             }
         }
@@ -278,9 +279,9 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
     private func tick() {
         guard let recorder else { return }
-        syncChrome()
         if recorder.isRecording != timerForRecording {
             startTimer()
+            syncChrome()
         }
         guard recorder.isRecording else { return }
         if let start = recorder.recordingStartedAt {
@@ -310,7 +311,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private func syncRowLevels() {
         guard let recorder else { return }
         for device in recorder.devices {
-            rows[device.id]?.applyLevel(device)
+            rows[device.id]?.applyLevel(device, level: recorder.meterLevel(for: device))
         }
     }
 
@@ -832,7 +833,6 @@ private final class RowView: NSView {
         detailField.isHidden = !hasDetail
         nameBottom?.isActive = !hasDetail
         detailBottom?.isActive = hasDetail
-        meter.level = device.level
         meter.active = device.isEnabled && device.canCapture && sectionEnabled
     }
 
@@ -851,9 +851,9 @@ private final class RowView: NSView {
         meter.active = mark.isOn && on
     }
 
-    func applyLevel(_ device: RecordingDeviceRow) {
+    func applyLevel(_ device: RecordingDeviceRow, level: Float) {
         mark.isOn = device.isEnabled
-        meter.level = device.level
+        meter.level = level
         meter.active = device.isEnabled && device.canCapture && sectionEnabled
     }
 
