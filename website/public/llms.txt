@@ -4,7 +4,7 @@
 
 ## Summary
 
-LockMic mutes the microphone at the **system level** using Apple Core Audio (not app-specific mute buttons). It works in Zoom, Microsoft Teams, Google Meet, FaceTime, browsers, and every other app on the Mac. Control is from the menu bar, global hotkeys, and an optional on-screen / floating HUD.
+LockMic mutes the microphone at the **system level** using Apple Core Audio (not app-specific mute buttons). It works in Zoom, Microsoft Teams, Google Meet, FaceTime, browsers, and every other app on the Mac. Control is from the menu bar, global hotkeys, and an optional on-screen / floating HUD. From 1.4 it can also **record locally**: default microphone plus system playback mixed to a dated AAC file on the Mac. Recordings are not uploaded.
 
 - **Website:** https://lockmic.com/
 - **GitHub:** https://github.com/oochernyshev/lockmic
@@ -22,6 +22,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - Virtual Core Audio devices are listed but ignored for mute control
 - Global hotkeys: toggle (⌘⇧M, optional ⌘F5), mute/unmute, push-to-talk, push-to-mute, push-to-flip
 - HUD toast and optional always-on floating HUD per display
+- Optional local recording (mic + system playback → dated mix on disk; not uploaded)
 - 23 UI languages following system language
 - Install: DMG or Homebrew cask (custom tap)
 - Not Developer ID notarized yet; users may need `xattr -dr com.apple.quarantine /Applications/LockMic.app` after download
@@ -68,7 +69,7 @@ App mute (e.g. Zoom) only silences that application. LockMic mutes the input dev
 
 ## Privacy
 
-If the user agrees to anonymous usage in the app: app version and action events only. No microphone audio, no personal content. Features stay disabled until agreement.
+If the user agrees to anonymous usage in the app: app version and action events only. No microphone audio, no recordings, no personal content. Features stay disabled until agreement. Recordings created in the app stay in a folder on the Mac (default `~/Movies/LockMic`) and are not sent to LockMic or WIXEE.AI.
 
 The marketing website (lockmic.com) uses the same Google Analytics 4 property (`G-0ZRQC93T49`) for anonymous page views and download clicks.
 

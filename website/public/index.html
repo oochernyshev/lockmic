@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LockMic — System-wide microphone mute for macOS</title>
-  <meta name="description" content="LockMic is a free macOS menu bar app for system-wide microphone mute. Works in Zoom, Teams, Meet, FaceTime, and every app via Core Audio. Global hotkeys, HUD, open source (MIT) by WIXEE.AI." />
-  <meta name="keywords" content="LockMic, macOS mic mute, system-wide microphone mute, menu bar mute, Zoom mute, Teams mute, Meet mute, Core Audio, push to talk, Homebrew, WIXEE.AI" />
+  <meta name="description" content="LockMic is a free macOS menu bar app for system-wide microphone mute. Optional local recording of your mic and what you hear — files stay on your Mac. Works in Zoom, Teams, Meet, and every app." />
+  <meta name="keywords" content="LockMic, macOS mic mute, system-wide microphone mute, menu bar mute, local recording, Zoom mute, Teams mute, Meet mute, Core Audio, push to talk, Homebrew, WIXEE.AI" />
   <meta name="author" content="WIXEE.AI" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
   <meta name="theme-color" content="#0b0d12" />
@@ -18,7 +18,7 @@
   <meta property="og:site_name" content="LockMic" />
   <meta property="og:url" content="https://lockmic.com/" />
   <meta property="og:title" content="LockMic — System-wide mic mute for macOS" />
-  <meta property="og:description" content="Mute your mic at the system level from the menu bar. Hotkeys, HUD, mute all inputs. Works in Zoom, Teams, Meet, and every app. Free & open source by WIXEE.AI." />
+  <meta property="og:description" content="Mute your mic at the system level from the menu bar. Optional local recording stays on your Mac. Hotkeys, HUD, mute all inputs. Free & open source by WIXEE.AI." />
   <meta property="og:image" content="https://lockmic.com/assets/og-v2.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -27,7 +27,7 @@
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="LockMic — System-wide mic mute for macOS" />
-  <meta name="twitter:description" content="Menu bar mute that works everywhere. Global hotkeys, HUD, MIT open source by WIXEE.AI." />
+  <meta name="twitter:description" content="Menu bar mute that works everywhere. Optional local recording stays on your Mac. MIT open source by WIXEE.AI." />
   <meta name="twitter:image" content="https://lockmic.com/assets/og-v2.png" />
   <meta name="twitter:image:alt" content="LockMic — system-wide microphone mute for macOS" />
 
@@ -38,7 +38,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1.4.7" />
+  <link rel="stylesheet" href="styles.css?v=1.4.8" />
   <link rel="preload" href="assets/hero-mic.mp4" as="video" type="video/mp4" />
   <link rel="preload" href="assets/hero-mic-poster.jpg" as="image" />
 
@@ -62,7 +62,7 @@
     "@type": "SoftwareApplication",
     "name": "LockMic",
     "alternateName": "LockMic for macOS",
-    "description": "System-wide microphone mute for macOS from the menu bar. Global hotkeys, on-screen HUD, mute all input devices via Core Audio. Works in Zoom, Teams, Google Meet, FaceTime, browsers, and every other app.",
+    "description": "System-wide microphone mute for macOS from the menu bar. Optional local recording of microphone and system playback stays on your Mac. Global hotkeys, HUD, mute all inputs via Core Audio.",
     "url": "https://lockmic.com/",
     "image": "https://lockmic.com/assets/og-v2.png",
     "screenshot": "https://lockmic.com/assets/og-v2.png",
@@ -100,11 +100,11 @@
       "Menu bar control",
       "Global hotkeys including push-to-talk and push-to-mute",
       "On-screen and floating HUD",
-      "Record microphone and system playback to a dated mix",
+      "Record microphone and system playback to a dated mix stored only on your Mac",
       "23 languages",
       "Homebrew and DMG install"
     ],
-    "keywords": "macOS microphone mute, system-wide mic mute, menu bar, Zoom, Teams, Meet, Core Audio, open source"
+    "keywords": "macOS microphone mute, system-wide mic mute, local recording, menu bar, Zoom, Teams, Meet, Core Audio, open source"
   }
   </script>
 
@@ -171,7 +171,15 @@
         "name": "What data does LockMic send?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "In the app, if you agree: version and anonymous action events (toggle, mute/unmute, holds). No microphone audio and no personal data. Mute control stays off until you agree. The marketing website uses the same Google Analytics property for anonymous page views and optional download clicks."
+          "text": "In the app, if you agree: version and anonymous action events (toggle, mute/unmute, holds). No microphone audio, no recordings, and no personal data. Mute control stays off until you agree. The marketing website uses the same Google Analytics property for anonymous page views and optional download clicks."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can LockMic record audio?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, optionally from version 1.4. Start Recording in the menu bar captures your default microphone and system playback, then writes a dated mix on your Mac (Movies/LockMic by default). Recordings are stored only locally — LockMic does not upload them. macOS asks for microphone and system audio access first."
         }
       },
       {
@@ -275,6 +283,7 @@
       <div class="hero-inner">
         <p class="eyebrow reveal">
           <span class="pill">macOS 14+</span>
+          <a class="pill" href="#features">New · Record locally</a>
           <span class="pill pill-soft">MIT · Open source</span>
           <a class="pill pill-soft" href="https://wixee.ai" rel="noopener noreferrer" target="_blank">by WIXEE.AI</a>
         </p>
@@ -286,6 +295,7 @@
           <strong>LockMic</strong> is a free macOS menu bar app for <strong>system-wide microphone mute</strong>.
           It uses Core Audio—not in-app mute buttons—so Zoom, Teams, Meet, FaceTime, browsers, and every other app see a muted mic.
           Global hotkeys, on-screen HUD, and optional floating indicator included.
+          New in 1.4: optionally record the mic and what you hear — files stay on your Mac.
         </p>
         <div class="hero-cta reveal">
           <a class="btn btn-primary btn-lg" href="#download">Download free</a>
@@ -295,6 +305,8 @@
           <span>⌘⇧M toggle</span>
           <span class="dot"></span>
           <span>Mute all inputs</span>
+          <span class="dot"></span>
+          <span>Local recording</span>
           <span class="dot"></span>
           <span>23 languages</span>
         </p>
@@ -387,7 +399,7 @@
       <div class="strip-inner">
         <div class="strip-item reveal"><strong>System-level</strong><span>Core Audio, not app buttons</span></div>
         <div class="strip-item reveal"><strong>Every app</strong><span>Zoom · Teams · Meet · more</span></div>
-        <div class="strip-item reveal"><strong>Menu bar</strong><span>One click, always ready</span></div>
+        <div class="strip-item reveal"><strong>Local only</strong><span>Recordings stay on your Mac</span></div>
         <div class="strip-item reveal"><strong>Free forever</strong><span>MIT open source</span></div>
       </div>
     </section>
@@ -414,6 +426,16 @@
       </div>
       <div class="feature-grid">
         <!-- Icons: 24×24 monoline set, stroke 2, round caps — SF Symbols weight -->
+        <article class="feature-card reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
+            </svg>
+          </div>
+          <h3>Record locally <span class="feature-new">New in 1.4</span></h3>
+          <p>Optionally capture your default mic and what you hear. LockMic writes a dated mix on your Mac — nothing is uploaded, and mute still works while you record.</p>
+        </article>
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
             <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none">
@@ -608,7 +630,11 @@ open /Applications/LockMic.app</code></pre>
         </details>
         <details class="faq-item reveal">
           <summary>What data is sent?</summary>
-          <p>In the <strong>app</strong>, if you agree: version and anonymous action events (toggle, mute/unmute, holds). No microphone audio, no personal data. Mute control stays off until you agree. This <strong>website</strong> uses the same Google Analytics property for anonymous page views (and optional download clicks) so we can improve the product and site.</p>
+          <p>In the <strong>app</strong>, if you agree: version and anonymous action events (toggle, mute/unmute, holds). No microphone audio, no recordings, and no personal data. Mute control stays off until you agree. This <strong>website</strong> uses the same Google Analytics property for anonymous page views (and optional download clicks) so we can improve the product and site.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>Can LockMic record audio?</summary>
+          <p>Yes — optionally, from 1.4. <strong>Start Recording</strong> in the menu bar captures your default microphone and system playback, then writes a dated mix on your Mac (<code>Movies/LockMic</code> by default). Recordings stay on your disk. LockMic does not upload them. macOS asks for microphone and system audio access first.</p>
         </details>
         <details class="faq-item reveal">
           <summary>Is it free?</summary>
