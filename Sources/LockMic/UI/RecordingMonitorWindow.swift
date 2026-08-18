@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import QuartzCore
 
 /// AppKit monitor styled like Preferences. Not SwiftUI — a second hosting
@@ -32,6 +33,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var waveSessionStart: Date?
     private var lastElapsedSeconds = -1
     private var timerForRecording = false
+    private var recorderCancellables = Set<AnyCancellable>()
 
     var isVisible: Bool { window?.isVisible == true }
 
@@ -52,6 +54,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             waveform?.reset()
             waveSessionStart = recorder.recordingStartedAt
         }
+        observeRecorder(recorder)
         rebuildSections()
         syncChrome()
         startTimer()
@@ -66,6 +69,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
     func hide() {
         saveWindowOrigin()
+        recorderCancellables.removeAll()
         timer?.invalidate()
         timer = nil
         window?.orderOut(nil)
@@ -281,8 +285,9 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         guard let recorder else { return }
         if recorder.isRecording != timerForRecording {
             startTimer()
-            syncChrome()
         }
+        // Access can flip while still not recording (TCC allow / Settings return).
+        syncChrome()
         guard recorder.isRecording else { return }
         if let start = recorder.recordingStartedAt {
             let seconds = max(0, Int(Date().timeIntervalSince(start)))
@@ -342,6 +347,21 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         }
         syncChrome()
         fitWindow()
+    }
+
+    /// AppKit does not observe `@Published` on its own — keep the cards in
+    /// sync as soon as mic / playback access or `isRecording` changes.
+    private func observeRecorder(_ recorder: SessionRecorder) {
+        recorderCancellables.removeAll()
+        Publishers.CombineLatest3(
+            recorder.$isRecording,
+            recorder.$microphoneAccess,
+            recorder.$playbackAccess
+        )
+        .sink { [weak self] _, _, _ in
+            self?.syncChrome()
+        }
+        .store(in: &recorderCancellables)
     }
 
     private func syncChrome() {

@@ -778,6 +778,9 @@ final class StatusItemController {
         let blocked = recorder.microphoneAccess == .denied || recorder.playbackAccess == .denied
         guard blocked else { return }
         recorder.refreshCaptureAccess()
+        // Mic (or playback) may now be granted while the other is still denied —
+        // refresh chrome so the matching card undims instead of staying stuck.
+        showRecordingMonitor()
         if recorder.microphoneAccess == .denied || recorder.playbackAccess == .denied { return }
         Task { await beginCapture(scope: currentPlaybackScope()) }
     }
