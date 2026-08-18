@@ -5,12 +5,14 @@ import SwiftUI
 final class StatusItemController {
     private let mic: MicController
     private let preferences: PreferencesStore
+    private let recorder: SessionRecorder
     private let hud = HUDOverlay()
     private let sounds = SoundFeedback()
     private let hotkeys = HotkeyManager()
 
     private var statusItem: NSStatusItem?
     private var preferencesWindow: NSWindow?
+    private let recordingMonitor = RecordingMonitorController()
     private var cancellables: [NSObjectProtocol] = []
     private var visibilityTimer: Timer?
     private var reportedMenuBarIconVisible: Bool?
@@ -52,9 +54,10 @@ final class StatusItemController {
 
     private var featuresEnabled: Bool { preferences.featuresEnabled }
 
-    init(mic: MicController, preferences: PreferencesStore) {
+    init(mic: MicController, preferences: PreferencesStore, recorder: SessionRecorder) {
         self.mic = mic
         self.preferences = preferences
+        self.recorder = recorder
     }
 
     func start() {
@@ -76,6 +79,9 @@ final class StatusItemController {
 
         hud.onToggle = { [weak self] in
             self?.toggleFromUser(source: .hud)
+        }
+        hud.onStopRecording = { [weak self] in
+            self?.stopRecordingNow()
         }
 
         applyFeatureAvailability(force: true)
@@ -173,6 +179,7 @@ final class StatusItemController {
                     }
                     self.mic.refreshFromHardware(applyDesired: false)
                     self.updateIcon()
+                    self.retryCaptureIfAccessGranted()
                 }
             }
         )
@@ -246,7 +253,7 @@ final class StatusItemController {
         let muted = mic.effectiveMuted
         let shouldPlay = playSound ?? showHUD
 
-        if shouldPlay, preferences.soundEnabled {
+        if shouldPlay, preferences.soundEnabled, !recorder.isRecording {
             sounds.play(muted: muted)
         }
 
@@ -256,6 +263,7 @@ final class StatusItemController {
     /// Floating = always interactive; momentary hold keeps toast HUD up without auto-hide.
     private func presentHUD(muted: Bool, userInitiated: Bool) {
         let hold = momentaryHold.hudHold
+        let recording = recorder.isRecording
 
         if preferences.hudFloating {
             hud.show(
@@ -263,12 +271,28 @@ final class StatusItemController {
                 deviceName: mic.deviceName,
                 persistent: true,
                 interactive: true,
-                hold: hold
+                hold: hold,
+                recording: recording
             )
             return
         }
 
-        guard preferences.hudEnabled, userInitiated || momentaryHold.isActive else { return }
+        if recording {
+            hud.show(
+                muted: muted,
+                deviceName: mic.deviceName,
+                persistent: true,
+                interactive: false,
+                hold: hold,
+                recording: true
+            )
+            return
+        }
+
+        guard preferences.hudEnabled, userInitiated || momentaryHold.isActive else {
+            hud.hide()
+            return
+        }
 
         // While PTT/PTM/flip is held, keep HUD visible (non-interactive toast layout).
         let holdVisible = momentaryHold.isActive
@@ -277,7 +301,8 @@ final class StatusItemController {
             deviceName: mic.deviceName,
             persistent: holdVisible,
             interactive: false,
-            hold: hold
+            hold: hold,
+            recording: recorder.isRecording
         )
     }
 
@@ -304,7 +329,8 @@ final class StatusItemController {
                 deviceName: mic.deviceName,
                 persistent: true,
                 interactive: true,
-                hold: momentaryHold.hudHold
+                hold: momentaryHold.hudHold,
+                recording: recorder.isRecording
             )
         } else if lastHudFloating == true {
             // Only dismiss when floating is turned off — don't cancel toast HUDs.
@@ -546,6 +572,34 @@ final class StatusItemController {
         muteAll.state = preferences.muteAllInputs ? .on : .off
         menu.addItem(muteAll)
 
+        menu.addItem(.separator())
+
+        let record = NSMenuItem(
+            title: recorder.isRecording ? L10n.menuStopRecording : L10n.menuStartRecording,
+            action: #selector(toggleRecording),
+            keyEquivalent: ""
+        )
+        record.target = self
+        menu.addItem(record)
+
+        let showRecordings = NSMenuItem(
+            title: L10n.menuShowRecordings,
+            action: #selector(showRecordingsFolder),
+            keyEquivalent: ""
+        )
+        showRecordings.target = self
+        menu.addItem(showRecordings)
+
+        if recorder.isRecording {
+            let showMonitor = NSMenuItem(
+                title: L10n.menuShowRecordingMonitor,
+                action: #selector(showRecordingMonitor),
+                keyEquivalent: ""
+            )
+            showMonitor.target = self
+            menu.addItem(showMonitor)
+        }
+
         if preferences.hudFloating {
             menu.addItem(.separator())
             let floatingHeader = NSMenuItem(title: L10n.menuFloatingHUD, action: nil, keyEquivalent: "")
@@ -649,6 +703,167 @@ final class StatusItemController {
         toggleFromUser(source: .menu)
     }
 
+    @objc private func toggleRecording() {
+        if recorder.isRecording {
+            stopRecordingNow()
+            return
+        }
+        guard featuresEnabled else { return }
+        Task { await startRecording() }
+    }
+
+    private func startRecording() async {
+        let scope = currentPlaybackScope()
+        recorder.previewSession(
+            playback: scope,
+            followInput: preferences.followDefaultMic,
+            followOutput: preferences.followDefaultOutput
+        )
+        // Menu teardown can eat a panel shown in the same click; wait a turn.
+        await nextMainRunLoopTurn()
+        showRecordingMonitor()
+        await beginCapture(scope: scope)
+    }
+
+    private func currentPlaybackScope() -> PlaybackRecordScope {
+        preferences.recordAllPlayback && !preferences.followDefaultOutput ? .all : .default
+    }
+
+    private func beginCapture(scope: PlaybackRecordScope) async {
+        do {
+            try await recorder.start(
+                playback: scope,
+                bitRate: preferences.recordingBitRate,
+                followInput: preferences.followDefaultMic,
+                followOutput: preferences.followDefaultOutput,
+                in: preferences.recordingsDirectory
+            )
+            handleMuteChanged(showHUD: false)
+            showRecordingMonitor()
+        } catch SessionRecorderError.microphoneDenied, SessionRecorderError.playbackDenied {
+            showRecordingMonitor()
+        } catch {
+            recordingMonitor.hide()
+            recorder.cancelPreview()
+            presentRecordingError(error)
+        }
+    }
+
+    private func retryAccessFromMonitor() {
+        if recorder.microphoneAccess == .denied {
+            Task { await retryMicrophoneAccess() }
+        } else {
+            Task { await retryPlaybackAccess() }
+        }
+    }
+
+    private func retryMicrophoneAccess() async {
+        if await SessionRecorder.requestMicrophoneAccess() {
+            await beginCapture(scope: currentPlaybackScope())
+            return
+        }
+        openMicrophoneSettings()
+    }
+
+    private func retryPlaybackAccess() async {
+        if await SystemAudioAccess.request() {
+            await beginCapture(scope: currentPlaybackScope())
+            return
+        }
+        openPlaybackSettings()
+    }
+
+    private func retryCaptureIfAccessGranted() {
+        guard !recorder.isRecording, recordingMonitor.isVisible else { return }
+        let blocked = recorder.microphoneAccess == .denied || recorder.playbackAccess == .denied
+        guard blocked else { return }
+        recorder.refreshCaptureAccess()
+        if recorder.microphoneAccess == .denied || recorder.playbackAccess == .denied { return }
+        Task { await beginCapture(scope: currentPlaybackScope()) }
+    }
+
+    private func openMicrophoneSettings() {
+        let candidates = [
+            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Microphone",
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
+        ]
+        for raw in candidates {
+            if let url = URL(string: raw), NSWorkspace.shared.open(url) { return }
+        }
+    }
+
+    private func openPlaybackSettings() {
+        let candidates = [
+            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_ScreenCapture",
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
+        ]
+        for raw in candidates {
+            if let url = URL(string: raw), NSWorkspace.shared.open(url) { return }
+        }
+    }
+
+    private func nextMainRunLoopTurn() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.main.async {
+                continuation.resume()
+            }
+        }
+    }
+
+    @objc private func showRecordingMonitor() {
+        recordingMonitor.show(
+            recorder: recorder,
+            preferences: preferences,
+            onStop: { [weak self] in
+                self?.stopRecordingNow()
+            },
+            onAllowAccess: { [weak self] in
+                self?.retryAccessFromMonitor()
+            }
+        )
+    }
+
+    /// Stop capture immediately; mix in the background.
+    private func stopRecordingNow() {
+        if !recorder.isRecording {
+            recordingMonitor.hide()
+            recorder.cancelPreview()
+            handleMuteChanged(showHUD: false)
+            return
+        }
+        recordingMonitor.hide()
+        let pending: SessionRecorder.PendingMix
+        do {
+            pending = try recorder.stopAndPrepareMix(
+                keepDeviceRecordings: preferences.keepDeviceRecordings
+            )
+        } catch {
+            handleMuteChanged(showHUD: false)
+            presentRecordingError(error)
+            return
+        }
+        handleMuteChanged(showHUD: false)
+        Task {
+            await recorder.completeMix(pending)
+        }
+    }
+
+    @objc private func showRecordingsFolder() {
+        let folder = preferences.recordingsDirectory
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(folder)
+    }
+
+    private func presentRecordingError(_ error: Error) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = L10n.recordingAlertTitle
+        alert.informativeText = error.localizedDescription
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: L10n.recordingAlertOK)
+        alert.runModal()
+    }
+
     @objc private func toggleMuteAllInputs() {
         guard featuresEnabled else { return }
         preferences.muteAllInputs.toggle()
@@ -686,7 +901,12 @@ final class StatusItemController {
             UsageReporter.record(.openPreferences, source: source)
         }
         if preferencesWindow == nil {
-            let view = PreferencesView(preferences: preferences, mic: mic, initialTab: tab)
+            let view = PreferencesView(
+                preferences: preferences,
+                mic: mic,
+                recorder: recorder,
+                initialTab: tab
+            )
                 .onExitCommand { [weak self] in
                     self?.preferencesWindow?.performClose(nil)
                 }

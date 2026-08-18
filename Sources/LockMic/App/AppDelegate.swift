@@ -7,6 +7,7 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "App")
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let preferences = PreferencesStore()
     private lazy var mic = MicController(preferences: preferences)
+    private let recorder = SessionRecorder()
     private var statusItemController: StatusItemController?
     private var dockPreferenceObserver: NSObjectProtocol?
     /// Optimistic until the first menu-bar geometry sample.
@@ -25,7 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         bundleReplacementWatcher?.start()
 
-        let status = StatusItemController(mic: mic, preferences: preferences)
+        let status = StatusItemController(mic: mic, preferences: preferences, recorder: recorder)
         status.onMenuBarIconVisibilityChange = { [weak self] visible in
             self?.setMenuBarIconVisible(visible)
         }
@@ -57,6 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        try? recorder.stopCaptures()
         bundleReplacementWatcher?.stop()
         bundleReplacementWatcher = nil
         if let dockPreferenceObserver {

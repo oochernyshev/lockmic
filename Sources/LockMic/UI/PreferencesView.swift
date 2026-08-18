@@ -4,14 +4,23 @@ import SwiftUI
 struct PreferencesView: View {
     @ObservedObject var preferences: PreferencesStore
     @ObservedObject var mic: MicController
+    /// Not `@ObservedObject` — live meter ticks would rebuild this whole window
+    /// and crash SwiftUI buttons (`MainActor.assumeIsolated`) while recording.
+    let recorder: SessionRecorder
     @State private var selection: PreferencesTab
     @State private var updateAvailable = UpdateChecker.shared.availableUpdate != nil
 
     private let sidebarWidth: CGFloat = 168
 
-    init(preferences: PreferencesStore, mic: MicController, initialTab: PreferencesTab = .general) {
+    init(
+        preferences: PreferencesStore,
+        mic: MicController,
+        recorder: SessionRecorder,
+        initialTab: PreferencesTab = .general
+    ) {
         self.preferences = preferences
         self.mic = mic
+        self.recorder = recorder
         _selection = State(initialValue: initialTab)
     }
 
@@ -89,34 +98,28 @@ struct PreferencesView: View {
     private func sidebarRow(_ tab: PreferencesTab) -> some View {
         let selected = selection == tab
         let showUpdateDot = tab == .about && updateAvailable
-        return Button {
-            selection = tab
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: tab.systemImage)
-                    .font(.body.weight(.medium))
-                    .frame(width: 20, alignment: .center)
-                    .symbolRenderingMode(.hierarchical)
-                Text(tab.title)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if showUpdateDot {
-                    Circle()
-                        .fill(Color.red)
-                        .frame(width: 8, height: 8)
-                }
+        return HStack(spacing: 10) {
+            Image(systemName: tab.systemImage)
+                .font(.body.weight(.medium))
+                .frame(width: 20, alignment: .center)
+                .symbolRenderingMode(.hierarchical)
+            Text(tab.title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if showUpdateDot {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 8, height: 8)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .focusEffectDisabled()
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .contentShape(Rectangle())
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(selected ? Color.accentColor.opacity(0.18) : Color.clear)
         )
         .foregroundStyle(selected ? Color.primary : Color.primary.opacity(0.85))
+        .onTapGesture { selection = tab }
     }
 
     @ViewBuilder
@@ -128,6 +131,10 @@ struct PreferencesView: View {
                     PreferencesGeneralPage(preferences: preferences, mic: mic)
                 case .devices:
                     PreferencesDevicesPage(preferences: preferences, mic: mic)
+                        .disabled(!preferences.featuresEnabled)
+                        .opacity(preferences.featuresEnabled ? 1 : 0.45)
+                case .recording:
+                    PreferencesRecordingPage(preferences: preferences, recorder: recorder)
                         .disabled(!preferences.featuresEnabled)
                         .opacity(preferences.featuresEnabled ? 1 : 0.45)
                 case .keyboard:

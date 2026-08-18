@@ -7,12 +7,15 @@ import AppKit
 final class HUDOverlay: NSObject {
     /// Called when the user clicks the floating HUD (not after a drag).
     var onToggle: (() -> Void)?
+    /// Called from the HUD context menu while a session is recording.
+    var onStopRecording: (() -> Void)?
 
     private var panels: [ObjectIdentifier: (screen: NSScreen, panel: NSPanel)] = [:]
     private var hideWorkItem: DispatchWorkItem?
     private var isPersistent = false
     private var lastMuted = false
     private var lastHold: HUDHoldKind = .none
+    private var lastRecording = false
     private var lastInteractive = false
     private var screenObserver: NSObjectProtocol?
     /// Mouse-move monitors: toggle `ignoresMouseEvents` so only the rounded pill is interactive.
@@ -60,13 +63,15 @@ final class HUDOverlay: NSObject {
         deviceName: String,
         persistent: Bool = false,
         interactive: Bool? = nil,
-        hold: HUDHoldKind = .none
+        hold: HUDHoldKind = .none,
+        recording: Bool = false
     ) {
         hideWorkItem?.cancel()
         hideWorkItem = nil
         isPersistent = persistent
         lastMuted = muted
         lastHold = hold
+        lastRecording = recording
         let isInteractive = interactive ?? persistent
         lastInteractive = isInteractive
 
@@ -77,12 +82,14 @@ final class HUDOverlay: NSObject {
                 muted: muted,
                 interactive: isInteractive,
                 hold: hold,
+                recording: recording,
                 screen: entry.screen
             )
-            // Default: toast never receives clicks; floating starts ignoring until mouse is on the pill.
+            // Default: toast never receives clicks; floating / recording starts
+            // ignoring until the mouse is on the pill (right-click to stop).
             entry.panel.ignoresMouseEvents = true
             // Needed so local mouseMoved monitors fire while our app is active.
-            entry.panel.acceptsMouseMovedEvents = isInteractive
+            entry.panel.acceptsMouseMovedEvents = isInteractive || recording
 
             // Per-display hide only applies to interactive floating HUD.
             if isInteractive, isDisplayHidden(displayID(for: entry.screen)) {
@@ -99,7 +106,7 @@ final class HUDOverlay: NSObject {
             present(entry.panel, animated: entry.panel.alphaValue < 0.95 || !entry.panel.isVisible)
         }
 
-        if isInteractive {
+        if isInteractive || recording {
             startClickThroughTrackingIfNeeded()
             updateClickThroughState()
         } else {
@@ -151,7 +158,8 @@ final class HUDOverlay: NSObject {
             deviceName: "",
             persistent: true,
             interactive: lastInteractive,
-            hold: lastHold
+            hold: lastHold,
+            recording: lastRecording
         )
     }
 
@@ -182,7 +190,8 @@ final class HUDOverlay: NSObject {
                 deviceName: "",
                 persistent: true,
                 interactive: lastInteractive,
-                hold: lastHold
+                hold: lastHold,
+                recording: lastRecording
             )
         }
     }
@@ -199,7 +208,8 @@ final class HUDOverlay: NSObject {
                 deviceName: "",
                 persistent: true,
                 interactive: lastInteractive,
-                hold: lastHold
+                hold: lastHold,
+                recording: lastRecording
             )
         }
     }
@@ -258,6 +268,7 @@ final class HUDOverlay: NSObject {
         muted: Bool,
         interactive: Bool,
         hold: HUDHoldKind,
+        recording: Bool,
         screen: NSScreen
     ) {
         guard let content = panel.contentView as? HUDContentView else { return }
@@ -267,7 +278,8 @@ final class HUDOverlay: NSObject {
         content.configureToast(
             muted: muted,
             hold: hold,
-            updateAvailable: UpdateChecker.shared.availableUpdate != nil
+            updateAvailable: UpdateChecker.shared.availableUpdate != nil,
+            recording: recording
         )
         content.onToggle = { [weak self] in
             self?.onToggle?()
@@ -320,7 +332,7 @@ final class HUDOverlay: NSObject {
 
     /// Mouse only over the visible pill (or mid-drag).
     private func updateClickThroughState() {
-        guard lastInteractive else { return }
+        guard lastInteractive || lastRecording else { return }
         let mouse = NSEvent.mouseLocation
         for entry in panels.values {
             guard let content = entry.panel.contentView as? HUDContentView else { continue }
@@ -335,50 +347,67 @@ final class HUDOverlay: NSObject {
     }
 
     private func showContextMenu(for view: NSView, event: NSEvent) {
-        guard isPersistent, let screen = (view as? HUDContentView)?.assignedScreen ?? screen(for: view.window) else {
-            return
-        }
-
+        let screen = (view as? HUDContentView)?.assignedScreen ?? screen(for: view.window)
         let menu = NSMenu()
         menu.autoenablesItems = false
 
-        let thisID = displayID(for: screen)
-        let hideItem = NSMenuItem(
-            title: L10n.menuHideThisDisplay,
-            action: #selector(contextHideThisDisplay(_:)),
-            keyEquivalent: ""
-        )
-        hideItem.target = self
-        hideItem.representedObject = thisID
-        menu.addItem(hideItem)
+        if lastRecording {
+            let stop = NSMenuItem(
+                title: L10n.menuStopRecording,
+                action: #selector(contextStopRecording),
+                keyEquivalent: ""
+            )
+            stop.target = self
+            menu.addItem(stop)
+        }
 
-        let hiddenOthers = screenVisibilities().filter { !$0.isVisible && $0.id != thisID }
-        if !hiddenOthers.isEmpty {
-            menu.addItem(.separator())
-            for screenInfo in hiddenOthers {
-                let item = NSMenuItem(
-                    title: L10n.menuShowOnDisplay(screenInfo.name),
-                    action: #selector(contextShowDisplay(_:)),
+        if lastInteractive, let screen {
+            if lastRecording {
+                menu.addItem(.separator())
+            }
+            let thisID = displayID(for: screen)
+            let hideItem = NSMenuItem(
+                title: L10n.menuHideThisDisplay,
+                action: #selector(contextHideThisDisplay(_:)),
+                keyEquivalent: ""
+            )
+            hideItem.target = self
+            hideItem.representedObject = thisID
+            menu.addItem(hideItem)
+
+            let hiddenOthers = screenVisibilities().filter { !$0.isVisible && $0.id != thisID }
+            if !hiddenOthers.isEmpty {
+                menu.addItem(.separator())
+                for screenInfo in hiddenOthers {
+                    let item = NSMenuItem(
+                        title: L10n.menuShowOnDisplay(screenInfo.name),
+                        action: #selector(contextShowDisplay(_:)),
+                        keyEquivalent: ""
+                    )
+                    item.target = self
+                    item.representedObject = screenInfo.id
+                    menu.addItem(item)
+                }
+            }
+
+            if hasAnyHiddenDisplay() {
+                menu.addItem(.separator())
+                let showAll = NSMenuItem(
+                    title: L10n.menuShowAllDisplays,
+                    action: #selector(contextShowAllDisplays(_:)),
                     keyEquivalent: ""
                 )
-                item.target = self
-                item.representedObject = screenInfo.id
-                menu.addItem(item)
+                showAll.target = self
+                menu.addItem(showAll)
             }
         }
 
-        if hasAnyHiddenDisplay() {
-            menu.addItem(.separator())
-            let showAll = NSMenuItem(
-                title: L10n.menuShowAllDisplays,
-                action: #selector(contextShowAllDisplays(_:)),
-                keyEquivalent: ""
-            )
-            showAll.target = self
-            menu.addItem(showAll)
-        }
-
+        guard !menu.items.isEmpty else { return }
         NSMenu.popUpContextMenu(menu, with: event, for: view)
+    }
+
+    @objc private func contextStopRecording() {
+        onStopRecording?()
     }
 
     @objc private func contextHideThisDisplay(_ sender: NSMenuItem) {

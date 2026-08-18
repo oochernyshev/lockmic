@@ -2,7 +2,7 @@
 
 System-wide microphone mute for macOS — menu bar icon, global hotkeys, and an on-screen HUD. Works in Zoom, Teams, Meet, FaceTime, browsers, and every other app by muting input devices via Core Audio.
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** [MIT](./LICENSE) · **Version:** 1.3.8
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** [MIT](./LICENSE) · **Version:** 1.4.0
 
 **Homebrew-first** distribution (App Store planned later). See [ARCHITECTURE.md](./ARCHITECTURE.md) for design details.
 
@@ -26,8 +26,9 @@ System-wide microphone mute for macOS — menu bar icon, global hotkeys, and an 
   - Right-click to hide/show on a display (also in menu bar)
 - Sound feedback on mute/unmute (optional)
 - Launch at login (optional)
-- Preferences: General, Devices, Keyboard, About
+- Preferences: General, Devices, Recording, Keyboard, About
 - Re-applies mute when devices or the default input change
+- **Record** the default microphone with system playback into a dated AAC mix (optional)
 
 ## Requirements
 
@@ -81,7 +82,7 @@ Package a release zip/DMG:
 
 ```bash
 ./Scripts/package_dmg.sh
-# → build/dist/LockMic-1.3.8.zip (+ .dmg, sha256)
+# → build/dist/LockMic-1.4.0.zip (+ .dmg, sha256)
 ```
 
 ## Install via Homebrew
@@ -127,6 +128,7 @@ open build/LockMic.app
 | Menu bar icon hidden | Dock appears automatically · left-click toggles mute · right-click opens the same menu (Preferences, floating HUD, …) |
 | Floating HUD move | Drag the indicator (each display is independent) |
 | Floating HUD hide/show | Right-click the indicator, menu bar / Dock menu → **Floating HUD** |
+| Start / stop recording | Menu → Start Recording / Stop Recording (also HUD right-click) |
 | Quit | Menu → Quit LockMic |
 
 ### Preferences
@@ -135,6 +137,7 @@ open build/LockMic.app
 |---------|---------|
 | **General** | Status, HUD toast, floating HUD, sound, launch at login, show in Dock |
 | **Devices** | Mute-all vs default-only, live input list (virtual = ignored) |
+| **Recording** | Folder, quality, follow-default mic/output, keep per-device files after mix |
 | **Keyboard** | Toggle / mute / unmute / flip / PTT / PTM; optional ⌘F5; conflicts; reset |
 | **About** | Logo, version, WIXEE.AI, website, MIT license |
 

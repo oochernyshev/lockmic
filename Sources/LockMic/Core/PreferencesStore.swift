@@ -17,6 +17,12 @@ final class PreferencesStore: ObservableObject {
         static let soundEnabled = "soundEnabled"
         static let launchAtLogin = "launchAtLogin"
         static let muteAllInputs = "muteAllInputs"
+        static let recordAllPlayback = "recordAllPlayback"
+        static let followDefaultMic = "followDefaultMic"
+        static let followDefaultOutput = "followDefaultOutput"
+        static let recordingBitRate = "recordingBitRate"
+        static let keepDeviceRecordings = "keepDeviceRecordings"
+        static let recordingsFolderPath = "recordingsFolderPath"
         static let shareAnonymousUsage = "shareAnonymousUsage"
         /// When true, show a Dock icon so Preferences stay reachable if the menu bar is full.
         static let showInDock = "showInDock"
@@ -82,6 +88,72 @@ final class PreferencesStore: ObservableObject {
 
     @Published var muteAllInputs: Bool {
         didSet { UserDefaults.standard.set(muteAllInputs, forKey: Keys.muteAllInputs) }
+    }
+
+    /// When true, the playback tap mixes every app. When false, only the default output.
+    @Published var recordAllPlayback: Bool {
+        didSet { UserDefaults.standard.set(recordAllPlayback, forKey: Keys.recordAllPlayback) }
+    }
+
+    @Published var followDefaultMic: Bool {
+        didSet { UserDefaults.standard.set(followDefaultMic, forKey: Keys.followDefaultMic) }
+    }
+
+    @Published var followDefaultOutput: Bool {
+        didSet { UserDefaults.standard.set(followDefaultOutput, forKey: Keys.followDefaultOutput) }
+    }
+
+    /// AAC bitrate for microphone, playback, and the mix.
+    @Published var recordingBitRate: RecordingBitRate {
+        didSet { UserDefaults.standard.set(recordingBitRate.rawValue, forKey: Keys.recordingBitRate) }
+    }
+
+    /// When false (default), stem files are deleted after a successful mix.
+    @Published var keepDeviceRecordings: Bool {
+        didSet { UserDefaults.standard.set(keepDeviceRecordings, forKey: Keys.keepDeviceRecordings) }
+    }
+
+    /// Empty means `defaultRecordingsDirectory` (`~/Movies/LockMic`).
+    @Published var recordingsFolderPath: String {
+        didSet { UserDefaults.standard.set(recordingsFolderPath, forKey: Keys.recordingsFolderPath) }
+    }
+
+    static var defaultRecordingsDirectory: URL {
+        let movies = FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask).first
+            ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Movies")
+        return movies.appendingPathComponent("LockMic", isDirectory: true)
+    }
+
+    var recordingsDirectory: URL {
+        let raw = recordingsFolderPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        if raw.isEmpty {
+            return Self.defaultRecordingsDirectory
+        }
+        return URL(fileURLWithPath: (raw as NSString).expandingTildeInPath, isDirectory: true)
+    }
+
+    var recordingsFolderDisplayPath: String {
+        (recordingsDirectory.path as NSString).abbreviatingWithTildeInPath
+    }
+
+    var usesDefaultRecordingsFolder: Bool {
+        let raw = recordingsFolderPath.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return true }
+        return recordingsDirectory.standardizedFileURL
+            == Self.defaultRecordingsDirectory.standardizedFileURL
+    }
+
+    func setRecordingsFolder(_ url: URL) {
+        let folder = url.standardizedFileURL
+        if folder == Self.defaultRecordingsDirectory.standardizedFileURL {
+            recordingsFolderPath = ""
+        } else {
+            recordingsFolderPath = folder.path
+        }
+    }
+
+    func resetRecordingsFolder() {
+        recordingsFolderPath = ""
     }
 
     @Published var launchAtLogin: Bool {
@@ -208,6 +280,25 @@ final class PreferencesStore: ObservableObject {
             defaults.set(true, forKey: Keys.muteAllInputs)
         }
         muteAllInputs = defaults.bool(forKey: Keys.muteAllInputs)
+
+        if defaults.object(forKey: Keys.recordAllPlayback) == nil {
+            defaults.set(false, forKey: Keys.recordAllPlayback)
+        }
+        recordAllPlayback = defaults.bool(forKey: Keys.recordAllPlayback)
+        if defaults.object(forKey: Keys.followDefaultMic) == nil {
+            defaults.set(true, forKey: Keys.followDefaultMic)
+        }
+        followDefaultMic = defaults.bool(forKey: Keys.followDefaultMic)
+        if defaults.object(forKey: Keys.followDefaultOutput) == nil {
+            defaults.set(true, forKey: Keys.followDefaultOutput)
+        }
+        followDefaultOutput = defaults.bool(forKey: Keys.followDefaultOutput)
+        recordingBitRate = RecordingBitRate.resolved(defaults.integer(forKey: Keys.recordingBitRate))
+        if defaults.object(forKey: Keys.keepDeviceRecordings) == nil {
+            defaults.set(false, forKey: Keys.keepDeviceRecordings)
+        }
+        keepDeviceRecordings = defaults.bool(forKey: Keys.keepDeviceRecordings)
+        recordingsFolderPath = defaults.string(forKey: Keys.recordingsFolderPath) ?? ""
 
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
 

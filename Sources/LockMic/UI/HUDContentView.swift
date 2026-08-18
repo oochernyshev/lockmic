@@ -23,6 +23,7 @@ final class HUDContentView: NSView {
     private var mouseDownScreenPoint: NSPoint?
     private var windowOriginAtDown: NSPoint?
     private var isDragging = false
+    private var isRecording = false
 
     /// True between left mouseDown and mouseUp (keep the panel interactive while dragging).
     var isHandlingMouseSession: Bool { mouseDownScreenPoint != nil }
@@ -104,7 +105,13 @@ final class HUDContentView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func configureToast(muted: Bool, hold: HUDHoldKind = .none, updateAvailable: Bool = false) {
+    func configureToast(
+        muted: Bool,
+        hold: HUDHoldKind = .none,
+        updateAvailable: Bool = false,
+        recording: Bool = false
+    ) {
+        isRecording = recording
         let name = muted ? "mic.slash.fill" : "mic.fill"
         let config = NSImage.SymbolConfiguration(pointSize: 58, weight: .medium)
             .applying(NSImage.SymbolConfiguration(paletteColors: [.white]))
@@ -122,7 +129,10 @@ final class HUDContentView: NSView {
         backdrop.layer?.backgroundColor = muted
             ? NSColor.black.withAlphaComponent(holding ? 0.72 : 0.62).cgColor
             : NSColor.black.withAlphaComponent(holding ? 0.60 : 0.50).cgColor
-        if holding {
+        if recording {
+            backdrop.layer?.borderWidth = 2.5
+            backdrop.layer?.borderColor = NSColor.systemRed.cgColor
+        } else if holding {
             backdrop.layer?.borderWidth = 2
             backdrop.layer?.borderColor = NSColor.white.withAlphaComponent(0.45).cgColor
         } else {
@@ -175,7 +185,7 @@ final class HUDContentView: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        guard isInteractive else { return super.hitTest(point) }
+        guard isInteractive || isRecording else { return super.hitTest(point) }
         // Content view is the window root (no superview); point is already local.
         // Own the whole pill so icon/caption don’t steal the drag.
         return roundedPillPath.contains(point) ? self : nil
@@ -236,7 +246,7 @@ final class HUDContentView: NSView {
     }
 
     override func rightMouseDown(with event: NSEvent) {
-        guard isInteractive else {
+        guard isInteractive || isRecording else {
             super.rightMouseDown(with: event)
             return
         }

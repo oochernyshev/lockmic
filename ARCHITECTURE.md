@@ -2,7 +2,7 @@
 
 LockMic is a native macOS menu-bar utility that mutes system microphone input at the Core Audio level so mute works in every app (Zoom, Teams, Meet, FaceTime, browsers, etc.).
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.3.8
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.4.0
 
 **Distribution priority:** Homebrew (Developer ID / notarized `.app`) first; Mac App Store later with the same codebase and a sandboxed flavor.
 
@@ -66,7 +66,7 @@ LockMic is a native macOS menu-bar utility that mutes system microphone input at
 - Enumerate inputs; detect mute support and **virtual devices**
   - Only `kAudioDevicePropertyTransportType == Virtual` (no name/UID heuristics)
 - Listen for **device list / default device** changes via property listeners
-- Never records audio → no microphone TCC for mute alone
+- Mute alone does not record → no microphone TCC until Recording starts
 
 ### 2. `MicController` (state machine)
 
@@ -113,7 +113,9 @@ Only one momentary hold is active at a time; latching shortcuts are ignored whil
 | `StatusItemController` | Menu bar icon, left-click toggle, right-click menu, owns HUD + hotkeys + prefs window |
 | `UpdateChecker` | Daily GitHub release check; badges + Preferences About update section (Homebrew vs DMG) |
 | `HUDOverlay` | Multi-display panels: toast (auto-hide) or floating (persistent) |
-| `PreferencesView` | System Settings–style sidebar: General, Devices, Keyboard, About |
+| `PreferencesView` | System Settings–style sidebar: General, Devices, Recording, Keyboard, About |
+| `SessionRecorder` | Optional session capture: default mic + system playback → dated AAC mix |
+| `RecordingMonitorWindow` | AppKit monitor: exclusive mic, extra outputs, levels, permission retry |
 | `HotkeyRecorderButton` | Capture custom shortcut chords |
 | `SoundFeedback` | Optional mute/unmute system sounds |
 
@@ -141,6 +143,7 @@ Preferences window: resizable, frosted material background (`regularMaterial` / 
 `UserDefaults`-backed `@Published` settings:
 
 - HUD toast, floating HUD, sound, launch at login, show in Dock, mute-all
+- Recording folder, bitrate, follow-default mic/output, keep per-device files
 - Shortcut enable flags + chords (toggle / mute / unmute / F5 / flip / talk / mute-hold)
 - Defaults: mute-all on; toast + sound on; floating off; mute/unmute shortcuts off
 
@@ -167,6 +170,8 @@ Floating HUD also stores (via `HUDOverlay` / UserDefaults):
 | Feature | TCC / entitlement |
 |---------|-------------------|
 | HAL mute | None |
+| Recording (mic) | `NSMicrophoneUsageDescription` |
+| Recording (playback) | `NSAudioCaptureUsageDescription` + audio-input entitlement |
 | Global hotkey | Carbon hotkeys (no Accessibility required for current design) |
 | Launch at login | `SMAppService` registration |
 | Floating HUD | None (non-activating panels) |
@@ -219,13 +224,16 @@ LockMic/
 ├── Sources/LockMic/
 │   ├── App/          LockMicApp, AppDelegate
 │   ├── Core/         AudioDeviceService, MicController, HotkeyTypes,
-│   │                 HotkeyManager, PreferencesStore, SoundFeedback
-│   ├── Util/         Comparable+Clamped
+│   │                 HotkeyManager, PreferencesStore, SoundFeedback,
+│   │                 SessionRecorder, SessionMix, PlaybackTap,
+│   │                 RecordingCapture, SystemAudioAccess
+│   ├── Util/         Comparable+Clamped, L10n
 │   └── UI/
 │       ├── StatusItemController, EscapeToCloseWindow
 │       ├── HUDHoldKind, HUDContentView, HUDOverlay
 │       ├── PreferencesView, PreferencesTab, PreferencesChrome,
-│       │   PreferencesGeneral/Devices/Keyboard/AboutPage
+│       │   PreferencesGeneral/Devices/Recording/Keyboard/AboutPage
+│       ├── RecordingMonitorWindow
 │       └── HotkeyRecorderButton
 ├── Resources/
 │   ├── Info.plist
@@ -286,6 +294,7 @@ Local:
 | **1.3.6** | Devices list: clearer status badges; label Unmuted (not On) | Done |
 | **1.3.7** | GA4 app events send country (system Region, timezone fallback); no city | Done |
 | **1.3.8** | Usage reports use website-style GA collect so Realtime can show location | Done |
+| **1.4.0** | Record default mic + system playback to a dated AAC mix; live monitor | Done |
 | **HB-1.x** | Push-to-talk / push-to-mute, shortcut conflict warnings | Done |
 | **HB-2** | Richer status, polish, notarized releases | Planned |
 | **Pro** (optional) | Paid add-ons in separate closed modules (open core remains MIT) | Future |

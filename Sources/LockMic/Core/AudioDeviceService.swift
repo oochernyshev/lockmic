@@ -9,14 +9,23 @@ struct AudioInputDevice: Identifiable, Equatable, Sendable {
     let isVirtual: Bool
 }
 
+struct AudioOutputDevice: Identifiable, Equatable, Sendable {
+    let id: AudioDeviceID
+    let uid: String
+    let name: String
+    let isVirtual: Bool
+}
+
 enum AudioDeviceServiceError: LocalizedError {
     case noDefaultInput
+    case noDefaultOutput
     case propertyFailed(String)
     case muteUnsupported
 
     var errorDescription: String? {
         switch self {
         case .noDefaultInput: return "No default input device is available."
+        case .noDefaultOutput: return "No default output device is available."
         case .propertyFailed(let detail): return "Audio property failed: \(detail)"
         case .muteUnsupported: return "This input device does not support system mute."
         }
@@ -26,6 +35,7 @@ enum AudioDeviceServiceError: LocalizedError {
 /// Core Audio HAL — master input mute only.
 final class AudioDeviceService: @unchecked Sendable {
     private var defaultDeviceListenerBlock: AudioObjectPropertyListenerBlock?
+    private var defaultOutputListenerBlock: AudioObjectPropertyListenerBlock?
     private var deviceListListenerBlock: AudioObjectPropertyListenerBlock?
     private let lock = NSLock()
     private var onDevicesChangedHandlers: [UUID: () -> Void] = [:]
@@ -58,6 +68,50 @@ final class AudioDeviceService: @unchecked Sendable {
             throw AudioDeviceServiceError.noDefaultInput
         }
         return deviceID
+    }
+
+    func defaultOutputDeviceID() throws -> AudioDeviceID {
+        var deviceID = AudioDeviceID(0)
+        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        var address = propertyAddress(
+            kAudioHardwarePropertyDefaultOutputDevice,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMain
+        )
+        let status = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            0,
+            nil,
+            &size,
+            &deviceID
+        )
+        guard status == noErr, deviceID != kAudioObjectUnknown else {
+            throw AudioDeviceServiceError.noDefaultOutput
+        }
+        return deviceID
+    }
+
+    /// Core Audio process object for a PID — used to exclude LockMic from playback taps.
+    func processObjectID(for pid: pid_t) -> AudioObjectID? {
+        var address = propertyAddress(
+            kAudioHardwarePropertyTranslatePIDToProcessObject,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMain
+        )
+        var pidValue = pid
+        var objectID = AudioObjectID(kAudioObjectUnknown)
+        var size = UInt32(MemoryLayout<AudioObjectID>.size)
+        let status = AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            UInt32(MemoryLayout<pid_t>.size),
+            &pidValue,
+            &size,
+            &objectID
+        )
+        guard status == noErr, objectID != kAudioObjectUnknown else { return nil }
+        return objectID
     }
 
     func deviceName(_ deviceID: AudioDeviceID) -> String {
@@ -157,7 +211,8 @@ final class AudioDeviceService: @unchecked Sendable {
         ) == noErr else { return [] }
 
         return deviceIDs.compactMap { id -> AudioInputDevice? in
-            guard inputChannelCount(id) > 0 else { return nil }
+            guard !isLockMicRecorder(id) else { return nil }
+            guard channelCount(id, scope: kAudioDevicePropertyScopeInput) > 0 else { return nil }
             let name = deviceName(id)
             let uid = deviceUID(id) ?? "\(id)"
 
@@ -166,6 +221,44 @@ final class AudioDeviceService: @unchecked Sendable {
                 uid: uid,
                 name: name,
                 supportsMute: supportsMute(id),
+                isVirtual: isVirtualInput(deviceID: id)
+            )
+        }
+    }
+
+    func listOutputDevices() -> [AudioOutputDevice] {
+        var address = propertyAddress(
+            kAudioHardwarePropertyDevices,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMain
+        )
+        var dataSize: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            0,
+            nil,
+            &dataSize
+        ) == noErr else { return [] }
+
+        let count = Int(dataSize) / MemoryLayout<AudioDeviceID>.size
+        var deviceIDs = [AudioDeviceID](repeating: 0, count: count)
+        guard AudioObjectGetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            0,
+            nil,
+            &dataSize,
+            &deviceIDs
+        ) == noErr else { return [] }
+
+        return deviceIDs.compactMap { id -> AudioOutputDevice? in
+            guard !isLockMicRecorder(id) else { return nil }
+            guard channelCount(id, scope: kAudioDevicePropertyScopeOutput) > 0 else { return nil }
+            return AudioOutputDevice(
+                id: id,
+                uid: deviceUID(id) ?? "\(id)",
+                name: deviceName(id),
                 isVirtual: isVirtualInput(deviceID: id)
             )
         }
@@ -187,6 +280,14 @@ final class AudioDeviceService: @unchecked Sendable {
     }
 
     // MARK: - Virtual device detection
+
+    /// Hide our process-tap aggregate so it does not show up as a system device.
+    func isLockMicRecorder(_ deviceID: AudioDeviceID) -> Bool {
+        let name = deviceName(deviceID)
+        if name.hasPrefix("LockMic") { return true }
+        if let uid = deviceUID(deviceID), uid.hasPrefix("com.lockmic.") { return true }
+        return false
+    }
 
     /// Virtual inputs are those Core Audio reports with transport type `Virtual` only.
     /// No name/UID heuristics — drivers that mis-report transport will be treated as normal devices.
@@ -243,9 +344,13 @@ final class AudioDeviceService: @unchecked Sendable {
     }
 
     private func inputChannelCount(_ deviceID: AudioDeviceID) -> Int {
+        channelCount(deviceID, scope: kAudioDevicePropertyScopeInput)
+    }
+
+    private func channelCount(_ deviceID: AudioDeviceID, scope: AudioObjectPropertyScope) -> Int {
         var address = propertyAddress(
             kAudioDevicePropertyStreamConfiguration,
-            kAudioDevicePropertyScopeInput,
+            scope,
             kAudioObjectPropertyElementMain
         )
         var dataSize: UInt32 = 0
@@ -274,6 +379,7 @@ final class AudioDeviceService: @unchecked Sendable {
             self?.notifyDevicesChanged()
         }
         defaultDeviceListenerBlock = block
+        defaultOutputListenerBlock = block
         deviceListListenerBlock = block
 
         var defaultAddress = propertyAddress(
@@ -284,6 +390,18 @@ final class AudioDeviceService: @unchecked Sendable {
         AudioObjectAddPropertyListenerBlock(
             AudioObjectID(kAudioObjectSystemObject),
             &defaultAddress,
+            DispatchQueue.main,
+            block
+        )
+
+        var defaultOutputAddress = propertyAddress(
+            kAudioHardwarePropertyDefaultOutputDevice,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMain
+        )
+        AudioObjectAddPropertyListenerBlock(
+            AudioObjectID(kAudioObjectSystemObject),
+            &defaultOutputAddress,
             DispatchQueue.main,
             block
         )
@@ -311,6 +429,17 @@ final class AudioDeviceService: @unchecked Sendable {
         AudioObjectRemovePropertyListenerBlock(
             AudioObjectID(kAudioObjectSystemObject),
             &defaultAddress,
+            DispatchQueue.main,
+            block
+        )
+        var defaultOutputAddress = propertyAddress(
+            kAudioHardwarePropertyDefaultOutputDevice,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioObjectPropertyElementMain
+        )
+        AudioObjectRemovePropertyListenerBlock(
+            AudioObjectID(kAudioObjectSystemObject),
+            &defaultOutputAddress,
             DispatchQueue.main,
             block
         )
