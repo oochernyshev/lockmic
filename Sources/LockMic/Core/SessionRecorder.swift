@@ -260,18 +260,19 @@ final class SessionRecorder: ObservableObject {
     @discardableResult
     func completeMix(_ pending: PendingMix) async -> Bool {
         do {
+            let destination = pending.keepDeviceRecordings
+                ? pending.folder
+                : pending.folder.deletingLastPathComponent()
             try await SessionMix.mix(
                 in: pending.folder,
                 extraUIDs: pending.extraUIDs,
                 gates: pending.gates,
                 bitRate: pending.bitRate,
-                mixFileName: pending.mixFileName
+                mixFileName: pending.mixFileName,
+                destinationFolder: destination
             )
             if !pending.keepDeviceRecordings {
-                SessionMix.discardDeviceRecordings(
-                    in: pending.folder,
-                    mixFileName: pending.mixFileName
-                )
+                SessionMix.discardDeviceRecordings(in: pending.folder)
             }
             log.info("Mixed file in \(pending.folder.path, privacy: .public)")
             return true

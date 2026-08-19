@@ -13,60 +13,52 @@ enum SessionMix {
         extraUIDs: [String],
         gates: MixGates,
         bitRate: Int,
-        mixFileName: String
+        mixFileName: String,
+        destinationFolder: URL
     ) async throws {
         let micURL = folder.appendingPathComponent(SessionRecorder.micFileName)
         let playbackURL = folder.appendingPathComponent(SessionRecorder.playbackFileName)
         let extraURLs = extraUIDs.map { ($0, folder.appendingPathComponent(SessionRecorder.extraMicFileName(uid: $0))) }
-        let outputURL = folder.appendingPathComponent(mixFileName)
-        // Hidden, but still `.m4a` — AVAudioFile picks the container from the
-        // extension, so `.tmp` was written as CAF and Space-bar preview failed.
-        let tempURL = folder.appendingPathComponent(".\(mixFileName)")
+        let base = (mixFileName as NSString).deletingPathExtension
+        let outputURL = destinationFolder.appendingPathComponent(mixFileName)
 
         try await Task.detached(priority: .userInitiated) {
             let fm = FileManager.default
-            try? fm.removeItem(at: tempURL)
+            removeProcessingMixes(named: base, in: destinationFolder)
             do {
-                try renderDuckedMix(
+                let processingURL = try renderDuckedMix(
                     mic: micURL,
                     playback: playbackURL,
                     extras: extraURLs,
                     gates: gates,
                     bitRate: bitRate,
-                    to: tempURL
+                    destFolder: destinationFolder,
+                    baseName: base
                 )
                 try? fm.removeItem(at: outputURL)
-                try fm.moveItem(at: tempURL, to: outputURL)
+                try fm.moveItem(at: processingURL, to: outputURL)
             } catch {
-                try? fm.removeItem(at: tempURL)
+                removeProcessingMixes(named: base, in: destinationFolder)
                 throw error
             }
         }.value
     }
 
-    /// Delete per-device stems after a successful mix and lift the mix file
-    /// next to the session folder so the dated mix is the recording.
-    static func discardDeviceRecordings(in folder: URL, mixFileName: String) {
-        let fm = FileManager.default
-        let mix = folder.appendingPathComponent(mixFileName)
-        guard fm.fileExists(atPath: mix.path) else { return }
-        let items = (try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
-        for item in items where item.lastPathComponent != mixFileName {
-            try? fm.removeItem(at: item)
-        }
-        let dest = folder.deletingLastPathComponent().appendingPathComponent(mixFileName)
-        if dest.standardizedFileURL != mix.standardizedFileURL {
-            try? fm.removeItem(at: dest)
-            do {
-                try fm.moveItem(at: mix, to: dest)
-            } catch {
-                log.error("Could not move mix out of session folder: \(error.localizedDescription, privacy: .public)")
-                return
-            }
-        }
-        let leftover = (try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
-        if leftover.filter({ !$0.lastPathComponent.hasPrefix(".") }).isEmpty {
-            try? fm.removeItem(at: folder)
+    /// Delete the session folder (stems). The dated mix already lives in `destinationFolder`.
+    static func discardDeviceRecordings(in folder: URL) {
+        try? FileManager.default.removeItem(at: folder)
+    }
+
+    /// Visible in-progress mix: `LockMic 2026-08-19 13.29 mixing 37%.m4a`.
+    nonisolated private static func processingMixName(base: String, percent: Int) -> String {
+        "\(base) mixing \(percent)%.m4a"
+    }
+
+    nonisolated private static func removeProcessingMixes(named base: String, in folder: URL) {
+        let prefix = "\(base) mixing "
+        let items = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
+        for item in items where item.lastPathComponent.hasPrefix(prefix) && item.pathExtension == "m4a" {
+            try? FileManager.default.removeItem(at: item)
         }
     }
 
@@ -86,8 +78,9 @@ enum SessionMix {
         extras: [(String, URL)],
         gates: MixGates,
         bitRate: Int,
-        to outputURL: URL
-    ) throws {
+        destFolder: URL,
+        baseName: String
+    ) throws -> URL {
         guard let mixFormat = AVAudioFormat(
             commonFormat: .pcmFormatFloat32,
             sampleRate: 48_000,
@@ -100,9 +93,16 @@ enum SessionMix {
         let micReader = try StemReader(url: micURL, destFormat: mixFormat)
         let playReader = try StemReader(url: playbackURL, destFormat: mixFormat)
         let extraReaders = try extras.map { ($0.0, try StemReader(url: $0.1, destFormat: mixFormat)) }
+        let totalDuration = max(
+            micReader.duration,
+            playReader.duration,
+            extraReaders.map(\.1.duration).max() ?? 0
+        )
 
+        var currentURL = destFolder.appendingPathComponent(processingMixName(base: baseName, percent: 0))
+        try? FileManager.default.removeItem(at: currentURL)
         let outFile = try AVAudioFile(
-            forWriting: outputURL,
+            forWriting: currentURL,
             settings: RecordingCodec.aacSettings(channels: 2, bitRate: bitRate),
             commonFormat: .pcmFormatFloat32,
             interleaved: false
@@ -114,6 +114,7 @@ enum SessionMix {
         var gain = MixDuck.openMicGain
         var wantDuck = false
         var time: TimeInterval = 0
+        var lastPercent = 0
         let dt = Float(MixDuck.chunkFrames) / Float(mixFormat.sampleRate)
         let attack = 1 - exp(-dt / MixDuck.attackSeconds)
         let release = 1 - exp(-dt / MixDuck.releaseSeconds)
@@ -157,7 +158,21 @@ enum SessionMix {
             )
             try outFile.write(from: mixed)
             time += Double(frames) / mixFormat.sampleRate
+            if totalDuration > 0 {
+                let percent = min(99, Int((time / totalDuration) * 100))
+                if percent > lastPercent {
+                    lastPercent = percent
+                    let next = destFolder.appendingPathComponent(
+                        processingMixName(base: baseName, percent: percent)
+                    )
+                    // Rename while the encoder keeps the open fd (inode follows).
+                    if (try? FileManager.default.moveItem(at: currentURL, to: next)) != nil {
+                        currentURL = next
+                    }
+                }
+            }
         }
+        return currentURL
     }
 
     nonisolated private static func rms(_ buffer: AVAudioPCMBuffer) -> Float {
@@ -221,6 +236,11 @@ private final class StemReader: @unchecked Sendable {
     private let file: AVAudioFile?
     private let converter: AVAudioConverter?
     private let destFormat: AVAudioFormat
+
+    var duration: TimeInterval {
+        guard let file, file.processingFormat.sampleRate > 0 else { return 0 }
+        return Double(file.length) / file.processingFormat.sampleRate
+    }
 
     init(url: URL, destFormat: AVAudioFormat) throws {
         self.destFormat = destFormat
