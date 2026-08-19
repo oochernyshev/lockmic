@@ -19,8 +19,9 @@ enum SessionMix {
         let playbackURL = folder.appendingPathComponent(SessionRecorder.playbackFileName)
         let extraURLs = extraUIDs.map { ($0, folder.appendingPathComponent(SessionRecorder.extraMicFileName(uid: $0))) }
         let outputURL = folder.appendingPathComponent(mixFileName)
-        // Hidden temp so a copy during a long mix cannot pick up a half-written m4a.
-        let tempURL = folder.appendingPathComponent(".\(mixFileName).tmp")
+        // Hidden, but still `.m4a` — AVAudioFile picks the container from the
+        // extension, so `.tmp` was written as CAF and Space-bar preview failed.
+        let tempURL = folder.appendingPathComponent(".\(mixFileName)")
 
         try await Task.detached(priority: .userInitiated) {
             let fm = FileManager.default
