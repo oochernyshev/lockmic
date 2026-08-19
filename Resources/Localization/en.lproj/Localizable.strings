@@ -160,6 +160,7 @@
 "recording.error.aggregate" = "Could not create the recording device (%d).";
 "recording.error.io" = "Could not start playback capture (%d).";
 "recording.error.invalid_format" = "Playback tap returned an invalid audio format.";
+"recording.error.file" = "Could not create the recording file. Try another quality setting or input device.";
 "recording.error.mix" = "Could not mix the microphone and playback into one file.";
 "menu.start_recording" = "Start Recording";
 "menu.stop_recording" = "Stop Recording";

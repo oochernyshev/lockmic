@@ -18,6 +18,7 @@
 		1FF5980AA9BA25AB2AA66B3C /* SessionRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06ADA52982EF60A0DC607152 /* SessionRecorder.swift */; };
 		22799EC9FE4846702741D29C /* StatusItemVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B2EEF27306A31B09E7F00C /* StatusItemVisibility.swift */; };
 		22D629D37CABB69D24449A23 /* HUDContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24381AAC5C63C2B4DEB0E190 /* HUDContentView.swift */; };
+		2BA758F4F6801B9775F202FD /* CompressedStemWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38D0E203797E6588D537F34 /* CompressedStemWriter.swift */; };
 		3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9531C60032267EFA1757D1BC /* AppDelegate.swift */; };
 		34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47A7A118040E6EF54FF7752 /* MicController.swift */; };
 		4789507C1B86DFC4DF3F5C1E /* EscapeToCloseWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC096BE49444BD1DD7C19BE /* EscapeToCloseWindow.swift */; };
@@ -27,18 +28,22 @@
 		624805273EFDB53BAC0EA7E0 /* PreferencesChrome.swift in Sources */ = {isa = PBXBuildFile; fileRef = E14F0285BCCAF4D12DE4858F /* PreferencesChrome.swift */; };
 		6507DC18A3CA52D862E30880 /* AppInstallMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A8DD329C0A00C7F98AB6DF /* AppInstallMethod.swift */; };
 		6F86EC406C1C751E39675BFC /* PreferencesRecordingPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB8A0A431336671A517462A4 /* PreferencesRecordingPage.swift */; };
+		75232B155DF36CAD79FADA2C /* RecordingMonitorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22B6B8B3457744193C315C66 /* RecordingMonitorViews.swift */; };
 		7AFC779B76AEA8179B52B8D0 /* UsageReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B05802BA0C62099286E966 /* UsageReporter.swift */; };
 		7BCF28B6E67FFB6A7D883F39 /* AppInstanceGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C32C09184D932FCEB0E14261 /* AppInstanceGuard.swift */; };
 		7E65C79EF56627FECFCA97A3 /* RecordingMonitorWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DADF81DCA924E93BBF8497C5 /* RecordingMonitorWindow.swift */; };
 		853BF2D0ACA89BE82704BD63 /* PreferencesTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200E9D59454FF5C42F0D7ECB /* PreferencesTab.swift */; };
-		85D659D3D79E64807BDB655F /* RecordingCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A435B29C287989D17AE777C /* RecordingCapture.swift */; };
 		881AA270D666437B1903E384 /* SoundFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */; };
 		8CF0A20DF5BC136F3B034052 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C3675125FEA46D7196900C /* HotkeyManager.swift */; };
 		8E88E5B6828241F03284F2FF /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2ED43090A4E39AD009CCA8E /* L10n.swift */; };
 		946536A8DD555F0C909F529A /* PreferencesKeyboardPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F419C15AF8C957D43FB3505F /* PreferencesKeyboardPage.swift */; };
 		958180F202E06B74C7FF70B8 /* Comparable+Clamped.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F757219C34041FABC16B182 /* Comparable+Clamped.swift */; };
+		A135303EFDE1E0DDF1395128 /* InputDeviceCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56C0C058BA882C7D377D7002 /* InputDeviceCapture.swift */; };
+		A76A5A5BAD20A087D0EEAD00 /* RecordingTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A1CAC0DBBA0C68A3001DC9 /* RecordingTypes.swift */; };
+		ACC18BD5233D2126186035CC /* RecordingDSP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D648AE0FEB3920E8A9FA910C /* RecordingDSP.swift */; };
 		BA20006664889BFA032B547D /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402280C03971421D5FC37176 /* PreferencesStore.swift */; };
 		BDD8AAD6F773AE812F75400F /* HUDHoldKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500AF84D4D16D9AFA3D3F98C /* HUDHoldKind.swift */; };
+		C06BA017129FFBF8FE432315 /* RecordingBitRate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D8E3B3E7AC79E5657EB4BD /* RecordingBitRate.swift */; };
 		D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C7D193AC5B7126335223E /* LockMicApp.swift */; };
 		D2858916A735CF2E761476C5 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */; };
 		DD37177C68DB7C1169F1C46D /* PreferencesGeneralPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C96E6DE500850364A23E1BF /* PreferencesGeneralPage.swift */; };
@@ -58,6 +63,7 @@
 		1F757219C34041FABC16B182 /* Comparable+Clamped.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Comparable+Clamped.swift"; sourceTree = "<group>"; };
 		200E9D59454FF5C42F0D7ECB /* PreferencesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesTab.swift; sourceTree = "<group>"; };
 		20D4F51BC72B06AE60177E02 /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hu; path = hu.lproj/Localizable.strings; sourceTree = "<group>"; };
+		22B6B8B3457744193C315C66 /* RecordingMonitorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingMonitorViews.swift; sourceTree = "<group>"; };
 		23C3675125FEA46D7196900C /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
 		24381AAC5C63C2B4DEB0E190 /* HUDContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDContentView.swift; sourceTree = "<group>"; };
 		26CB49637ACD31ADA88C6706 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -75,9 +81,10 @@
 		4BC096BE49444BD1DD7C19BE /* EscapeToCloseWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EscapeToCloseWindow.swift; sourceTree = "<group>"; };
 		500AF84D4D16D9AFA3D3F98C /* HUDHoldKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDHoldKind.swift; sourceTree = "<group>"; };
 		507F692EF636EDD123B7C354 /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/Localizable.strings; sourceTree = "<group>"; };
-		5A435B29C287989D17AE777C /* RecordingCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingCapture.swift; sourceTree = "<group>"; };
+		56C0C058BA882C7D377D7002 /* InputDeviceCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputDeviceCapture.swift; sourceTree = "<group>"; };
 		5C696A9C7623EEF09C24ADDB /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = it.lproj/Localizable.strings; sourceTree = "<group>"; };
 		5EC7728A0646DDB0B80A26E3 /* SessionMix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionMix.swift; sourceTree = "<group>"; };
+		68A1CAC0DBBA0C68A3001DC9 /* RecordingTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingTypes.swift; sourceTree = "<group>"; };
 		6C96E6DE500850364A23E1BF /* PreferencesGeneralPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesGeneralPage.swift; sourceTree = "<group>"; };
 		6D93F1024B71207F8831FB2E /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
 		6DCBF140C7338A9FBDC5EA31 /* ThinTransparentScroller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinTransparentScroller.swift; sourceTree = "<group>"; };
@@ -85,6 +92,7 @@
 		7E3364D1BD68964EA0E478CE /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/Localizable.strings; sourceTree = "<group>"; };
 		83B05802BA0C62099286E966 /* UsageReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageReporter.swift; sourceTree = "<group>"; };
 		85D3C494D4898BA8C2268DB1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		88D8E3B3E7AC79E5657EB4BD /* RecordingBitRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingBitRate.swift; sourceTree = "<group>"; };
 		9531C60032267EFA1757D1BC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		96D23D9BDF660CFB378C08B5 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		A4DE69CE589C220C182F7AAD /* LockMic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LockMic.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -103,6 +111,8 @@
 		C98EF85571E738D1FB5D06D9 /* SystemAudioAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioAccess.swift; sourceTree = "<group>"; };
 		CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedback.swift; sourceTree = "<group>"; };
 		D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDOverlay.swift; sourceTree = "<group>"; };
+		D38D0E203797E6588D537F34 /* CompressedStemWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompressedStemWriter.swift; sourceTree = "<group>"; };
+		D648AE0FEB3920E8A9FA910C /* RecordingDSP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDSP.swift; sourceTree = "<group>"; };
 		D8A8DD329C0A00C7F98AB6DF /* AppInstallMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInstallMethod.swift; sourceTree = "<group>"; };
 		D9B302F7FB86DB3FAF07A20E /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
 		DADF81DCA924E93BBF8497C5 /* RecordingMonitorWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingMonitorWindow.swift; sourceTree = "<group>"; };
@@ -162,12 +172,16 @@
 			children = (
 				D8A8DD329C0A00C7F98AB6DF /* AppInstallMethod.swift */,
 				B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */,
+				D38D0E203797E6588D537F34 /* CompressedStemWriter.swift */,
 				23C3675125FEA46D7196900C /* HotkeyManager.swift */,
 				B35F1D3335235FFC0A1CFD00 /* HotkeyTypes.swift */,
+				56C0C058BA882C7D377D7002 /* InputDeviceCapture.swift */,
 				C47A7A118040E6EF54FF7752 /* MicController.swift */,
 				00BF46D371BFBCB0BC6F1628 /* PlaybackTap.swift */,
 				402280C03971421D5FC37176 /* PreferencesStore.swift */,
-				5A435B29C287989D17AE777C /* RecordingCapture.swift */,
+				88D8E3B3E7AC79E5657EB4BD /* RecordingBitRate.swift */,
+				D648AE0FEB3920E8A9FA910C /* RecordingDSP.swift */,
+				68A1CAC0DBBA0C68A3001DC9 /* RecordingTypes.swift */,
 				5EC7728A0646DDB0B80A26E3 /* SessionMix.swift */,
 				06ADA52982EF60A0DC607152 /* SessionRecorder.swift */,
 				CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */,
@@ -198,6 +212,7 @@
 				200E9D59454FF5C42F0D7ECB /* PreferencesTab.swift */,
 				6D93F1024B71207F8831FB2E /* PreferencesView.swift */,
 				DBCDAC13656AB32C933EB7FC /* RecordingCoordinator.swift */,
+				22B6B8B3457744193C315C66 /* RecordingMonitorViews.swift */,
 				DADF81DCA924E93BBF8497C5 /* RecordingMonitorWindow.swift */,
 				F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */,
 				29B2EEF27306A31B09E7F00C /* StatusItemVisibility.swift */,
@@ -340,6 +355,7 @@
 				7BCF28B6E67FFB6A7D883F39 /* AppInstanceGuard.swift in Sources */,
 				ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */,
 				958180F202E06B74C7FF70B8 /* Comparable+Clamped.swift in Sources */,
+				2BA758F4F6801B9775F202FD /* CompressedStemWriter.swift in Sources */,
 				F004DB315B6F5162DE075031 /* DockIconRenderer.swift in Sources */,
 				4789507C1B86DFC4DF3F5C1E /* EscapeToCloseWindow.swift in Sources */,
 				22D629D37CABB69D24449A23 /* HUDContentView.swift in Sources */,
@@ -350,6 +366,7 @@
 				8CF0A20DF5BC136F3B034052 /* HotkeyManager.swift in Sources */,
 				E20244D2F3506734EB9D15D9 /* HotkeyRecorderButton.swift in Sources */,
 				15DD7D576F72455A28455301 /* HotkeyTypes.swift in Sources */,
+				A135303EFDE1E0DDF1395128 /* InputDeviceCapture.swift in Sources */,
 				8E88E5B6828241F03284F2FF /* L10n.swift in Sources */,
 				D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */,
 				34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */,
@@ -363,9 +380,12 @@
 				BA20006664889BFA032B547D /* PreferencesStore.swift in Sources */,
 				853BF2D0ACA89BE82704BD63 /* PreferencesTab.swift in Sources */,
 				DF99A9504527B6B0E6F48478 /* PreferencesView.swift in Sources */,
-				85D659D3D79E64807BDB655F /* RecordingCapture.swift in Sources */,
+				C06BA017129FFBF8FE432315 /* RecordingBitRate.swift in Sources */,
 				1F2EE35C311EB17B8016DD27 /* RecordingCoordinator.swift in Sources */,
+				ACC18BD5233D2126186035CC /* RecordingDSP.swift in Sources */,
+				75232B155DF36CAD79FADA2C /* RecordingMonitorViews.swift in Sources */,
 				7E65C79EF56627FECFCA97A3 /* RecordingMonitorWindow.swift in Sources */,
+				A76A5A5BAD20A087D0EEAD00 /* RecordingTypes.swift in Sources */,
 				0D4A5F4D20A2E31F464F4122 /* SessionMix.swift in Sources */,
 				1FF5980AA9BA25AB2AA66B3C /* SessionRecorder.swift in Sources */,
 				881AA270D666437B1903E384 /* SoundFeedback.swift in Sources */,
@@ -449,7 +469,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 148;
+				CURRENT_PROJECT_VERSION = 149;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_LANGUAGE = en;
 				DEVELOPMENT_TEAM = "";
@@ -471,7 +491,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.4.8;
+				MARKETING_VERSION = 1.4.9;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -489,12 +509,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 148;
+				CURRENT_PROJECT_VERSION = 149;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
-				MARKETING_VERSION = 1.4.8;
+				MARKETING_VERSION = 1.4.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -536,7 +556,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 148;
+				CURRENT_PROJECT_VERSION = 149;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_LANGUAGE = en;
 				DEVELOPMENT_TEAM = "";
@@ -552,7 +572,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.4.8;
+				MARKETING_VERSION = 1.4.9;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = LockMic;
@@ -569,12 +589,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 148;
+				CURRENT_PROJECT_VERSION = 149;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
-				MARKETING_VERSION = 1.4.8;
+				MARKETING_VERSION = 1.4.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;

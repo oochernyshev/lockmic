@@ -183,20 +183,7 @@ final class MicController: ObservableObject {
             if let id = try? audio.defaultInputDeviceID() {
                 deviceName = audio.deviceName(id)
             }
-            if muted {
-                if result.allFailed, !result.failed.isEmpty {
-                    state = .unsupported(deviceName: deviceName)
-                    lastError = result.failed.map { "\($0.name): \($0.message)" }.joined(separator: "; ")
-                } else {
-                    state = .muted
-                    lastError = result.failed.isEmpty
-                        ? nil
-                        : "No system mute on: \(result.failed.map(\.name).joined(separator: ", "))"
-                }
-            } else {
-                state = .unmuted
-                lastError = nil
-            }
+            applyMuteAllResult(result, desiredMuted: muted)
         } else {
             // Default input only — never touch other devices.
             do {
@@ -216,6 +203,41 @@ final class MicController: ObservableObject {
         }
         log.debug("\(muted ? "Muted" : "Unmuted", privacy: .public)")
         refreshDeviceList()
+    }
+
+    /// Mute and unmute share the same batch outcome. Unmute must not claim success
+    /// when every in-scope device failed — otherwise the icon/HUD lie and toggle mutes again.
+    private func applyMuteAllResult(_ result: AudioDeviceService.MuteBatchResult, desiredMuted: Bool) {
+        let failedDetail = result.failed.map { "\($0.name): \($0.message)" }.joined(separator: "; ")
+        let failedNames = result.failed.map(\.name).joined(separator: ", ")
+
+        if result.allFailed {
+            lastError = failedDetail
+            if desiredMuted {
+                state = .unsupported(deviceName: deviceName)
+            } else {
+                // Unmute did not take: keep HAL-truthful state and sticky mute intent.
+                self.desiredMuted = true
+                if let hardwareMuted = defaultInputMute() {
+                    state = hardwareMuted ? .muted : .unmuted
+                }
+            }
+            return
+        }
+
+        if let hardwareMuted = defaultInputMute() {
+            state = hardwareMuted ? .muted : .unmuted
+        } else {
+            state = desiredMuted ? .muted : .unmuted
+        }
+        lastError = result.failed.isEmpty
+            ? nil
+            : (desiredMuted ? "No system mute on: \(failedNames)" : "Could not unmute: \(failedNames)")
+    }
+
+    private func defaultInputMute() -> Bool? {
+        guard let id = try? audio.defaultInputDeviceID(), audio.supportsMute(id) else { return nil }
+        return try? audio.isMuted(id)
     }
 
     /// Start/stop the background re-assert timer based on `desiredMuted`.

@@ -6,50 +6,6 @@ import QuartzCore
 
 private let log = Logger(subsystem: "com.lockmic.app", category: "SessionRecorder")
 
-/// Which playback to capture. Mic is always the system default input only.
-enum PlaybackRecordScope: Sendable {
-    /// Audio routed to the default output device.
-    case `default`
-    /// Mix of every app's playback, regardless of output device.
-    case all
-}
-
-enum CaptureAccess: Equatable, Sendable {
-    case unknown
-    case denied
-    case granted
-}
-
-enum SessionRecorderError: LocalizedError {
-    case alreadyRecording
-    case notRecording
-    case needsMacOS142
-    case microphoneDenied
-    case playbackDenied
-    case micStartFailed
-    case tapFailed(OSStatus)
-    case aggregateFailed(OSStatus)
-    case ioFailed(OSStatus)
-    case invalidTapFormat
-    case mixFailed
-
-    var errorDescription: String? {
-        switch self {
-        case .alreadyRecording: return L10n.recordingErrorAlready
-        case .notRecording: return L10n.recordingErrorNotRecording
-        case .needsMacOS142: return L10n.recordingErrorNeedsMacOS
-        case .microphoneDenied: return L10n.recordingErrorMicDenied
-        case .playbackDenied: return L10n.recordingErrorPlaybackDenied
-        case .micStartFailed: return L10n.recordingErrorMicStart
-        case .tapFailed(let status): return L10n.recordingErrorTap(Int(status))
-        case .aggregateFailed(let status): return L10n.recordingErrorAggregate(Int(status))
-        case .ioFailed(let status): return L10n.recordingErrorIO(Int(status))
-        case .invalidTapFormat: return L10n.recordingErrorInvalidFormat
-        case .mixFailed: return L10n.recordingErrorMix
-        }
-    }
-}
-
 /// Records one selected mic + system playback as AAC, then mixes them into a dated `LockMic yyyy-MM-dd HH.mm.m4a`.
 ///
 /// Playback uses a Core Audio process tap (macOS 14.2+). Mic uses a HAL IO capture
@@ -202,8 +158,9 @@ final class SessionRecorder: ObservableObject {
             if case .playbackDenied? = error as? SessionRecorderError {
                 playbackAccess = .denied
             }
-            lastError = error.localizedDescription
-            throw error
+            let wrapped = Self.wrapStartError(error)
+            lastError = wrapped.localizedDescription
+            throw wrapped
         }
     }
 
@@ -536,6 +493,11 @@ final class SessionRecorder: ObservableObject {
         defaultInputDevice()?.uid
     }
 
+    private func currentDefaultOutputUID() -> String? {
+        guard let id = try? audio.defaultOutputDeviceID(), !audio.isLockMicRecorder(id) else { return nil }
+        return audio.deviceUID(id)
+    }
+
     private func defaultInputDevice() -> AudioInputDevice? {
         guard let id = try? audio.defaultInputDeviceID(), !audio.isLockMicRecorder(id) else { return nil }
         return audio.listInputDevices().first { $0.id == id && !$0.isVirtual }
@@ -578,6 +540,7 @@ final class SessionRecorder: ObservableObject {
     private func refreshDeviceRows() {
         rememberDeviceOrder()
         let defaultInUID = currentDefaultInputUID()
+        let defaultOutUID = currentDefaultOutputUID()
         let inputsByUID = Dictionary(uniqueKeysWithValues: audio.listInputDevices().map { ($0.uid, $0) })
         var rows: [RecordingDeviceRow] = []
 
@@ -604,7 +567,7 @@ final class SessionRecorder: ObservableObject {
         for uid in outputOrder {
             guard let device = outputsByUID[uid] else { continue }
             let id = "out.\(uid)"
-            let isDefault = uid == playbackDeviceUID
+            let isDefault = uid == defaultOutUID
             let selected = selectedOutputUIDs.contains(uid)
             rows.append(
                 RecordingDeviceRow(
@@ -669,6 +632,16 @@ final class SessionRecorder: ObservableObject {
                 continuation.resume(returning: granted)
             }
         }
+    }
+
+    /// `!dat` (560226676) and similar AVAudioFile failures arrive as raw OSStatus NSErrors.
+    private static func wrapStartError(_ error: Error) -> Error {
+        if error is SessionRecorderError { return error }
+        let ns = error as NSError
+        if ns.domain == "com.apple.coreaudio.avfaudio" || ns.domain == NSOSStatusErrorDomain {
+            return SessionRecorderError.fileFailed
+        }
+        return error
     }
 
     private static func ensureMicrophonePermission() async throws {

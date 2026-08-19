@@ -62,10 +62,7 @@ final class HotkeyCoordinator {
     }
 
     func disable() {
-        if momentaryHold.isActive {
-            momentaryHold = .none
-            mic.suppressDeviceResync = false
-        }
+        cancelHold(restore: true)
         lastRegisteredBindings = []
         hotkeys.register(bindings: []) { _, _ in }
     }
@@ -132,25 +129,36 @@ final class HotkeyCoordinator {
             }
             onMuteChanged?(true, changed)
         case .released:
-            let wasMuted: Bool?
+            let matches: Bool
             switch (mode, momentaryHold) {
-            case (.talk, .pushToTalk(let w)),
-                 (.mute, .pushToMute(let w)),
-                 (.toggle, .pushToToggle(let w)):
-                wasMuted = w
+            case (.talk, .pushToTalk), (.mute, .pushToMute), (.toggle, .pushToToggle):
+                matches = true
             default:
-                wasMuted = nil
+                matches = false
             }
-            guard let wasMuted else { return }
-            momentaryHold = .none
-            mic.suppressDeviceResync = false
-            if mic.effectiveMuted != wasMuted {
-                mic.setMuted(wasMuted)
-                onMuteChanged?(true, true)
-            } else {
-                onMuteChanged?(true, false)
-            }
-            mic.refreshFromHardware(applyDesired: true)
+            guard matches else { return }
+            cancelHold(restore: true)
         }
+    }
+
+    /// Ends a momentary hold. `restore` writes the pre-hold mute back (key-up and disable).
+    private func cancelHold(restore: Bool) {
+        let wasMuted: Bool
+        switch momentaryHold {
+        case .none:
+            return
+        case .pushToTalk(let w), .pushToMute(let w), .pushToToggle(let w):
+            wasMuted = w
+        }
+        momentaryHold = .none
+        mic.suppressDeviceResync = false
+        guard restore else { return }
+        if mic.effectiveMuted != wasMuted {
+            mic.setMuted(wasMuted)
+            onMuteChanged?(true, true)
+        } else {
+            onMuteChanged?(true, false)
+        }
+        mic.refreshFromHardware(applyDesired: true)
     }
 }

@@ -133,6 +133,7 @@ enum L10n {
         format("recording.error.io", status)
     }
     static var recordingErrorInvalidFormat: String { tr("recording.error.invalid_format") }
+    static var recordingErrorFile: String { tr("recording.error.file") }
     static var recordingErrorMix: String { tr("recording.error.mix") }
 
     // MARK: - Keyboard
