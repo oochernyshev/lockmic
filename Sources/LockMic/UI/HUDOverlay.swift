@@ -358,6 +358,7 @@ final class HUDOverlay: NSObject {
                 keyEquivalent: ""
             )
             stop.target = self
+            stop.image = NSImage.menuItemSymbol("stop.circle")
             menu.addItem(stop)
         }
 

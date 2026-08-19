@@ -561,6 +561,7 @@ final class StatusItemController {
             keyEquivalent: ""
         )
         toggle.target = self
+        toggle.image = NSImage.menuItemSymbol(mic.effectiveMuted ? "mic.slash.fill" : "mic.fill")
         menu.addItem(toggle)
 
         let muteAll = NSMenuItem(
@@ -580,6 +581,7 @@ final class StatusItemController {
             keyEquivalent: ""
         )
         record.target = self
+        record.image = NSImage.menuItemSymbol(recorder.isRecording ? "stop.circle" : "record.circle")
         menu.addItem(record)
 
         let showRecordings = NSMenuItem(
@@ -823,6 +825,9 @@ final class StatusItemController {
             },
             onAllowAccess: { [weak self] in
                 self?.retryAccessFromMonitor()
+            },
+            onToggleMute: { [weak self] in
+                self?.toggleFromUser(source: .hud)
             }
         )
     }
@@ -1102,5 +1107,36 @@ final class StatusItemController {
             lines.append(L10n.menuUpdateAvailable(update.version))
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+extension NSImage {
+    /// Square template glyph for `NSMenuItem`. Raw SF Symbols carry a short, wide
+    /// `alignmentRect` that AppKit uses to lay out menu icons, which squashes them.
+    static func menuItemSymbol(_ name: String) -> NSImage? {
+        let canvas = NSSize(width: 16, height: 16)
+        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        guard let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(config) else { return nil }
+        let image = NSImage(size: canvas, flipped: false) { bounds in
+            let symbolSize = symbol.size
+            let scale = min(bounds.width / max(symbolSize.width, 1), bounds.height / max(symbolSize.height, 1))
+            let drawSize = NSSize(width: symbolSize.width * scale, height: symbolSize.height * scale)
+            let origin = NSPoint(
+                x: bounds.midX - drawSize.width / 2,
+                y: bounds.midY - drawSize.height / 2
+            )
+            symbol.draw(
+                in: NSRect(origin: origin, size: drawSize),
+                from: .zero,
+                operation: .sourceOver,
+                fraction: 1,
+                respectFlipped: true,
+                hints: [.interpolation: NSImageInterpolation.high]
+            )
+            return true
+        }
+        image.isTemplate = true
+        return image
     }
 }

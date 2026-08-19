@@ -19,16 +19,27 @@ enum SessionMix {
         let playbackURL = folder.appendingPathComponent(SessionRecorder.playbackFileName)
         let extraURLs = extraUIDs.map { ($0, folder.appendingPathComponent(SessionRecorder.extraMicFileName(uid: $0))) }
         let outputURL = folder.appendingPathComponent(mixFileName)
+        // Hidden temp so a copy during a long mix cannot pick up a half-written m4a.
+        let tempURL = folder.appendingPathComponent(".\(mixFileName).tmp")
 
         try await Task.detached(priority: .userInitiated) {
-            try renderDuckedMix(
-                mic: micURL,
-                playback: playbackURL,
-                extras: extraURLs,
-                gates: gates,
-                bitRate: bitRate,
-                to: outputURL
-            )
+            let fm = FileManager.default
+            try? fm.removeItem(at: tempURL)
+            do {
+                try renderDuckedMix(
+                    mic: micURL,
+                    playback: playbackURL,
+                    extras: extraURLs,
+                    gates: gates,
+                    bitRate: bitRate,
+                    to: tempURL
+                )
+                try? fm.removeItem(at: outputURL)
+                try fm.moveItem(at: tempURL, to: outputURL)
+            } catch {
+                try? fm.removeItem(at: tempURL)
+                throw error
+            }
         }.value
     }
 
@@ -89,7 +100,6 @@ enum SessionMix {
         let playReader = try StemReader(url: playbackURL, destFormat: mixFormat)
         let extraReaders = try extras.map { ($0.0, try StemReader(url: $0.1, destFormat: mixFormat)) }
 
-        try? FileManager.default.removeItem(at: outputURL)
         let outFile = try AVAudioFile(
             forWriting: outputURL,
             settings: RecordingCodec.aacSettings(channels: 2, bitRate: bitRate),

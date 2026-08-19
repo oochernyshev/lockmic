@@ -22,6 +22,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var outputsCard: CardView?
     private var followToggle: AccessoryToggle?
     private var followOutputToggle: AccessoryToggle?
+    private var muteButton: MuteToggleButton?
     private var stopButton: StopRecordingButton?
     private var preferences: PreferencesStore?
     private var mic: MicController?
@@ -30,6 +31,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var recorder: SessionRecorder?
     private var onStop: (() -> Void)?
     private var onAllowAccess: (() -> Void)?
+    private var onToggleMute: (() -> Void)?
     private var rows: [String: RowView] = [:]
     private var waveSessionStart: Date?
     private var lastElapsedSeconds = -1
@@ -44,13 +46,15 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         preferences: PreferencesStore? = nil,
         mic: MicController? = nil,
         onStop: @escaping () -> Void,
-        onAllowAccess: (() -> Void)? = nil
+        onAllowAccess: (() -> Void)? = nil,
+        onToggleMute: (() -> Void)? = nil
     ) {
         self.recorder = recorder
         self.preferences = preferences
         self.mic = mic
         self.onStop = onStop
         self.onAllowAccess = onAllowAccess
+        self.onToggleMute = onToggleMute
         if window == nil {
             buildWindow()
         }
@@ -207,22 +211,31 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         permission.isHidden = true
         permissionBox = permission
 
+        let mute = MuteToggleButton(target: self, action: #selector(muteClicked))
+        muteButton = mute
         let stop = StopRecordingButton(title: L10n.menuStopRecording, target: self, action: #selector(stopClicked))
         stopButton = stop
-        let stopRow = NSStackView()
-        stopRow.orientation = .horizontal
-        stopRow.alignment = .centerY
-        stopRow.addArrangedSubview(NSView())
-        stopRow.addArrangedSubview(stop)
-        stopRow.addArrangedSubview(NSView())
+        let leading = NSView()
+        let trailing = NSView()
+        leading.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        trailing.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let actions = NSStackView()
+        actions.orientation = .horizontal
+        actions.alignment = .centerY
+        actions.spacing = 10
+        actions.addArrangedSubview(leading)
+        actions.addArrangedSubview(mute)
+        actions.addArrangedSubview(stop)
+        actions.addArrangedSubview(trailing)
+        leading.widthAnchor.constraint(equalTo: trailing.widthAnchor).isActive = true
 
         root.addArrangedSubview(header)
         root.addArrangedSubview(permission)
         root.addArrangedSubview(inputs)
         root.addArrangedSubview(outputs)
-        root.addArrangedSubview(stopRow)
+        root.addArrangedSubview(actions)
         let inset = root.edgeInsets.left + root.edgeInsets.right
-        [header, permission, inputs, outputs, stopRow].forEach { view in
+        [header, permission, inputs, outputs, actions].forEach { view in
             view.translatesAutoresizingMaskIntoConstraints = false
             view.widthAnchor.constraint(equalTo: root.widthAnchor, constant: -inset).isActive = true
         }
@@ -400,6 +413,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     }
 
     private func syncMuteStatus() {
+        muteButton?.apply(muted: mic?.effectiveMuted == true)
         guard let recorder else { return }
         for device in recorder.devices where device.kind == .input {
             rows[device.id]?.applyMute(isInputMuted(device))
@@ -530,6 +544,10 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         onStop?()
     }
 
+    @objc private func muteClicked() {
+        onToggleMute?()
+    }
+
     @objc private func followDefaultClicked() {
         guard let recorder, let followToggle else { return }
         recorder.setFollowDefaultInput(followToggle.isOn)
@@ -623,6 +641,79 @@ private final class AllowAccessButton: NSButton {
     override func updateLayer() {
         let color = NSColor.controlAccentColor
         layer?.backgroundColor = (isHighlighted ? color.blended(withFraction: 0.18, of: .black) : color)?.cgColor
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+}
+
+/// Same pill chrome as Stop Recording: icon + title, own fill so it
+/// does not go grey in a non-activating panel. HUD colors and filled mic.
+private final class MuteToggleButton: NSButton {
+    private var isMuted = false
+
+    init(target: AnyObject?, action: Selector) {
+        super.init(frame: .zero)
+        self.target = target
+        self.action = action
+        isBordered = false
+        bezelStyle = .shadowlessSquare
+        imagePosition = .imageLeading
+        imageHugsTitle = true
+        contentTintColor = .white
+        wantsLayer = true
+        layer?.cornerRadius = 7
+        layer?.masksToBounds = true
+        focusRingType = .none
+        apply(muted: false)
+    }
+
+    func apply(muted: Bool) {
+        isMuted = muted
+        let title = muted ? L10n.hudMuted : L10n.hudUnmuted
+        image = NSImage(systemSymbolName: muted ? "mic.slash.fill" : "mic.fill", accessibilityDescription: title)
+        attributedTitle = NSAttributedString(
+            string: title,
+            attributes: [
+                .foregroundColor: NSColor.white,
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .semibold),
+            ]
+        )
+        invalidateIntrinsicContentSize()
+        needsDisplay = true
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: NSSize {
+        var size = super.intrinsicContentSize
+        size.width += 20
+        size.height += 8
+        return size
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func highlight(_ flag: Bool) {
+        super.highlight(flag)
+        needsDisplay = true
+    }
+
+    override func updateLayer() {
+        let titleColor = NSColor.white
+        layer?.backgroundColor = NSColor.black.withAlphaComponent(
+            isMuted ? (isHighlighted ? 0.78 : 0.62) : (isHighlighted ? 0.66 : 0.50)
+        ).cgColor
+        contentTintColor = titleColor
+        attributedTitle = NSAttributedString(
+            string: attributedTitle.string,
+            attributes: [
+                .foregroundColor: titleColor,
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .semibold),
+            ]
+        )
     }
 
     override func resetCursorRects() {
