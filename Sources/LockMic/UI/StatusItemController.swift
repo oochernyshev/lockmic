@@ -81,7 +81,7 @@ final class StatusItemController {
             self?.toggleFromUser(source: .hud)
         }
         hud.onStopRecording = { [weak self] in
-            self?.stopRecordingNow()
+            self?.stopRecordingNow(source: .hud)
         }
 
         applyFeatureAvailability(force: true)
@@ -707,14 +707,14 @@ final class StatusItemController {
 
     @objc private func toggleRecording() {
         if recorder.isRecording {
-            stopRecordingNow()
+            stopRecordingNow(source: .menu)
             return
         }
         guard featuresEnabled else { return }
-        Task { await startRecording() }
+        Task { await startRecording(source: .menu) }
     }
 
-    private func startRecording() async {
+    private func startRecording(source: UsageReporter.ActivationSource) async {
         let scope = currentPlaybackScope()
         recorder.previewSession(
             playback: scope,
@@ -724,14 +724,14 @@ final class StatusItemController {
         // Menu teardown can eat a panel shown in the same click; wait a turn.
         await nextMainRunLoopTurn()
         showRecordingMonitor()
-        await beginCapture(scope: scope)
+        await beginCapture(scope: scope, source: source)
     }
 
     private func currentPlaybackScope() -> PlaybackRecordScope {
         preferences.recordAllPlayback && !preferences.followDefaultOutput ? .all : .default
     }
 
-    private func beginCapture(scope: PlaybackRecordScope) async {
+    private func beginCapture(scope: PlaybackRecordScope, source: UsageReporter.ActivationSource) async {
         do {
             try await recorder.start(
                 playback: scope,
@@ -740,6 +740,7 @@ final class StatusItemController {
                 followOutput: preferences.followDefaultOutput,
                 in: preferences.recordingsDirectory
             )
+            UsageReporter.record(.startRecording, source: source)
             handleMuteChanged(showHUD: false)
             showRecordingMonitor()
         } catch SessionRecorderError.microphoneDenied, SessionRecorderError.playbackDenied {
@@ -761,7 +762,7 @@ final class StatusItemController {
 
     private func retryMicrophoneAccess() async {
         if await SessionRecorder.requestMicrophoneAccess() {
-            await beginCapture(scope: currentPlaybackScope())
+            await beginCapture(scope: currentPlaybackScope(), source: .monitor)
             return
         }
         openMicrophoneSettings()
@@ -769,7 +770,7 @@ final class StatusItemController {
 
     private func retryPlaybackAccess() async {
         if await SystemAudioAccess.request() {
-            await beginCapture(scope: currentPlaybackScope())
+            await beginCapture(scope: currentPlaybackScope(), source: .monitor)
             return
         }
         openPlaybackSettings()
@@ -784,7 +785,7 @@ final class StatusItemController {
         // refresh chrome so the matching card undims instead of staying stuck.
         showRecordingMonitor()
         if recorder.microphoneAccess == .denied || recorder.playbackAccess == .denied { return }
-        Task { await beginCapture(scope: currentPlaybackScope()) }
+        Task { await beginCapture(scope: currentPlaybackScope(), source: .monitor) }
     }
 
     private func openMicrophoneSettings() {
@@ -821,7 +822,7 @@ final class StatusItemController {
             preferences: preferences,
             mic: mic,
             onStop: { [weak self] in
-                self?.stopRecordingNow()
+                self?.stopRecordingNow(source: .monitor)
             },
             onAllowAccess: { [weak self] in
                 self?.retryAccessFromMonitor()
@@ -833,7 +834,7 @@ final class StatusItemController {
     }
 
     /// Stop capture immediately; mix in the background.
-    private func stopRecordingNow() {
+    private func stopRecordingNow(source: UsageReporter.ActivationSource) {
         if !recorder.isRecording {
             recordingMonitor.hide()
             recorder.cancelPreview()
@@ -851,13 +852,18 @@ final class StatusItemController {
             presentRecordingError(error)
             return
         }
+        UsageReporter.record(.stopRecording, source: source)
         handleMuteChanged(showHUD: false)
         Task {
-            await recorder.completeMix(pending)
+            let mixed = await recorder.completeMix(pending)
+            if !mixed {
+                UsageReporter.record(.mixFailed, source: source)
+            }
         }
     }
 
     @objc private func showRecordingsFolder() {
+        UsageReporter.record(.showRecordings, source: .menu)
         let folder = preferences.recordingsDirectory
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         NSWorkspace.shared.open(folder)

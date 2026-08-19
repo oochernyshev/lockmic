@@ -257,7 +257,8 @@ final class SessionRecorder: ObservableObject {
         )
     }
 
-    func completeMix(_ pending: PendingMix) async {
+    @discardableResult
+    func completeMix(_ pending: PendingMix) async -> Bool {
         do {
             try await SessionMix.mix(
                 in: pending.folder,
@@ -273,9 +274,11 @@ final class SessionRecorder: ObservableObject {
                 )
             }
             log.info("Mixed file in \(pending.folder.path, privacy: .public)")
+            return true
         } catch {
             lastError = error.localizedDescription
             log.error("Mix failed: \(error.localizedDescription, privacy: .public)")
+            return false
         }
     }
 

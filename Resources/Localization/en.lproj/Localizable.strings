@@ -28,7 +28,7 @@
 "devices.subtitle.outside_scope" = "Outside current mute scope (default only)";
 "devices.subtitle.unknown" = "Mute state unknown";
 "devices.subtitle.virtual" = "Virtual transport (Core Audio) — ignored for mute control";
-"general.anonymous.caption" = "Required to use LockMic. Sends app version and each anonymous action as it happens (toggle, mute/unmute, hold shortcuts). No mic audio or personal data.";
+"general.anonymous.caption" = "Required to use LockMic. Sends app version and each anonymous action as it happens (toggle, mute/unmute, hold shortcuts, recording start/stop). No mic audio, no recording files, and no personal data.";
 "general.anonymous.disabled" = "Microphone control is disabled until you agree.";
 "general.anonymous.header" = "Anonymous usage";
 "general.anonymous.toggle" = "I agree to share anonymous usage statistics";

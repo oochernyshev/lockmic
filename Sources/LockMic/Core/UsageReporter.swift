@@ -27,6 +27,8 @@ enum UsageReporter {
         case menu
         /// Left-click on the Dock tile.
         case dock
+        /// Recording monitor window.
+        case monitor
     }
 
     enum Action: String, CaseIterable {
@@ -37,6 +39,10 @@ enum UsageReporter {
         case pushToMute
         case pushToFlip
         case openPreferences
+        case startRecording
+        case stopRecording
+        case showRecordings
+        case mixFailed
 
         /// GA4 event name (snake_case, ≤40 chars).
         var eventName: String {
@@ -48,6 +54,10 @@ enum UsageReporter {
             case .pushToMute: return "action_push_to_mute"
             case .pushToFlip: return "action_push_to_flip"
             case .openPreferences: return "action_open_preferences"
+            case .startRecording: return "action_start_recording"
+            case .stopRecording: return "action_stop_recording"
+            case .showRecordings: return "action_show_recordings"
+            case .mixFailed: return "action_mix_failed"
             }
         }
     }

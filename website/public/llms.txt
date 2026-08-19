@@ -13,7 +13,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - **Partnerships / press:** info@wixee.ai
 - **Price:** Free
 - **Platform:** macOS 14 Sonoma or later
-- **Current version:** 1.4.5
+- **Current version:** 1.4.6
 
 ## Key facts
 
@@ -31,7 +31,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 
 ### DMG
 
-https://github.com/oochernyshev/lockmic/releases/download/v1.4.5/LockMic-1.4.5.dmg
+https://github.com/oochernyshev/lockmic/releases/download/v1.4.6/LockMic-1.4.6.dmg
 
 ### Homebrew
 
@@ -69,7 +69,7 @@ App mute (e.g. Zoom) only silences that application. LockMic mutes the input dev
 
 ## Privacy
 
-If the user agrees to anonymous usage in the app: app version and action events only. No microphone audio, no recordings, no personal content. Features stay disabled until agreement. Recordings created in the app stay in a folder on the Mac (default `~/Movies/LockMic`) and are not sent to LockMic or WIXEE.AI.
+If the user agrees to anonymous usage in the app: app version and action events only (mute/unmute, holds, recording start/stop). No microphone audio, no recording files, no personal content. Features stay disabled until agreement. Recordings created in the app stay in a folder on the Mac (default `~/Movies/LockMic`) and are not sent to LockMic or WIXEE.AI.
 
 The marketing website (lockmic.com) uses the same Google Analytics 4 property (`G-0ZRQC93T49`) for anonymous page views and download clicks.
 
