@@ -119,6 +119,9 @@ final class MicController: ObservableObject {
         }
     }
 
+    /// - Parameter applyDesired: `true` re-writes HAL from sticky intent (device change,
+    ///   app activation). `false` seeds intent from HAL — only safe at launch or when
+    ///   the user is not holding a mute.
     func refreshFromHardware(applyDesired: Bool) {
         if applyDesired {
             applyMute(desiredMuted)

@@ -88,7 +88,12 @@ final class SessionRecorder: ObservableObject {
     private var lastMeterTime: CFTimeInterval = 0
     private var playbackScope: PlaybackRecordScope = .default
     private var selectedInputUID = ""
+    /// Device UID `AVAudioRecorder` bound to at `start()`. It does not follow later default-input changes.
+    private var defaultMicCaptureUID = ""
     private var selectedOutputUIDs: Set<String> = []
+    private var inFlightMix: Task<Bool, Never>?
+    private var inFlightMixFolder: URL?
+    private var mixGeneration = 0
     private var inputOrder: [String] = []
     private var outputOrder: [String] = []
     private var playbackDeviceName = ""
@@ -195,6 +200,7 @@ final class SessionRecorder: ObservableObject {
             failedExtraUIDs = []
             micRecorder = mic
             playback = tap
+            defaultMicCaptureUID = selectedInputUID
             sessionDirectory = folder
             recordingStartedAt = Date()
             isRecording = true
@@ -227,6 +233,18 @@ final class SessionRecorder: ObservableObject {
         let keepDeviceRecordings: Bool
     }
 
+    private struct PendingMixRecord: Codable {
+        var extraUIDs: [String]
+        var gates: MixGates
+        var bitRate: Int
+        var mixFileName: String
+        var keepDeviceRecordings: Bool
+    }
+
+    static let pendingMixFileName = "pending-mix.json"
+
+    var isMixing: Bool { inFlightMix != nil }
+
     /// Drop a preview / denied-start so the monitor can close cleanly.
     func cancelPreview() {
         guard !isRecording else { return }
@@ -247,7 +265,7 @@ final class SessionRecorder: ObservableObject {
         let gates = MixGates(microphone: defaultMicGate, playback: playbackGate, extras: extraGates)
         let bitRate = sessionBitRate
         let folder = try stopCaptures()
-        return PendingMix(
+        let pending = PendingMix(
             folder: folder,
             extraUIDs: extras,
             gates: gates,
@@ -255,10 +273,77 @@ final class SessionRecorder: ObservableObject {
             mixFileName: "\(folder.lastPathComponent).m4a",
             keepDeviceRecordings: keepDeviceRecordings
         )
+        persistPendingMix(pending)
+        return pending
+    }
+
+    /// Finish an in-progress session (or wait for an already-running mix). Used on Quit.
+    @discardableResult
+    func finalizeAndMix(keepDeviceRecordings: Bool) async -> Bool {
+        if isRecording {
+            do {
+                let pending = try stopAndPrepareMix(keepDeviceRecordings: keepDeviceRecordings)
+                return await completeMix(pending)
+            } catch {
+                lastError = error.localizedDescription
+                log.error("Stop for quit failed: \(error.localizedDescription, privacy: .public)")
+                return false
+            }
+        }
+        if let inFlightMix {
+            return await inFlightMix.value
+        }
+        if let folder = sessionDirectory, let pending = Self.loadPendingMix(in: folder) {
+            return await completeMix(pending)
+        }
+        return true
+    }
+
+    /// Pick up session folders left with `pending-mix.json` after a crash or force-quit.
+    func resumeInterruptedMixes(in directory: URL) async {
+        let fm = FileManager.default
+        guard let items = try? fm.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ) else { return }
+        for item in items {
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: item.path, isDirectory: &isDir), isDir.boolValue else { continue }
+            guard let pending = Self.loadPendingMix(in: item) else { continue }
+            let micExists = fm.fileExists(atPath: item.appendingPathComponent(Self.micFileName).path)
+            let playExists = fm.fileExists(atPath: item.appendingPathComponent(Self.playbackFileName).path)
+            guard micExists || playExists else { continue }
+            log.info("Resuming interrupted mix in \(item.path, privacy: .public)")
+            _ = await completeMix(pending)
+        }
     }
 
     @discardableResult
     func completeMix(_ pending: PendingMix) async -> Bool {
+        persistPendingMix(pending)
+        if let inFlightMix, inFlightMixFolder == pending.folder {
+            return await inFlightMix.value
+        }
+        let previous = inFlightMix
+        mixGeneration += 1
+        let generation = mixGeneration
+        let task = Task { @MainActor in
+            _ = await previous?.value
+            defer {
+                if self.mixGeneration == generation {
+                    self.inFlightMix = nil
+                    self.inFlightMixFolder = nil
+                }
+            }
+            return await self.performMix(pending)
+        }
+        inFlightMix = task
+        inFlightMixFolder = pending.folder
+        return await task.value
+    }
+
+    private func performMix(_ pending: PendingMix) async -> Bool {
         do {
             let destination = pending.keepDeviceRecordings
                 ? pending.folder
@@ -271,6 +356,7 @@ final class SessionRecorder: ObservableObject {
                 mixFileName: pending.mixFileName,
                 destinationFolder: destination
             )
+            Self.removePendingMix(in: pending.folder)
             if !pending.keepDeviceRecordings {
                 SessionMix.discardDeviceRecordings(in: pending.folder)
             }
@@ -283,7 +369,46 @@ final class SessionRecorder: ObservableObject {
         }
     }
 
-    /// Stop hardware only (no mix). Used on quit.
+    private func persistPendingMix(_ pending: PendingMix) {
+        let record = PendingMixRecord(
+            extraUIDs: pending.extraUIDs,
+            gates: pending.gates,
+            bitRate: pending.bitRate,
+            mixFileName: pending.mixFileName,
+            keepDeviceRecordings: pending.keepDeviceRecordings
+        )
+        do {
+            let data = try JSONEncoder().encode(record)
+            try data.write(to: pending.folder.appendingPathComponent(Self.pendingMixFileName), options: .atomic)
+        } catch {
+            log.error("Could not persist pending mix: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    static func loadPendingMix(in folder: URL) -> PendingMix? {
+        let url = folder.appendingPathComponent(pendingMixFileName)
+        guard let data = try? Data(contentsOf: url),
+              let record = try? JSONDecoder().decode(PendingMixRecord.self, from: data)
+        else { return nil }
+        return PendingMix(
+            folder: folder,
+            extraUIDs: record.extraUIDs,
+            gates: record.gates,
+            bitRate: record.bitRate,
+            mixFileName: record.mixFileName,
+            keepDeviceRecordings: record.keepDeviceRecordings
+        )
+    }
+
+    static func hasPendingMix(in folder: URL) -> Bool {
+        FileManager.default.fileExists(atPath: folder.appendingPathComponent(pendingMixFileName).path)
+    }
+
+    private static func removePendingMix(in folder: URL) {
+        try? FileManager.default.removeItem(at: folder.appendingPathComponent(pendingMixFileName))
+    }
+
+    /// Stop hardware only (no mix). Quit uses `finalizeAndMix` so the mix still runs.
     @discardableResult
     func stopCaptures() throws -> URL {
         guard isRecording, let folder = sessionDirectory else {
@@ -300,6 +425,7 @@ final class SessionRecorder: ObservableObject {
         selectedInputUID = ""
         followDefaultInput = true
         followDefaultOutput = true
+        defaultMicCaptureUID = ""
         selectedOutputUIDs = []
         inputOrder = []
         outputOrder = []
@@ -438,7 +564,9 @@ final class SessionRecorder: ObservableObject {
     private func selectOnlyMic(_ id: String, at now: TimeInterval) {
         let defaultUID = currentDefaultInputUID()
         let uid = id == Self.defaultMicID ? (defaultUID ?? id) : id
-        let wantDefault = uid == defaultUID
+        // AVAudioRecorder is stuck on `defaultMicCaptureUID`. A later system-default
+        // device must be captured as an extra stem, not by flipping this flag.
+        let wantDefault = !defaultMicCaptureUID.isEmpty && uid == defaultMicCaptureUID
         if !wantDefault {
             startExtraMicIfNeeded(uid: uid)
             guard extraCaptures[uid] != nil else { return }
@@ -522,7 +650,7 @@ final class SessionRecorder: ObservableObject {
 
     private func startExtraMicIfNeeded(uid: String) {
         guard extraCaptures[uid] == nil, let folder = sessionDirectory else { return }
-        guard uid != currentDefaultInputUID(),
+        guard uid != defaultMicCaptureUID,
               let device = audio.listInputDevices().first(where: { $0.uid == uid }),
               !device.isVirtual
         else { return }
@@ -604,7 +732,10 @@ final class SessionRecorder: ObservableObject {
         guard row.isEnabled else { return 0 }
         switch row.kind {
         case .input:
-            return row.isDefault ? defaultMicMeterLevel() : (extraCaptures[row.id]?.level ?? 0)
+            if let extra = extraCaptures[row.id] {
+                return extra.level
+            }
+            return defaultMicMeterLevel()
         case .output:
             return playback?.level ?? 0
         }

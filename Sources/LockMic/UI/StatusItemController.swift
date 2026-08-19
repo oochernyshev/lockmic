@@ -170,14 +170,16 @@ final class StatusItemController {
                 Task { @MainActor in
                     guard let self else { return }
                     self.refreshMenuBarIconVisibility(force: false)
-                    // Mid PTT/PTM/flip: do not re-read HAL into desiredMuted — that
-                    // would desync restore-on-release. Device list only is safe.
+                    // Mid PTT/PTM/flip: list only — re-applying mute would clobber
+                    // restore-on-release.
                     if self.momentaryHold.isActive {
                         self.mic.refreshDeviceList()
                         self.updateIcon()
                         return
                     }
-                    self.mic.refreshFromHardware(applyDesired: false)
+                    // Re-apply sticky intent. Copying HAL here (applyDesired: false)
+                    // lets Meet/Chrome unmute stick after the user clicks Dock / prefs.
+                    self.mic.refreshFromHardware(applyDesired: true)
                     self.updateIcon()
                     self.retryCaptureIfAccessGranted()
                 }
@@ -859,6 +861,24 @@ final class StatusItemController {
             if !mixed {
                 UsageReporter.record(.mixFailed, source: source)
             }
+        }
+    }
+
+    /// Stop capture and finish the mix before Quit. Safe if a mix is already running.
+    func finalizeRecordingForQuit() async {
+        let wasRecording = recorder.isRecording
+        if wasRecording {
+            recordingMonitor.hide()
+        }
+        let mixed = await recorder.finalizeAndMix(
+            keepDeviceRecordings: preferences.keepDeviceRecordings
+        )
+        if wasRecording {
+            UsageReporter.record(.stopRecording, source: .menu)
+        }
+        handleMuteChanged(showHUD: false)
+        if !mixed {
+            UsageReporter.record(.mixFailed, source: .menu)
         }
     }
 

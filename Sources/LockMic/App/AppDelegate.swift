@@ -14,6 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBarIconVisible = true
     /// Relaunch when the user replaces the .app on disk while we are still running.
     private var bundleReplacementWatcher: BundleReplacementWatcher?
+    /// True while stop+mix is running so a second Quit keeps waiting.
+    private var isFinalizingForQuit = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // If Finder replaced us on disk before this process fully started, hop to the new binary.
@@ -55,10 +57,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 floating: preferences.hudFloating
             )
         )
+
+        Task {
+            await recorder.resumeInterruptedMixes(in: preferences.recordingsDirectory)
+        }
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        if isFinalizingForQuit {
+            return .terminateLater
+        }
+        let pendingFolder = recorder.sessionDirectory
+        let hasPending = pendingFolder.map { SessionRecorder.hasPendingMix(in: $0) } ?? false
+        guard recorder.isRecording || recorder.isMixing || hasPending else {
+            return .terminateNow
+        }
+        isFinalizingForQuit = true
+        Task { @MainActor in
+            if let status = self.statusItemController {
+                await status.finalizeRecordingForQuit()
+            } else {
+                _ = await self.recorder.finalizeAndMix(
+                    keepDeviceRecordings: self.preferences.keepDeviceRecordings
+                )
+            }
+            NSApp.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        try? recorder.stopCaptures()
+        _ = try? recorder.stopCaptures()
         bundleReplacementWatcher?.stop()
         bundleReplacementWatcher = nil
         if let dockPreferenceObserver {

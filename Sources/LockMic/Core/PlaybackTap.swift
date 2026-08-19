@@ -30,6 +30,8 @@ final class PlaybackTap: PlaybackCapturing {
     private var tapScope: PlaybackRecordScope = .default
     private var tapStreamIndex: UInt = 0
     private var didAlignToSession = false
+    /// Set when IO is torn down for a retarget; first buffer after restart pads this gap.
+    private var ioGapStartedAt: CFTimeInterval = 0
     private let lock = NSLock()
     private var _level: Float = 0
     private var _enabled = true
@@ -59,6 +61,9 @@ final class PlaybackTap: PlaybackCapturing {
     }
 
     func retarget(using audio: AudioDeviceService, scope: PlaybackRecordScope? = nil) throws {
+        lock.lock()
+        ioGapStartedAt = CACurrentMediaTime()
+        lock.unlock()
         detachHardware()
         try attachHardware(using: audio, fileURL: nil, scope: scope)
         let aggregate = aggregateID
@@ -225,12 +230,28 @@ final class PlaybackTap: PlaybackCapturing {
         let abl = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         guard !abl.isEmpty else { return }
 
-        if !didAlignToSession {
+        lock.lock()
+        let needsSessionAlign = !didAlignToSession
+        let gapStart = ioGapStartedAt
+        if needsSessionAlign {
             didAlignToSession = true
+            ioGapStartedAt = 0
+        } else if gapStart > 0 {
+            ioGapStartedAt = 0
+        }
+        lock.unlock()
+
+        if needsSessionAlign {
             let delay = max(0, CACurrentMediaTime() - sessionStart)
             if delay > 0.001 {
                 writer.writeSilence(seconds: delay)
                 log.info("Aligned playback with \(String(format: "%.3f", delay), privacy: .public)s of leading silence")
+            }
+        } else if gapStart > 0 {
+            let gap = max(0, CACurrentMediaTime() - gapStart)
+            if gap > 0.001 {
+                writer.writeSilence(seconds: gap)
+                log.info("Padded playback retarget gap \(String(format: "%.3f", gap), privacy: .public)s")
             }
         }
 

@@ -15,7 +15,9 @@ enum AppInstanceGuard {
         for app in others {
             app.terminate()
         }
-        let deadline = Date().addingTimeInterval(2.0)
+        // Give the other process time to stop capture and write pending-mix.json
+        // before we force-kill. Mix itself resumes in the new instance.
+        let deadline = Date().addingTimeInterval(5.0)
         while Date() < deadline {
             if others.allSatisfy(\.isTerminated) { break }
             usleep(50_000)

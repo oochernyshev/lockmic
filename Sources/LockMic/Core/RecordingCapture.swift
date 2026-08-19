@@ -25,8 +25,12 @@ struct RecordingDeviceRow: Identifiable, Equatable, Sendable {
     var detail: String?
 }
 
-struct StemGate: Sendable {
+struct StemGate: Sendable, Codable {
     var events: [(TimeInterval, Bool)]
+
+    init(events: [(TimeInterval, Bool)]) {
+        self.events = events
+    }
 
     func enabled(at time: TimeInterval) -> Bool {
         var on = true
@@ -43,9 +47,28 @@ struct StemGate: Sendable {
     var wasEverEnabled: Bool {
         events.contains { $0.1 }
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case events
+    }
+
+    private struct Event: Codable {
+        var at: TimeInterval
+        var enabled: Bool
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        events = try container.decode([Event].self, forKey: .events).map { ($0.at, $0.enabled) }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(events.map { Event(at: $0.0, enabled: $0.1) }, forKey: .events)
+    }
 }
 
-struct MixGates: Sendable {
+struct MixGates: Sendable, Codable {
     var microphone: StemGate
     var playback: StemGate
     var extras: [String: StemGate]
