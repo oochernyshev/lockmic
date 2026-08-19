@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Przytrzymaj, by odwrócić";
 "keyboard.push_mute" = "Przytrzymaj, by wyciszyć";
 "keyboard.push_talk" = "Push-to-talk";
+"keyboard.recording.header" = "Nagrywanie";
 "keyboard.reset" = "Przywróć domyślne";
 "keyboard.shortcuts.caption" = "Kliknij pole, potem klawisze · Esc anuluje · Delete czyści";
 "keyboard.shortcuts.header" = "Skróty";
+"keyboard.start_recording" = "Rozpocznij nagrywanie";
+"keyboard.stop_recording" = "Zatrzymaj nagrywanie";
 "keyboard.toggle" = "Przełącz mute";
 "keyboard.type_shortcut" = "Wpisz skrót…";
 "keyboard.unmute" = "Włącz";

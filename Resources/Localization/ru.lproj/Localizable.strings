@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Удержать для инверсии";
 "keyboard.push_mute" = "Удержать для mute";
 "keyboard.push_talk" = "Push-to-talk";
+"keyboard.recording.header" = "Запись";
 "keyboard.reset" = "Сбросить по умолчанию";
 "keyboard.shortcuts.caption" = "Нажмите поле, затем клавиши · Esc — отмена · Delete — очистить";
 "keyboard.shortcuts.header" = "Сочетания клавиш";
+"keyboard.start_recording" = "Начать запись";
+"keyboard.stop_recording" = "Остановить запись";
 "keyboard.toggle" = "Переключить mute";
 "keyboard.type_shortcut" = "Нажмите сочетание…";
 "keyboard.unmute" = "Включить";

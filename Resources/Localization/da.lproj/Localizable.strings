@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Hold for at vende";
 "keyboard.push_mute" = "Hold for at slå fra";
 "keyboard.push_talk" = "Tryk for at tale";
+"keyboard.recording.header" = "Optagelse";
 "keyboard.reset" = "Nulstil til standard";
 "keyboard.shortcuts.caption" = "Klik i et felt, og tryk taster · Esc annullerer · Delete rydder";
 "keyboard.shortcuts.header" = "Genveje";
+"keyboard.start_recording" = "Start optagelse";
+"keyboard.stop_recording" = "Stop optagelse";
 "keyboard.toggle" = "Skift mute";
 "keyboard.type_shortcut" = "Indtast genvej…";
 "keyboard.unmute" = "Slå til";

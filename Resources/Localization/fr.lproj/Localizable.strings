@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Maintenir pour basculer";
 "keyboard.push_mute" = "Maintenir pour couper";
 "keyboard.push_talk" = "Appuyer pour parler";
+"keyboard.recording.header" = "Enregistrement";
 "keyboard.reset" = "Réinitialiser";
 "keyboard.shortcuts.caption" = "Cliquez un champ, puis appuyez sur les touches · Échap annule · Suppr efface";
 "keyboard.shortcuts.header" = "Raccourcis";
+"keyboard.start_recording" = "Démarrer l’enregistrement";
+"keyboard.stop_recording" = "Arrêter l’enregistrement";
 "keyboard.toggle" = "Basculer la sourdine";
 "keyboard.type_shortcut" = "Saisir le raccourci…";
 "keyboard.unmute" = "Réactiver";

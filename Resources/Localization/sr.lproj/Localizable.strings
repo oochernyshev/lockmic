@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Drži za inverziju";
 "keyboard.push_mute" = "Drži za mute";
 "keyboard.push_talk" = "Push-to-talk";
+"keyboard.recording.header" = "Snimanje";
 "keyboard.reset" = "Vrati podrazumevano";
 "keyboard.shortcuts.caption" = "Kliknite polje, zatim tastere · Esc otkazuje · Delete briše";
 "keyboard.shortcuts.header" = "Prečice";
+"keyboard.start_recording" = "Pokreni snimanje";
+"keyboard.stop_recording" = "Zaustavi snimanje";
 "keyboard.toggle" = "Prebaci mute";
 "keyboard.type_shortcut" = "Unesite prečicu…";
 "keyboard.unmute" = "Uključi";

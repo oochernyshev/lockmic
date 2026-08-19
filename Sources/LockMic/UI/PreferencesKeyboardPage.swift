@@ -30,21 +30,9 @@ struct PreferencesKeyboardPage: View {
                     )
                 }
 
-                PreferencesChrome.shortcutRow(
-                    title: L10n.keyboardToggle,
-                    enabled: $preferences.toggleShortcutEnabled,
-                    chord: $preferences.toggleChord
-                )
-                PreferencesChrome.shortcutRow(
-                    title: L10n.keyboardMute,
-                    enabled: $preferences.muteShortcutEnabled,
-                    chord: $preferences.muteChord
-                )
-                PreferencesChrome.shortcutRow(
-                    title: L10n.keyboardUnmute,
-                    enabled: $preferences.unmuteShortcutEnabled,
-                    chord: $preferences.unmuteChord
-                )
+                PreferencesChrome.shortcutRow(title: L10n.keyboardToggle, pref: $preferences.toggleShortcut)
+                PreferencesChrome.shortcutRow(title: L10n.keyboardMute, pref: $preferences.muteShortcut)
+                PreferencesChrome.shortcutRow(title: L10n.keyboardUnmute, pref: $preferences.unmuteShortcut)
 
                 Toggle(L10n.keyboardF5, isOn: $preferences.f5ToggleEnabled)
                     .focusable(false)
@@ -55,31 +43,30 @@ struct PreferencesKeyboardPage: View {
                 PreferencesChrome.sectionHeader(L10n.keyboardMomentaryHeader)
                 PreferencesChrome.caption(L10n.keyboardMomentaryCaption)
 
-                PreferencesChrome.shortcutRow(
-                    title: L10n.keyboardPushFlip,
-                    enabled: $preferences.pushToToggleEnabled,
-                    chord: $preferences.pushToToggleChord
-                )
-                PreferencesChrome.shortcutRow(
-                    title: L10n.keyboardPushTalk,
-                    enabled: $preferences.pushToTalkEnabled,
-                    chord: $preferences.pushToTalkChord
-                )
-                PreferencesChrome.shortcutRow(
-                    title: L10n.keyboardPushMute,
-                    enabled: $preferences.pushToMuteEnabled,
-                    chord: $preferences.pushToMuteChord
-                )
+                PreferencesChrome.shortcutRow(title: L10n.keyboardPushFlip, pref: $preferences.pushToToggleShortcut)
+                PreferencesChrome.shortcutRow(title: L10n.keyboardPushTalk, pref: $preferences.pushToTalkShortcut)
+                PreferencesChrome.shortcutRow(title: L10n.keyboardPushMute, pref: $preferences.pushToMuteShortcut)
+            }
 
-                HStack {
-                    Spacer(minLength: 0)
-                    Button(L10n.keyboardReset) {
-                        preferences.resetShortcutsToDefaults()
-                    }
-                    .focusable(false)
-                    .focusEffectDisabled()
+            PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader(L10n.keyboardRecordingHeader)
+                PreferencesChrome.shortcutRow(
+                    title: L10n.keyboardStartRecording,
+                    pref: $preferences.startRecordingShortcut
+                )
+                PreferencesChrome.shortcutRow(
+                    title: L10n.keyboardStopRecording,
+                    pref: $preferences.stopRecordingShortcut
+                )
+            }
+
+            HStack {
+                Spacer(minLength: 0)
+                Button(L10n.keyboardReset) {
+                    preferences.resetShortcutsToDefaults()
                 }
-                .padding(.top, 2)
+                .focusable(false)
+                .focusEffectDisabled()
             }
         }
     }

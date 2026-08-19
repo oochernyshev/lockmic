@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Утримати для інверсії";
 "keyboard.push_mute" = "Утримати для mute";
 "keyboard.push_talk" = "Push-to-talk";
+"keyboard.recording.header" = "Запис";
 "keyboard.reset" = "Скинути за замовчуванням";
 "keyboard.shortcuts.caption" = "Натисніть поле, потім клавіші · Esc — скасувати · Delete — очистити";
 "keyboard.shortcuts.header" = "Сполучення клавіш";
+"keyboard.start_recording" = "Почати запис";
+"keyboard.stop_recording" = "Зупинити запис";
 "keyboard.toggle" = "Перемкнути mute";
 "keyboard.type_shortcut" = "Натисніть сполучення…";
 "keyboard.unmute" = "Увімкнути";

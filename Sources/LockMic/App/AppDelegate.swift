@@ -5,9 +5,10 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "App")
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private let audio = AudioDeviceService()
     private let preferences = PreferencesStore()
-    private lazy var mic = MicController(preferences: preferences)
-    private let recorder = SessionRecorder()
+    private lazy var mic = MicController(audio: audio, preferences: preferences)
+    private lazy var recorder = SessionRecorder(audio: audio)
     private var statusItemController: StatusItemController?
     private var dockPreferenceObserver: NSObjectProtocol?
     /// Optimistic until the first menu-bar geometry sample.

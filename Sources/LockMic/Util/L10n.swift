@@ -147,6 +147,9 @@ enum L10n {
     static var keyboardF5Toggle: String { tr("keyboard.f5_toggle") }
     static var keyboardMute: String { tr("keyboard.mute") }
     static var keyboardUnmute: String { tr("keyboard.unmute") }
+    static var keyboardStartRecording: String { tr("keyboard.start_recording") }
+    static var keyboardStopRecording: String { tr("keyboard.stop_recording") }
+    static var keyboardRecordingHeader: String { tr("keyboard.recording.header") }
     static var keyboardF5: String { tr("keyboard.f5") }
     static var keyboardMomentaryHeader: String { tr("keyboard.momentary.header") }
     static var keyboardMomentaryCaption: String { tr("keyboard.momentary.caption") }

@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Hold for å snu";
 "keyboard.push_mute" = "Hold for å dempe";
 "keyboard.push_talk" = "Trykk for å snakke";
+"keyboard.recording.header" = "Opptak";
 "keyboard.reset" = "Tilbakestill til standard";
 "keyboard.shortcuts.caption" = "Klikk i et felt, og trykk taster · Esc avbryter · Delete tømmer";
 "keyboard.shortcuts.header" = "Snarveier";
+"keyboard.start_recording" = "Start opptak";
+"keyboard.stop_recording" = "Stopp opptak";
 "keyboard.toggle" = "Veksle mute";
 "keyboard.type_shortcut" = "Skriv snarvei…";
 "keyboard.unmute" = "Aktiver";

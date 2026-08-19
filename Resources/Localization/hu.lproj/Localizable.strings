@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Tartsa lenyomva a fordításhoz";
 "keyboard.push_mute" = "Tartsa lenyomva a némításhoz";
 "keyboard.push_talk" = "Nyomva tartva beszélés";
+"keyboard.recording.header" = "Felvétel";
 "keyboard.reset" = "Alapértelmezések visszaállítása";
 "keyboard.shortcuts.caption" = "Kattintson egy mezőre, majd nyomjon billentyűket · Esc megszakít · Delete töröl";
 "keyboard.shortcuts.header" = "Billentyűparancsok";
+"keyboard.start_recording" = "Felvétel indítása";
+"keyboard.stop_recording" = "Felvétel leállítása";
 "keyboard.toggle" = "Némítás váltása";
 "keyboard.type_shortcut" = "Írja be a parancsot…";
 "keyboard.unmute" = "Némítás feloldása";

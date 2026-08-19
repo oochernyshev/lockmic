@@ -39,6 +39,14 @@ final class PreferencesStore: ObservableObject {
         static let unmuteKeyCode = "hotkeyUnmuteKeyCode"
         static let unmuteModifiers = "hotkeyUnmuteModifiers"
 
+        static let startRecEnabled = "hotkeyStartRecordingEnabled"
+        static let startRecKeyCode = "hotkeyStartRecordingKeyCode"
+        static let startRecModifiers = "hotkeyStartRecordingModifiers"
+
+        static let stopRecEnabled = "hotkeyStopRecordingEnabled"
+        static let stopRecKeyCode = "hotkeyStopRecordingKeyCode"
+        static let stopRecModifiers = "hotkeyStopRecordingModifiers"
+
         static let pttEnabled = "hotkeyPushToTalkEnabled"
         static let pttKeyCode = "hotkeyPushToTalkKeyCode"
         static let pttModifiers = "hotkeyPushToTalkModifiers"
@@ -65,6 +73,8 @@ final class PreferencesStore: ObservableObject {
     static let defaultToggle = HotkeyChord(keyCode: 46, modifiers: cmdKey | shiftKey) // ⌘⇧M
     static let defaultMute = HotkeyChord(keyCode: 46, modifiers: cmdKey | shiftKey | controlKey) // ⌃⌘⇧M
     static let defaultUnmute = HotkeyChord(keyCode: 46, modifiers: cmdKey | shiftKey | optionKey) // ⌥⌘⇧M
+    static let defaultStartRecording = HotkeyChord(keyCode: 15, modifiers: cmdKey | shiftKey) // ⌘⇧R
+    static let defaultStopRecording = HotkeyChord(keyCode: 15, modifiers: cmdKey | shiftKey | optionKey) // ⌥⌘⇧R
     static let defaultToggleAlt = HotkeyChord(keyCode: 96, modifiers: cmdKey) // ⌘F5
     /// Hold to invert mute — Option+Space by default.
     static let defaultPushToToggle = HotkeyChord(keyCode: 49, modifiers: optionKey) // ⌥Space
@@ -184,78 +194,34 @@ final class PreferencesStore: ObservableObject {
 
     // MARK: - Shortcut bindings
 
-    @Published var toggleShortcutEnabled: Bool {
-        didSet { UserDefaults.standard.set(toggleShortcutEnabled, forKey: Keys.toggleEnabled) }
+    @Published var toggleShortcut: HotkeyPref {
+        didSet { Self.save(toggleShortcut, spec: Self.toggleSpec) }
     }
-
-    @Published var toggleChord: HotkeyChord {
-        didSet {
-            UserDefaults.standard.set(Int(toggleChord.keyCode), forKey: Keys.toggleKeyCode)
-            UserDefaults.standard.set(Int(toggleChord.modifiers), forKey: Keys.toggleModifiers)
-        }
+    @Published var muteShortcut: HotkeyPref {
+        didSet { Self.save(muteShortcut, spec: Self.muteSpec) }
     }
-
-    @Published var muteShortcutEnabled: Bool {
-        didSet { UserDefaults.standard.set(muteShortcutEnabled, forKey: Keys.muteEnabled) }
+    @Published var unmuteShortcut: HotkeyPref {
+        didSet { Self.save(unmuteShortcut, spec: Self.unmuteSpec) }
     }
-
-    @Published var muteChord: HotkeyChord {
-        didSet {
-            UserDefaults.standard.set(Int(muteChord.keyCode), forKey: Keys.muteKeyCode)
-            UserDefaults.standard.set(Int(muteChord.modifiers), forKey: Keys.muteModifiers)
-        }
+    @Published var startRecordingShortcut: HotkeyPref {
+        didSet { Self.save(startRecordingShortcut, spec: Self.startRecSpec) }
     }
-
-    @Published var unmuteShortcutEnabled: Bool {
-        didSet { UserDefaults.standard.set(unmuteShortcutEnabled, forKey: Keys.unmuteEnabled) }
+    @Published var stopRecordingShortcut: HotkeyPref {
+        didSet { Self.save(stopRecordingShortcut, spec: Self.stopRecSpec) }
     }
-
-    @Published var unmuteChord: HotkeyChord {
-        didSet {
-            UserDefaults.standard.set(Int(unmuteChord.keyCode), forKey: Keys.unmuteKeyCode)
-            UserDefaults.standard.set(Int(unmuteChord.modifiers), forKey: Keys.unmuteModifiers)
-        }
+    @Published var pushToTalkShortcut: HotkeyPref {
+        didSet { Self.save(pushToTalkShortcut, spec: Self.pttSpec) }
+    }
+    @Published var pushToMuteShortcut: HotkeyPref {
+        didSet { Self.save(pushToMuteShortcut, spec: Self.ptmSpec) }
+    }
+    @Published var pushToToggleShortcut: HotkeyPref {
+        didSet { Self.save(pushToToggleShortcut, spec: Self.pttogSpec) }
     }
 
     /// Extra always-on toggle alias (⌘F5) — enable/disable separately.
     @Published var f5ToggleEnabled: Bool {
         didSet { UserDefaults.standard.set(f5ToggleEnabled, forKey: "hotkeyF5ToggleEnabled") }
-    }
-
-    /// Hold to unmute; release restores previous mute state.
-    @Published var pushToTalkEnabled: Bool {
-        didSet { UserDefaults.standard.set(pushToTalkEnabled, forKey: Keys.pttEnabled) }
-    }
-
-    @Published var pushToTalkChord: HotkeyChord {
-        didSet {
-            UserDefaults.standard.set(Int(pushToTalkChord.keyCode), forKey: Keys.pttKeyCode)
-            UserDefaults.standard.set(Int(pushToTalkChord.modifiers), forKey: Keys.pttModifiers)
-        }
-    }
-
-    /// Hold to mute; release restores previous mute state.
-    @Published var pushToMuteEnabled: Bool {
-        didSet { UserDefaults.standard.set(pushToMuteEnabled, forKey: Keys.ptmEnabled) }
-    }
-
-    @Published var pushToMuteChord: HotkeyChord {
-        didSet {
-            UserDefaults.standard.set(Int(pushToMuteChord.keyCode), forKey: Keys.ptmKeyCode)
-            UserDefaults.standard.set(Int(pushToMuteChord.modifiers), forKey: Keys.ptmModifiers)
-        }
-    }
-
-    /// Hold to invert mute; release restores previous state (UI: Push to flip).
-    @Published var pushToToggleEnabled: Bool {
-        didSet { UserDefaults.standard.set(pushToToggleEnabled, forKey: Keys.pttogEnabled) }
-    }
-
-    @Published var pushToToggleChord: HotkeyChord {
-        didSet {
-            UserDefaults.standard.set(Int(pushToToggleChord.keyCode), forKey: Keys.pttogKeyCode)
-            UserDefaults.standard.set(Int(pushToToggleChord.modifiers), forKey: Keys.pttogModifiers)
-        }
     }
 
     init() {
@@ -313,147 +279,150 @@ final class PreferencesStore: ObservableObject {
         }
         shareAnonymousUsage = defaults.bool(forKey: Keys.shareAnonymousUsage)
 
-        // Toggle shortcut (migrate legacy if needed)
-        if defaults.object(forKey: Keys.toggleEnabled) == nil {
-            defaults.set(true, forKey: Keys.toggleEnabled)
-        }
-        toggleShortcutEnabled = defaults.bool(forKey: Keys.toggleEnabled)
-
-        if defaults.object(forKey: Keys.toggleKeyCode) == nil {
-            if defaults.object(forKey: Keys.legacyKeyCode) != nil {
-                defaults.set(defaults.integer(forKey: Keys.legacyKeyCode), forKey: Keys.toggleKeyCode)
-                defaults.set(defaults.integer(forKey: Keys.legacyModifiers), forKey: Keys.toggleModifiers)
-            } else {
-                defaults.set(Int(Self.defaultToggle.keyCode), forKey: Keys.toggleKeyCode)
-                defaults.set(Int(Self.defaultToggle.modifiers), forKey: Keys.toggleModifiers)
-            }
-        }
-        toggleChord = HotkeyChord(
-            keyCode: UInt32(defaults.integer(forKey: Keys.toggleKeyCode)),
-            modifiers: UInt32(defaults.integer(forKey: Keys.toggleModifiers))
-        )
-
-        // Mute-only (off by default)
-        if defaults.object(forKey: Keys.muteEnabled) == nil {
-            defaults.set(false, forKey: Keys.muteEnabled)
-        }
-        muteShortcutEnabled = defaults.bool(forKey: Keys.muteEnabled)
-        if defaults.object(forKey: Keys.muteKeyCode) == nil {
-            defaults.set(Int(Self.defaultMute.keyCode), forKey: Keys.muteKeyCode)
-            defaults.set(Int(Self.defaultMute.modifiers), forKey: Keys.muteModifiers)
-        }
-        muteChord = HotkeyChord(
-            keyCode: UInt32(defaults.integer(forKey: Keys.muteKeyCode)),
-            modifiers: UInt32(defaults.integer(forKey: Keys.muteModifiers))
-        )
-
-        // Unmute-only (off by default)
-        if defaults.object(forKey: Keys.unmuteEnabled) == nil {
-            defaults.set(false, forKey: Keys.unmuteEnabled)
-        }
-        unmuteShortcutEnabled = defaults.bool(forKey: Keys.unmuteEnabled)
-        if defaults.object(forKey: Keys.unmuteKeyCode) == nil {
-            defaults.set(Int(Self.defaultUnmute.keyCode), forKey: Keys.unmuteKeyCode)
-            defaults.set(Int(Self.defaultUnmute.modifiers), forKey: Keys.unmuteModifiers)
-        }
-        unmuteChord = HotkeyChord(
-            keyCode: UInt32(defaults.integer(forKey: Keys.unmuteKeyCode)),
-            modifiers: UInt32(defaults.integer(forKey: Keys.unmuteModifiers))
-        )
+        toggleShortcut = Self.load(Self.toggleSpec, from: defaults)
+        muteShortcut = Self.load(Self.muteSpec, from: defaults)
+        unmuteShortcut = Self.load(Self.unmuteSpec, from: defaults)
+        startRecordingShortcut = Self.load(Self.startRecSpec, from: defaults)
+        stopRecordingShortcut = Self.load(Self.stopRecSpec, from: defaults)
 
         if defaults.object(forKey: "hotkeyF5ToggleEnabled") == nil {
             defaults.set(true, forKey: "hotkeyF5ToggleEnabled")
         }
         f5ToggleEnabled = defaults.bool(forKey: "hotkeyF5ToggleEnabled")
 
-        // Momentary shortcuts (all off by default). UI order: flip → talk → mute.
-        let space: UInt32 = 49
-        let legacyControlSpace = HotkeyChord(keyCode: space, modifiers: Self.controlKey)
-        let legacyOptionSpace = HotkeyChord(keyCode: space, modifiers: Self.optionKey)
-        let legacyShiftSpace = HotkeyChord(keyCode: space, modifiers: Self.shiftKey)
-
-        if defaults.object(forKey: Keys.pttogEnabled) == nil {
-            defaults.set(false, forKey: Keys.pttogEnabled)
-        }
-        pushToToggleEnabled = defaults.bool(forKey: Keys.pttogEnabled)
-        pushToToggleChord = Self.loadChord(
-            defaults: defaults,
-            keyCodeKey: Keys.pttogKeyCode,
-            modifiersKey: Keys.pttogModifiers,
-            factory: Self.defaultPushToToggle,
-            legacyDefaults: [legacyControlSpace]
-        )
-
-        if defaults.object(forKey: Keys.pttEnabled) == nil {
-            defaults.set(false, forKey: Keys.pttEnabled)
-        }
-        pushToTalkEnabled = defaults.bool(forKey: Keys.pttEnabled)
-        pushToTalkChord = Self.loadChord(
-            defaults: defaults,
-            keyCodeKey: Keys.pttKeyCode,
-            modifiersKey: Keys.pttModifiers,
-            factory: Self.defaultPushToTalk,
-            // Prior factory defaults for talk: ⌃Space, then ⌥Space
-            legacyDefaults: [legacyControlSpace, legacyOptionSpace]
-        )
-
-        if defaults.object(forKey: Keys.ptmEnabled) == nil {
-            defaults.set(false, forKey: Keys.ptmEnabled)
-        }
-        pushToMuteEnabled = defaults.bool(forKey: Keys.ptmEnabled)
-        pushToMuteChord = Self.loadChord(
-            defaults: defaults,
-            keyCodeKey: Keys.ptmKeyCode,
-            modifiersKey: Keys.ptmModifiers,
-            factory: Self.defaultPushToMute,
-            // Prior factory defaults for mute: ⌃Space, then ⇧Space
-            legacyDefaults: [legacyControlSpace, legacyShiftSpace]
-        )
+        pushToToggleShortcut = Self.load(Self.pttogSpec, from: defaults)
+        pushToTalkShortcut = Self.load(Self.pttSpec, from: defaults)
+        pushToMuteShortcut = Self.load(Self.ptmSpec, from: defaults)
     }
 
-    /// Load a stored chord, writing the factory default if missing, or migrating known legacy factory chords.
-    private static func loadChord(
-        defaults: UserDefaults,
-        keyCodeKey: String,
-        modifiersKey: String,
-        factory: HotkeyChord,
-        legacyDefaults: [HotkeyChord]
-    ) -> HotkeyChord {
-        if defaults.object(forKey: keyCodeKey) == nil {
-            defaults.set(Int(factory.keyCode), forKey: keyCodeKey)
-            defaults.set(Int(factory.modifiers), forKey: modifiersKey)
-            return factory
+    private struct HotkeySpec {
+        let enabledKey: String
+        let keyCodeKey: String
+        let modifiersKey: String
+        let factory: HotkeyChord
+        let defaultEnabled: Bool
+        var legacyDefaults: [HotkeyChord] = []
+        var migrateFrom: (keyCode: String, modifiers: String)? = nil
+    }
+
+    private static let space: UInt32 = 49
+    private static var legacyControlSpace: HotkeyChord { HotkeyChord(keyCode: space, modifiers: controlKey) }
+    private static var legacyOptionSpace: HotkeyChord { HotkeyChord(keyCode: space, modifiers: optionKey) }
+    private static var legacyShiftSpace: HotkeyChord { HotkeyChord(keyCode: space, modifiers: shiftKey) }
+
+    private static let toggleSpec = HotkeySpec(
+        enabledKey: Keys.toggleEnabled,
+        keyCodeKey: Keys.toggleKeyCode,
+        modifiersKey: Keys.toggleModifiers,
+        factory: defaultToggle,
+        defaultEnabled: true,
+        migrateFrom: (Keys.legacyKeyCode, Keys.legacyModifiers)
+    )
+    private static let muteSpec = HotkeySpec(
+        enabledKey: Keys.muteEnabled,
+        keyCodeKey: Keys.muteKeyCode,
+        modifiersKey: Keys.muteModifiers,
+        factory: defaultMute,
+        defaultEnabled: false
+    )
+    private static let unmuteSpec = HotkeySpec(
+        enabledKey: Keys.unmuteEnabled,
+        keyCodeKey: Keys.unmuteKeyCode,
+        modifiersKey: Keys.unmuteModifiers,
+        factory: defaultUnmute,
+        defaultEnabled: false
+    )
+    private static let startRecSpec = HotkeySpec(
+        enabledKey: Keys.startRecEnabled,
+        keyCodeKey: Keys.startRecKeyCode,
+        modifiersKey: Keys.startRecModifiers,
+        factory: defaultStartRecording,
+        defaultEnabled: true
+    )
+    private static let stopRecSpec = HotkeySpec(
+        enabledKey: Keys.stopRecEnabled,
+        keyCodeKey: Keys.stopRecKeyCode,
+        modifiersKey: Keys.stopRecModifiers,
+        factory: defaultStopRecording,
+        defaultEnabled: true
+    )
+    private static let pttogSpec = HotkeySpec(
+        enabledKey: Keys.pttogEnabled,
+        keyCodeKey: Keys.pttogKeyCode,
+        modifiersKey: Keys.pttogModifiers,
+        factory: defaultPushToToggle,
+        defaultEnabled: false,
+        legacyDefaults: [legacyControlSpace]
+    )
+    private static let pttSpec = HotkeySpec(
+        enabledKey: Keys.pttEnabled,
+        keyCodeKey: Keys.pttKeyCode,
+        modifiersKey: Keys.pttModifiers,
+        factory: defaultPushToTalk,
+        defaultEnabled: false,
+        legacyDefaults: [legacyControlSpace, legacyOptionSpace]
+    )
+    private static let ptmSpec = HotkeySpec(
+        enabledKey: Keys.ptmEnabled,
+        keyCodeKey: Keys.ptmKeyCode,
+        modifiersKey: Keys.ptmModifiers,
+        factory: defaultPushToMute,
+        defaultEnabled: false,
+        legacyDefaults: [legacyControlSpace, legacyShiftSpace]
+    )
+
+    private static func load(_ spec: HotkeySpec, from defaults: UserDefaults) -> HotkeyPref {
+        if defaults.object(forKey: spec.enabledKey) == nil {
+            defaults.set(spec.defaultEnabled, forKey: spec.enabledKey)
         }
-        let stored = HotkeyChord(
-            keyCode: UInt32(defaults.integer(forKey: keyCodeKey)),
-            modifiers: UInt32(defaults.integer(forKey: modifiersKey))
+        if defaults.object(forKey: spec.keyCodeKey) == nil {
+            if let migrate = spec.migrateFrom, defaults.object(forKey: migrate.keyCode) != nil {
+                defaults.set(defaults.integer(forKey: migrate.keyCode), forKey: spec.keyCodeKey)
+                defaults.set(defaults.integer(forKey: migrate.modifiers), forKey: spec.modifiersKey)
+            } else {
+                defaults.set(Int(spec.factory.keyCode), forKey: spec.keyCodeKey)
+                defaults.set(Int(spec.factory.modifiers), forKey: spec.modifiersKey)
+            }
+        }
+        var chord = HotkeyChord(
+            keyCode: UInt32(defaults.integer(forKey: spec.keyCodeKey)),
+            modifiers: UInt32(defaults.integer(forKey: spec.modifiersKey))
         )
-        if legacyDefaults.contains(stored) {
-            defaults.set(Int(factory.keyCode), forKey: keyCodeKey)
-            defaults.set(Int(factory.modifiers), forKey: modifiersKey)
-            return factory
+        if spec.legacyDefaults.contains(chord) {
+            defaults.set(Int(spec.factory.keyCode), forKey: spec.keyCodeKey)
+            defaults.set(Int(spec.factory.modifiers), forKey: spec.modifiersKey)
+            chord = spec.factory
         }
-        return stored
+        return HotkeyPref(enabled: defaults.bool(forKey: spec.enabledKey), chord: chord)
+    }
+
+    private static func save(_ pref: HotkeyPref, spec: HotkeySpec) {
+        let defaults = UserDefaults.standard
+        defaults.set(pref.enabled, forKey: spec.enabledKey)
+        defaults.set(Int(pref.chord.keyCode), forKey: spec.keyCodeKey)
+        defaults.set(Int(pref.chord.modifiers), forKey: spec.modifiersKey)
     }
 
     /// Named rows used for registration and conflict detection.
-    private var namedShortcutRows: [(title: String, enabled: Bool, chord: HotkeyChord, action: HotkeyAction)] {
+    private var namedShortcutRows: [(title: String, pref: HotkeyPref, action: HotkeyAction)] {
         [
-            (L10n.keyboardToggle, toggleShortcutEnabled, toggleChord, .toggle),
-            (L10n.keyboardF5Toggle, f5ToggleEnabled, Self.defaultToggleAlt, .toggle),
-            (L10n.keyboardMute, muteShortcutEnabled, muteChord, .mute),
-            (L10n.keyboardUnmute, unmuteShortcutEnabled, unmuteChord, .unmute),
-            (L10n.keyboardPushFlip, pushToToggleEnabled, pushToToggleChord, .pushToToggle),
-            (L10n.keyboardPushTalk, pushToTalkEnabled, pushToTalkChord, .pushToTalk),
-            (L10n.keyboardPushMute, pushToMuteEnabled, pushToMuteChord, .pushToMute),
+            (L10n.keyboardToggle, toggleShortcut, .toggle),
+            (L10n.keyboardF5Toggle, HotkeyPref(enabled: f5ToggleEnabled, chord: Self.defaultToggleAlt), .toggle),
+            (L10n.keyboardMute, muteShortcut, .mute),
+            (L10n.keyboardUnmute, unmuteShortcut, .unmute),
+            (L10n.keyboardStartRecording, startRecordingShortcut, .startRecording),
+            (L10n.keyboardStopRecording, stopRecordingShortcut, .stopRecording),
+            (L10n.keyboardPushFlip, pushToToggleShortcut, .pushToToggle),
+            (L10n.keyboardPushTalk, pushToTalkShortcut, .pushToTalk),
+            (L10n.keyboardPushMute, pushToMuteShortcut, .pushToMute),
         ]
     }
 
     /// Bindings registered with the global hotkey manager.
     var activeBindings: [HotkeyBinding] {
         namedShortcutRows.compactMap { row in
-            guard row.enabled, !row.chord.isEmpty else { return nil }
-            return HotkeyBinding(enabled: true, chord: row.chord, action: row.action)
+            guard row.pref.enabled, !row.pref.chord.isEmpty else { return nil }
+            return HotkeyBinding(enabled: true, chord: row.pref.chord, action: row.action)
         }
     }
 
@@ -461,8 +430,8 @@ final class PreferencesStore: ObservableObject {
     var shortcutConflictMessages: [String] {
         var groups: [HotkeyChord: [String]] = [:]
         for row in namedShortcutRows {
-            guard row.enabled, !row.chord.isEmpty else { continue }
-            groups[row.chord, default: []].append(row.title)
+            guard row.pref.enabled, !row.pref.chord.isEmpty else { continue }
+            groups[row.pref.chord, default: []].append(row.title)
         }
         return groups
             .filter { $0.value.count > 1 }
@@ -474,24 +443,15 @@ final class PreferencesStore: ObservableObject {
 
     /// Restore factory shortcut defaults.
     func resetShortcutsToDefaults() {
-        toggleShortcutEnabled = true
-        toggleChord = Self.defaultToggle
+        toggleShortcut = HotkeyPref(enabled: true, chord: Self.defaultToggle)
         f5ToggleEnabled = true
-
-        muteShortcutEnabled = false
-        muteChord = Self.defaultMute
-
-        unmuteShortcutEnabled = false
-        unmuteChord = Self.defaultUnmute
-
-        pushToToggleEnabled = false
-        pushToToggleChord = Self.defaultPushToToggle
-
-        pushToTalkEnabled = false
-        pushToTalkChord = Self.defaultPushToTalk
-
-        pushToMuteEnabled = false
-        pushToMuteChord = Self.defaultPushToMute
+        muteShortcut = HotkeyPref(enabled: false, chord: Self.defaultMute)
+        unmuteShortcut = HotkeyPref(enabled: false, chord: Self.defaultUnmute)
+        startRecordingShortcut = HotkeyPref(enabled: true, chord: Self.defaultStartRecording)
+        stopRecordingShortcut = HotkeyPref(enabled: true, chord: Self.defaultStopRecording)
+        pushToToggleShortcut = HotkeyPref(enabled: false, chord: Self.defaultPushToToggle)
+        pushToTalkShortcut = HotkeyPref(enabled: false, chord: Self.defaultPushToTalk)
+        pushToMuteShortcut = HotkeyPref(enabled: false, chord: Self.defaultPushToMute)
     }
 
     private func updateLoginItem() {

@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Tieni per invertire";
 "keyboard.push_mute" = "Tieni per disattivare";
 "keyboard.push_talk" = "Push to talk";
+"keyboard.recording.header" = "Registrazione";
 "keyboard.reset" = "Ripristina predefiniti";
 "keyboard.shortcuts.caption" = "Clic su un campo, poi premi i tasti · Esc annulla · Canc cancella";
 "keyboard.shortcuts.header" = "Scorciatoie";
+"keyboard.start_recording" = "Avvia registrazione";
+"keyboard.stop_recording" = "Interrompi registrazione";
 "keyboard.toggle" = "Commuta mute";
 "keyboard.type_shortcut" = "Digita scorciatoia…";
 "keyboard.unmute" = "Attiva";

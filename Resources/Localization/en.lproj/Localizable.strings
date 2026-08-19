@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Push to flip";
 "keyboard.push_mute" = "Push to mute";
 "keyboard.push_talk" = "Push to talk";
+"keyboard.recording.header" = "Recording";
 "keyboard.reset" = "Reset to Defaults";
 "keyboard.shortcuts.caption" = "Click a field, then press keys · Esc cancels · Delete clears";
 "keyboard.shortcuts.header" = "Shortcuts";
+"keyboard.start_recording" = "Start recording";
+"keyboard.stop_recording" = "Stop recording";
 "keyboard.toggle" = "Toggle mute";
 "keyboard.type_shortcut" = "Type shortcut…";
 "keyboard.unmute" = "Unmute";

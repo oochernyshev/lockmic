@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Indrukken om om te keren";
 "keyboard.push_mute" = "Indrukken om te dempen";
 "keyboard.push_talk" = "Push-to-talk";
+"keyboard.recording.header" = "Opname";
 "keyboard.reset" = "Standaardwaarden herstellen";
 "keyboard.shortcuts.caption" = "Klik op een veld en druk toetsen · Esc annuleert · Delete wist";
 "keyboard.shortcuts.header" = "Sneltoetsen";
+"keyboard.start_recording" = "Opname starten";
+"keyboard.stop_recording" = "Opname stoppen";
 "keyboard.toggle" = "Dempen schakelen";
 "keyboard.type_shortcut" = "Sneltoets typen…";
 "keyboard.unmute" = "Activeren";

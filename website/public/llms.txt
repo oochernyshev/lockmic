@@ -13,14 +13,14 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - **Partnerships / press:** info@wixee.ai
 - **Price:** Free
 - **Platform:** macOS 14 Sonoma or later
-- **Current version:** 1.4.7
+- **Current version:** 1.4.8
 
 ## Key facts
 
 - Mutes hardware / system input devices via Core Audio
 - Default: mute all controllable input devices (optional: default input only)
 - Virtual Core Audio devices are listed but ignored for mute control
-- Global hotkeys: toggle (⌘⇧M, optional ⌘F5), mute/unmute, push-to-talk, push-to-mute, push-to-flip
+- Global hotkeys: toggle (⌘⇧M, optional ⌘F5), mute/unmute, start/stop recording (⌘⇧R / ⌥⌘⇧R), push-to-talk, push-to-mute, push-to-flip
 - HUD toast and optional always-on floating HUD per display
 - Optional local recording (mic + system playback → dated mix on disk; not uploaded)
 - 23 UI languages following system language
@@ -31,7 +31,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 
 ### DMG
 
-https://github.com/oochernyshev/lockmic/releases/download/v1.4.7/LockMic-1.4.7.dmg
+https://github.com/oochernyshev/lockmic/releases/download/v1.4.8/LockMic-1.4.8.dmg
 
 ### Homebrew
 

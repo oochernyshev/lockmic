@@ -6,13 +6,13 @@ final class StatusItemController {
     private let mic: MicController
     private let preferences: PreferencesStore
     private let recorder: SessionRecorder
-    private let hud = HUDOverlay()
+    private let hud: HUDPresenter
+    private let hotkeys: HotkeyCoordinator
+    private let recording: RecordingCoordinator
     private let sounds = SoundFeedback()
-    private let hotkeys = HotkeyManager()
 
     private var statusItem: NSStatusItem?
     private var preferencesWindow: NSWindow?
-    private let recordingMonitor = RecordingMonitorController()
     private var cancellables: [NSObjectProtocol] = []
     private var visibilityTimer: Timer?
     private var reportedMenuBarIconVisible: Bool?
@@ -21,34 +21,6 @@ final class StatusItemController {
     private var updateBadgeView: NSView?
     /// Debounced: menu bar icon on-screen vs hidden (camera housing / overcrowding).
     var onMenuBarIconVisibilityChange: ((Bool) -> Void)?
-
-    /// Tracks last applied floating preference so we only hide/show on a real change.
-    private var lastHudFloating: Bool?
-    /// Last bindings passed to HotkeyManager (skip re-register when unchanged).
-    private var lastRegisteredBindings: [HotkeyBinding] = []
-    /// Active momentary hold (push-to-talk / mute / flip).
-    private enum MomentaryHold {
-        case none
-        case pushToTalk(wasMuted: Bool)
-        case pushToMute(wasMuted: Bool)
-        case pushToToggle(wasMuted: Bool)
-
-        var isActive: Bool {
-            if case .none = self { return false }
-            return true
-        }
-
-        var hudHold: HUDHoldKind {
-            switch self {
-            case .none: return .none
-            case .pushToTalk: return .talk
-            case .pushToMute: return .mute
-            case .pushToToggle: return .flip
-            }
-        }
-    }
-
-    private var momentaryHold: MomentaryHold = .none
     /// Last known consent so we only re-apply the feature gate on a real change.
     private var lastFeaturesEnabled: Bool?
 
@@ -58,6 +30,34 @@ final class StatusItemController {
         self.mic = mic
         self.preferences = preferences
         self.recorder = recorder
+        self.hud = HUDPresenter(preferences: preferences)
+        self.hotkeys = HotkeyCoordinator(mic: mic, preferences: preferences)
+        self.recording = RecordingCoordinator(recorder: recorder, preferences: preferences, mic: mic)
+
+        hotkeys.onMuteChanged = { [weak self] showHUD, playSound in
+            self?.handleMuteChanged(showHUD: showHUD, playSound: playSound)
+        }
+        hotkeys.onStartRecording = { [weak self] in
+            self?.recording.startIfIdle(source: .keyboard)
+        }
+        hotkeys.onStopRecording = { [weak self] in
+            self?.recording.stop(source: .keyboard)
+        }
+        recording.onSessionChanged = { [weak self] in
+            self?.handleMuteChanged(showHUD: false)
+        }
+        recording.onToggleMute = { [weak self] in
+            self?.toggleFromUser(source: .hud)
+        }
+        recording.onPresentError = { [weak self] error in
+            self?.presentRecordingError(error)
+        }
+        hud.overlay.onToggle = { [weak self] in
+            self?.toggleFromUser(source: .hud)
+        }
+        hud.overlay.onStopRecording = { [weak self] in
+            self?.recording.stop(source: .hud)
+        }
     }
 
     func start() {
@@ -76,13 +76,6 @@ final class StatusItemController {
         }
         item.menu = nil
         statusItem = item
-
-        hud.onToggle = { [weak self] in
-            self?.toggleFromUser(source: .hud)
-        }
-        hud.onStopRecording = { [weak self] in
-            self?.stopRecordingNow(source: .hud)
-        }
 
         applyFeatureAvailability(force: true)
         observeMic()
@@ -170,18 +163,14 @@ final class StatusItemController {
                 Task { @MainActor in
                     guard let self else { return }
                     self.refreshMenuBarIconVisibility(force: false)
-                    // Mid PTT/PTM/flip: list only — re-applying mute would clobber
-                    // restore-on-release.
-                    if self.momentaryHold.isActive {
+                    if self.hotkeys.isHoldActive {
                         self.mic.refreshDeviceList()
                         self.updateIcon()
                         return
                     }
-                    // Re-apply sticky intent. Copying HAL here (applyDesired: false)
-                    // lets Meet/Chrome unmute stick after the user clicks Dock / prefs.
                     self.mic.refreshFromHardware(applyDesired: true)
                     self.updateIcon()
-                    self.retryCaptureIfAccessGranted()
+                    self.recording.retryCaptureIfAccessGranted()
                 }
             }
         )
@@ -198,7 +187,7 @@ final class StatusItemController {
             ) { [weak self] _ in
                 Task { @MainActor in
                     self?.applyFeatureAvailability()
-                    self?.registerHotkeysIfNeeded()
+                    self?.hotkeys.registerIfNeeded(enabled: self?.featuresEnabled == true)
                     self?.syncFloatingHUDIfNeeded()
                 }
             }
@@ -227,22 +216,13 @@ final class StatusItemController {
         lastFeaturesEnabled = enabled
 
         if !enabled {
-            endMomentaryHoldForDisable()
-            lastRegisteredBindings = []
-            hotkeys.register(bindings: []) { _, _ in }
+            hotkeys.disable()
             hud.hide()
-            lastHudFloating = false
         } else {
-            registerHotkeysIfNeeded(force: true)
+            hotkeys.registerIfNeeded(force: true, enabled: true)
             syncFloatingHUDIfNeeded(force: true)
         }
         updateIcon()
-    }
-
-    private func endMomentaryHoldForDisable() {
-        guard momentaryHold.isActive else { return }
-        momentaryHold = .none
-        mic.suppressDeviceResync = false
     }
 
     /// - Parameters:
@@ -259,185 +239,27 @@ final class StatusItemController {
             sounds.play(muted: muted)
         }
 
-        presentHUD(muted: muted, userInitiated: showHUD)
-    }
-
-    /// Floating = always interactive; momentary hold keeps toast HUD up without auto-hide.
-    private func presentHUD(muted: Bool, userInitiated: Bool) {
-        let hold = momentaryHold.hudHold
-        let recording = recorder.isRecording
-
-        if preferences.hudFloating {
-            hud.show(
-                muted: muted,
-                deviceName: mic.deviceName,
-                persistent: true,
-                interactive: true,
-                hold: hold,
-                recording: recording
-            )
-            return
-        }
-
-        if recording {
-            hud.show(
-                muted: muted,
-                deviceName: mic.deviceName,
-                persistent: true,
-                interactive: false,
-                hold: hold,
-                recording: true
-            )
-            return
-        }
-
-        guard preferences.hudEnabled, userInitiated || momentaryHold.isActive else {
-            hud.hide()
-            return
-        }
-
-        // While PTT/PTM/flip is held, keep HUD visible (non-interactive toast layout).
-        let holdVisible = momentaryHold.isActive
-        hud.show(
+        hud.present(
             muted: muted,
-            deviceName: mic.deviceName,
-            persistent: holdVisible,
-            interactive: false,
-            hold: hold,
-            recording: recorder.isRecording
+            userInitiated: showHUD,
+            hold: hotkeys.hudHold,
+            recording: recorder.isRecording,
+            featuresEnabled: true
         )
     }
 
-    /// Show or hide the always-on floating mute indicator based on preference.
     func syncFloatingHUD() {
         syncFloatingHUDIfNeeded(force: true)
     }
 
     private func syncFloatingHUDIfNeeded(force: Bool = false) {
-        guard featuresEnabled else {
-            if lastHudFloating != false {
-                hud.hide()
-                lastHudFloating = false
-            }
-            return
-        }
-
-        let floating = preferences.hudFloating
-        guard force || floating != lastHudFloating else { return }
-
-        if floating {
-            hud.show(
-                muted: mic.effectiveMuted,
-                deviceName: mic.deviceName,
-                persistent: true,
-                interactive: true,
-                hold: momentaryHold.hudHold,
-                recording: recorder.isRecording
-            )
-        } else if lastHudFloating == true {
-            // Only dismiss when floating is turned off — don't cancel toast HUDs.
-            hud.hide()
-        }
-        lastHudFloating = floating
-    }
-
-    private func registerHotkeysIfNeeded(force: Bool = false) {
-        let bindings = featuresEnabled ? preferences.activeBindings : []
-        guard force || bindings != lastRegisteredBindings else { return }
-        lastRegisteredBindings = bindings
-        hotkeys.register(bindings: bindings) { [weak self] action, phase in
-            DispatchQueue.main.async {
-                self?.handleHotkeyAction(action, phase: phase)
-            }
-        }
-    }
-
-    private func handleHotkeyAction(_ action: HotkeyAction, phase: HotkeyPhase) {
-        guard featuresEnabled else { return }
-        switch action {
-        case .toggle:
-            guard phase == .pressed, !momentaryHold.isActive else { return }
-            toggleFromUser(source: .keyboard)
-        case .mute:
-            guard phase == .pressed, !momentaryHold.isActive else { return }
-            guard !mic.effectiveMuted else { return }
-            UsageReporter.record(.mute, source: .keyboard)
-            mic.setMuted(true)
-            handleMuteChanged(showHUD: true)
-        case .unmute:
-            guard phase == .pressed, !momentaryHold.isActive else { return }
-            guard mic.effectiveMuted else { return }
-            UsageReporter.record(.unmute, source: .keyboard)
-            mic.setMuted(false)
-            handleMuteChanged(showHUD: true)
-        case .pushToTalk:
-            handleMomentary(phase: phase, mode: .talk)
-        case .pushToMute:
-            handleMomentary(phase: phase, mode: .mute)
-        case .pushToToggle:
-            handleMomentary(phase: phase, mode: .toggle)
-        }
-    }
-
-    private enum MomentaryMode {
-        case talk
-        case mute
-        case toggle
-    }
-
-    private func handleMomentary(phase: HotkeyPhase, mode: MomentaryMode) {
-        guard featuresEnabled else { return }
-        switch phase {
-        case .pressed:
-            guard case .none = momentaryHold else { return }
-            let wasMuted = mic.effectiveMuted
-            let targetMuted: Bool
-            switch mode {
-            case .talk:
-                UsageReporter.record(.pushToTalk, source: .keyboard)
-                momentaryHold = .pushToTalk(wasMuted: wasMuted)
-                targetMuted = false
-            case .mute:
-                UsageReporter.record(.pushToMute, source: .keyboard)
-                momentaryHold = .pushToMute(wasMuted: wasMuted)
-                targetMuted = true
-            case .toggle:
-                UsageReporter.record(.pushToFlip, source: .keyboard)
-                momentaryHold = .pushToToggle(wasMuted: wasMuted)
-                targetMuted = !wasMuted
-            }
-            mic.suppressDeviceResync = true
-            let changed = mic.effectiveMuted != targetMuted
-            if changed {
-                mic.setMuted(targetMuted)
-            }
-            // Always show hold HUD; sound only when mute actually changed.
-            handleMuteChanged(showHUD: true, playSound: changed)
-        case .released:
-            let wasMuted: Bool?
-            switch (mode, momentaryHold) {
-            case (.talk, .pushToTalk(let w)),
-                 (.mute, .pushToMute(let w)),
-                 (.toggle, .pushToToggle(let w)):
-                wasMuted = w
-            default:
-                wasMuted = nil
-            }
-            guard let wasMuted else { return }
-            momentaryHold = .none
-            mic.suppressDeviceResync = false
-            if mic.effectiveMuted != wasMuted {
-                mic.setMuted(wasMuted)
-                // Toast shows restored state then auto-hides (hold already cleared).
-                handleMuteChanged(showHUD: true, playSound: true)
-            } else {
-                // End hold UI without a second beep.
-                handleMuteChanged(showHUD: true, playSound: false)
-            }
-            // Catch up: re-apply post-hold desired mute to any devices that appeared mid-hold.
-            mic.refreshFromHardware(applyDesired: true)
-            updateIcon()
-        }
+        hud.syncFloating(
+            muted: mic.effectiveMuted,
+            hold: hotkeys.hudHold,
+            recording: recorder.isRecording,
+            featuresEnabled: featuresEnabled,
+            force: force
+        )
     }
 
     private func toggleFromUser(source: UsageReporter.ActivationSource) {
@@ -464,7 +286,6 @@ final class StatusItemController {
         } else if featuresEnabled {
             toggleFromUser(source: .menuBar)
         } else {
-            // Left-click while disabled: open menu so agreement is one click away.
             showMenuFromStatusItem()
         }
     }
@@ -610,7 +431,7 @@ final class StatusItemController {
             floatingHeader.isEnabled = false
             menu.addItem(floatingHeader)
 
-            for screen in hud.screenVisibilities() {
+            for screen in hud.overlay.screenVisibilities() {
                 let item = NSMenuItem(
                     title: screen.name,
                     action: #selector(toggleFloatingHUDOnDisplay(_:)),
@@ -622,7 +443,7 @@ final class StatusItemController {
                 menu.addItem(item)
             }
 
-            if hud.hasAnyHiddenDisplay() {
+            if hud.overlay.hasAnyHiddenDisplay() {
                 let showAll = NSMenuItem(
                     title: L10n.menuShowAllDisplays,
                     action: #selector(showFloatingHUDOnAllDisplays),
@@ -652,7 +473,6 @@ final class StatusItemController {
     }
 
     private func appendUpdateMenuItems(to menu: NSMenu) {
-        // Only when an update is known — manual “Check for Updates…” lives in Preferences → About.
         guard let update = UpdateChecker.shared.availableUpdate else { return }
 
         let title = L10n.menuUpdateAvailable(update.version)
@@ -662,8 +482,6 @@ final class StatusItemController {
             keyEquivalent: ""
         )
         updateItem.target = self
-        // Dock menus ignore `NSMenuItem.image`; a red bullet in the title works
-        // for both Dock and menu-bar context menus.
         updateItem.attributedTitle = Self.updateMenuAttributedTitle(title)
         menu.addItem(updateItem)
 
@@ -708,185 +526,19 @@ final class StatusItemController {
     }
 
     @objc private func toggleRecording() {
-        if recorder.isRecording {
-            stopRecordingNow(source: .menu)
-            return
-        }
-        guard featuresEnabled else { return }
-        Task { await startRecording(source: .menu) }
-    }
-
-    private func startRecording(source: UsageReporter.ActivationSource) async {
-        let scope = currentPlaybackScope()
-        recorder.previewSession(
-            playback: scope,
-            followInput: preferences.followDefaultMic,
-            followOutput: preferences.followDefaultOutput
-        )
-        // Menu teardown can eat a panel shown in the same click; wait a turn.
-        await nextMainRunLoopTurn()
-        showRecordingMonitor()
-        await beginCapture(scope: scope, source: source)
-    }
-
-    private func currentPlaybackScope() -> PlaybackRecordScope {
-        preferences.recordAllPlayback && !preferences.followDefaultOutput ? .all : .default
-    }
-
-    private func beginCapture(scope: PlaybackRecordScope, source: UsageReporter.ActivationSource) async {
-        do {
-            try await recorder.start(
-                playback: scope,
-                bitRate: preferences.recordingBitRate,
-                followInput: preferences.followDefaultMic,
-                followOutput: preferences.followDefaultOutput,
-                in: preferences.recordingsDirectory
-            )
-            UsageReporter.record(.startRecording, source: source)
-            handleMuteChanged(showHUD: false)
-            showRecordingMonitor()
-        } catch SessionRecorderError.microphoneDenied, SessionRecorderError.playbackDenied {
-            showRecordingMonitor()
-        } catch {
-            recordingMonitor.hide()
-            recorder.cancelPreview()
-            presentRecordingError(error)
-        }
-    }
-
-    private func retryAccessFromMonitor() {
-        if recorder.microphoneAccess == .denied {
-            Task { await retryMicrophoneAccess() }
-        } else {
-            Task { await retryPlaybackAccess() }
-        }
-    }
-
-    private func retryMicrophoneAccess() async {
-        if await SessionRecorder.requestMicrophoneAccess() {
-            await beginCapture(scope: currentPlaybackScope(), source: .monitor)
-            return
-        }
-        openMicrophoneSettings()
-    }
-
-    private func retryPlaybackAccess() async {
-        if await SystemAudioAccess.request() {
-            await beginCapture(scope: currentPlaybackScope(), source: .monitor)
-            return
-        }
-        openPlaybackSettings()
-    }
-
-    private func retryCaptureIfAccessGranted() {
-        guard !recorder.isRecording, recordingMonitor.isVisible else { return }
-        let blocked = recorder.microphoneAccess == .denied || recorder.playbackAccess == .denied
-        guard blocked else { return }
-        recorder.refreshCaptureAccess()
-        // Mic (or playback) may now be granted while the other is still denied —
-        // refresh chrome so the matching card undims instead of staying stuck.
-        showRecordingMonitor()
-        if recorder.microphoneAccess == .denied || recorder.playbackAccess == .denied { return }
-        Task { await beginCapture(scope: currentPlaybackScope(), source: .monitor) }
-    }
-
-    private func openMicrophoneSettings() {
-        let candidates = [
-            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Microphone",
-            "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone",
-        ]
-        for raw in candidates {
-            if let url = URL(string: raw), NSWorkspace.shared.open(url) { return }
-        }
-    }
-
-    private func openPlaybackSettings() {
-        let candidates = [
-            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_ScreenCapture",
-            "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
-        ]
-        for raw in candidates {
-            if let url = URL(string: raw), NSWorkspace.shared.open(url) { return }
-        }
-    }
-
-    private func nextMainRunLoopTurn() async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            DispatchQueue.main.async {
-                continuation.resume()
-            }
-        }
+        recording.toggle(source: .menu)
     }
 
     @objc private func showRecordingMonitor() {
-        recordingMonitor.show(
-            recorder: recorder,
-            preferences: preferences,
-            mic: mic,
-            onStop: { [weak self] in
-                self?.stopRecordingNow(source: .monitor)
-            },
-            onAllowAccess: { [weak self] in
-                self?.retryAccessFromMonitor()
-            },
-            onToggleMute: { [weak self] in
-                self?.toggleFromUser(source: .hud)
-            }
-        )
-    }
-
-    /// Stop capture immediately; mix in the background.
-    private func stopRecordingNow(source: UsageReporter.ActivationSource) {
-        if !recorder.isRecording {
-            recordingMonitor.hide()
-            recorder.cancelPreview()
-            handleMuteChanged(showHUD: false)
-            return
-        }
-        recordingMonitor.hide()
-        let pending: SessionRecorder.PendingMix
-        do {
-            pending = try recorder.stopAndPrepareMix(
-                keepDeviceRecordings: preferences.keepDeviceRecordings
-            )
-        } catch {
-            handleMuteChanged(showHUD: false)
-            presentRecordingError(error)
-            return
-        }
-        UsageReporter.record(.stopRecording, source: source)
-        handleMuteChanged(showHUD: false)
-        Task {
-            let mixed = await recorder.completeMix(pending)
-            if !mixed {
-                UsageReporter.record(.mixFailed, source: source)
-            }
-        }
-    }
-
-    /// Stop capture and finish the mix before Quit. Safe if a mix is already running.
-    func finalizeRecordingForQuit() async {
-        let wasRecording = recorder.isRecording
-        if wasRecording {
-            recordingMonitor.hide()
-        }
-        let mixed = await recorder.finalizeAndMix(
-            keepDeviceRecordings: preferences.keepDeviceRecordings
-        )
-        if wasRecording {
-            UsageReporter.record(.stopRecording, source: .menu)
-        }
-        handleMuteChanged(showHUD: false)
-        if !mixed {
-            UsageReporter.record(.mixFailed, source: .menu)
-        }
+        recording.showMonitor()
     }
 
     @objc private func showRecordingsFolder() {
-        UsageReporter.record(.showRecordings, source: .menu)
-        let folder = preferences.recordingsDirectory
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        NSWorkspace.shared.open(folder)
+        recording.showRecordingsFolder()
+    }
+
+    func finalizeRecordingForQuit() async {
+        await recording.finalizeForQuit()
     }
 
     private func presentRecordingError(_ error: Error) {
@@ -909,11 +561,11 @@ final class StatusItemController {
     @objc private func toggleFloatingHUDOnDisplay(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
         let currentlyVisible = sender.state == .on
-        hud.setDisplayHidden(id, hidden: currentlyVisible)
+        hud.overlay.setDisplayHidden(id, hidden: currentlyVisible)
     }
 
     @objc private func showFloatingHUDOnAllDisplays() {
-        hud.setAllDisplaysHidden(false)
+        hud.overlay.setAllDisplaysHidden(false)
     }
 
     @objc private func openPreferences() {
@@ -979,7 +631,6 @@ final class StatusItemController {
     }
 
     private func updateIcon() {
-        // Never use appearsDisabled — it greys/shrinks the menu-bar glyph and looks broken.
         statusItem?.button?.appearsDisabled = false
         statusItem?.button?.image = featuresEnabled
             ? statusImage(symbolName: symbolName(for: mic.state))
@@ -1020,7 +671,6 @@ final class StatusItemController {
             badge.layer?.backgroundColor = NSColor.systemRed.cgColor
             badge.layer?.cornerRadius = 3.5
             badge.layer?.masksToBounds = true
-            // Keep the badge out of layout / hit-testing for the status button.
             badge.translatesAutoresizingMaskIntoConstraints = true
             button.addSubview(badge)
             updateBadgeView = badge
@@ -1029,7 +679,6 @@ final class StatusItemController {
         let diameter: CGFloat = 7
         let inset: CGFloat = 1
         let size = button.bounds.size
-        // Status button is flipped on some systems; pin to visual top-right.
         let isFlipped = button.isFlipped
         let x = max(0, size.width - diameter - inset)
         let y: CGFloat = isFlipped ? inset : max(0, size.height - diameter - inset)
@@ -1046,14 +695,11 @@ final class StatusItemController {
         }
     }
 
-    /// Menu-bar template icon sized to match system status items (~18pt cell).
     private func statusImage(symbolName: String) -> NSImage {
         menuBarSymbolImage(systemName: symbolName, accessibilityDescription: "LockMic")
     }
 
-    /// Full-size “needs agreement” icon — same visual weight as mute/unmute, not a tiny nested glyph.
     private func disabledStatusImage() -> NSImage {
-        // Distinct from mute (mic.slash): raised hand = permission / agreement required.
         menuBarSymbolImage(
             systemName: "hand.raised.fill",
             accessibilityDescription: "LockMic disabled — agreement required",
@@ -1076,7 +722,6 @@ final class StatusItemController {
             return NSImage(size: canvas)
         }
 
-        // Draw into a fixed canvas so compound SF Symbols don’t shrink in the status item.
         let image = NSImage(size: canvas, flipped: false) { bounds in
             let symbolSize = symbol.size
             let scale = min(bounds.width / max(symbolSize.width, 1), bounds.height / max(symbolSize.height, 1))
@@ -1105,11 +750,11 @@ final class StatusItemController {
         }
 
         let holdLine: String? = {
-            switch momentaryHold {
+            switch hotkeys.hudHold {
             case .none: return nil
-            case .pushToTalk: return "Holding push-to-talk"
-            case .pushToMute: return "Holding push-to-mute"
-            case .pushToToggle: return "Holding push-to-flip"
+            case .talk: return "Holding push-to-talk"
+            case .mute: return "Holding push-to-mute"
+            case .flip: return "Holding push-to-flip"
             }
         }()
 

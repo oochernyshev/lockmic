@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Basılı tutarak ters çevir";
 "keyboard.push_mute" = "Basılı tutarak sessize al";
 "keyboard.push_talk" = "Bas-konuş";
+"keyboard.recording.header" = "Kayıt";
 "keyboard.reset" = "Varsayılanlara sıfırla";
 "keyboard.shortcuts.caption" = "Alana tıklayın, ardından tuşlara basın · Esc iptal · Delete temizle";
 "keyboard.shortcuts.header" = "Kısayollar";
+"keyboard.start_recording" = "Kaydı başlat";
+"keyboard.stop_recording" = "Kaydı durdur";
 "keyboard.toggle" = "Sessize almayı değiştir";
 "keyboard.type_shortcut" = "Kısayol yazın…";
 "keyboard.unmute" = "Sesi aç";

@@ -17,6 +17,8 @@ enum HotkeyAction: String, Sendable {
     case toggle
     case mute
     case unmute
+    case startRecording
+    case stopRecording
     /// Hold to unmute; release restores prior mute state.
     case pushToTalk
     /// Hold to mute; release restores prior mute state.
@@ -45,4 +47,10 @@ struct HotkeyBinding: Equatable, Sendable {
     var isActive: Bool {
         enabled && !chord.isEmpty
     }
+}
+
+/// One user-editable shortcut row (enable + chord).
+struct HotkeyPref: Equatable, Sendable {
+    var enabled: Bool
+    var chord: HotkeyChord
 }

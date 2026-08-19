@@ -25,55 +25,6 @@ struct RecordingDeviceRow: Identifiable, Equatable, Sendable {
     var detail: String?
 }
 
-struct StemGate: Sendable, Codable {
-    var events: [(TimeInterval, Bool)]
-
-    init(events: [(TimeInterval, Bool)]) {
-        self.events = events
-    }
-
-    func enabled(at time: TimeInterval) -> Bool {
-        var on = true
-        for (at, enabled) in events where at <= time {
-            on = enabled
-        }
-        return on
-    }
-
-    mutating func append(_ enabled: Bool, at time: TimeInterval) {
-        events.append((max(0, time), enabled))
-    }
-
-    var wasEverEnabled: Bool {
-        events.contains { $0.1 }
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case events
-    }
-
-    private struct Event: Codable {
-        var at: TimeInterval
-        var enabled: Bool
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        events = try container.decode([Event].self, forKey: .events).map { ($0.at, $0.enabled) }
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(events.map { Event(at: $0.0, enabled: $0.1) }, forKey: .events)
-    }
-}
-
-struct MixGates: Sendable, Codable {
-    var microphone: StemGate
-    var playback: StemGate
-    var extras: [String: StemGate]
-}
-
 /// Shared 0…1 meter scale so HAL peaks and AVAudioRecorder dB match on the wave.
 enum RecordingLevelDisplay {
     static let noiseFloorDB: Float = -38
@@ -506,19 +457,20 @@ final class CompressedStemWriter: @unchecked Sendable {
     }
 }
 
-/// HAL input capture for a non-default microphone.
+/// HAL input capture for the selected microphone. One writer; `retarget` moves IO to another device.
 final class InputDeviceCapture: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.lockmic.input-capture")
-    private let deviceID: AudioDeviceID
+    private var deviceID: AudioDeviceID
     private var ioProcID: AudioDeviceIOProcID?
     private var writer: CompressedStemWriter?
     private var format: AVAudioFormat?
     private var scratch: AVAudioPCMBuffer?
     private let sessionStart: CFTimeInterval
     private var didAlign = false
+    private var ioGapStartedAt: CFTimeInterval = 0
     private let lock = NSLock()
     private var _level: Float = 0
-    private var _enabled = false
+    private var _enabled = true
 
     let fileURL: URL
 
@@ -541,13 +493,46 @@ final class InputDeviceCapture: @unchecked Sendable {
         guard let format = AVAudioFormat(streamDescription: &asbd), format.channelCount > 0 else {
             throw SessionRecorderError.invalidTapFormat
         }
-        self.format = format
         writer = try CompressedStemWriter(
             url: fileURL,
             channels: 1,
             bitRate: bitRate,
             sampleRate: format.sampleRate
         )
+        try attachIO()
+    }
+
+    func retarget(deviceID newID: AudioDeviceID) throws {
+        guard newID != deviceID else { return }
+        let previous = deviceID
+        lock.lock()
+        ioGapStartedAt = CACurrentMediaTime()
+        lock.unlock()
+        detachIO()
+        deviceID = newID
+        do {
+            try attachIO()
+        } catch {
+            deviceID = previous
+            try? attachIO()
+            throw error
+        }
+    }
+
+    func stop() {
+        detachIO()
+        writer?.finish()
+        writer = nil
+    }
+
+    deinit { stop() }
+
+    private func attachIO() throws {
+        var asbd = try Self.inputStreamFormat(deviceID)
+        guard let format = AVAudioFormat(streamDescription: &asbd), format.channelCount > 0 else {
+            throw SessionRecorderError.invalidTapFormat
+        }
+        self.format = format
 
         var proc: AudioDeviceIOProcID?
         let ioStatus = AudioDeviceCreateIOProcIDWithBlock(&proc, deviceID, queue) { [weak self] _, inInput, _, _, _ in
@@ -559,42 +544,50 @@ final class InputDeviceCapture: @unchecked Sendable {
         ioProcID = proc
         let startStatus = AudioDeviceStart(deviceID, proc)
         guard startStatus == noErr else {
-            stop()
+            detachIO()
             throw SessionRecorderError.ioFailed(startStatus)
         }
     }
 
-    func stop() {
+    private func detachIO() {
         if let proc = ioProcID {
             AudioDeviceStop(deviceID, proc)
             AudioDeviceDestroyIOProcID(deviceID, proc)
         }
         ioProcID = nil
-        writer?.finish()
-        writer = nil
     }
-
-    deinit { stop() }
 
     private func write(_ input: UnsafePointer<AudioBufferList>, format: AVAudioFormat) {
         guard let writer else { return }
         let abl = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         guard !abl.isEmpty else { return }
 
-        if !didAlign {
+        lock.lock()
+        let needsSessionAlign = !didAlign
+        let gapStart = ioGapStartedAt
+        if needsSessionAlign {
             didAlign = true
+            ioGapStartedAt = 0
+        } else if gapStart > 0 {
+            ioGapStartedAt = 0
+        }
+        let enabled = _enabled
+        lock.unlock()
+
+        if needsSessionAlign {
             let delay = max(0, CACurrentMediaTime() - sessionStart)
             if delay > 0.001 {
                 writer.writeSilence(seconds: delay)
+            }
+        } else if gapStart > 0 {
+            let gap = max(0, CACurrentMediaTime() - gapStart)
+            if gap > 0.001 {
+                writer.writeSilence(seconds: gap)
             }
         }
 
         let frames = RecordingSilence.frameCount(in: abl, format: format)
         guard frames > 0 else { return }
-
-        lock.lock()
-        let enabled = _enabled
-        lock.unlock()
 
         if enabled, let dest = scratchBuffer(frames: frames, format: format) {
             RecordingDSP.copy(abl, into: dest)

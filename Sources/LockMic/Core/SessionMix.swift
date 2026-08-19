@@ -4,21 +4,18 @@ import os.log
 
 private let log = Logger(subsystem: "com.lockmic.app", category: "SessionMix")
 
-/// Mix stems and optionally discard per-device files after a successful mix.
+/// Mix microphone + playback stems and optionally discard them after a successful mix.
 enum SessionMix {
     /// Mix stems into a dated `LockMic yyyy-MM-dd HH.mm.m4a`.
     /// Mic is ducked while playback has energy so speaker bleed does not double.
     static func mix(
         in folder: URL,
-        extraUIDs: [String],
-        gates: MixGates,
         bitRate: Int,
         mixFileName: String,
         destinationFolder: URL
     ) async throws {
         let micURL = folder.appendingPathComponent(SessionRecorder.micFileName)
         let playbackURL = folder.appendingPathComponent(SessionRecorder.playbackFileName)
-        let extraURLs = extraUIDs.map { ($0, folder.appendingPathComponent(SessionRecorder.extraMicFileName(uid: $0))) }
         let base = (mixFileName as NSString).deletingPathExtension
         let outputURL = destinationFolder.appendingPathComponent(mixFileName)
 
@@ -29,8 +26,6 @@ enum SessionMix {
                 let processingURL = try renderDuckedMix(
                     mic: micURL,
                     playback: playbackURL,
-                    extras: extraURLs,
-                    gates: gates,
                     bitRate: bitRate,
                     destFolder: destinationFolder,
                     baseName: base
@@ -75,8 +70,6 @@ enum SessionMix {
     nonisolated private static func renderDuckedMix(
         mic micURL: URL,
         playback playbackURL: URL,
-        extras: [(String, URL)],
-        gates: MixGates,
         bitRate: Int,
         destFolder: URL,
         baseName: String
@@ -92,12 +85,7 @@ enum SessionMix {
 
         let micReader = try StemReader(url: micURL, destFormat: mixFormat)
         let playReader = try StemReader(url: playbackURL, destFormat: mixFormat)
-        let extraReaders = try extras.map { ($0.0, try StemReader(url: $0.1, destFormat: mixFormat)) }
-        let totalDuration = max(
-            micReader.duration,
-            playReader.duration,
-            extraReaders.map(\.1.duration).max() ?? 0
-        )
+        let totalDuration = max(micReader.duration, playReader.duration)
 
         var currentURL = destFolder.appendingPathComponent(processingMixName(base: baseName, percent: 0))
         try? FileManager.default.removeItem(at: currentURL)
@@ -122,20 +110,13 @@ enum SessionMix {
         while true {
             let micBuf = try micReader.read(MixDuck.chunkFrames)
             let playBuf = try playReader.read(MixDuck.chunkFrames)
-            var extraBufs: [AVAudioPCMBuffer?] = []
-            extraBufs.reserveCapacity(extraReaders.count)
-            for reader in extraReaders {
-                extraBufs.append(try reader.1.read(MixDuck.chunkFrames))
-            }
-            if micBuf == nil, playBuf == nil, extraBufs.allSatisfy({ $0 == nil }) { break }
+            if micBuf == nil, playBuf == nil { break }
 
-            let frames = [micBuf?.frameLength ?? 0, playBuf?.frameLength ?? 0]
-                .reduce(extraBufs.map { $0?.frameLength ?? 0 }.max() ?? 0, max)
+            let frames = max(micBuf?.frameLength ?? 0, playBuf?.frameLength ?? 0)
             guard frames > 0 else { break }
             mixed.frameLength = frames
 
-            let playOn = gates.playback.enabled(at: time)
-            let playRMS = playOn ? (playBuf.map(rms) ?? 0) : 0
+            let playRMS = playBuf.map(rms) ?? 0
             if playRMS > MixDuck.playbackRMSThreshold {
                 wantDuck = true
             } else if playRMS < MixDuck.playbackRMSOff {
@@ -145,17 +126,7 @@ enum SessionMix {
             let coeff = target < gain ? attack : release
             gain += (target - gain) * coeff
 
-            let defaultMicOn = gates.microphone.enabled(at: time)
-            mix(
-                mic: defaultMicOn ? micBuf : nil,
-                extras: zip(extras.map { $0.0 }, extraBufs).map { uid, buf in
-                    (buf, gates.extras[uid]?.enabled(at: time) ?? true)
-                },
-                playback: playOn ? playBuf : nil,
-                into: mixed,
-                frames: Int(frames),
-                voiceGain: gain
-            )
+            mix(mic: micBuf, playback: playBuf, into: mixed, frames: Int(frames), voiceGain: gain)
             try outFile.write(from: mixed)
             time += Double(frames) / mixFormat.sampleRate
             if totalDuration > 0 {
@@ -193,7 +164,6 @@ enum SessionMix {
 
     nonisolated private static func mix(
         mic: AVAudioPCMBuffer?,
-        extras: [(AVAudioPCMBuffer?, Bool)],
         playback: AVAudioPCMBuffer?,
         into dest: AVAudioPCMBuffer,
         frames: Int,
@@ -211,10 +181,6 @@ enum SessionMix {
             var voice: Float = 0
             if let micData, i < micFrames, micChans > 0 {
                 voice += micData[0][i] * voiceGain
-            }
-            for (buf, enabled) in extras where enabled {
-                guard let data = buf?.floatChannelData, i < Int(buf?.frameLength ?? 0) else { continue }
-                voice += data[0][i] * voiceGain
             }
             let playL: Float
             let playR: Float

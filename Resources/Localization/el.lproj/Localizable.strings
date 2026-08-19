@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Κρατήστε για αντιστροφή";
 "keyboard.push_mute" = "Κρατήστε για σίγαση";
 "keyboard.push_talk" = "Πάτημα για ομιλία";
+"keyboard.recording.header" = "Εγγραφή";
 "keyboard.reset" = "Επαναφορά προεπιλογών";
 "keyboard.shortcuts.caption" = "Κλικ σε πεδίο, μετά πλήκτρα · Esc ακύρωση · Delete εκκαθάριση";
 "keyboard.shortcuts.header" = "Συντομεύσεις";
+"keyboard.start_recording" = "Έναρξη εγγραφής";
+"keyboard.stop_recording" = "Διακοπή εγγραφής";
 "keyboard.toggle" = "Εναλλαγή mute";
 "keyboard.type_shortcut" = "Πληκτρολογήστε συντόμευση…";
 "keyboard.unmute" = "Κατάργηση σίγασης";

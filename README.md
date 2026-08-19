@@ -2,7 +2,7 @@
 
 System-wide microphone mute for macOS — menu bar icon, global hotkeys, and an on-screen HUD. Works in Zoom, Teams, Meet, FaceTime, browsers, and every other app by muting input devices via Core Audio.
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** [MIT](./LICENSE) · **Version:** 1.4.7
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** [MIT](./LICENSE) · **Version:** 1.4.8
 
 **Homebrew-first** distribution (App Store planned later). See [ARCHITECTURE.md](./ARCHITECTURE.md) for design details.
 
@@ -18,6 +18,8 @@ System-wide microphone mute for macOS — menu bar icon, global hotkeys, and an 
   - **Push to flip:** hold to invert mute, release to restore (off by default; default ⌥Space)
   - **Push to talk:** hold to unmute, release to restore (off by default; default ⇧Space)
   - **Push to mute:** hold to mute, release to restore (off by default; default ⇧⌥Space)
+  - **Start recording:** ⌘⇧R
+  - **Stop recording:** ⌥⌘⇧R
   - **Conflict warnings** when two enabled shortcuts share the same keys
 - **On-screen HUD** on mute/unmute (optional toast)
 - **Floating HUD** (optional): always visible on each display
@@ -82,7 +84,7 @@ Package a release zip/DMG:
 
 ```bash
 ./Scripts/package_dmg.sh
-# → build/dist/LockMic-1.4.7.zip (+ .dmg, sha256)
+# → build/dist/LockMic-1.4.8.zip (+ .dmg, sha256)
 ```
 
 ## Install via Homebrew
@@ -128,7 +130,7 @@ open build/LockMic.app
 | Menu bar icon hidden | Dock appears automatically · left-click toggles mute · right-click opens the same menu (Preferences, floating HUD, …) |
 | Floating HUD move | Drag the indicator (each display is independent) |
 | Floating HUD hide/show | Right-click the indicator, menu bar / Dock menu → **Floating HUD** |
-| Start / stop recording | Menu → Start Recording / Stop Recording (also HUD right-click) |
+| Start / stop recording | Menu → Start Recording / Stop Recording · **⌘⇧R** / **⌥⌘⇧R** (also HUD right-click) |
 | Quit | Menu → Quit LockMic |
 
 ### Preferences
@@ -137,8 +139,8 @@ open build/LockMic.app
 |---------|---------|
 | **General** | Status, HUD toast, floating HUD, sound, launch at login, show in Dock |
 | **Devices** | Mute-all vs default-only, live input list (virtual = ignored) |
-| **Recording** | Folder, quality, follow-default mic/output, keep per-device files after mix |
-| **Keyboard** | Toggle / mute / unmute / flip / PTT / PTM; optional ⌘F5; conflicts; reset |
+| **Recording** | Folder, quality, follow-default mic/output, keep stem files after mix |
+| **Keyboard** | Toggle / mute / unmute / start / stop recording / flip / PTT / PTM; optional ⌘F5; conflicts; reset |
 | **About** | Logo, version, WIXEE.AI, website, MIT license |
 
 ## Development in VS Code

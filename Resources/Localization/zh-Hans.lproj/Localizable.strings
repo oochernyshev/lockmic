@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "按住翻转";
 "keyboard.push_mute" = "按住静音";
 "keyboard.push_talk" = "按住说话";
+"keyboard.recording.header" = "录音";
 "keyboard.reset" = "恢复默认";
 "keyboard.shortcuts.caption" = "点击字段后按键 · Esc 取消 · Delete 清除";
 "keyboard.shortcuts.header" = "快捷键";
+"keyboard.start_recording" = "开始录音";
+"keyboard.stop_recording" = "停止录音";
 "keyboard.toggle" = "切换静音";
 "keyboard.type_shortcut" = "输入快捷键…";
 "keyboard.unmute" = "取消静音";

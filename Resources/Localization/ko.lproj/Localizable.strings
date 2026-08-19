@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "눌러서 반전";
 "keyboard.push_mute" = "눌러서 음소거";
 "keyboard.push_talk" = "눌러서 말하기";
+"keyboard.recording.header" = "녹음";
 "keyboard.reset" = "기본값으로 재설정";
 "keyboard.shortcuts.caption" = "필드를 클릭한 다음 키 입력 · Esc 취소 · Delete 지우기";
 "keyboard.shortcuts.header" = "단축키";
+"keyboard.start_recording" = "녹음 시작";
+"keyboard.stop_recording" = "녹음 중지";
 "keyboard.toggle" = "음소거 전환";
 "keyboard.type_shortcut" = "단축키 입력…";
 "keyboard.unmute" = "음소거 해제";

@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Pidä kääntääksesi";
 "keyboard.push_mute" = "Pidä mykistääksesi";
 "keyboard.push_talk" = "Paina puhuaksesi";
+"keyboard.recording.header" = "Tallennus";
 "keyboard.reset" = "Palauta oletukset";
 "keyboard.shortcuts.caption" = "Napsauta kenttää ja paina näppäimiä · Esc peruuttaa · Delete tyhjentää";
 "keyboard.shortcuts.header" = "Pikanäppäimet";
+"keyboard.start_recording" = "Aloita tallennus";
+"keyboard.stop_recording" = "Lopeta tallennus";
 "keyboard.toggle" = "Vaihda mykistys";
 "keyboard.type_shortcut" = "Kirjoita pikanäppäin…";
 "keyboard.unmute" = "Poista mykistys";

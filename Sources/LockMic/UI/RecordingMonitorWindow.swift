@@ -113,9 +113,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         window.isFloatingPanel = true
         window.becomesKeyOnlyIfNeeded = true
         window.level = .statusBar
-        // Frosted like Preferences (SwiftUI `.regularMaterial`). The effect
-        // is a sibling behind the chrome — parenting it as the root reblurs
-        // on every waveform tick and looks like flicker.
+        // Frosted like Preferences (SwiftUI `.regularMaterial`). Sibling behind
+        // chrome — as the content root it reblurs on every waveform tick.
         window.isOpaque = false
         window.backgroundColor = .clear
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
@@ -123,13 +122,22 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
         let content = NSView(frame: NSRect(x: 0, y: 0, width: Self.windowWidth, height: 420))
         content.autoresizingMask = [.width, .height]
+        content.wantsLayer = true
+        content.layer?.backgroundColor = NSColor.clear.cgColor
 
-        let frost = NSVisualEffectView(frame: content.bounds)
-        frost.autoresizingMask = [.width, .height]
-        frost.material = .headerView
+        let frost = NSVisualEffectView()
+        frost.translatesAutoresizingMaskIntoConstraints = false
+        // `.headerView` is nearly solid on current macOS. This matches `.regularMaterial`.
+        frost.material = .underWindowBackground
         frost.blendingMode = .behindWindow
         frost.state = .active
         content.addSubview(frost)
+        NSLayoutConstraint.activate([
+            frost.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            frost.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            frost.topAnchor.constraint(equalTo: content.topAnchor),
+            frost.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+        ])
 
         let root = NSStackView()
         root.orientation = .vertical

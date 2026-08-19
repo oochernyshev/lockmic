@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Halten zum Umschalten";
 "keyboard.push_mute" = "Halten zum Stummschalten";
 "keyboard.push_talk" = "Push-to-Talk";
+"keyboard.recording.header" = "Aufnahme";
 "keyboard.reset" = "Auf Standard zurücksetzen";
 "keyboard.shortcuts.caption" = "Feld anklicken, dann Tasten drücken · Esc bricht ab · Entf löscht";
 "keyboard.shortcuts.header" = "Tastenkürzel";
+"keyboard.start_recording" = "Aufnahme starten";
+"keyboard.stop_recording" = "Aufnahme stoppen";
 "keyboard.toggle" = "Stummschaltung umschalten";
 "keyboard.type_shortcut" = "Tastenkürzel…";
 "keyboard.unmute" = "Aufschalten";

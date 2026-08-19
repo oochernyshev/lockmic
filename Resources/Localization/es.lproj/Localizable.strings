@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Mantener para invertir";
 "keyboard.push_mute" = "Mantener para silenciar";
 "keyboard.push_talk" = "Pulsar para hablar";
+"keyboard.recording.header" = "Grabación";
 "keyboard.reset" = "Restablecer valores";
 "keyboard.shortcuts.caption" = "Clic en un campo y pulse teclas · Esc cancela · Supr borra";
 "keyboard.shortcuts.header" = "Atajos";
+"keyboard.start_recording" = "Iniciar grabación";
+"keyboard.stop_recording" = "Detener grabación";
 "keyboard.toggle" = "Alternar silencio";
 "keyboard.type_shortcut" = "Escriba el atajo…";
 "keyboard.unmute" = "Activar";

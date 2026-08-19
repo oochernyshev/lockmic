@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Manter para inverter";
 "keyboard.push_mute" = "Manter para silenciar";
 "keyboard.push_talk" = "Premir para falar";
+"keyboard.recording.header" = "Gravação";
 "keyboard.reset" = "Repor predefinições";
 "keyboard.shortcuts.caption" = "Clique num campo e prima teclas · Esc cancela · Delete limpa";
 "keyboard.shortcuts.header" = "Atalhos";
+"keyboard.start_recording" = "Iniciar gravação";
+"keyboard.stop_recording" = "Parar gravação";
 "keyboard.toggle" = "Alternar silêncio";
 "keyboard.type_shortcut" = "Introduzir atalho…";
 "keyboard.unmute" = "Ativar";

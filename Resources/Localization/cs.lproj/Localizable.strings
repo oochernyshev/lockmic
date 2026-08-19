@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Podržet pro invertování";
 "keyboard.push_mute" = "Podržet pro ztlumení";
 "keyboard.push_talk" = "Stisknutím mluvit";
+"keyboard.recording.header" = "Nahrávání";
 "keyboard.reset" = "Obnovit výchozí";
 "keyboard.shortcuts.caption" = "Klikněte do pole a stiskněte klávesy · Esc zruší · Delete vymaže";
 "keyboard.shortcuts.header" = "Zkratky";
+"keyboard.start_recording" = "Spustit nahrávání";
+"keyboard.stop_recording" = "Zastavit nahrávání";
 "keyboard.toggle" = "Přepnout mute";
 "keyboard.type_shortcut" = "Zadejte zkratku…";
 "keyboard.unmute" = "Zapnout";

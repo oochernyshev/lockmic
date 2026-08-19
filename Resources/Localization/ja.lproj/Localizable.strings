@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "プッシュで反転";
 "keyboard.push_mute" = "プッシュでミュート";
 "keyboard.push_talk" = "プッシュトゥトーク";
+"keyboard.recording.header" = "録音";
 "keyboard.reset" = "デフォルトに戻す";
 "keyboard.shortcuts.caption" = "フィールドをクリックしてキーを押す · Esc でキャンセル · Delete でクリア";
 "keyboard.shortcuts.header" = "ショートカット";
+"keyboard.start_recording" = "録音を開始";
+"keyboard.stop_recording" = "録音を停止";
 "keyboard.toggle" = "ミュート切替";
 "keyboard.type_shortcut" = "ショートカットを入力…";
 "keyboard.unmute" = "ミュート解除";

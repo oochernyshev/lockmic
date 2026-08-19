@@ -12,11 +12,14 @@ final class HUDOverlay: NSObject {
 
     private var panels: [ObjectIdentifier: (screen: NSScreen, panel: NSPanel)] = [:]
     private var hideWorkItem: DispatchWorkItem?
-    private var isPersistent = false
+    private enum Presentation {
+        case toast(persistent: Bool)
+        case floating
+    }
+    private var presentation: Presentation?
     private var lastMuted = false
     private var lastHold: HUDHoldKind = .none
     private var lastRecording = false
-    private var lastInteractive = false
     private var screenObserver: NSObjectProtocol?
     /// Mouse-move monitors: toggle `ignoresMouseEvents` so only the rounded pill is interactive.
     /// Event-driven (not a timer) — runs only when the cursor actually moves.
@@ -52,53 +55,71 @@ final class HUDOverlay: NSObject {
         }
     }
 
-    /// Show or update the HUD.
-    /// - Parameters:
-    ///   - persistent: when true, stays visible until `hide()` or a non-persistent `show`.
-    ///   - interactive: drag / click / per-display hide (floating mode). Defaults to `persistent`.
-    ///     Momentary holds use `persistent: true, interactive: false` so toast HUD stays up while held.
-    ///   - hold: optional momentary label (Talking / Hold mute / Holding).
-    func show(
+    /// Bottom-center toast. Auto-hides unless `persistent` (hold / recording).
+    func showToast(
         muted: Bool,
-        deviceName: String,
-        persistent: Bool = false,
-        interactive: Bool? = nil,
+        hold: HUDHoldKind = .none,
+        recording: Bool = false,
+        persistent: Bool = false
+    ) {
+        apply(.toast(persistent: persistent || hold != .none || recording), muted: muted, hold: hold, recording: recording)
+    }
+
+    /// Always-on draggable pill, one per display.
+    func showFloating(
+        muted: Bool,
         hold: HUDHoldKind = .none,
         recording: Bool = false
     ) {
+        apply(.floating, muted: muted, hold: hold, recording: recording)
+    }
+
+    private var isFloating: Bool {
+        if case .floating = presentation { return true }
+        return false
+    }
+
+    private var isPersistent: Bool {
+        switch presentation {
+        case .floating, .toast(persistent: true): return true
+        default: return false
+        }
+    }
+
+    private func apply(
+        _ presentation: Presentation,
+        muted: Bool,
+        hold: HUDHoldKind,
+        recording: Bool
+    ) {
         hideWorkItem?.cancel()
         hideWorkItem = nil
-        isPersistent = persistent
+        self.presentation = presentation
         lastMuted = muted
         lastHold = hold
         lastRecording = recording
-        let isInteractive = interactive ?? persistent
-        lastInteractive = isInteractive
+        let floating = isFloating
 
         ensurePanels()
         for entry in panels.values {
             configureContent(
                 entry.panel,
                 muted: muted,
-                interactive: isInteractive,
+                interactive: floating,
                 hold: hold,
                 recording: recording,
                 screen: entry.screen
             )
-            // Default: toast never receives clicks; floating / recording starts
-            // ignoring until the mouse is on the pill (right-click to stop).
             entry.panel.ignoresMouseEvents = true
-            // Needed so local mouseMoved monitors fire while our app is active.
-            entry.panel.acceptsMouseMovedEvents = isInteractive || recording
+            entry.panel.acceptsMouseMovedEvents = floating || recording
 
-            // Per-display hide only applies to interactive floating HUD.
-            if isInteractive, isDisplayHidden(displayID(for: entry.screen)) {
+            if floating, isDisplayHidden(displayID(for: entry.screen)) {
                 entry.panel.orderOut(nil)
                 entry.panel.alphaValue = 0
                 continue
             }
 
-            if isInteractive {
+            if floating {
                 applyRelativePosition(entry.panel, on: entry.screen)
             } else {
                 positionAtBottom(entry.panel, on: entry.screen)
@@ -106,31 +127,31 @@ final class HUDOverlay: NSObject {
             present(entry.panel, animated: entry.panel.alphaValue < 0.95 || !entry.panel.isVisible)
         }
 
-        if isInteractive || recording {
+        if floating || recording {
             startClickThroughTrackingIfNeeded()
             updateClickThroughState()
         } else {
             stopClickThroughTracking()
         }
 
-        if persistent {
-            if isInteractive {
-                observeScreenChangesIfNeeded()
-            }
+        if floating {
+            observeScreenChangesIfNeeded()
         } else {
             stopObservingScreenChanges()
-            let work = DispatchWorkItem { [weak self] in
-                self?.hide()
+            if !isPersistent {
+                let work = DispatchWorkItem { [weak self] in
+                    self?.hide()
+                }
+                hideWorkItem = work
+                DispatchQueue.main.asyncAfter(deadline: .now() + toastDuration, execute: work)
             }
-            hideWorkItem = work
-            DispatchQueue.main.asyncAfter(deadline: .now() + toastDuration, execute: work)
         }
     }
 
     func hide() {
         hideWorkItem?.cancel()
         hideWorkItem = nil
-        isPersistent = false
+        presentation = nil
         stopObservingScreenChanges()
         stopClickThroughTracking()
 
@@ -152,15 +173,8 @@ final class HUDOverlay: NSObject {
 
     /// Re-layout floating panels when displays change (resolution / add / remove).
     func relayoutIfPersistent() {
-        guard isPersistent else { return }
-        show(
-            muted: lastMuted,
-            deviceName: "",
-            persistent: true,
-            interactive: lastInteractive,
-            hold: lastHold,
-            recording: lastRecording
-        )
+        guard isFloating else { return }
+        showFloating(muted: lastMuted, hold: lastHold, recording: lastRecording)
     }
 
     // MARK: - Per-display visibility
@@ -184,15 +198,8 @@ final class HUDOverlay: NSObject {
             hiddenIDs.remove(displayID)
         }
         saveHiddenDisplayIDs(hiddenIDs)
-        if isPersistent {
-            show(
-                muted: lastMuted,
-                deviceName: "",
-                persistent: true,
-                interactive: lastInteractive,
-                hold: lastHold,
-                recording: lastRecording
-            )
+        if isFloating {
+            showFloating(muted: lastMuted, hold: lastHold, recording: lastRecording)
         }
     }
 
@@ -202,15 +209,8 @@ final class HUDOverlay: NSObject {
         } else {
             saveHiddenDisplayIDs([])
         }
-        if isPersistent {
-            show(
-                muted: lastMuted,
-                deviceName: "",
-                persistent: true,
-                interactive: lastInteractive,
-                hold: lastHold,
-                recording: lastRecording
-            )
+        if isFloating {
+            showFloating(muted: lastMuted, hold: lastHold, recording: lastRecording)
         }
     }
 
@@ -332,7 +332,7 @@ final class HUDOverlay: NSObject {
 
     /// Mouse only over the visible pill (or mid-drag).
     private func updateClickThroughState() {
-        guard lastInteractive || lastRecording else { return }
+        guard isFloating || lastRecording else { return }
         let mouse = NSEvent.mouseLocation
         for entry in panels.values {
             guard let content = entry.panel.contentView as? HUDContentView else { continue }
@@ -362,7 +362,7 @@ final class HUDOverlay: NSObject {
             menu.addItem(stop)
         }
 
-        if lastInteractive, let screen {
+        if isFloating, let screen {
             if lastRecording {
                 menu.addItem(.separator())
             }

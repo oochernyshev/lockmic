@@ -48,13 +48,12 @@ enum SessionRecorderError: LocalizedError {
         case .mixFailed: return L10n.recordingErrorMix
         }
     }
-
 }
 
-/// Records default-mic + system playback as AAC, then mixes them into a dated `LockMic yyyy-MM-dd HH.mm.m4a`.
+/// Records one selected mic + system playback as AAC, then mixes them into a dated `LockMic yyyy-MM-dd HH.mm.m4a`.
 ///
-/// Playback uses a Core Audio process tap (macOS 14.2+). Mic uses `AVAudioRecorder`
-/// on the default input — other input devices are left alone.
+/// Playback uses a Core Audio process tap (macOS 14.2+). Mic uses a HAL IO capture
+/// that can move to another input mid-session (still one `microphone.m4a`).
 @MainActor
 final class SessionRecorder: ObservableObject {
     @Published private(set) var isRecording = false
@@ -64,12 +63,6 @@ final class SessionRecorder: ObservableObject {
     @Published private(set) var recordingStartedAt: Date?
     @Published private(set) var microphoneAccess: CaptureAccess = .unknown
     @Published private(set) var playbackAccess: CaptureAccess = .unknown
-    @Published var defaultMicEnabled = true {
-        didSet { recordDefaultMicToggle() }
-    }
-    @Published var playbackEnabled = true {
-        didSet { recordPlaybackToggle() }
-    }
 
     /// When true, the selected input tracks the system default microphone.
     @Published private(set) var followDefaultInput = true
@@ -77,30 +70,25 @@ final class SessionRecorder: ObservableObject {
     @Published private(set) var followDefaultOutput = true
 
     private let audio: AudioDeviceService
-    private var micRecorder: AVAudioRecorder?
+    private var micCapture: InputDeviceCapture?
     private var playback: PlaybackCapturing?
-    private var extraCaptures: [String: InputDeviceCapture] = [:]
-    private var failedExtraUIDs: Set<String> = []
     private var sessionStart: CFTimeInterval = 0
-    private var defaultMicGate = StemGate(events: [])
-    private var playbackGate = StemGate(events: [])
-    private var extraGates: [String: StemGate] = [:]
-    private var lastMeterTime: CFTimeInterval = 0
     private var playbackScope: PlaybackRecordScope = .default
     private var selectedInputUID = ""
-    /// Device UID `AVAudioRecorder` bound to at `start()`. It does not follow later default-input changes.
-    private var defaultMicCaptureUID = ""
     private var selectedOutputUIDs: Set<String> = []
+    private var inputOrder: [String] = []
+    private var outputOrder: [String] = []
+    private var playbackDeviceUID = ""
     private var inFlightMix: Task<Bool, Never>?
     private var inFlightMixFolder: URL?
     private var mixGeneration = 0
-    private var inputOrder: [String] = []
-    private var outputOrder: [String] = []
-    private var playbackDeviceName = ""
-    private var playbackDeviceUID = ""
     private var devicesToken: UUID?
     private var outputChangeWork: DispatchWorkItem?
     private var sessionBitRate: Int = RecordingBitRate.default.bitsPerSecond
+
+    nonisolated static let micFileName = "microphone.m4a"
+    nonisolated static let playbackFileName = "playback.m4a"
+    nonisolated static let pendingMixFileName = "pending-mix.json"
 
     init(audio: AudioDeviceService = AudioDeviceService()) {
         self.audio = audio
@@ -116,9 +104,8 @@ final class SessionRecorder: ObservableObject {
         if let devicesToken {
             audio.removeDevicesChangedHandler(devicesToken)
         }
-        micRecorder?.stop()
+        micCapture?.stop()
         playback?.stop()
-        extraCaptures.values.forEach { $0.stop() }
     }
 
     /// Fill the device list so the monitor can appear before TCC prompts.
@@ -137,15 +124,13 @@ final class SessionRecorder: ObservableObject {
     func start(
         playback scope: PlaybackRecordScope = .default,
         bitRate: RecordingBitRate = .default,
-        followInput: Bool = true,
-        followOutput: Bool = true,
         in baseDirectory: URL
     ) async throws {
         guard !isRecording else { throw SessionRecorderError.alreadyRecording }
         guard #available(macOS 14.2, *) else { throw SessionRecorderError.needsMacOS142 }
 
         lastError = nil
-        applySessionSelection(scope: scope, followInput: followInput, followOutput: followOutput)
+        applySessionSelection(scope: scope, followInput: followDefaultInput, followOutput: followDefaultOutput)
         refreshCaptureAccess()
         refreshDeviceRows()
         do {
@@ -171,17 +156,17 @@ final class SessionRecorder: ObservableObject {
 
         do {
             sessionBitRate = bitRate.bitsPerSecond
-            let mic = try Self.makeMicRecorder(url: micURL, bitRate: sessionBitRate)
-            guard mic.record() else {
+            sessionStart = CACurrentMediaTime()
+            guard let micDevice = inputDevice(uid: selectedInputUID) ?? defaultInputDevice() else {
                 throw SessionRecorderError.micStartFailed
             }
-            mic.isMeteringEnabled = true
-            sessionStart = CACurrentMediaTime()
-            defaultMicEnabled = true
-            playbackEnabled = true
-            defaultMicGate = StemGate(events: [(0, true)])
-            playbackGate = StemGate(events: [(0, true)])
-            extraGates = [:]
+            selectedInputUID = micDevice.uid
+            let mic = try InputDeviceCapture(
+                deviceID: micDevice.id,
+                fileURL: micURL,
+                sessionStart: sessionStart,
+                bitRate: sessionBitRate
+            )
 
             let tap: PlaybackTap
             do {
@@ -196,11 +181,11 @@ final class SessionRecorder: ObservableObject {
                 mic.stop()
                 throw error
             }
-            extraCaptures = [:]
-            failedExtraUIDs = []
-            micRecorder = mic
+            micCapture = mic
             playback = tap
-            defaultMicCaptureUID = selectedInputUID
+            if let outID = try? audio.defaultOutputDeviceID(), !audio.isLockMicRecorder(outID) {
+                playbackDeviceUID = audio.deviceUID(outID) ?? ""
+            }
             sessionDirectory = folder
             recordingStartedAt = Date()
             isRecording = true
@@ -209,12 +194,10 @@ final class SessionRecorder: ObservableObject {
             refreshDeviceRows()
             log.info("Recording started in \(folder.path, privacy: .public)")
         } catch {
-            micRecorder?.stop()
-            micRecorder = nil
+            micCapture?.stop()
+            micCapture = nil
             playback?.stop()
             playback = nil
-            extraCaptures.values.forEach { $0.stop() }
-            extraCaptures = [:]
             try? FileManager.default.removeItem(at: folder)
             if case .playbackDenied? = error as? SessionRecorderError {
                 playbackAccess = .denied
@@ -226,22 +209,16 @@ final class SessionRecorder: ObservableObject {
 
     struct PendingMix: Sendable {
         let folder: URL
-        let extraUIDs: [String]
-        let gates: MixGates
         let bitRate: Int
         let mixFileName: String
         let keepDeviceRecordings: Bool
     }
 
     private struct PendingMixRecord: Codable {
-        var extraUIDs: [String]
-        var gates: MixGates
         var bitRate: Int
         var mixFileName: String
         var keepDeviceRecordings: Bool
     }
-
-    static let pendingMixFileName = "pending-mix.json"
 
     var isMixing: Bool { inFlightMix != nil }
 
@@ -261,14 +238,10 @@ final class SessionRecorder: ObservableObject {
 
     /// Stop capture immediately and return what the mixer needs.
     func stopAndPrepareMix(keepDeviceRecordings: Bool = false) throws -> PendingMix {
-        let extras = extraGates.compactMap { $0.value.wasEverEnabled ? $0.key : nil }
-        let gates = MixGates(microphone: defaultMicGate, playback: playbackGate, extras: extraGates)
         let bitRate = sessionBitRate
         let folder = try stopCaptures()
         let pending = PendingMix(
             folder: folder,
-            extraUIDs: extras,
-            gates: gates,
             bitRate: bitRate,
             mixFileName: "\(folder.lastPathComponent).m4a",
             keepDeviceRecordings: keepDeviceRecordings
@@ -350,8 +323,6 @@ final class SessionRecorder: ObservableObject {
                 : pending.folder.deletingLastPathComponent()
             try await SessionMix.mix(
                 in: pending.folder,
-                extraUIDs: pending.extraUIDs,
-                gates: pending.gates,
                 bitRate: pending.bitRate,
                 mixFileName: pending.mixFileName,
                 destinationFolder: destination
@@ -371,8 +342,6 @@ final class SessionRecorder: ObservableObject {
 
     private func persistPendingMix(_ pending: PendingMix) {
         let record = PendingMixRecord(
-            extraUIDs: pending.extraUIDs,
-            gates: pending.gates,
             bitRate: pending.bitRate,
             mixFileName: pending.mixFileName,
             keepDeviceRecordings: pending.keepDeviceRecordings
@@ -392,8 +361,6 @@ final class SessionRecorder: ObservableObject {
         else { return nil }
         return PendingMix(
             folder: folder,
-            extraUIDs: record.extraUIDs,
-            gates: record.gates,
             bitRate: record.bitRate,
             mixFileName: record.mixFileName,
             keepDeviceRecordings: record.keepDeviceRecordings
@@ -414,18 +381,15 @@ final class SessionRecorder: ObservableObject {
         guard isRecording, let folder = sessionDirectory else {
             throw SessionRecorderError.notRecording
         }
-        micRecorder?.stop()
-        micRecorder = nil
+        micCapture?.stop()
+        micCapture = nil
         playback?.stop()
         playback = nil
-        extraCaptures.values.forEach { $0.stop() }
-        extraCaptures = [:]
-        failedExtraUIDs = []
+        playbackDeviceUID = ""
         refreshCaptureAccess()
         selectedInputUID = ""
         followDefaultInput = true
         followDefaultOutput = true
-        defaultMicCaptureUID = ""
         selectedOutputUIDs = []
         inputOrder = []
         outputOrder = []
@@ -451,7 +415,9 @@ final class SessionRecorder: ObservableObject {
 
     private func retargetPlaybackIfNeeded() {
         guard isRecording else { return }
-        remountInputIfNeeded()
+        if followDefaultInput, let uid = currentDefaultInputUID() {
+            selectMic(uid)
+        }
         guard let outID = try? audio.defaultOutputDeviceID(), !audio.isLockMicRecorder(outID),
               let uid = audio.deviceUID(outID)
         else {
@@ -463,20 +429,18 @@ final class SessionRecorder: ObservableObject {
             if followDefaultOutput {
                 selectedOutputUIDs = [uid]
             }
-            if #available(macOS 14.2, *), let tap = playback as? PlaybackTap {
+            if #available(macOS 14.2, *), let tap = playback as? PlaybackTap, followDefaultOutput {
                 do {
                     try tap.retarget(using: audio, scope: playbackScope)
                     playbackDeviceUID = uid
-                    playbackDeviceName = audio.deviceName(outID)
                     applyOutputSelection()
-                    log.info("Playback tap moved to \(self.playbackDeviceName, privacy: .public)")
+                    log.info("Playback tap moved to \(self.audio.deviceName(outID), privacy: .public)")
                 } catch {
                     lastError = error.localizedDescription
                     log.error("Playback retarget failed: \(error.localizedDescription, privacy: .public)")
                 }
             } else {
                 playbackDeviceUID = uid
-                playbackDeviceName = audio.deviceName(outID)
                 applyOutputSelection()
             }
         }
@@ -486,7 +450,6 @@ final class SessionRecorder: ObservableObject {
 
     func setDeviceEnabled(_ id: String, enabled: Bool) {
         guard isRecording else { return }
-        let now = CACurrentMediaTime() - sessionStart
         if id.hasPrefix("out.") {
             followDefaultOutput = false
             let uid = String(id.dropFirst(4))
@@ -501,7 +464,7 @@ final class SessionRecorder: ObservableObject {
         }
         if enabled {
             followDefaultInput = false
-            selectOnlyMic(id, at: now)
+            selectMic(id)
         }
         refreshDeviceRows()
     }
@@ -510,7 +473,7 @@ final class SessionRecorder: ObservableObject {
         guard isRecording else { return }
         followDefaultInput = follow
         if follow, let uid = currentDefaultInputUID() {
-            selectOnlyMic(uid, at: CACurrentMediaTime() - sessionStart)
+            selectMic(uid)
         }
         refreshDeviceRows()
     }
@@ -527,9 +490,6 @@ final class SessionRecorder: ObservableObject {
 
     private func applyOutputSelection() {
         let anySelected = !selectedOutputUIDs.isEmpty
-        if playbackEnabled != anySelected {
-            playbackEnabled = anySelected
-        }
         playback?.captureEnabled = anySelected
         let nextScope: PlaybackRecordScope =
             selectedOutputUIDs.contains(where: { $0 != playbackDeviceUID }) ? .all : .default
@@ -551,43 +511,6 @@ final class SessionRecorder: ObservableObject {
         }
     }
 
-    private func remountInputIfNeeded() {
-        guard isRecording else { return }
-        let now = CACurrentMediaTime() - sessionStart
-        if followDefaultInput, let uid = currentDefaultInputUID() {
-            selectOnlyMic(uid, at: now)
-        } else if !selectedInputUID.isEmpty {
-            selectOnlyMic(selectedInputUID, at: now)
-        }
-    }
-
-    private func selectOnlyMic(_ id: String, at now: TimeInterval) {
-        let defaultUID = currentDefaultInputUID()
-        let uid = id == Self.defaultMicID ? (defaultUID ?? id) : id
-        // AVAudioRecorder is stuck on `defaultMicCaptureUID`. A later system-default
-        // device must be captured as an extra stem, not by flipping this flag.
-        let wantDefault = !defaultMicCaptureUID.isEmpty && uid == defaultMicCaptureUID
-        if !wantDefault {
-            startExtraMicIfNeeded(uid: uid)
-            guard extraCaptures[uid] != nil else { return }
-        }
-        selectedInputUID = uid
-        if defaultMicEnabled != wantDefault {
-            defaultMicEnabled = wantDefault
-        }
-        for (extraUID, capture) in extraCaptures {
-            let on = extraUID == uid
-            if capture.captureEnabled != on {
-                capture.captureEnabled = on
-            }
-            var gate = extraGates[extraUID] ?? StemGate(events: [(0, false)])
-            if gate.enabled(at: now) != on {
-                gate.append(on, at: now)
-                extraGates[extraUID] = gate
-            }
-        }
-    }
-
     private func applySessionSelection(
         scope: PlaybackRecordScope,
         followInput: Bool,
@@ -595,7 +518,6 @@ final class SessionRecorder: ObservableObject {
     ) {
         playbackScope = scope
         if let outID = try? audio.defaultOutputDeviceID(), !audio.isLockMicRecorder(outID) {
-            playbackDeviceName = audio.deviceName(outID)
             playbackDeviceUID = audio.deviceUID(outID) ?? ""
         }
         followDefaultInput = followInput
@@ -611,8 +533,32 @@ final class SessionRecorder: ObservableObject {
     }
 
     private func currentDefaultInputUID() -> String? {
+        defaultInputDevice()?.uid
+    }
+
+    private func defaultInputDevice() -> AudioInputDevice? {
         guard let id = try? audio.defaultInputDeviceID(), !audio.isLockMicRecorder(id) else { return nil }
-        return audio.deviceUID(id)
+        return audio.listInputDevices().first { $0.id == id && !$0.isVirtual }
+    }
+
+    private func inputDevice(uid: String) -> AudioInputDevice? {
+        audio.listInputDevices().first { $0.uid == uid && !$0.isVirtual }
+    }
+
+    private func selectMic(_ uid: String) {
+        guard uid != selectedInputUID else { return }
+        guard let device = inputDevice(uid: uid) else { return }
+        if let micCapture {
+            do {
+                try micCapture.retarget(deviceID: device.id)
+                selectedInputUID = uid
+            } catch {
+                lastError = error.localizedDescription
+                log.error("Mic retarget failed: \(error.localizedDescription, privacy: .public)")
+            }
+            return
+        }
+        selectedInputUID = uid
     }
 
     private func rememberDeviceOrder() {
@@ -629,53 +575,6 @@ final class SessionRecorder: ObservableObject {
         outputOrder.removeAll { !outputs.contains($0) }
     }
 
-    static let defaultMicID = "mic.default"
-    static let playbackID = "playback"
-
-    static let micFileName = "microphone.m4a"
-    static let playbackFileName = "playback.m4a"
-
-    private func recordDefaultMicToggle() {
-        guard isRecording else { return }
-        defaultMicGate.append(defaultMicEnabled, at: CACurrentMediaTime() - sessionStart)
-        refreshDeviceRows()
-    }
-
-    private func recordPlaybackToggle() {
-        guard isRecording else { return }
-        playback?.captureEnabled = playbackEnabled
-        playbackGate.append(playbackEnabled, at: CACurrentMediaTime() - sessionStart)
-        refreshDeviceRows()
-    }
-
-    private func startExtraMicIfNeeded(uid: String) {
-        guard extraCaptures[uid] == nil, let folder = sessionDirectory else { return }
-        guard uid != defaultMicCaptureUID,
-              let device = audio.listInputDevices().first(where: { $0.uid == uid }),
-              !device.isVirtual
-        else { return }
-        let url = folder.appendingPathComponent(Self.extraMicFileName(uid: device.uid))
-        do {
-            extraCaptures[uid] = try InputDeviceCapture(
-                deviceID: device.id,
-                fileURL: url,
-                sessionStart: sessionStart,
-                bitRate: sessionBitRate
-            )
-            extraGates[uid] = StemGate(events: [(0, false)])
-            failedExtraUIDs.remove(uid)
-        } catch {
-            failedExtraUIDs.insert(uid)
-            lastError = error.localizedDescription
-            log.error("Could not capture \(device.name, privacy: .public): \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    nonisolated static func extraMicFileName(uid: String) -> String {
-        let safe = uid.replacingOccurrences(of: "/", with: "-")
-        return "mic-\(safe).m4a"
-    }
-
     private func refreshDeviceRows() {
         rememberDeviceOrder()
         let defaultInUID = currentDefaultInputUID()
@@ -686,7 +585,6 @@ final class SessionRecorder: ObservableObject {
             guard let device = inputsByUID[uid] else { continue }
             let isDefault = uid == defaultInUID
             let selected = uid == selectedInputUID
-            let failed = failedExtraUIDs.contains(uid)
             rows.append(
                 RecordingDeviceRow(
                     id: uid,
@@ -694,10 +592,10 @@ final class SessionRecorder: ObservableObject {
                     kind: .input,
                     isDefault: isDefault,
                     isVirtual: false,
-                    canCapture: !failed,
+                    canCapture: true,
                     isEnabled: selected,
                     level: 0,
-                    detail: failed ? L10n.recordingSourceUnavailable : nil
+                    detail: nil
                 )
             )
         }
@@ -732,43 +630,18 @@ final class SessionRecorder: ObservableObject {
         guard row.isEnabled else { return 0 }
         switch row.kind {
         case .input:
-            if let extra = extraCaptures[row.id] {
-                return extra.level
-            }
-            return defaultMicMeterLevel()
+            return micCapture?.level ?? 0
         case .output:
             return playback?.level ?? 0
         }
     }
 
-    /// Peak of every source currently armed — for the monitor waveform.
+    /// Peak of mic + playback — for the monitor waveform.
     func liveWaveformLevel() -> Float {
-        var peak: Float = 0
-        if defaultMicEnabled {
-            peak = max(peak, defaultMicMeterLevel())
-        }
-        if playbackEnabled {
-            peak = max(peak, playback?.level ?? 0)
-        }
-        for capture in extraCaptures.values where capture.captureEnabled {
-            peak = max(peak, capture.level)
-        }
-        return min(1, peak)
+        let mic = devices.contains(where: { $0.kind == .input && $0.isEnabled }) ? (micCapture?.level ?? 0) : 0
+        let play = selectedOutputUIDs.isEmpty ? 0 : (playback?.level ?? 0)
+        return min(1, max(mic, play))
     }
-
-    private func defaultMicMeterLevel() -> Float {
-        guard let mic = micRecorder, defaultMicEnabled else { return 0 }
-        let now = CACurrentMediaTime()
-        if now - lastMeterTime > 0.04 {
-            mic.updateMeters()
-            lastMeterTime = now
-        }
-        // averagePower is dBFS (0 = full scale). Laptop room noise sits around
-        // -45…-35 dB; mapping from -50 made hiss look like speech.
-        return RecordingLevelDisplay.fromAverageDB(mic.averagePower(forChannel: 0))
-    }
-
-    // MARK: - Mic (default input only)
 
     func refreshCaptureAccess() {
         microphoneAccess = Self.liveMicrophoneAccess()
@@ -813,15 +686,6 @@ final class SessionRecorder: ObservableObject {
             let granted = await SystemAudioAccess.request()
             guard granted else { throw SessionRecorderError.playbackDenied }
         }
-    }
-
-    private static func makeMicRecorder(url: URL, bitRate: Int) throws -> AVAudioRecorder {
-        let recorder = try AVAudioRecorder(
-            url: url,
-            settings: RecordingCodec.aacSettings(channels: 1, bitRate: bitRate)
-        )
-        recorder.prepareToRecord()
-        return recorder
     }
 
     private static func makeSessionDirectory(in base: URL) throws -> URL {

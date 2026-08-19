@@ -91,6 +91,10 @@ enum PreferencesChrome {
         }
     }
 
+    static func shortcutRow(title: String, pref: Binding<HotkeyPref>) -> some View {
+        shortcutRow(title: title, enabled: pref.enabled, chord: pref.chord)
+    }
+
     static func shortcutRow(
         title: String,
         enabled: Binding<Bool>,

@@ -2,7 +2,7 @@
 
 LockMic is a native macOS menu-bar utility that mutes system microphone input at the Core Audio level so mute works in every app (Zoom, Teams, Meet, FaceTime, browsers, etc.).
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.4.7
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.4.8
 
 **Distribution priority:** Homebrew (Developer ID / notarized `.app`) first; Mac App Store later with the same codebase and a sandboxed flavor.
 
@@ -61,6 +61,8 @@ LockMic is a native macOS menu-bar utility that mutes system microphone input at
 
 ### 1. `AudioDeviceService` (Core Audio)
 
+One instance is shared by `MicController` and `SessionRecorder`.
+
 - Resolve **default input device** (`kAudioHardwarePropertyDefaultInputDevice`)
 - Get/set **mute** (`kAudioDevicePropertyMute`, input scope)
 - Enumerate inputs; detect mute support and **virtual devices**
@@ -92,8 +94,9 @@ enum MicState: muted | unmuted | unknown | unsupported(deviceName)
 - Registers global shortcuts via Carbon `RegisterEventHotKey` + event handler on the dispatcher target
 - Listens for **both** `kEventHotKeyPressed` and `kEventHotKeyReleased` (release used for push-to-talk)
 - Fallback `NSEvent` local/global monitors for keyDown/keyUp
-- Bindings: toggle, mute-only, unmute-only, push-to-talk, push-to-mute, optional ⌘F5 toggle alias
-- Forwards `(HotkeyAction, HotkeyPhase)` to `StatusItemController` → `MicController`
+- Bindings: toggle, mute-only, unmute-only, start/stop recording, push-to-talk, push-to-mute, optional ⌘F5 toggle alias
+- Forwards `(HotkeyAction, HotkeyPhase)` to `HotkeyCoordinator` → `MicController` / `RecordingCoordinator`
+- Shortcut prefs are one `HotkeyPref` row per binding (enable + chord)
 - Preferences surfaces **shortcut conflicts** when two enabled bindings share a chord
 
 #### Momentary hotkeys
@@ -110,12 +113,15 @@ Only one momentary hold is active at a time; latching shortcuts are ignored whil
 
 | Piece | Role |
 |-------|------|
-| `StatusItemController` | Menu bar icon, left-click toggle, right-click menu, owns HUD + hotkeys + prefs window |
+| `StatusItemController` | Menu bar icon, click, menu, prefs window; wires coordinators |
+| `HotkeyCoordinator` | Global hotkey registration and momentary hold/restore |
+| `HUDPresenter` | Chooses toast vs floating |
+| `RecordingCoordinator` | Start/stop capture, TCC retry, monitor, mix-on-quit |
 | `UpdateChecker` | Daily GitHub release check; badges + Preferences About update section (Homebrew vs DMG) |
-| `HUDOverlay` | Multi-display panels: toast (auto-hide) or floating (persistent) |
+| `HUDOverlay` | `showToast` / `showFloating` — one pill per display |
 | `PreferencesView` | System Settings–style sidebar: General, Devices, Recording, Keyboard, About |
-| `SessionRecorder` | Optional session capture: default mic + system playback → dated AAC mix |
-| `RecordingMonitorWindow` | AppKit monitor: exclusive mic, extra outputs, levels, permission retry |
+| `SessionRecorder` | Selected mic (HAL, retargetable) + system playback tap → dated AAC mix |
+| `RecordingMonitorWindow` | AppKit monitor: input/output list, levels, mute, stop, permission retry |
 | `HotkeyRecorderButton` | Capture custom shortcut chords |
 | `SoundFeedback` | Optional mute/unmute system sounds |
 
@@ -143,7 +149,7 @@ Preferences window: resizable, frosted material background (`regularMaterial` / 
 `UserDefaults`-backed `@Published` settings:
 
 - HUD toast, floating HUD, sound, launch at login, show in Dock, mute-all
-- Recording folder, bitrate, follow-default mic/output, keep per-device files
+- Recording folder, bitrate, all-playback vs default output, keep stem files
 - Shortcut enable flags + chords (toggle / mute / unmute / F5 / flip / talk / mute-hold)
 - Defaults: mute-all on; toast + sound on; floating off; mute/unmute shortcuts off
 
@@ -229,7 +235,8 @@ LockMic/
 │   │                 RecordingCapture, SystemAudioAccess
 │   ├── Util/         Comparable+Clamped, L10n
 │   └── UI/
-│       ├── StatusItemController, EscapeToCloseWindow
+│       ├── StatusItemController, HotkeyCoordinator, HUDPresenter,
+│       │   RecordingCoordinator, EscapeToCloseWindow
 │       ├── HUDHoldKind, HUDContentView, HUDOverlay
 │       ├── PreferencesView, PreferencesTab, PreferencesChrome,
 │       │   PreferencesGeneral/Devices/Recording/Keyboard/AboutPage
@@ -302,6 +309,7 @@ Local:
 | **1.4.5** | Mix temp file keeps .m4a so Finder Space preview plays | Done |
 | **1.4.6** | Anonymous usage includes recording start/stop (no audio or files) | Done |
 | **1.4.7** | Visible mix progress filename (`… mixing 37%.m4a`) | Done |
+| **1.4.8** | Recording shortcuts; switch mic mid-session; simpler two-file mix | Done |
 | **HB-1.x** | Push-to-talk / push-to-mute, shortcut conflict warnings | Done |
 | **HB-2** | Richer status, polish, notarized releases | Planned |
 | **Pro** (optional) | Paid add-ons in separate closed modules (open core remains MIT) | Future |

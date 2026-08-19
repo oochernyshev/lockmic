@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Țineți pentru a inversa";
 "keyboard.push_mute" = "Țineți pentru mute";
 "keyboard.push_talk" = "Apasă pentru a vorbi";
+"keyboard.recording.header" = "Înregistrare";
 "keyboard.reset" = "Resetează la implicite";
 "keyboard.shortcuts.caption" = "Clic pe un câmp, apoi apăsați tastele · Esc anulează · Delete șterge";
 "keyboard.shortcuts.header" = "Scurtături";
+"keyboard.start_recording" = "Pornește înregistrarea";
+"keyboard.stop_recording" = "Oprește înregistrarea";
 "keyboard.toggle" = "Comută mute";
 "keyboard.type_shortcut" = "Introduceți scurtătura…";
 "keyboard.unmute" = "Activează";

@@ -68,9 +68,12 @@
 "keyboard.push_flip" = "Håll för att vända";
 "keyboard.push_mute" = "Håll för att tysta";
 "keyboard.push_talk" = "Tryck för att prata";
+"keyboard.recording.header" = "Inspelning";
 "keyboard.reset" = "Återställ standardvärden";
 "keyboard.shortcuts.caption" = "Klicka i ett fält och tryck tangenter · Esc avbryter · Delete rensar";
 "keyboard.shortcuts.header" = "Genvägar";
+"keyboard.start_recording" = "Starta inspelning";
+"keyboard.stop_recording" = "Stoppa inspelning";
 "keyboard.toggle" = "Växla mute";
 "keyboard.type_shortcut" = "Skriv genväg…";
 "keyboard.unmute" = "Aktivera";
