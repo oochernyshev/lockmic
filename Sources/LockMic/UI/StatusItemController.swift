@@ -817,6 +817,7 @@ final class StatusItemController {
         recordingMonitor.show(
             recorder: recorder,
             preferences: preferences,
+            mic: mic,
             onStop: { [weak self] in
                 self?.stopRecordingNow()
             },

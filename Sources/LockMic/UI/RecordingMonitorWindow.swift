@@ -24,6 +24,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var followOutputToggle: AccessoryToggle?
     private var stopButton: StopRecordingButton?
     private var preferences: PreferencesStore?
+    private var mic: MicController?
     private var waveform: WaveformView?
     private var timer: Timer?
     private var recorder: SessionRecorder?
@@ -34,17 +35,20 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var lastElapsedSeconds = -1
     private var timerForRecording = false
     private var recorderCancellables = Set<AnyCancellable>()
+    private var micCancellables = Set<AnyCancellable>()
 
     var isVisible: Bool { window?.isVisible == true }
 
     func show(
         recorder: SessionRecorder,
         preferences: PreferencesStore? = nil,
+        mic: MicController? = nil,
         onStop: @escaping () -> Void,
         onAllowAccess: (() -> Void)? = nil
     ) {
         self.recorder = recorder
         self.preferences = preferences
+        self.mic = mic
         self.onStop = onStop
         self.onAllowAccess = onAllowAccess
         if window == nil {
@@ -55,6 +59,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             waveSessionStart = recorder.recordingStartedAt
         }
         observeRecorder(recorder)
+        observeMic(mic)
         rebuildSections()
         syncChrome()
         startTimer()
@@ -64,12 +69,14 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         }
         window.alphaValue = 1
         window.orderFrontRegardless()
+        window.invalidateShadow()
         window.displayIfNeeded()
     }
 
     func hide() {
         saveWindowOrigin()
         recorderCancellables.removeAll()
+        micCancellables.removeAll()
         timer?.invalidate()
         timer = nil
         window?.orderOut(nil)
@@ -102,15 +109,23 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         window.isFloatingPanel = true
         window.becomesKeyOnlyIfNeeded = true
         window.level = .statusBar
-        // Opaque window — a visual-effect root reblurs on every subview
-        // redraw and makes the waveform look like it is flickering.
-        window.isOpaque = true
-        window.backgroundColor = .windowBackgroundColor
+        // Frosted like Preferences (SwiftUI `.regularMaterial`). The effect
+        // is a sibling behind the chrome — parenting it as the root reblurs
+        // on every waveform tick and looks like flicker.
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         window.delegate = self
 
         let content = NSView(frame: NSRect(x: 0, y: 0, width: Self.windowWidth, height: 420))
         content.autoresizingMask = [.width, .height]
+
+        let frost = NSVisualEffectView(frame: content.bounds)
+        frost.autoresizingMask = [.width, .height]
+        frost.material = .headerView
+        frost.blendingMode = .behindWindow
+        frost.state = .active
+        content.addSubview(frost)
 
         let root = NSStackView()
         root.orientation = .vertical
@@ -309,8 +324,18 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private func syncRows() {
         guard let recorder else { return }
         for device in recorder.devices {
-            rows[device.id]?.apply(device)
+            rows[device.id]?.apply(device, muted: isInputMuted(device))
         }
+    }
+
+    private func isInputMuted(_ device: RecordingDeviceRow) -> Bool {
+        guard device.kind == .input, let mic, mic.effectiveMuted else { return false }
+        guard let row = mic.inputDevices.first(where: { $0.uid == device.id }) else {
+            return device.isDefault
+        }
+        // Follow LockMic intent for devices we control. A raw HAL mute read can
+        // stay true while a capture is open, even after the user has unmuted.
+        return row.isInScope && row.supportsMute && !row.isVirtual
     }
 
     private func syncRowLevels() {
@@ -330,7 +355,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         outputsCard.removeRows()
 
         for device in recorder.devices where device.kind == .input {
-            let row = RowView(device: device) { [weak self] id, on in
+            let row = RowView(device: device, muted: isInputMuted(device)) { [weak self] id, on in
                 self?.recorder?.setDeviceEnabled(id, enabled: on)
                 self?.syncRows()
             }
@@ -338,7 +363,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             inputsCard.addRow(row)
         }
         for device in recorder.devices where device.kind == .output {
-            let row = RowView(device: device) { [weak self] id, on in
+            let row = RowView(device: device, muted: false) { [weak self] id, on in
                 self?.recorder?.setDeviceEnabled(id, enabled: on)
                 self?.syncRows()
             }
@@ -362,6 +387,23 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             self?.syncChrome()
         }
         .store(in: &recorderCancellables)
+    }
+
+    private func observeMic(_ mic: MicController?) {
+        micCancellables.removeAll()
+        guard let mic else { return }
+        Publishers.CombineLatest(mic.$state, mic.$inputDevices)
+            .sink { [weak self] _, _ in
+                self?.syncMuteStatus()
+            }
+            .store(in: &micCancellables)
+    }
+
+    private func syncMuteStatus() {
+        guard let recorder else { return }
+        for device in recorder.devices where device.kind == .input {
+            rows[device.id]?.applyMute(isInputMuted(device))
+        }
     }
 
     private func syncChrome() {
@@ -746,6 +788,57 @@ private final class CardView: NSView {
     }
 }
 
+/// Compact orange “Muted” capsule matching Preferences device status.
+private final class MuteBadgeView: NSView {
+    private let dot = NSView()
+    private let label = NSTextField(labelWithString: L10n.devicesStatusMuted)
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.cornerRadius = 8
+        layer?.masksToBounds = true
+
+        dot.wantsLayer = true
+        dot.layer?.cornerRadius = 3
+        dot.translatesAutoresizingMaskIntoConstraints = false
+
+        label.font = .systemFont(ofSize: 11, weight: .semibold)
+        label.textColor = .labelColor
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        addSubview(dot)
+        addSubview(label)
+        NSLayoutConstraint.activate([
+            dot.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 7),
+            dot.centerYAnchor.constraint(equalTo: centerYAnchor),
+            dot.widthAnchor.constraint(equalToConstant: 6),
+            dot.heightAnchor.constraint(equalToConstant: 6),
+            label.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 5),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -7),
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 3),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -3),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: NSSize {
+        let text = label.intrinsicContentSize
+        return NSSize(width: 7 + 6 + 5 + text.width + 7, height: 18)
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.18).cgColor
+        dot.layer?.backgroundColor = NSColor.systemOrange.cgColor
+    }
+}
+
 private final class RowView: NSView {
     private static let markWidth: CGFloat = 16
     private static let iconWidth: CGFloat = 16
@@ -755,17 +848,24 @@ private final class RowView: NSView {
     private let iconView = NSImageView()
     private let nameField = NSTextField(labelWithString: "")
     private let badge = NSTextField(labelWithString: "")
+    private let muteBadge = MuteBadgeView()
     private let detailField = NSTextField(labelWithString: "")
     private let meter = LevelBar()
     private var nameBottom: NSLayoutConstraint?
     private var detailBottom: NSLayoutConstraint?
     private var badgeWidth: NSLayoutConstraint?
+    private var muteWidth: NSLayoutConstraint?
+    private var badgeToMeter: NSLayoutConstraint?
+    private var badgeToMute: NSLayoutConstraint?
+    private var muteToMeter: NSLayoutConstraint?
     private let onToggle: (String, Bool) -> Void
     private var deviceID = ""
+    private var kind: RecordingDeviceKind = .input
     private var canCapture = true
     private var sectionEnabled = true
+    private var isMuted = false
 
-    init(device: RecordingDeviceRow, onToggle: @escaping (String, Bool) -> Void) {
+    init(device: RecordingDeviceRow, muted: Bool, onToggle: @escaping (String, Bool) -> Void) {
         self.onToggle = onToggle
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
@@ -787,12 +887,15 @@ private final class RowView: NSView {
         badge.setContentHuggingPriority(.required, for: .horizontal)
         badge.setContentCompressionResistancePriority(.required, for: .horizontal)
 
+        muteBadge.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        muteBadge.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         detailField.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         detailField.textColor = .secondaryLabelColor
         detailField.lineBreakMode = .byTruncatingTail
         detailField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        [mark, iconView, nameField, badge, detailField, meter].forEach {
+        [mark, iconView, nameField, badge, muteBadge, detailField, meter].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             addSubview($0)
         }
@@ -800,6 +903,10 @@ private final class RowView: NSView {
         nameBottom = nameField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -9)
         detailBottom = detailField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
         badgeWidth = badge.widthAnchor.constraint(equalToConstant: 0)
+        muteWidth = muteBadge.widthAnchor.constraint(equalToConstant: 0)
+        badgeToMeter = badge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10)
+        badgeToMute = badge.trailingAnchor.constraint(equalTo: muteBadge.leadingAnchor, constant: -6)
+        muteToMeter = muteBadge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10)
 
         NSLayoutConstraint.activate([
             mark.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -817,7 +924,7 @@ private final class RowView: NSView {
             nameField.trailingAnchor.constraint(equalTo: badge.leadingAnchor, constant: -6),
 
             badge.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
-            badge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10),
+            muteBadge.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
 
             meter.trailingAnchor.constraint(equalTo: trailingAnchor),
             meter.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
@@ -828,20 +935,18 @@ private final class RowView: NSView {
             detailField.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10),
             detailField.topAnchor.constraint(equalTo: nameField.bottomAnchor, constant: 1),
         ])
-        apply(device)
+        apply(device, muted: muted)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { nil }
 
-    func apply(_ device: RecordingDeviceRow) {
+    func apply(_ device: RecordingDeviceRow, muted: Bool = false) {
         deviceID = device.id
+        kind = device.kind
         canCapture = device.canCapture
         mark.style = device.kind == .input ? .radio : .checkbox
         mark.isOn = device.isEnabled
-        let symbol = device.kind == .input ? "mic.fill" : "speaker.wave.2.fill"
-        iconView.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
-        iconView.contentTintColor = device.canCapture ? .controlAccentColor : .secondaryLabelColor
         nameField.stringValue = device.name
         applyEnabledLook()
         let showBadge = device.isDefault
@@ -854,6 +959,37 @@ private final class RowView: NSView {
         nameBottom?.isActive = !hasDetail
         detailBottom?.isActive = hasDetail
         meter.active = device.isEnabled && device.canCapture && sectionEnabled
+        applyMute(muted)
+    }
+
+    func applyMute(_ muted: Bool) {
+        let show = muted && kind == .input
+        isMuted = show
+        muteBadge.isHidden = !show
+        muteWidth?.isActive = !show
+        badgeToMute?.isActive = show
+        muteToMeter?.isActive = show
+        badgeToMeter?.isActive = !show
+        muteBadge.setContentHuggingPriority(show ? .required : .defaultLow, for: .horizontal)
+        muteBadge.setContentCompressionResistancePriority(show ? .required : .defaultLow, for: .horizontal)
+        applyIcon()
+    }
+
+    private func applyIcon() {
+        let symbol: String
+        if kind == .output {
+            symbol = "speaker.wave.2.fill"
+        } else if isMuted {
+            symbol = "mic.slash.fill"
+        } else {
+            symbol = "mic.fill"
+        }
+        iconView.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        if isMuted {
+            iconView.contentTintColor = .systemOrange
+        } else {
+            iconView.contentTintColor = canCapture ? .controlAccentColor : .secondaryLabelColor
+        }
     }
 
     func setSectionEnabled(_ enabled: Bool) {
@@ -1082,23 +1218,25 @@ private final class WaveformView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.isOpaque = true
+        layer?.isOpaque = false
         layer?.masksToBounds = true
         layer?.actions = Self.noAnim
         strip.anchorPoint = .zero
         strip.actions = Self.noAnim
         layer?.addSublayer(strip)
-        for chrome in [mid, top, fade, playhead] {
+        for chrome in [mid, top, playhead] {
             chrome.actions = Self.noAnim
             layer?.addSublayer(chrome)
         }
+        fade.actions = Self.noAnim
+        layer?.mask = fade
         applyColors()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { nil }
 
-    override var isOpaque: Bool { true }
+    override var isOpaque: Bool { false }
     override var wantsUpdateLayer: Bool { true }
 
     override func updateLayer() {
@@ -1156,16 +1294,15 @@ private final class WaveformView: NSView {
 
     private func applyColors() {
         effectiveAppearance.performAsCurrentDrawingAppearance {
-            let bg = NSColor.windowBackgroundColor.cgColor
-            layer?.backgroundColor = bg
+            layer?.backgroundColor = NSColor.clear.cgColor
             mid.backgroundColor = NSColor.separatorColor.withAlphaComponent(0.28).cgColor
             top.backgroundColor = NSColor.separatorColor.cgColor
             playhead.backgroundColor = NSColor.systemRed.cgColor
-            fade.colors = [bg, bg.copy(alpha: 0) ?? bg]
             let red = NSColor.systemRed.cgColor
             for bar in bars { bar.backgroundColor = red }
             for bar in pool { bar.backgroundColor = red }
         }
+        fade.colors = [NSColor.clear.cgColor, NSColor.black.cgColor]
         fade.startPoint = CGPoint(x: 0, y: 0.5)
         fade.endPoint = CGPoint(x: 1, y: 0.5)
     }
@@ -1175,7 +1312,9 @@ private final class WaveformView: NSView {
         top.frame = CGRect(x: 0, y: bounds.maxY - hair, width: bounds.width, height: hair)
         mid.frame = CGRect(x: inset, y: bounds.midY.rounded(.down), width: max(0, bounds.width - inset * 2), height: hair)
         playhead.frame = CGRect(x: bounds.maxX - inset, y: 10, width: hair, height: max(0, bounds.height - 20))
-        fade.frame = CGRect(x: 0, y: 0, width: 28, height: bounds.height)
+        fade.frame = bounds
+        let fadeEnd = bounds.width > 0 ? min(1, 28 / bounds.width) : 0.06
+        fade.locations = [0, fadeEnd as NSNumber]
         layoutStrip()
     }
 

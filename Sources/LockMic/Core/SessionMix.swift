@@ -6,7 +6,7 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "SessionMix")
 
 /// Mix stems and optionally discard per-device files after a successful mix.
 enum SessionMix {
-    /// Mix stems into a dated `LockMic yyyy-MM-dd HH.mm.ss.m4a`.
+    /// Mix stems into a dated `LockMic yyyy-MM-dd HH.mm.m4a`.
     /// Mic is ducked while playback has energy so speaker bleed does not double.
     static func mix(
         in folder: URL,

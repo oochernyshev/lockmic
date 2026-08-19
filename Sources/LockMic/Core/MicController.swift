@@ -14,6 +14,7 @@ enum MicState: Equatable, Sendable {
 /// Snapshot of an input device for the Preferences → Devices list.
 struct InputDeviceRow: Identifiable, Equatable, Sendable {
     let id: UInt32
+    let uid: String
     let name: String
     let isDefault: Bool
     let supportsMute: Bool
@@ -153,6 +154,7 @@ final class MicController: ObservableObject {
             let muted: Bool? = device.supportsMute ? (try? audio.isMuted(device.id)) : nil
             return InputDeviceRow(
                 id: device.id,
+                uid: device.uid,
                 name: device.name,
                 isDefault: isDefault,
                 supportsMute: device.supportsMute,

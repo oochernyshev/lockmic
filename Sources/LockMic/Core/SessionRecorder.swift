@@ -51,7 +51,7 @@ enum SessionRecorderError: LocalizedError {
 
 }
 
-/// Records default-mic + system playback as AAC, then mixes them into a dated `LockMic yyyy-MM-dd HH.mm.ss.m4a`.
+/// Records default-mic + system playback as AAC, then mixes them into a dated `LockMic yyyy-MM-dd HH.mm.m4a`.
 ///
 /// Playback uses a Core Audio process tap (macOS 14.2+). Mic uses `AVAudioRecorder`
 /// on the default input — other input devices are left alone.
@@ -692,9 +692,16 @@ final class SessionRecorder: ObservableObject {
     private static func makeSessionDirectory(in base: URL) throws -> URL {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd HH.mm.ss"
-        let folder = base.appendingPathComponent("LockMic \(formatter.string(from: Date()))", isDirectory: true)
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        formatter.dateFormat = "yyyy-MM-dd HH.mm"
+        let stamp = formatter.string(from: Date())
+        let fm = FileManager.default
+        var folder = base.appendingPathComponent("LockMic \(stamp)", isDirectory: true)
+        var n = 2
+        while fm.fileExists(atPath: folder.path) {
+            folder = base.appendingPathComponent("LockMic \(stamp) \(n)", isDirectory: true)
+            n += 1
+        }
+        try fm.createDirectory(at: folder, withIntermediateDirectories: true)
         return folder
     }
 }
