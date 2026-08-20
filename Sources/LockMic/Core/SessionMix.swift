@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 import AudioToolbox
 import Foundation
@@ -84,7 +85,78 @@ enum SessionMix {
             packet += Int64(numPackets)
         }
         guard packet > 0 else { throw SessionRecorderError.mixFailed }
+        applyLockMicMetadata(outFile, url: output)
     }
+
+    /// Finder/Music tags + app logo as cover. Best-effort; wrap already has the audio.
+    private static func applyLockMicMetadata(_ file: AudioFileID, url: URL) {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let app = version.isEmpty ? "LockMic" : "LockMic \(version)"
+        let copyright = Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? ""
+        let year = String(Calendar.current.component(.year, from: Date()))
+        var info: [String: String] = [
+            kAFInfoDictionary_Title: url.deletingPathExtension().lastPathComponent,
+            kAFInfoDictionary_Artist: "LockMic",
+            kAFInfoDictionary_Album: "LockMic",
+            kAFInfoDictionary_EncodingApplication: app,
+            kAFInfoDictionary_Comments: "Recorded with \(app)",
+            kAFInfoDictionary_RecordedDate: ISO8601DateFormatter().string(from: Date()),
+            kAFInfoDictionary_Year: year,
+        ]
+        if !copyright.isEmpty {
+            info[kAFInfoDictionary_Copyright] = copyright
+        }
+        var dict = info as CFDictionary
+        _ = AudioFileSetProperty(
+            file,
+            kAudioFilePropertyInfoDictionary,
+            UInt32(MemoryLayout<CFDictionary>.size),
+            &dict
+        )
+        guard let art = albumArtPNG else { return }
+        var writable: UInt32 = 0
+        if AudioFileGetPropertyInfo(file, kAudioFilePropertyAlbumArtwork, nil, &writable) == noErr,
+           writable == 0
+        {
+            return
+        }
+        var data = art as CFData
+        _ = AudioFileSetProperty(
+            file,
+            kAudioFilePropertyAlbumArtwork,
+            UInt32(MemoryLayout<CFData>.size),
+            &data
+        )
+    }
+
+    private static let albumArtPNG: Data? = {
+        guard let image = NSImage(named: "AppLogo") ?? NSImage(named: "AppIcon") else { return nil }
+        let dim = 512
+        guard let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: dim,
+            pixelsHigh: dim,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ) else { return nil }
+        rep.size = NSSize(width: dim, height: dim)
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+        NSGraphicsContext.current?.imageInterpolation = .high
+        image.draw(
+            in: NSRect(x: 0, y: 0, width: dim, height: dim),
+            from: .zero,
+            operation: .copy,
+            fraction: 1
+        )
+        NSGraphicsContext.restoreGraphicsState()
+        return rep.representation(using: .png, properties: [:])
+    }()
 
     private static func waitUntilPlayable(_ url: URL) throws {
         for _ in 0..<50 {

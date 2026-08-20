@@ -171,6 +171,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
         let waveCard = CardView()
         waveCard.setHeaderHidden(true)
+        waveCard.setBodyInsets(NSEdgeInsets(top: 8, left: 14, bottom: 8, right: 14))
         let waveBox = NSView()
         waveBox.translatesAutoresizingMaskIntoConstraints = false
         let wave = WaveformView()
@@ -309,6 +310,15 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         }
     }
 
+    /// Under an hour: `05:23`. From 60 minutes: `5:00:00`.
+    private static func elapsedText(_ seconds: Int) -> String {
+        let s = max(0, seconds)
+        if s >= 3600 {
+            return String(format: "%d:%02d:%02d", s / 3600, (s / 60) % 60, s % 60)
+        }
+        return String(format: "%02d:%02d", s / 60, s % 60)
+    }
+
     private func tick() {
         guard let recorder else { return }
         if recorder.isRecording != timerForRecording {
@@ -321,7 +331,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             let seconds = max(0, Int(Date().timeIntervalSince(start)))
             if seconds != lastElapsedSeconds {
                 lastElapsedSeconds = seconds
-                elapsedField?.stringValue = String(format: "%02d:%02d", seconds / 60, seconds % 60)
+                elapsedField?.stringValue = Self.elapsedText(seconds)
                 sizeField?.stringValue = recorder.mixSizeChipText()
             }
         }

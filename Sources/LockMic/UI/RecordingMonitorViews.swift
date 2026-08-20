@@ -319,6 +319,10 @@ final class CardView: NSView {
         bodyStack.setCustomSpacing(hidden ? 0 : PreferencesChrome.contentSpacing, after: header)
     }
 
+    func setBodyInsets(_ insets: NSEdgeInsets) {
+        bodyStack.edgeInsets = insets
+    }
+
     func setLeadingAccessory(_ view: NSView?) {
         if let leadingAccessory {
             header.removeArrangedSubview(leadingAccessory)
