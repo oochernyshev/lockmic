@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Finder に表示";
 "recording.folder.reset" = "デフォルトを使用";
 "recording.folder.caption" = "各セッションは文字起こし用の日付付きミックス（マイク＋再生）として保存されます。";
-"recording.keep_stems" = "ミックス後もデバイス録音を残す";
-"recording.keep_stems.caption" = "オフの場合、ミックスが成功するとマイクと再生のファイルは削除され、日付付きのミックスだけが残ります。";
 "recording.playback.header" = "再生";
 "recording.playback.toggle" = "すべての再生デバイスを録音";
 "recording.playback.caption.all" = "すべてのアプリの再生を、出力先を問わず取り込みます。";

@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Finder’da göster";
 "recording.folder.reset" = "Varsayılanı kullan";
 "recording.folder.caption" = "Her oturum, yazıya dökmek için tarihli bir karışım (mikrofon + oynatma) olarak kaydedilir.";
-"recording.keep_stems" = "Karışımdan sonra cihaz kayıtlarını tut";
-"recording.keep_stems.caption" = "Kapalıyken başarılı bir karışımdan sonra mikrofon ve oynatma dosyaları silinir. Yalnızca tarihli karışım kalır.";
 "recording.playback.header" = "Oynatma";
 "recording.playback.toggle" = "Tüm oynatma aygıtlarını kaydet";
 "recording.playback.caption.all" = "Tüm uygulamaların oynatmasını, herhangi bir çıkışta yakalar.";

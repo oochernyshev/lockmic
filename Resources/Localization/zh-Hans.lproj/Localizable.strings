@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "在 Finder 中显示";
 "recording.folder.reset" = "使用默认位置";
 "recording.folder.caption" = "每次会话保存为带日期的混音（麦克风 + 播放），便于转写。";
-"recording.keep_stems" = "混音后保留设备录音";
-"recording.keep_stems.caption" = "关闭时，混音成功后会删除麦克风和播放文件，只保留带日期的混音。";
 "recording.playback.header" = "播放";
 "recording.playback.toggle" = "录制所有播放设备";
 "recording.playback.caption.all" = "捕获所有应用在任意输出上的播放。";

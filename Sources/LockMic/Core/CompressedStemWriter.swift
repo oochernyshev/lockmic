@@ -23,11 +23,10 @@ final class CompressedStemWriter: @unchecked Sendable {
     private var ioPendingSilenceFrames: AVAudioFrameCount = 0
     private var pendingSilenceFrames: AVAudioFrameCount = 0
 
-    init(url: URL, channels: AVAudioChannelCount, bitRate: Int, sampleRate: Double = RecordingCodec.sampleRate) throws {
+    init(url: URL, channels: AVAudioChannelCount, bitRate: Int) throws {
         let channels = max(1, min(channels, 2))
-        // Always 48 kHz AAC. HAL/tap rates (e.g. 16 kHz Bluetooth) are resampled on ingest.
-        let rate = RecordingCodec.sampleRate
-        writeFormat = RecordingCodec.pcmFormat(channels: channels, sampleRate: rate)
+        // PCM ingest is 48 kHz; AAC sample rate follows bitrate (32 / 44.1 / 48 kHz).
+        writeFormat = RecordingCodec.pcmFormat(channels: channels)
         queue = DispatchQueue(label: "com.lockmic.stem-write.\(url.lastPathComponent)", qos: .userInitiated)
         try FileManager.default.createDirectory(
             at: url.deletingLastPathComponent(),
@@ -35,16 +34,15 @@ final class CompressedStemWriter: @unchecked Sendable {
         )
         try? FileManager.default.removeItem(at: url)
         do {
-            file = try Self.openAAC(url: url, channels: channels, bitRate: bitRate, sampleRate: rate)
+            file = try Self.openAAC(url: url, channels: channels, bitRate: bitRate)
         } catch {
-            log.error("AAC open failed: \(error.localizedDescription, privacy: .public); retrying 48 kHz 128 kbps")
+            log.error("AAC open failed: \(error.localizedDescription, privacy: .public); retrying 128 kbps")
             try? FileManager.default.removeItem(at: url)
             do {
                 file = try Self.openAAC(
                     url: url,
                     channels: channels,
-                    bitRate: RecordingBitRate.default.bitsPerSecond,
-                    sampleRate: RecordingCodec.sampleRate
+                    bitRate: RecordingBitRate.default.bitsPerSecond
                 )
             } catch {
                 throw SessionRecorderError.fileFailed
@@ -55,12 +53,11 @@ final class CompressedStemWriter: @unchecked Sendable {
     private static func openAAC(
         url: URL,
         channels: AVAudioChannelCount,
-        bitRate: Int,
-        sampleRate: Double
+        bitRate: Int
     ) throws -> AVAudioFile {
         try AVAudioFile(
             forWriting: url,
-            settings: RecordingCodec.aacSettings(channels: channels, bitRate: bitRate, sampleRate: sampleRate),
+            settings: RecordingCodec.aacSettings(channels: channels, bitRate: bitRate),
             commonFormat: .pcmFormatFloat32,
             interleaved: false
         )

@@ -40,6 +40,7 @@
 		958180F202E06B74C7FF70B8 /* Comparable+Clamped.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F757219C34041FABC16B182 /* Comparable+Clamped.swift */; };
 		A135303EFDE1E0DDF1395128 /* InputDeviceCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56C0C058BA882C7D377D7002 /* InputDeviceCapture.swift */; };
 		A76A5A5BAD20A087D0EEAD00 /* RecordingTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A1CAC0DBBA0C68A3001DC9 /* RecordingTypes.swift */; };
+		AA473EA7E801B173E98DE292 /* LiveMixer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12E7B26E0035AAB6D481CEFE /* LiveMixer.swift */; };
 		ACC18BD5233D2126186035CC /* RecordingDSP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D648AE0FEB3920E8A9FA910C /* RecordingDSP.swift */; };
 		BA20006664889BFA032B547D /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402280C03971421D5FC37176 /* PreferencesStore.swift */; };
 		BDD8AAD6F773AE812F75400F /* HUDHoldKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500AF84D4D16D9AFA3D3F98C /* HUDHoldKind.swift */; };
@@ -59,6 +60,7 @@
 /* Begin PBXFileReference section */
 		00BF46D371BFBCB0BC6F1628 /* PlaybackTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackTap.swift; sourceTree = "<group>"; };
 		06ADA52982EF60A0DC607152 /* SessionRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecorder.swift; sourceTree = "<group>"; };
+		12E7B26E0035AAB6D481CEFE /* LiveMixer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMixer.swift; sourceTree = "<group>"; };
 		182A9BCDF590AE38191EA976 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/Localizable.strings; sourceTree = "<group>"; };
 		1F757219C34041FABC16B182 /* Comparable+Clamped.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Comparable+Clamped.swift"; sourceTree = "<group>"; };
 		200E9D59454FF5C42F0D7ECB /* PreferencesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesTab.swift; sourceTree = "<group>"; };
@@ -176,6 +178,7 @@
 				23C3675125FEA46D7196900C /* HotkeyManager.swift */,
 				B35F1D3335235FFC0A1CFD00 /* HotkeyTypes.swift */,
 				56C0C058BA882C7D377D7002 /* InputDeviceCapture.swift */,
+				12E7B26E0035AAB6D481CEFE /* LiveMixer.swift */,
 				C47A7A118040E6EF54FF7752 /* MicController.swift */,
 				00BF46D371BFBCB0BC6F1628 /* PlaybackTap.swift */,
 				402280C03971421D5FC37176 /* PreferencesStore.swift */,
@@ -368,6 +371,7 @@
 				15DD7D576F72455A28455301 /* HotkeyTypes.swift in Sources */,
 				A135303EFDE1E0DDF1395128 /* InputDeviceCapture.swift in Sources */,
 				8E88E5B6828241F03284F2FF /* L10n.swift in Sources */,
+				AA473EA7E801B173E98DE292 /* LiveMixer.swift in Sources */,
 				D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */,
 				34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */,
 				E7476AF3C6061511AF856AB6 /* PlaybackTap.swift in Sources */,
@@ -469,7 +473,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 150;
+				CURRENT_PROJECT_VERSION = 151;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_LANGUAGE = en;
 				DEVELOPMENT_TEAM = "";
@@ -491,7 +495,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.4.10;
+				MARKETING_VERSION = 1.4.11;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -509,12 +513,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 150;
+				CURRENT_PROJECT_VERSION = 151;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
-				MARKETING_VERSION = 1.4.10;
+				MARKETING_VERSION = 1.4.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -556,7 +560,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 150;
+				CURRENT_PROJECT_VERSION = 151;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_LANGUAGE = en;
 				DEVELOPMENT_TEAM = "";
@@ -572,7 +576,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.4.10;
+				MARKETING_VERSION = 1.4.11;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = LockMic;
@@ -589,12 +593,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 150;
+				CURRENT_PROJECT_VERSION = 151;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
-				MARKETING_VERSION = 1.4.10;
+				MARKETING_VERSION = 1.4.11;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;

@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Visa i Finder";
 "recording.folder.reset" = "Använd standard";
 "recording.folder.caption" = "Varje session sparas som en daterad mix (mikrofon + uppspelning) för transkribering.";
-"recording.keep_stems" = "Behåll enhetsinspelningar efter mix";
-"recording.keep_stems.caption" = "När av raderas mikrofon- och uppspelningsfiler efter en lyckad mix. Bara den daterade mixen behålls.";
 "recording.playback.header" = "Uppspelning";
 "recording.playback.toggle" = "Spela in alla uppspelningsenheter";
 "recording.playback.caption.all" = "Fångar alla appars uppspelning, på valfri utgång.";

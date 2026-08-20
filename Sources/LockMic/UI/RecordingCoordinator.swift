@@ -57,9 +57,7 @@ final class RecordingCoordinator {
         monitor.hide()
         let pending: SessionRecorder.PendingMix
         do {
-            pending = try recorder.stopAndPrepareMix(
-                keepDeviceRecordings: preferences.keepDeviceRecordings
-            )
+            pending = try recorder.stopAndPrepareMix()
         } catch {
             onSessionChanged?()
             onPresentError?(error)
@@ -80,9 +78,7 @@ final class RecordingCoordinator {
         if wasRecording {
             monitor.hide()
         }
-        let mixed = await recorder.finalizeAndMix(
-            keepDeviceRecordings: preferences.keepDeviceRecordings
-        )
+        let mixed = await recorder.finalizeAndMix()
         if wasRecording {
             UsageReporter.record(.stopRecording, source: .menu)
         }

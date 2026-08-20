@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Pokaż w Finderze";
 "recording.folder.reset" = "Użyj domyślnego";
 "recording.folder.caption" = "Każda sesja jest zapisywana jako datowany miks (mikrofon + odtwarzanie) do transkrypcji.";
-"recording.keep_stems" = "Zachowaj nagrania urządzeń po miksie";
-"recording.keep_stems.caption" = "Gdy wyłączone, pliki mikrofonu i odtwarzania są usuwane po udanym miksie. Pozostaje tylko datowany miks.";
 "recording.playback.header" = "Odtwarzanie";
 "recording.playback.toggle" = "Nagrywaj wszystkie urządzenia odtwarzające";
 "recording.playback.caption.all" = "Przechwytuje odtwarzanie wszystkich aplikacji na dowolnym wyjściu.";

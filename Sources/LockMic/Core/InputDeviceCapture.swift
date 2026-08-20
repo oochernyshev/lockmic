@@ -9,6 +9,7 @@ final class InputDeviceCapture: @unchecked Sendable {
     private var deviceID: AudioDeviceID
     private var ioProcID: AudioDeviceIOProcID?
     private var writer: CompressedStemWriter?
+    weak var mixer: LiveMixer?
     private var format: AVAudioFormat?
     private var scratch: AVAudioPCMBuffer?
     private let sessionStart: CFTimeInterval
@@ -30,21 +31,22 @@ final class InputDeviceCapture: @unchecked Sendable {
         return RecordingLevelDisplay.fromLinearPeak(_level)
     }
 
-    init(deviceID: AudioDeviceID, fileURL: URL, sessionStart: CFTimeInterval, bitRate: Int) throws {
+    init(deviceID: AudioDeviceID, fileURL: URL?, sessionStart: CFTimeInterval, bitRate: Int) throws {
         self.deviceID = deviceID
-        self.fileURL = fileURL
+        self.fileURL = fileURL ?? URL(fileURLWithPath: "/dev/null")
         self.sessionStart = sessionStart
 
         var asbd = try Self.inputStreamFormat(deviceID)
         guard let format = AVAudioFormat(streamDescription: &asbd), format.channelCount > 0 else {
             throw SessionRecorderError.invalidTapFormat
         }
-        writer = try CompressedStemWriter(
-            url: fileURL,
-            channels: 1,
-            bitRate: bitRate,
-            sampleRate: format.sampleRate
-        )
+        if let fileURL {
+            writer = try CompressedStemWriter(
+                url: fileURL,
+                channels: 1,
+                bitRate: bitRate
+            )
+        }
         try attachIO()
     }
 
@@ -104,7 +106,6 @@ final class InputDeviceCapture: @unchecked Sendable {
     }
 
     private func write(_ input: UnsafePointer<AudioBufferList>, format: AVAudioFormat) {
-        guard let writer else { return }
         let abl = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         guard !abl.isEmpty else { return }
 
@@ -123,12 +124,12 @@ final class InputDeviceCapture: @unchecked Sendable {
         if needsSessionAlign {
             let delay = max(0, CACurrentMediaTime() - sessionStart)
             if delay > 0.001 {
-                writer.writeSilence(seconds: delay)
+                writer?.writeSilence(seconds: delay)
             }
         } else if gapStart > 0 {
             let gap = max(0, CACurrentMediaTime() - gapStart)
             if gap > 0.001 {
-                writer.writeSilence(seconds: gap)
+                writer?.writeSilence(seconds: gap)
             }
         }
 
@@ -142,14 +143,15 @@ final class InputDeviceCapture: @unchecked Sendable {
             lock.lock()
             _level = max(peak, _level * 0.65)
             lock.unlock()
-            writer.write(dest)
+            writer?.write(dest)
+            mixer?.pushMic(dest)
             return
         }
 
         lock.lock()
         _level *= 0.65
         lock.unlock()
-        writer.padSilence(inputFrames: frames, sampleRate: format.sampleRate)
+        writer?.padSilence(inputFrames: frames, sampleRate: format.sampleRate)
     }
 
     private func scratchBuffer(frames: AVAudioFrameCount, format: AVAudioFormat) -> AVAudioPCMBuffer? {

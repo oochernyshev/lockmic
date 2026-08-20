@@ -23,6 +23,7 @@ final class PlaybackTap: PlaybackCapturing {
     private var aggregateID: AudioDeviceID = 0
     private var ioProcID: AudioDeviceIOProcID?
     private var writer: CompressedStemWriter?
+    weak var mixer: LiveMixer?
     private var scratch: AVAudioPCMBuffer?
     private var loggedFirstBuffer = false
     private let sessionStart: CFTimeInterval
@@ -49,7 +50,7 @@ final class PlaybackTap: PlaybackCapturing {
     init(
         audio: AudioDeviceService,
         scope: PlaybackRecordScope,
-        fileURL: URL,
+        fileURL: URL?,
         sessionStart: CFTimeInterval,
         bitRate: Int
     ) async throws {
@@ -172,8 +173,7 @@ final class PlaybackTap: PlaybackCapturing {
             writer = try CompressedStemWriter(
                 url: fileURL,
                 channels: 2,
-                bitRate: bitRate,
-                sampleRate: ioFormat.sampleRate
+                bitRate: bitRate
             )
         }
 
@@ -226,7 +226,6 @@ final class PlaybackTap: PlaybackCapturing {
     deinit { stop() }
 
     private func write(_ input: UnsafePointer<AudioBufferList>, ioFormat: AVAudioFormat) {
-        guard let writer else { return }
         let abl = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         guard !abl.isEmpty else { return }
 
@@ -244,13 +243,13 @@ final class PlaybackTap: PlaybackCapturing {
         if needsSessionAlign {
             let delay = max(0, CACurrentMediaTime() - sessionStart)
             if delay > 0.001 {
-                writer.writeSilence(seconds: delay)
+                writer?.writeSilence(seconds: delay)
                 log.info("Aligned playback with \(String(format: "%.3f", delay), privacy: .public)s of leading silence")
             }
         } else if gapStart > 0 {
             let gap = max(0, CACurrentMediaTime() - gapStart)
             if gap > 0.001 {
-                writer.writeSilence(seconds: gap)
+                writer?.writeSilence(seconds: gap)
                 log.info("Padded playback retarget gap \(String(format: "%.3f", gap), privacy: .public)s")
             }
         }
@@ -271,20 +270,21 @@ final class PlaybackTap: PlaybackCapturing {
             lock.lock()
             _level *= 0.65
             lock.unlock()
-            writer.padSilence(inputFrames: frames, sampleRate: ioFormat.sampleRate)
+            writer?.padSilence(inputFrames: frames, sampleRate: ioFormat.sampleRate)
             return
         }
         guard let dest = stereoScratch(frames: frames, format: ioFormat),
               Self.fillStereo(from: abl, into: dest)
         else {
-            writer.padSilence(inputFrames: frames, sampleRate: ioFormat.sampleRate)
+            writer?.padSilence(inputFrames: frames, sampleRate: ioFormat.sampleRate)
             return
         }
         let peak = RecordingDSP.peak(in: dest)
         lock.lock()
         _level = max(peak, _level * 0.65)
         lock.unlock()
-        writer.write(dest)
+        writer?.write(dest)
+        mixer?.pushPlayback(dest)
     }
 
     private func stereoScratch(frames: AVAudioFrameCount, format: AVAudioFormat) -> AVAudioPCMBuffer? {

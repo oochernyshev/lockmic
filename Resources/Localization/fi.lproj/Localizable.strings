@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Näytä Finderissa";
 "recording.folder.reset" = "Käytä oletusta";
 "recording.folder.caption" = "Kukin istunto tallennetaan päivättynä miksauksena (mikki + toisto) transkriptiota varten.";
-"recording.keep_stems" = "Säilytä laitetallenteet miksauksen jälkeen";
-"recording.keep_stems.caption" = "Kun pois päältä, mikin ja toiston tiedostot poistetaan onnistuneen miksauksen jälkeen. Vain päivätty miksaus jää.";
 "recording.playback.header" = "Toisto";
 "recording.playback.toggle" = "Tallenna kaikki toistolaitteet";
 "recording.playback.caption.all" = "Kaappaa kaikkien sovellusten toiston miltä tahansa lähdöltä.";

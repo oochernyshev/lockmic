@@ -47,10 +47,6 @@ struct PreferencesRecordingPage: View {
                     }
                 }
                 PreferencesChrome.caption(L10n.recordingFolderCaption)
-                prefsCheckRow(L10n.recordingKeepDeviceFiles, isOn: preferences.keepDeviceRecordings) {
-                    preferences.keepDeviceRecordings.toggle()
-                }
-                PreferencesChrome.caption(L10n.recordingKeepDeviceFilesCaption)
             }
 
             PreferencesChrome.sectionCard {

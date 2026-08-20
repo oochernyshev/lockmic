@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Toon in Finder";
 "recording.folder.reset" = "Gebruik standaard";
 "recording.folder.caption" = "Elke sessie wordt opgeslagen als een gedateerde mix (microfoon + weergave) om te transcriberen.";
-"recording.keep_stems" = "Apparaatopnamen na mix bewaren";
-"recording.keep_stems.caption" = "Als dit uit staat, worden microfoon- en weergavebestanden na een geslaagde mix verwijderd. Alleen de gedateerde mix blijft over.";
 "recording.playback.header" = "Weergave";
 "recording.playback.toggle" = "Alle afspeelapparaten opnemen";
 "recording.playback.caption.all" = "Neemt de weergave van alle apps op, op elke uitvoer.";

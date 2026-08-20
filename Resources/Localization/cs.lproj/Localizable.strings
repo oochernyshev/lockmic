@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Zobrazit ve Finderu";
 "recording.folder.reset" = "Použít výchozí";
 "recording.folder.caption" = "Každá relace se uloží jako datovaný mix (mikrofon + přehrávání) pro přepis.";
-"recording.keep_stems" = "Ponechat nahrávky zařízení po mixu";
-"recording.keep_stems.caption" = "Když je vypnuto, soubory mikrofonu a přehrávání se po úspěšném mixu smažou. Zůstane jen datovaný mix.";
 "recording.playback.header" = "Přehrávání";
 "recording.playback.toggle" = "Nahrávat všechna přehrávací zařízení";
 "recording.playback.caption.all" = "Zachytí přehrávání všech aplikací na jakémkoli výstupu.";

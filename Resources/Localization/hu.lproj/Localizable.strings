@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Megjelenítés a Finderben";
 "recording.folder.reset" = "Alapértelmezett használata";
 "recording.folder.caption" = "Minden munkamenet dátumozott keverésként (mikrofon + lejátszás) mentődik átíráshoz.";
-"recording.keep_stems" = "Eszközfelvételek megtartása a keverés után";
-"recording.keep_stems.caption" = "Ha ki van kapcsolva, a mikrofon- és lejátszófájlok törlődnek a sikeres keverés után. Csak a dátumozott keverés marad.";
 "recording.playback.header" = "Lejátszás";
 "recording.playback.toggle" = "Minden lejátszóeszköz felvétele";
 "recording.playback.caption.all" = "Minden app lejátszását rögzíti, bármely kimeneten.";

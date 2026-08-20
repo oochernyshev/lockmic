@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Показати у Finder";
 "recording.folder.reset" = "Типову теку";
 "recording.folder.caption" = "Кожен сеанс зберігається як датований мікс (мікрофон + відтворення) для транскрипції.";
-"recording.keep_stems" = "Зберігати записи пристроїв після зведення";
-"recording.keep_stems.caption" = "Якщо вимкнено, файли мікрофона та відтворення видаляються після успішного зведення. Залишається лише датований мікс.";
 "recording.playback.header" = "Відтворення";
 "recording.playback.toggle" = "Записувати всі пристрої відтворення";
 "recording.playback.caption.all" = "Записує відтворення всіх програм на будь-якому виході.";

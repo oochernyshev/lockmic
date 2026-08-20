@@ -21,7 +21,6 @@ final class PreferencesStore: ObservableObject {
         static let followDefaultMic = "followDefaultMic"
         static let followDefaultOutput = "followDefaultOutput"
         static let recordingBitRate = "recordingBitRate"
-        static let keepDeviceRecordings = "keepDeviceRecordings"
         static let recordingsFolderPath = "recordingsFolderPath"
         static let shareAnonymousUsage = "shareAnonymousUsage"
         /// When true, show a Dock icon so Preferences stay reachable if the menu bar is full.
@@ -116,11 +115,6 @@ final class PreferencesStore: ObservableObject {
     /// AAC bitrate for microphone, playback, and the mix.
     @Published var recordingBitRate: RecordingBitRate {
         didSet { UserDefaults.standard.set(recordingBitRate.rawValue, forKey: Keys.recordingBitRate) }
-    }
-
-    /// When false (default), stem files are deleted after a successful mix.
-    @Published var keepDeviceRecordings: Bool {
-        didSet { UserDefaults.standard.set(keepDeviceRecordings, forKey: Keys.keepDeviceRecordings) }
     }
 
     /// Empty means `defaultRecordingsDirectory` (`~/Movies/LockMic`).
@@ -260,10 +254,6 @@ final class PreferencesStore: ObservableObject {
         }
         followDefaultOutput = defaults.bool(forKey: Keys.followDefaultOutput)
         recordingBitRate = RecordingBitRate.resolved(defaults.integer(forKey: Keys.recordingBitRate))
-        if defaults.object(forKey: Keys.keepDeviceRecordings) == nil {
-            defaults.set(false, forKey: Keys.keepDeviceRecordings)
-        }
-        keepDeviceRecordings = defaults.bool(forKey: Keys.keepDeviceRecordings)
         recordingsFolderPath = defaults.string(forKey: Keys.recordingsFolderPath) ?? ""
 
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)

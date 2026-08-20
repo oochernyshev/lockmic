@@ -81,8 +81,6 @@ enum L10n {
     static var recordingFolderReveal: String { tr("recording.folder.reveal") }
     static var recordingFolderReset: String { tr("recording.folder.reset") }
     static var recordingFolderCaption: String { tr("recording.folder.caption") }
-    static var recordingKeepDeviceFiles: String { tr("recording.keep_stems") }
-    static var recordingKeepDeviceFilesCaption: String { tr("recording.keep_stems.caption") }
     static var recordingPlaybackHeader: String { tr("recording.playback.header") }
     static var recordingPlaybackToggle: String { tr("recording.playback.toggle") }
     static var recordingPlaybackCaptionAll: String { tr("recording.playback.caption.all") }

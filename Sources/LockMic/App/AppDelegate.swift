@@ -78,9 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if let status = self.statusItemController {
                 await status.finalizeRecordingForQuit()
             } else {
-                _ = await self.recorder.finalizeAndMix(
-                    keepDeviceRecordings: self.preferences.keepDeviceRecordings
-                )
+                _ = await self.recorder.finalizeAndMix()
             }
             NSApp.reply(toApplicationShouldTerminate: true)
         }

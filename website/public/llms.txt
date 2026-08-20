@@ -13,7 +13,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - **Partnerships / press:** info@wixee.ai
 - **Price:** Free
 - **Platform:** macOS 14 Sonoma or later
-- **Current version:** 1.4.10
+- **Current version:** 1.4.11
 
 ## Key facts
 
@@ -31,7 +31,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 
 ### DMG
 
-https://github.com/oochernyshev/lockmic/releases/download/v1.4.10/LockMic-1.4.10.dmg
+https://github.com/oochernyshev/lockmic/releases/download/v1.4.11/LockMic-1.4.11.dmg
 
 ### Homebrew
 

@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Afficher dans le Finder";
 "recording.folder.reset" = "Utiliser le dossier par défaut";
 "recording.folder.caption" = "Chaque session est enregistrée comme un mix daté (micro + lecture) pour la transcription.";
-"recording.keep_stems" = "Conserver les enregistrements des appareils après le mixage";
-"recording.keep_stems.caption" = "Si désactivé, les fichiers micro et lecture sont supprimés après un mixage réussi. Seul le mix daté est conservé.";
 "recording.playback.header" = "Lecture";
 "recording.playback.toggle" = "Enregistrer tous les appareils de lecture";
 "recording.playback.caption.all" = "Capture la lecture de toutes les apps, sur n’importe quelle sortie.";

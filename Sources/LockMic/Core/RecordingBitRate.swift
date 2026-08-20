@@ -18,13 +18,23 @@ enum RecordingBitRate: Int, CaseIterable, Equatable, Sendable {
     }
 
     func formattedSessionSize(duration: TimeInterval) -> String {
-        Self.sizeFormatter.string(fromByteCount: estimatedSessionBytes(duration: duration))
+        Self.formattedBytes(estimatedSessionBytes(duration: duration))
+    }
+
+    /// On-disk size plus unflushed audio at this bitrate, as one figure.
+    func sizeChipText(onDisk bytes: Int64, extra duration: TimeInterval = 0) -> String {
+        Self.formattedBytes(bytes + estimatedSessionBytes(duration: duration))
+    }
+
+    static func formattedBytes(_ bytes: Int64) -> String {
+        sizeFormatter.string(fromByteCount: max(0, bytes))
     }
 
     private static let sizeFormatter: ByteCountFormatter = {
         let formatter = ByteCountFormatter()
         formatter.countStyle = .file
         formatter.allowedUnits = [.useKB, .useMB, .useGB]
+        formatter.allowsNonnumericFormatting = false
         return formatter
     }()
 
@@ -38,10 +48,16 @@ enum RecordingBitRate: Int, CaseIterable, Equatable, Sendable {
 enum RecordingCodec {
     static let sampleRate: Double = 48_000
 
-    static func aacSampleRate(nearest rate: Double) -> Double {
-        // AAC-LC at 8–24 kHz rejects typical 96–160 kbps settings (`!dat` / 560226676).
-        // Stems always land on 44.1/48 kHz; CompressedStemWriter resamples HAL into this.
-        rate >= 46_000 ? 48_000 : 44_100
+    /// AAC-LC at 48 kHz stereo ignores 48–64 kbps and encodes ~200 kbps.
+    /// Pair low bitrates with 32 kHz; keep 44.1/48 kHz for 96 kbps and up.
+    static func aacSampleRate(bitRate: Int, channels: AVAudioChannelCount) -> Double {
+        let bps = clampedBitRate(bitRate, channels: channels)
+        if channels >= 2 {
+            if bps <= 64_000 { return 32_000 }
+            if bps <= 96_000 { return 44_100 }
+            return 48_000
+        }
+        return bps <= 48_000 ? 32_000 : 48_000
     }
 
     static func clampedBitRate(_ bitsPerSecond: Int, channels: AVAudioChannelCount) -> Int {
@@ -52,10 +68,9 @@ enum RecordingCodec {
 
     static func aacSettings(
         channels: AVAudioChannelCount,
-        bitRate: Int,
-        sampleRate: Double = sampleRate
+        bitRate: Int
     ) -> [String: Any] {
-        let rate = aacSampleRate(nearest: sampleRate)
+        let rate = aacSampleRate(bitRate: bitRate, channels: channels)
         let bps = clampedBitRate(bitRate, channels: channels)
         return [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),

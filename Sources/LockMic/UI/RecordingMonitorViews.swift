@@ -401,7 +401,7 @@ final class CardView: NSView {
     }
 }
 
-/// Compact pill overlaid on the waveform (status / elapsed).
+/// Compact pill overlaid on the waveform (status / size / elapsed).
 final class MonitorChip: NSView {
     let dotView = NSView()
     let label = NSTextField(labelWithString: "")

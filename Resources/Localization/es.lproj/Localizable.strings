@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Mostrar en el Finder";
 "recording.folder.reset" = "Usar predeterminado";
 "recording.folder.caption" = "Cada sesión se guarda como una mezcla con fecha (micrófono + reproducción) para transcribir.";
-"recording.keep_stems" = "Conservar las grabaciones de los dispositivos después de la mezcla";
-"recording.keep_stems.caption" = "Si está desactivado, los archivos de micrófono y reproducción se eliminan tras una mezcla correcta. Solo queda la mezcla con fecha.";
 "recording.playback.header" = "Reproducción";
 "recording.playback.toggle" = "Grabar todos los dispositivos de reproducción";
 "recording.playback.caption.all" = "Captura la reproducción de todas las apps, en cualquier salida.";

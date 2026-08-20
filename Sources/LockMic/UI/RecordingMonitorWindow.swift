@@ -11,6 +11,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private var rootStack: NSStackView?
     private var elapsedField: NSTextField?
+    private var sizeField: NSTextField?
     private var statusDot: NSView?
     private var waveCard: CardView?
     private var permissionBox: NSView?
@@ -60,6 +61,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         if recorder.recordingStartedAt != waveSessionStart {
             waveform?.reset()
             waveSessionStart = recorder.recordingStartedAt
+            lastElapsedSeconds = -1
         }
         observeRecorder(recorder)
         observeMic(mic)
@@ -178,8 +180,15 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         statusDot = statusChip.dotView
         let elapsedChip = MonitorChip(title: "00:00", showsDot: false, monospaced: true)
         elapsedField = elapsedChip.label
+        let sizeChip = MonitorChip(
+            title: RecordingBitRate.default.sizeChipText(onDisk: 0),
+            showsDot: false,
+            monospaced: true
+        )
+        sizeField = sizeChip.label
         waveBox.addSubview(wave)
         waveBox.addSubview(statusChip)
+        waveBox.addSubview(sizeChip)
         waveBox.addSubview(elapsedChip)
         NSLayoutConstraint.activate([
             wave.leadingAnchor.constraint(equalTo: waveBox.leadingAnchor),
@@ -191,6 +200,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             statusChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
             elapsedChip.trailingAnchor.constraint(equalTo: waveBox.trailingAnchor, constant: -8),
             elapsedChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
+            sizeChip.trailingAnchor.constraint(equalTo: elapsedChip.leadingAnchor, constant: -6),
+            sizeChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
         ])
         waveCard.addRow(waveBox)
         waveform = wave
@@ -311,6 +322,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             if seconds != lastElapsedSeconds {
                 lastElapsedSeconds = seconds
                 elapsedField?.stringValue = String(format: "%02d:%02d", seconds / 60, seconds % 60)
+                sizeField?.stringValue = recorder.mixSizeChipText()
             }
         }
         syncDeviceRows()

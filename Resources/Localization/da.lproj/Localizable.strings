@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Vis i Finder";
 "recording.folder.reset" = "Brug standard";
 "recording.folder.caption" = "Hver session gemmes som et mix med dato (mikrofon + afspilning) til transskription.";
-"recording.keep_stems" = "Behold enhedsoptagelser efter mix";
-"recording.keep_stems.caption" = "Når slået fra slettes mikrofon- og afspilningsfiler efter et vellykket mix. Kun mixet med dato beholdes.";
 "recording.playback.header" = "Afspilning";
 "recording.playback.toggle" = "Optag alle afspilningsenheder";
 "recording.playback.caption.all" = "Optager alle apps’ afspilning på enhver udgang.";

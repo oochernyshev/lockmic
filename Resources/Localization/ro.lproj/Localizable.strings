@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Arată în Finder";
 "recording.folder.reset" = "Folosește implicit";
 "recording.folder.caption" = "Fiecare sesiune este salvată ca un mix datat (microfon + redare) pentru transcriere.";
-"recording.keep_stems" = "Păstrează înregistrările dispozitivelor după mix";
-"recording.keep_stems.caption" = "Când este dezactivat, fișierele de microfon și redare sunt șterse după un mix reușit. Rămâne doar mixul datat.";
 "recording.playback.header" = "Redare";
 "recording.playback.toggle" = "Înregistrează toate dispozitivele de redare";
 "recording.playback.caption.all" = "Capturează redarea tuturor aplicațiilor, pe orice ieșire.";

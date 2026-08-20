@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Finder에서 보기";
 "recording.folder.reset" = "기본값 사용";
 "recording.folder.caption" = "각 세션은 받아쓰기용 날짜 믹스(마이크+재생)로 저장됩니다.";
-"recording.keep_stems" = "믹스 후 기기 녹음 유지";
-"recording.keep_stems.caption" = "끄면 믹스가 성공한 뒤 마이크와 재생 파일이 삭제되고 날짜가 있는 믹스만 남습니다.";
 "recording.playback.header" = "재생";
 "recording.playback.toggle" = "모든 재생 기기 녹음";
 "recording.playback.caption.all" = "모든 앱의 재생을 출력 장치에 관계없이 캡처합니다.";

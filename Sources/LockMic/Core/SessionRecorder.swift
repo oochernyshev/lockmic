@@ -7,10 +7,11 @@ import QuartzCore
 
 private let log = Logger(subsystem: "com.lockmic.app", category: "SessionRecorder")
 
-/// Records one selected mic + system playback as AAC, then mixes them into a dated `LockMic yyyy-MM-dd HH.mm.m4a`.
+/// Records selected mic + system playback, mixed live to a dated `LockMic yyyy-MM-dd HH.mm.aac`.
 ///
-/// Playback uses a Core Audio process tap (macOS 14.2+). Mic uses a HAL IO capture
-/// that can move to another input mid-session (still one `microphone.m4a`).
+/// Playback is a Core Audio process tap (macOS 14.2+). Mic is a HAL IO capture
+/// that can move mid-session. Mixed PCM is held in RAM for up to 30 seconds,
+/// then encoded into the final m4a (a crash only loses the current slice).
 @MainActor
 final class SessionRecorder: ObservableObject {
     @Published private(set) var isRecording = false
@@ -44,6 +45,8 @@ final class SessionRecorder: ObservableObject {
     private var outputChangeWork: DispatchWorkItem?
     private var sessionBitRate: Int = RecordingBitRate.default.bitsPerSecond
     private var micCancellables = Set<AnyCancellable>()
+    private var liveMixer: LiveMixer?
+    private var sessionFile: URL?
 
     nonisolated static let micFileName = "microphone.m4a"
     nonisolated static let playbackFileName = "playback.m4a"
@@ -71,6 +74,7 @@ final class SessionRecorder: ObservableObject {
         }
         micCapture?.stop()
         playback?.stop()
+        liveMixer?.stop()
     }
 
     /// Fill the device list so the monitor can appear before TCC prompts.
@@ -85,7 +89,7 @@ final class SessionRecorder: ObservableObject {
         refreshDeviceRows()
     }
 
-    /// Start capturing default mic + playback into `baseDirectory/<timestamp>/`.
+    /// Start capturing default mic + playback into `baseDirectory/LockMic yyyy-MM-dd HH.mm.aac`.
     func start(
         playback scope: PlaybackRecordScope = .default,
         bitRate: RecordingBitRate = .default,
@@ -115,35 +119,39 @@ final class SessionRecorder: ObservableObject {
             throw error
         }
 
-        let folder = try Self.makeSessionDirectory(in: baseDirectory)
-        let micURL = folder.appendingPathComponent(Self.micFileName)
-        let playbackURL = folder.appendingPathComponent(Self.playbackFileName)
+        let mixURL = try Self.makeSessionFile(in: baseDirectory)
 
         do {
             sessionBitRate = bitRate.bitsPerSecond
             sessionStart = CACurrentMediaTime()
+            let mixer = LiveMixer(url: mixURL, bitRate: sessionBitRate, sessionStart: sessionStart)
+            try mixer.start()
+            liveMixer = mixer
             guard let micDevice = inputDevice(uid: selectedInputUID) ?? defaultInputDevice() else {
                 throw SessionRecorderError.micStartFailed
             }
             selectedInputUID = micDevice.uid
             let mic = try InputDeviceCapture(
                 deviceID: micDevice.id,
-                fileURL: micURL,
+                fileURL: nil,
                 sessionStart: sessionStart,
                 bitRate: sessionBitRate
             )
+            mic.mixer = mixer
 
             let tap: PlaybackTap
             do {
                 tap = try await PlaybackTap(
                     audio: audio,
                     scope: scope,
-                    fileURL: playbackURL,
+                    fileURL: nil,
                     sessionStart: sessionStart,
                     bitRate: sessionBitRate
                 )
+                tap.mixer = mixer
             } catch {
                 mic.stop()
+                mixer.stop()
                 throw error
             }
             micCapture = mic
@@ -152,19 +160,23 @@ final class SessionRecorder: ObservableObject {
             if let outID = try? audio.defaultOutputDeviceID(), !audio.isLockMicRecorder(outID) {
                 playbackDeviceUID = audio.deviceUID(outID) ?? ""
             }
-            sessionDirectory = folder
+            sessionFile = mixURL
+            sessionDirectory = mixURL.deletingLastPathComponent()
             recordingStartedAt = Date()
             isRecording = true
             microphoneAccess = .granted
             playbackAccess = .granted
             refreshDeviceRows()
-            log.info("Recording started in \(folder.path, privacy: .public)")
+            log.info("Recording started \(mixURL.lastPathComponent, privacy: .public)")
         } catch {
+            liveMixer?.stop()
+            liveMixer = nil
             micCapture?.stop()
             micCapture = nil
             playback?.stop()
             playback = nil
-            try? FileManager.default.removeItem(at: folder)
+            sessionFile = nil
+            try? FileManager.default.removeItem(at: mixURL)
             if case .playbackDenied? = error as? SessionRecorderError {
                 playbackAccess = .denied
             }
@@ -178,13 +190,25 @@ final class SessionRecorder: ObservableObject {
         let folder: URL
         let bitRate: Int
         let mixFileName: String
-        let keepDeviceRecordings: Bool
+        /// Live mixer already wrote this dated file. Mix is a no-op.
+        let liveFile: URL?
+
+        init(
+            folder: URL,
+            bitRate: Int,
+            mixFileName: String,
+            liveFile: URL? = nil
+        ) {
+            self.folder = folder
+            self.bitRate = bitRate
+            self.mixFileName = mixFileName
+            self.liveFile = liveFile
+        }
     }
 
     private struct PendingMixRecord: Codable {
         var bitRate: Int
         var mixFileName: String
-        var keepDeviceRecordings: Bool
     }
 
     var isMixing: Bool { inFlightMix != nil }
@@ -204,25 +228,23 @@ final class SessionRecorder: ObservableObject {
     }
 
     /// Stop capture immediately and return what the mixer needs.
-    func stopAndPrepareMix(keepDeviceRecordings: Bool = false) throws -> PendingMix {
+    func stopAndPrepareMix() throws -> PendingMix {
         let bitRate = sessionBitRate
-        let folder = try stopCaptures()
-        let pending = PendingMix(
-            folder: folder,
+        let mixFile = try stopCaptures()
+        return PendingMix(
+            folder: mixFile.deletingLastPathComponent(),
             bitRate: bitRate,
-            mixFileName: "\(folder.lastPathComponent).m4a",
-            keepDeviceRecordings: keepDeviceRecordings
+            mixFileName: mixFile.lastPathComponent,
+            liveFile: mixFile
         )
-        persistPendingMix(pending)
-        return pending
     }
 
     /// Finish an in-progress session (or wait for an already-running mix). Used on Quit.
     @discardableResult
-    func finalizeAndMix(keepDeviceRecordings: Bool) async -> Bool {
+    func finalizeAndMix() async -> Bool {
         if isRecording {
             do {
-                let pending = try stopAndPrepareMix(keepDeviceRecordings: keepDeviceRecordings)
+                let pending = try stopAndPrepareMix()
                 return await completeMix(pending)
             } catch {
                 lastError = error.localizedDescription
@@ -253,7 +275,9 @@ final class SessionRecorder: ObservableObject {
             guard let pending = Self.loadPendingMix(in: item) else { continue }
             let micExists = fm.fileExists(atPath: item.appendingPathComponent(Self.micFileName).path)
             let playExists = fm.fileExists(atPath: item.appendingPathComponent(Self.playbackFileName).path)
-            guard micExists || playExists else { continue }
+            let liveExists = FileManager.default.fileExists(atPath: LiveMixer.mixURL(in: item).path)
+                || !LiveMixer.playableSegmentURLs(in: item).isEmpty
+            guard micExists || playExists || liveExists else { continue }
             log.info("Resuming interrupted mix in \(item.path, privacy: .public)")
             _ = await completeMix(pending)
         }
@@ -284,20 +308,36 @@ final class SessionRecorder: ObservableObject {
     }
 
     private func performMix(_ pending: PendingMix) async -> Bool {
-        do {
-            let destination = pending.keepDeviceRecordings
-                ? pending.folder
-                : pending.folder.deletingLastPathComponent()
-            try await SessionMix.mix(
-                in: pending.folder,
-                bitRate: pending.bitRate,
-                mixFileName: pending.mixFileName,
-                destinationFolder: destination
-            )
-            Self.removePendingMix(in: pending.folder)
-            if !pending.keepDeviceRecordings {
-                SessionMix.discardDeviceRecordings(in: pending.folder)
+        if let liveFile = pending.liveFile {
+            let ok = FileManager.default.fileExists(atPath: liveFile.path)
+            if !ok {
+                lastError = SessionRecorderError.mixFailed.localizedDescription
+                log.error("Live mix file missing: \(liveFile.lastPathComponent, privacy: .public)")
             }
+            return ok
+        }
+        do {
+            let destination = pending.folder.deletingLastPathComponent()
+            SessionMix.recoverInterruptedAppend(in: pending.folder)
+            let hasLiveMix = FileManager.default.fileExists(
+                atPath: LiveMixer.mixURL(in: pending.folder).path
+            ) || !LiveMixer.playableSegmentURLs(in: pending.folder).isEmpty
+            if hasLiveMix {
+                try await SessionMix.concatLiveSegments(
+                    in: pending.folder,
+                    mixFileName: pending.mixFileName,
+                    destinationFolder: destination
+                )
+            } else {
+                try await SessionMix.mix(
+                    in: pending.folder,
+                    bitRate: pending.bitRate,
+                    mixFileName: pending.mixFileName,
+                    destinationFolder: destination
+                )
+            }
+            Self.removePendingMix(in: pending.folder)
+            SessionMix.discardDeviceRecordings(in: pending.folder)
             log.info("Mixed file in \(pending.folder.path, privacy: .public)")
             return true
         } catch {
@@ -308,10 +348,10 @@ final class SessionRecorder: ObservableObject {
     }
 
     private func persistPendingMix(_ pending: PendingMix) {
+        guard pending.liveFile == nil else { return }
         let record = PendingMixRecord(
             bitRate: pending.bitRate,
-            mixFileName: pending.mixFileName,
-            keepDeviceRecordings: pending.keepDeviceRecordings
+            mixFileName: pending.mixFileName
         )
         do {
             let data = try JSONEncoder().encode(record)
@@ -329,8 +369,7 @@ final class SessionRecorder: ObservableObject {
         return PendingMix(
             folder: folder,
             bitRate: record.bitRate,
-            mixFileName: record.mixFileName,
-            keepDeviceRecordings: record.keepDeviceRecordings
+            mixFileName: record.mixFileName
         )
     }
 
@@ -345,13 +384,17 @@ final class SessionRecorder: ObservableObject {
     /// Stop hardware only (no mix). Quit uses `finalizeAndMix` so the mix still runs.
     @discardableResult
     func stopCaptures() throws -> URL {
-        guard isRecording, let folder = sessionDirectory else {
+        guard isRecording, let file = sessionFile else {
             throw SessionRecorderError.notRecording
         }
         micCapture?.stop()
         micCapture = nil
         playback?.stop()
         playback = nil
+        liveMixer?.stop()
+        let finalFile = liveMixer?.url ?? file
+        liveMixer = nil
+        sessionFile = finalFile
         playbackDeviceUID = ""
         refreshCaptureAccess()
         selectedInputUID = ""
@@ -364,8 +407,8 @@ final class SessionRecorder: ObservableObject {
         recordingStartedAt = nil
         devices = []
         outputChangeWork?.cancel()
-        log.info("Recording stopped: \(folder.path, privacy: .public)")
-        return folder
+        log.info("Recording stopped: \(finalFile.lastPathComponent, privacy: .public)")
+        return finalFile
     }
 
     private func scheduleOutputRetarget() {
@@ -625,6 +668,21 @@ final class SessionRecorder: ObservableObject {
         }
     }
 
+    /// Real file size plus a bitrate guess for PCM not yet on disk (current RAM chunk).
+    func mixSizeChipText() -> String {
+        let bytes: Int64
+        if let url = sessionFile,
+           FileManager.default.fileExists(atPath: url.path),
+           let size = try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber
+        {
+            bytes = size.int64Value
+        } else {
+            bytes = 0
+        }
+        let extra = liveMixer?.unflushedDuration() ?? 0
+        return RecordingBitRate.resolved(sessionBitRate / 1_000).sizeChipText(onDisk: bytes, extra: extra)
+    }
+
     /// Peak of mic + playback — for the monitor waveform.
     func liveWaveformLevel() -> Float {
         let mic = devices.contains(where: { $0.kind == .input && $0.isEnabled }) ? (micCapture?.level ?? 0) : 0
@@ -687,19 +745,19 @@ final class SessionRecorder: ObservableObject {
         }
     }
 
-    private static func makeSessionDirectory(in base: URL) throws -> URL {
+    private static func makeSessionFile(in base: URL) throws -> URL {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd HH.mm"
         let stamp = formatter.string(from: Date())
         let fm = FileManager.default
-        var folder = base.appendingPathComponent("LockMic \(stamp)", isDirectory: true)
+        try fm.createDirectory(at: base, withIntermediateDirectories: true)
+        var file = base.appendingPathComponent("LockMic \(stamp).aac")
         var n = 2
-        while fm.fileExists(atPath: folder.path) {
-            folder = base.appendingPathComponent("LockMic \(stamp) \(n)", isDirectory: true)
+        while fm.fileExists(atPath: file.path) {
+            file = base.appendingPathComponent("LockMic \(stamp) \(n).aac")
             n += 1
         }
-        try fm.createDirectory(at: folder, withIntermediateDirectories: true)
-        return folder
+        return file
     }
 }

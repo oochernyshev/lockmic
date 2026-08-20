@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Vis i Finder";
 "recording.folder.reset" = "Bruk standard";
 "recording.folder.caption" = "Hver økt lagres som en datert miks (mikrofon + avspilling) for transkripsjon.";
-"recording.keep_stems" = "Behold enhetsopptak etter miks";
-"recording.keep_stems.caption" = "Når av slås mikrofon- og avspillingsfiler slettet etter en vellykket miks. Bare miksen med dato beholdes.";
 "recording.playback.header" = "Avspilling";
 "recording.playback.toggle" = "Ta opp alle avspillingsenheter";
 "recording.playback.caption.all" = "Tar opp avspilling fra alle apper, på alle utganger.";

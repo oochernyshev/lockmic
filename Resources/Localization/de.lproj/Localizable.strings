@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Im Finder zeigen";
 "recording.folder.reset" = "Standard verwenden";
 "recording.folder.caption" = "Jede Sitzung wird als datierter Mix (Mikrofon + Wiedergabe) zum Transkribieren gespeichert.";
-"recording.keep_stems" = "Geräteaufnahmen nach dem Mix behalten";
-"recording.keep_stems.caption" = "Wenn aus, werden Mikrofon- und Wiedergabedateien nach einem erfolgreichen Mix gelöscht. Es bleibt nur der datierte Mix.";
 "recording.playback.header" = "Wiedergabe";
 "recording.playback.toggle" = "Alle Wiedergabegeräte aufnehmen";
 "recording.playback.caption.all" = "Nimmt die Wiedergabe aller Apps auf jedem Ausgang auf.";

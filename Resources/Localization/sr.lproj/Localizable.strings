@@ -138,8 +138,6 @@
 "recording.folder.reveal" = "Prikaži u Finderu";
 "recording.folder.reset" = "Koristi podrazumevano";
 "recording.folder.caption" = "Svaka sesija se čuva kao datirani miks (mikrofon + reprodukcija) za transkripciju.";
-"recording.keep_stems" = "Zadrži snimke uređaja posle miksa";
-"recording.keep_stems.caption" = "Kad je isključeno, fajlovi mikrofona i reprodukcije se brišu posle uspešnog miksa. Ostaje samo datirani miks.";
 "recording.playback.header" = "Reprodukcija";
 "recording.playback.toggle" = "Snimaj sve uređaje za reprodukciju";
 "recording.playback.caption.all" = "Snima reprodukciju svih aplikacija, na bilo kom izlazu.";

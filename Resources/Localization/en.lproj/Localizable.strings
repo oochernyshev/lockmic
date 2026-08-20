@@ -114,8 +114,6 @@
 "recording.folder.reveal" = "Show in Finder";
 "recording.folder.reset" = "Use Default";
 "recording.folder.caption" = "Each session is saved as a dated mix (mic + playback) for transcription.";
-"recording.keep_stems" = "Keep device recordings after mix";
-"recording.keep_stems.caption" = "When off, microphone and playback files are deleted after a successful mix. Only the dated mix remains.";
 "recording.playback.header" = "Playback";
 "recording.playback.toggle" = "Record all playback devices";
 "recording.playback.caption.all" = "Captures every app’s playback, on any output.";
