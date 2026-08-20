@@ -15,7 +15,6 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "SessionRecorde
 @MainActor
 final class SessionRecorder: ObservableObject {
     @Published private(set) var isRecording = false
-    @Published private(set) var sessionDirectory: URL?
     @Published private(set) var lastError: String?
     @Published private(set) var devices: [RecordingDeviceRow] = []
     @Published private(set) var recordingStartedAt: Date?
@@ -38,19 +37,12 @@ final class SessionRecorder: ObservableObject {
     private var inputOrder: [String] = []
     private var outputOrder: [String] = []
     private var playbackDeviceUID = ""
-    private var inFlightMix: Task<Bool, Never>?
-    private var inFlightMixFolder: URL?
-    private var mixGeneration = 0
     private var devicesToken: UUID?
     private var outputChangeWork: DispatchWorkItem?
     private var sessionBitRate: Int = RecordingBitRate.default.bitsPerSecond
     private var micCancellables = Set<AnyCancellable>()
     private var liveMixer: LiveMixer?
     private var sessionFile: URL?
-
-    nonisolated static let micFileName = "microphone.m4a"
-    nonisolated static let playbackFileName = "playback.m4a"
-    nonisolated static let pendingMixFileName = "pending-mix.json"
 
     init(audio: AudioDeviceService = AudioDeviceService(), mic: MicController) {
         self.audio = audio
@@ -161,7 +153,6 @@ final class SessionRecorder: ObservableObject {
                 playbackDeviceUID = audio.deviceUID(outID) ?? ""
             }
             sessionFile = mixURL
-            sessionDirectory = mixURL.deletingLastPathComponent()
             recordingStartedAt = Date()
             isRecording = true
             microphoneAccess = .granted
@@ -186,33 +177,6 @@ final class SessionRecorder: ObservableObject {
         }
     }
 
-    struct PendingMix: Sendable {
-        let folder: URL
-        let bitRate: Int
-        let mixFileName: String
-        /// Live mixer already wrote this dated file. Mix is a no-op.
-        let liveFile: URL?
-
-        init(
-            folder: URL,
-            bitRate: Int,
-            mixFileName: String,
-            liveFile: URL? = nil
-        ) {
-            self.folder = folder
-            self.bitRate = bitRate
-            self.mixFileName = mixFileName
-            self.liveFile = liveFile
-        }
-    }
-
-    private struct PendingMixRecord: Codable {
-        var bitRate: Int
-        var mixFileName: String
-    }
-
-    var isMixing: Bool { inFlightMix != nil }
-
     /// Drop a preview / denied-start so the monitor can close cleanly.
     func cancelPreview() {
         guard !isRecording else { return }
@@ -227,161 +191,21 @@ final class SessionRecorder: ObservableObject {
         outputOrder = []
     }
 
-    /// Stop capture immediately and return what the mixer needs.
-    func stopAndPrepareMix() throws -> PendingMix {
-        let bitRate = sessionBitRate
-        let mixFile = try stopCaptures()
-        return PendingMix(
-            folder: mixFile.deletingLastPathComponent(),
-            bitRate: bitRate,
-            mixFileName: mixFile.lastPathComponent,
-            liveFile: mixFile
-        )
-    }
-
-    /// Finish an in-progress session (or wait for an already-running mix). Used on Quit.
+    /// Used on Quit: stop if a session is running. The mix is already on disk.
     @discardableResult
     func finalizeAndMix() async -> Bool {
-        if isRecording {
-            do {
-                let pending = try stopAndPrepareMix()
-                return await completeMix(pending)
-            } catch {
-                lastError = error.localizedDescription
-                log.error("Stop for quit failed: \(error.localizedDescription, privacy: .public)")
-                return false
-            }
-        }
-        if let inFlightMix {
-            return await inFlightMix.value
-        }
-        if let folder = sessionDirectory, let pending = Self.loadPendingMix(in: folder) {
-            return await completeMix(pending)
-        }
-        return true
-    }
-
-    /// Pick up session folders left with `pending-mix.json` after a crash or force-quit.
-    func resumeInterruptedMixes(in directory: URL) async {
-        let fm = FileManager.default
-        guard let items = try? fm.contentsOfDirectory(
-            at: directory,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles]
-        ) else { return }
-        for item in items {
-            var isDir: ObjCBool = false
-            guard fm.fileExists(atPath: item.path, isDirectory: &isDir), isDir.boolValue else { continue }
-            guard let pending = Self.loadPendingMix(in: item) else { continue }
-            let micExists = fm.fileExists(atPath: item.appendingPathComponent(Self.micFileName).path)
-            let playExists = fm.fileExists(atPath: item.appendingPathComponent(Self.playbackFileName).path)
-            let liveExists = FileManager.default.fileExists(atPath: LiveMixer.mixURL(in: item).path)
-                || !LiveMixer.playableSegmentURLs(in: item).isEmpty
-            guard micExists || playExists || liveExists else { continue }
-            log.info("Resuming interrupted mix in \(item.path, privacy: .public)")
-            _ = await completeMix(pending)
-        }
-    }
-
-    @discardableResult
-    func completeMix(_ pending: PendingMix) async -> Bool {
-        persistPendingMix(pending)
-        if let inFlightMix, inFlightMixFolder == pending.folder {
-            return await inFlightMix.value
-        }
-        let previous = inFlightMix
-        mixGeneration += 1
-        let generation = mixGeneration
-        let task = Task { @MainActor in
-            _ = await previous?.value
-            defer {
-                if self.mixGeneration == generation {
-                    self.inFlightMix = nil
-                    self.inFlightMixFolder = nil
-                }
-            }
-            return await self.performMix(pending)
-        }
-        inFlightMix = task
-        inFlightMixFolder = pending.folder
-        return await task.value
-    }
-
-    private func performMix(_ pending: PendingMix) async -> Bool {
-        if let liveFile = pending.liveFile {
-            let ok = FileManager.default.fileExists(atPath: liveFile.path)
-            if !ok {
-                lastError = SessionRecorderError.mixFailed.localizedDescription
-                log.error("Live mix file missing: \(liveFile.lastPathComponent, privacy: .public)")
-            }
-            return ok
-        }
+        guard isRecording else { return true }
         do {
-            let destination = pending.folder.deletingLastPathComponent()
-            SessionMix.recoverInterruptedAppend(in: pending.folder)
-            let hasLiveMix = FileManager.default.fileExists(
-                atPath: LiveMixer.mixURL(in: pending.folder).path
-            ) || !LiveMixer.playableSegmentURLs(in: pending.folder).isEmpty
-            if hasLiveMix {
-                try await SessionMix.concatLiveSegments(
-                    in: pending.folder,
-                    mixFileName: pending.mixFileName,
-                    destinationFolder: destination
-                )
-            } else {
-                try await SessionMix.mix(
-                    in: pending.folder,
-                    bitRate: pending.bitRate,
-                    mixFileName: pending.mixFileName,
-                    destinationFolder: destination
-                )
-            }
-            Self.removePendingMix(in: pending.folder)
-            SessionMix.discardDeviceRecordings(in: pending.folder)
-            log.info("Mixed file in \(pending.folder.path, privacy: .public)")
-            return true
+            let file = try stopCaptures()
+            return FileManager.default.fileExists(atPath: file.path)
         } catch {
             lastError = error.localizedDescription
-            log.error("Mix failed: \(error.localizedDescription, privacy: .public)")
+            log.error("Stop for quit failed: \(error.localizedDescription, privacy: .public)")
             return false
         }
     }
 
-    private func persistPendingMix(_ pending: PendingMix) {
-        guard pending.liveFile == nil else { return }
-        let record = PendingMixRecord(
-            bitRate: pending.bitRate,
-            mixFileName: pending.mixFileName
-        )
-        do {
-            let data = try JSONEncoder().encode(record)
-            try data.write(to: pending.folder.appendingPathComponent(Self.pendingMixFileName), options: .atomic)
-        } catch {
-            log.error("Could not persist pending mix: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    static func loadPendingMix(in folder: URL) -> PendingMix? {
-        let url = folder.appendingPathComponent(pendingMixFileName)
-        guard let data = try? Data(contentsOf: url),
-              let record = try? JSONDecoder().decode(PendingMixRecord.self, from: data)
-        else { return nil }
-        return PendingMix(
-            folder: folder,
-            bitRate: record.bitRate,
-            mixFileName: record.mixFileName
-        )
-    }
-
-    static func hasPendingMix(in folder: URL) -> Bool {
-        FileManager.default.fileExists(atPath: folder.appendingPathComponent(pendingMixFileName).path)
-    }
-
-    private static func removePendingMix(in folder: URL) {
-        try? FileManager.default.removeItem(at: folder.appendingPathComponent(pendingMixFileName))
-    }
-
-    /// Stop hardware only (no mix). Quit uses `finalizeAndMix` so the mix still runs.
+    /// Stop hardware and wrap the live mix. Quit uses `finalizeAndMix`.
     @discardableResult
     func stopCaptures() throws -> URL {
         guard isRecording, let file = sessionFile else {

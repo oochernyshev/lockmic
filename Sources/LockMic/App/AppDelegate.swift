@@ -15,7 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBarIconVisible = true
     /// Relaunch when the user replaces the .app on disk while we are still running.
     private var bundleReplacementWatcher: BundleReplacementWatcher?
-    /// True while stop+mix is running so a second Quit keeps waiting.
+    /// True while stop is running so a second Quit keeps waiting.
     private var isFinalizingForQuit = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -58,19 +58,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 floating: preferences.hudFloating
             )
         )
-
-        Task {
-            await recorder.resumeInterruptedMixes(in: preferences.recordingsDirectory)
-        }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if isFinalizingForQuit {
             return .terminateLater
         }
-        let pendingFolder = recorder.sessionDirectory
-        let hasPending = pendingFolder.map { SessionRecorder.hasPendingMix(in: $0) } ?? false
-        guard recorder.isRecording || recorder.isMixing || hasPending else {
+        guard recorder.isRecording else {
             return .terminateNow
         }
         isFinalizingForQuit = true

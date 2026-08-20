@@ -11,8 +11,6 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "LiveMixer")
 /// the unflushed slice. Slices that fail to fold are kept and retried.
 final class LiveMixer: @unchecked Sendable {
     static let sampleRate: Double = RecordingCodec.sampleRate
-    static let mixFileName = "mix.m4a"
-    static let segmentPrefix = "live-"
     static let segmentSeconds: Double = 30
     private static let chunkFrames: AVAudioFrameCount = 1024
     private static let segmentFrames = AVAudioFrameCount(sampleRate * segmentSeconds)
@@ -39,8 +37,10 @@ final class LiveMixer: @unchecked Sendable {
     private var pendingFrames: AVAudioFrameCount = 0
     private var timer: DispatchSourceTimer?
     private var startedOutput = false
-    private var receivedAudio = false
     private var stopped = false
+    private var ingestPool: [AVAudioPCMBuffer] = []
+    private let ingestPoolLock = NSLock()
+    private static let ingestPoolLimit = 8
 
     private var micConverter: AVAudioConverter?
     private var micFrom: AVAudioFormat?
@@ -67,9 +67,10 @@ final class LiveMixer: @unchecked Sendable {
 
     func start() throws {
         try queue.sync {
+            ringLock.lock()
             stopped = false
+            ringLock.unlock()
             startedOutput = false
-            receivedAudio = false
             try prepare()
             startTimer()
         }
@@ -79,8 +80,11 @@ final class LiveMixer: @unchecked Sendable {
         timer?.cancel()
         timer = nil
         queue.sync {
-            guard !stopped else { return }
+            ringLock.lock()
+            let already = stopped
             stopped = true
+            ringLock.unlock()
+            guard !already else { return }
             drainRings()
             enqueueSlice()
             segmentBuffer = nil
@@ -92,22 +96,12 @@ final class LiveMixer: @unchecked Sendable {
         }
     }
 
-    static func mixURL(in folder: URL) -> URL {
-        folder.appendingPathComponent(mixFileName)
-    }
-
     func pushMic(_ buffer: AVAudioPCMBuffer) {
-        let copy = Self.copy(buffer)
-        queue.async { [weak self] in
-            self?.ingest(copy, asMic: true)
-        }
+        push(buffer, asMic: true)
     }
 
     func pushPlayback(_ buffer: AVAudioPCMBuffer) {
-        let copy = Self.copy(buffer)
-        queue.async { [weak self] in
-            self?.ingest(copy, asMic: false)
-        }
+        push(buffer, asMic: false)
     }
 
     /// Seconds of mixed PCM not yet in the dated mix file.
@@ -118,26 +112,40 @@ final class LiveMixer: @unchecked Sendable {
         return Double(frames) / Self.sampleRate
     }
 
-    static func segmentURLs(in folder: URL) -> [URL] {
-        let items = (try? FileManager.default.contentsOfDirectory(
-            at: folder,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        )) ?? []
-        return items
-            .filter { $0.pathExtension == "m4a" && $0.lastPathComponent.hasPrefix(segmentPrefix) }
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
-    }
-
-    static func playableSegmentURLs(in folder: URL) -> [URL] {
-        segmentURLs(in: folder).filter { (try? AVAudioFile(forReading: $0)) != nil }
-    }
-
     // MARK: - Ingest
+
+    private func push(_ buffer: AVAudioPCMBuffer, asMic: Bool) {
+        if enqueueNative(buffer, asMic: asMic) { return }
+        guard let copy = checkoutIngest(buffer) else { return }
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.ingest(copy, asMic: asMic)
+            self.checkinIngest(copy)
+        }
+    }
+
+    /// 48 kHz float already — copy into the mix rings here, no extra buffer or hop.
+    private func enqueueNative(_ buffer: AVAudioPCMBuffer, asMic: Bool) -> Bool {
+        let channels: AVAudioChannelCount = asMic ? 1 : 2
+        guard Self.isMixFormat(buffer.format, channels: channels),
+              buffer.frameLength > 0,
+              let samples = buffer.floatChannelData
+        else { return false }
+        let n = Int(buffer.frameLength)
+        ringLock.lock()
+        defer { ringLock.unlock() }
+        guard !stopped else { return true }
+        if asMic {
+            micRing.write(samples[0], count: n)
+        } else {
+            playLRing.write(samples[0], count: n)
+            playRRing.write(samples[buffer.format.channelCount > 1 ? 1 : 0], count: n)
+        }
+        return true
+    }
 
     private func ingest(_ buffer: AVAudioPCMBuffer?, asMic: Bool) {
         guard !stopped, let buffer, buffer.frameLength > 0 else { return }
-        receivedAudio = true
         if asMic {
             ingestMic(buffer)
         } else {
@@ -188,11 +196,7 @@ final class LiveMixer: @unchecked Sendable {
         recovering: Bool = false
     ) -> AVAudioPCMBuffer? {
         let target = RecordingCodec.pcmFormat(channels: channels)
-        if buffer.format.sampleRate == target.sampleRate,
-           buffer.format.channelCount == channels,
-           buffer.format.commonFormat == .pcmFormatFloat32,
-           !buffer.format.isInterleaved
-        {
+        if Self.isMixFormat(buffer.format, channels: channels) {
             return buffer
         }
         if converter == nil || from != buffer.format {
@@ -253,7 +257,10 @@ final class LiveMixer: @unchecked Sendable {
     private func mixTick() {
         guard !stopped, segmentBuffer != nil else { return }
         if !startedOutput {
-            guard receivedAudio else { return }
+            ringLock.lock()
+            let hasAudio = micRing.count > 0 || playLRing.count > 0
+            ringLock.unlock()
+            guard hasAudio else { return }
             startedOutput = true
             let delay = max(0, CACurrentMediaTime() - sessionStart)
             if delay > 0.02 {
@@ -433,7 +440,7 @@ final class LiveMixer: @unchecked Sendable {
         let slice = fm.temporaryDirectory.appendingPathComponent("lockmic-slice-\(UUID().uuidString).aac")
         do {
             try encodeClosedM4A(pcm, to: slice)
-            try SessionMix.appendSegment(slice, onto: url, bitRate: bitRate)
+            try SessionMix.appendSegment(slice, onto: url)
         } catch {
             try? fm.removeItem(at: slice)
             throw error
@@ -551,6 +558,50 @@ final class LiveMixer: @unchecked Sendable {
         }
     }
 
+    private static func isMixFormat(_ format: AVAudioFormat, channels: AVAudioChannelCount) -> Bool {
+        format.sampleRate == sampleRate
+            && format.channelCount == channels
+            && format.commonFormat == .pcmFormatFloat32
+            && !format.isInterleaved
+    }
+
+    private func checkoutIngest(_ buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
+        guard buffer.frameLength > 0 else { return nil }
+        ingestPoolLock.lock()
+        var dest: AVAudioPCMBuffer?
+        if let idx = ingestPool.lastIndex(where: {
+            $0.format == buffer.format && $0.frameCapacity >= buffer.frameLength
+        }) {
+            dest = ingestPool.remove(at: idx)
+            ingestPoolLock.unlock()
+        } else {
+            ingestPoolLock.unlock()
+            dest = AVAudioPCMBuffer(
+                pcmFormat: buffer.format,
+                frameCapacity: max(buffer.frameLength, 2048)
+            )
+        }
+        guard let dest else { return nil }
+        dest.frameLength = buffer.frameLength
+        if buffer.floatChannelData != nil, dest.floatChannelData != nil {
+            Self.copyFrames(from: buffer, at: 0, to: dest, at: 0, count: buffer.frameLength)
+        } else {
+            RecordingDSP.copy(
+                UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList),
+                into: dest
+            )
+        }
+        return dest
+    }
+
+    private func checkinIngest(_ buffer: AVAudioPCMBuffer) {
+        ingestPoolLock.lock()
+        if ingestPool.count < Self.ingestPoolLimit {
+            ingestPool.append(buffer)
+        }
+        ingestPoolLock.unlock()
+    }
+
     private static func copyFrames(
         from src: AVAudioPCMBuffer,
         at srcOff: AVAudioFrameCount,
@@ -610,28 +661,55 @@ private struct FloatRing {
     }
 
     mutating func write(_ src: UnsafePointer<Float>, count n: Int) {
+        guard n > 0 else { return }
         let cap = buf.count
-        for i in 0..<n {
-            if count == cap {
-                read = (read + 1) % cap
-                count -= 1
+        var n = n
+        var src = src
+        if n >= cap {
+            src += n - cap
+            n = cap
+            read = 0
+            write = 0
+            count = 0
+        } else {
+            let overflow = count + n - cap
+            if overflow > 0 {
+                read = (read + overflow) % cap
+                count -= overflow
             }
-            buf[write] = src[i]
-            write = (write + 1) % cap
-            count += 1
         }
+        buf.withUnsafeMutableBufferPointer { dst in
+            guard let base = dst.baseAddress else { return }
+            let first = min(n, cap - write)
+            base.advanced(by: write).update(from: src, count: first)
+            let second = n - first
+            if second > 0 {
+                base.update(from: src + first, count: second)
+            }
+        }
+        write = (write + n) % cap
+        count += n
     }
 
     mutating func read(_ dst: UnsafeMutablePointer<Float>, count n: Int) {
+        guard n > 0 else { return }
         let cap = buf.count
-        for i in 0..<n {
-            if count == 0 {
-                dst[i] = 0
-            } else {
-                dst[i] = buf[read]
-                read = (read + 1) % cap
-                count -= 1
+        let available = min(n, count)
+        if available > 0 {
+            buf.withUnsafeBufferPointer { src in
+                guard let base = src.baseAddress else { return }
+                let first = min(available, cap - read)
+                dst.update(from: base + read, count: first)
+                let second = available - first
+                if second > 0 {
+                    (dst + first).update(from: base, count: second)
+                }
             }
+            read = (read + available) % cap
+            count -= available
+        }
+        if available < n {
+            dst.advanced(by: available).update(repeating: 0, count: n - available)
         }
     }
 }

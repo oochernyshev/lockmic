@@ -1,6 +1,6 @@
 import AppKit
 
-/// Start/stop session capture, TCC retry, recording monitor, mix-on-quit.
+/// Start/stop session capture, TCC retry, recording monitor.
 @MainActor
 final class RecordingCoordinator {
     private let recorder: SessionRecorder
@@ -55,9 +55,9 @@ final class RecordingCoordinator {
             return
         }
         monitor.hide()
-        let pending: SessionRecorder.PendingMix
+        let file: URL
         do {
-            pending = try recorder.stopAndPrepareMix()
+            file = try recorder.stopCaptures()
         } catch {
             onSessionChanged?()
             onPresentError?(error)
@@ -65,11 +65,8 @@ final class RecordingCoordinator {
         }
         UsageReporter.record(.stopRecording, source: source)
         onSessionChanged?()
-        Task {
-            let mixed = await recorder.completeMix(pending)
-            if !mixed {
-                UsageReporter.record(.mixFailed, source: source)
-            }
+        if !FileManager.default.fileExists(atPath: file.path) {
+            UsageReporter.record(.mixFailed, source: source)
         }
     }
 
