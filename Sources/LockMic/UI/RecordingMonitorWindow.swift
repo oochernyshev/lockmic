@@ -152,8 +152,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             root.bottomAnchor.constraint(equalTo: content.bottomAnchor),
         ])
 
-        let inputs = CardView()
-        let outputs = CardView()
+        let inputs = CardView(maxVisibleRows: 5)
+        let outputs = CardView(maxVisibleRows: 5)
         let follow = AccessoryToggle(title: L10n.recordingFollowDefaultMic)
         follow.target = self
         follow.action = #selector(followDefaultClicked)
@@ -168,27 +168,31 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         outputsCard = outputs
 
         let waveCard = CardView()
-        waveCard.setTitle(L10n.recordingStatusRecording)
-        let dot = NSView()
-        dot.wantsLayer = true
-        dot.layer?.backgroundColor = NSColor.systemRed.cgColor
-        dot.layer?.cornerRadius = 4.5
-        dot.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            dot.widthAnchor.constraint(equalToConstant: 9),
-            dot.heightAnchor.constraint(equalToConstant: 9),
-        ])
-        statusDot = dot
-        waveCard.setLeadingAccessory(dot)
-        let elapsed = makeLabel("00:00", font: .monospacedDigitSystemFont(ofSize: 13, weight: .medium))
-        elapsed.textColor = .secondaryLabelColor
-        elapsed.setContentHuggingPriority(.required, for: .horizontal)
-        elapsedField = elapsed
-        waveCard.setAccessory(elapsed)
+        waveCard.setHeaderHidden(true)
+        let waveBox = NSView()
+        waveBox.translatesAutoresizingMaskIntoConstraints = false
         let wave = WaveformView()
         wave.translatesAutoresizingMaskIntoConstraints = false
-        wave.heightAnchor.constraint(equalToConstant: Self.waveformHeight).isActive = true
-        waveCard.addRow(wave)
+        let statusChip = MonitorChip(title: L10n.recordingStatusRecording, showsDot: true)
+        statusChip.dotView.layer?.backgroundColor = NSColor.systemRed.cgColor
+        statusDot = statusChip.dotView
+        let elapsedChip = MonitorChip(title: "00:00", showsDot: false, monospaced: true)
+        elapsedField = elapsedChip.label
+        waveBox.addSubview(wave)
+        waveBox.addSubview(statusChip)
+        waveBox.addSubview(elapsedChip)
+        NSLayoutConstraint.activate([
+            wave.leadingAnchor.constraint(equalTo: waveBox.leadingAnchor),
+            wave.trailingAnchor.constraint(equalTo: waveBox.trailingAnchor),
+            wave.topAnchor.constraint(equalTo: waveBox.topAnchor),
+            wave.bottomAnchor.constraint(equalTo: waveBox.bottomAnchor),
+            wave.heightAnchor.constraint(equalToConstant: Self.waveformHeight),
+            statusChip.leadingAnchor.constraint(equalTo: waveBox.leadingAnchor, constant: 8),
+            statusChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
+            elapsedChip.trailingAnchor.constraint(equalTo: waveBox.trailingAnchor, constant: -8),
+            elapsedChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
+        ])
+        waveCard.addRow(waveBox)
         waveform = wave
         self.waveCard = waveCard
 
@@ -376,6 +380,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             rows[device.id] = row
             outputsCard.addRow(row)
         }
+        inputsCard.refreshScrolling()
+        outputsCard.refreshScrolling()
         syncChrome()
         fitWindow()
     }

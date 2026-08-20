@@ -213,13 +213,26 @@ enum RecordingMonitorChrome {
     }
 }
 
+private final class FlippedClipView: NSClipView {
+    override var isFlipped: Bool { true }
+}
+
 /// Preferences-style inset card (fill + hairline + 10pt corner).
 final class CardView: NSView {
     private let titleField = NSTextField(labelWithString: "")
     private let header = NSStackView()
     private let rows = NSStackView()
+    private let scroller = NSScrollView()
+    private let bodyStack = NSStackView()
+    private var scrollerHeight: NSLayoutConstraint?
     private var leadingAccessory: NSView?
     private var accessory: NSView?
+    private var maxVisibleRows: Int?
+
+    convenience init(maxVisibleRows: Int? = nil) {
+        self.init(frame: .zero)
+        self.maxVisibleRows = maxVisibleRows
+    }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -243,21 +256,47 @@ final class CardView: NSView {
         rows.orientation = .vertical
         rows.alignment = .leading
         rows.spacing = 0
+        rows.translatesAutoresizingMaskIntoConstraints = false
 
-        let stack = NSStackView(views: [header, rows])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = PreferencesChrome.contentSpacing
-        stack.edgeInsets = NSEdgeInsets(top: 14, left: 14, bottom: 14, right: 14)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(stack)
+        let clip = FlippedClipView()
+        clip.drawsBackground = false
+        scroller.contentView = clip
+        scroller.drawsBackground = false
+        scroller.backgroundColor = .clear
+        scroller.borderType = .noBorder
+        scroller.hasHorizontalScroller = false
+        scroller.hasVerticalScroller = false
+        scroller.autohidesScrollers = true
+        scroller.scrollerStyle = .overlay
+        scroller.automaticallyAdjustsContentInsets = false
+        scroller.contentInsets = NSEdgeInsets()
+        scroller.documentView = rows
+        let verticalScroller = ThinTransparentScroller()
+        verticalScroller.controlSize = .regular
+        scroller.verticalScroller = verticalScroller
+        let height = scroller.heightAnchor.constraint(equalToConstant: 0)
+        height.priority = .required
+        scrollerHeight = height
+
+        bodyStack.orientation = .vertical
+        bodyStack.alignment = .leading
+        bodyStack.spacing = PreferencesChrome.contentSpacing
+        bodyStack.edgeInsets = NSEdgeInsets(top: 14, left: 14, bottom: 14, right: 14)
+        bodyStack.translatesAutoresizingMaskIntoConstraints = false
+        bodyStack.addArrangedSubview(header)
+        bodyStack.addArrangedSubview(scroller)
+        addSubview(bodyStack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor),
-            stack.topAnchor.constraint(equalTo: topAnchor),
-            stack.bottomAnchor.constraint(equalTo: bottomAnchor),
-            header.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -28),
-            rows.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -28),
+            bodyStack.leadingAnchor.constraint(equalTo: leadingAnchor),
+            bodyStack.trailingAnchor.constraint(equalTo: trailingAnchor),
+            bodyStack.topAnchor.constraint(equalTo: topAnchor),
+            bodyStack.bottomAnchor.constraint(equalTo: bottomAnchor),
+            header.widthAnchor.constraint(equalTo: bodyStack.widthAnchor, constant: -28),
+            scroller.widthAnchor.constraint(equalTo: bodyStack.widthAnchor, constant: -28),
+            height,
+            rows.topAnchor.constraint(equalTo: clip.topAnchor),
+            rows.leadingAnchor.constraint(equalTo: clip.leadingAnchor),
+            rows.widthAnchor.constraint(equalTo: clip.widthAnchor),
         ])
     }
 
@@ -273,6 +312,11 @@ final class CardView: NSView {
 
     func setTitle(_ title: String) {
         titleField.stringValue = title
+    }
+
+    func setHeaderHidden(_ hidden: Bool) {
+        header.isHidden = hidden
+        bodyStack.setCustomSpacing(hidden ? 0 : PreferencesChrome.contentSpacing, after: header)
     }
 
     func setLeadingAccessory(_ view: NSView?) {
@@ -302,6 +346,7 @@ final class CardView: NSView {
             rows.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
+        refreshScrolling()
     }
 
     func addRow(_ row: NSView) {
@@ -312,10 +357,116 @@ final class CardView: NSView {
         }
         rows.addArrangedSubview(row)
         row.widthAnchor.constraint(equalTo: rows.widthAnchor).isActive = true
+        refreshScrolling()
+    }
+
+    func refreshScrolling() {
+        layoutSubtreeIfNeeded()
+        let count = rows.arrangedSubviews.filter { !($0 is NSBox) }.count
+        let shouldScroll = maxVisibleRows.map { count > $0 } ?? false
+        scroller.hasVerticalScroller = shouldScroll
+        scroller.verticalScrollElasticity = shouldScroll ? .automatic : .none
+        let height: CGFloat
+        if shouldScroll, let limit = maxVisibleRows {
+            height = heightOfVisibleRows(limit)
+        } else {
+            height = max(rows.fittingSize.height, 0)
+        }
+        if let scrollerHeight, abs(scrollerHeight.constant - height) > 0.5 {
+            scrollerHeight.constant = height
+        }
+    }
+
+    private func heightOfVisibleRows(_ limit: Int) -> CGFloat {
+        var height: CGFloat = 0
+        var devices = 0
+        for view in rows.arrangedSubviews {
+            if view is NSBox {
+                if devices > 0, devices < limit {
+                    height += max(view.fittingSize.height, 1)
+                }
+                continue
+            }
+            devices += 1
+            if devices <= limit {
+                let rowHeight = view.fittingSize.height
+                height += rowHeight > 1 ? rowHeight : view.intrinsicContentSize.height
+            }
+        }
+        return height
     }
 
     func setDimmed(_ dimmed: Bool) {
         alphaValue = dimmed ? 0.42 : 1
+    }
+}
+
+/// Compact pill overlaid on the waveform (status / elapsed).
+final class MonitorChip: NSView {
+    let dotView = NSView()
+    let label = NSTextField(labelWithString: "")
+    private let showsDot: Bool
+
+    init(title: String, showsDot: Bool, monospaced: Bool = false) {
+        self.showsDot = showsDot
+        super.init(frame: .zero)
+        wantsLayer = true
+        layer?.cornerRadius = 11
+        layer?.masksToBounds = true
+        translatesAutoresizingMaskIntoConstraints = false
+
+        dotView.wantsLayer = true
+        dotView.layer?.cornerRadius = 3.5
+        dotView.isHidden = !showsDot
+        dotView.translatesAutoresizingMaskIntoConstraints = false
+
+        label.stringValue = title
+        label.font = monospaced
+            ? .monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+            : .systemFont(ofSize: 11, weight: .semibold)
+        label.textColor = .labelColor
+        label.drawsBackground = false
+        label.isBezeled = false
+        label.isEditable = false
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        addSubview(dotView)
+        addSubview(label)
+        if showsDot {
+            NSLayoutConstraint.activate([
+                dotView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+                dotView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                dotView.widthAnchor.constraint(equalToConstant: 7),
+                dotView.heightAnchor.constraint(equalToConstant: 7),
+                label.leadingAnchor.constraint(equalTo: dotView.trailingAnchor, constant: 5),
+                label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+                label.topAnchor.constraint(equalTo: topAnchor, constant: 4),
+                label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4),
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+                label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+                label.topAnchor.constraint(equalTo: topAnchor, constant: 4),
+                label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4),
+            ])
+        }
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.82).cgColor
+        layer?.borderWidth = 1
+        layer?.borderColor = NSColor.labelColor.withAlphaComponent(0.12).cgColor
+        if showsDot, dotView.layer?.backgroundColor == nil {
+            dotView.layer?.backgroundColor = NSColor.systemRed.cgColor
+        }
     }
 }
 
@@ -472,6 +623,11 @@ final class RowView: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) { nil }
 
+    override var intrinsicContentSize: NSSize {
+        let height: CGFloat = detailField.isHidden ? 34 : 48
+        return NSSize(width: NSView.noIntrinsicMetric, height: height)
+    }
+
     func apply(_ device: RecordingDeviceRow, muted: Bool = false) {
         deviceID = device.id
         kind = device.kind
@@ -489,6 +645,7 @@ final class RowView: NSView {
         detailField.isHidden = !hasDetail
         nameBottom?.isActive = !hasDetail
         detailBottom?.isActive = hasDetail
+        invalidateIntrinsicContentSize()
         meter.active = device.isEnabled && device.canCapture && sectionEnabled
         applyMute(muted)
     }
@@ -743,7 +900,8 @@ final class WaveformView: NSView {
     private var nextBarX: CGFloat = 0
     private var lastCommit: Date?
     private var pendingPeak: Float = 0
-    private let inset: CGFloat = 16
+    /// Left fade only — playhead and bars flush to the trailing edge.
+    private let leadingFade: CGFloat = 12
     private let secondsPerBar: TimeInterval = 0.055
 
     override init(frame frameRect: NSRect) {
@@ -841,8 +999,14 @@ final class WaveformView: NSView {
     private func layoutChrome() {
         let hair = pixel
         top.isHidden = true
-        mid.frame = CGRect(x: inset, y: bounds.midY.rounded(.down), width: max(0, bounds.width - inset * 2), height: hair)
-        playhead.frame = CGRect(x: bounds.maxX - inset, y: 10, width: hair, height: max(0, bounds.height - 20))
+        let playX = bounds.maxX - hair
+        mid.frame = CGRect(
+            x: leadingFade,
+            y: bounds.midY.rounded(.down),
+            width: max(0, playX - leadingFade),
+            height: hair
+        )
+        playhead.frame = CGRect(x: playX, y: 8, width: hair, height: max(0, bounds.height - 16))
         fade.frame = bounds
         let fadeEnd = bounds.width > 0 ? min(1, 28 / bounds.width) : 0.06
         fade.locations = [0, fadeEnd as NSNumber]
@@ -850,7 +1014,7 @@ final class WaveformView: NSView {
     }
 
     private func layoutStrip() {
-        let playX = bounds.maxX - inset
+        let playX = bounds.maxX - pixel
         strip.frame = CGRect(
             x: playX - nextBarX,
             y: 0,
