@@ -8,7 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let audio = AudioDeviceService()
     private let preferences = PreferencesStore()
     private lazy var mic = MicController(audio: audio, preferences: preferences)
-    private lazy var recorder = SessionRecorder(audio: audio)
+    private lazy var recorder = SessionRecorder(audio: audio, mic: mic)
     private var statusItemController: StatusItemController?
     private var dockPreferenceObserver: NSObjectProtocol?
     /// Optimistic until the first menu-bar geometry sample.

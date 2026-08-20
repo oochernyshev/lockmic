@@ -646,7 +646,6 @@ final class RowView: NSView {
         nameBottom?.isActive = !hasDetail
         detailBottom?.isActive = hasDetail
         invalidateIntrinsicContentSize()
-        meter.active = device.isEnabled && device.canCapture && sectionEnabled
         applyMute(muted)
     }
 
@@ -661,6 +660,7 @@ final class RowView: NSView {
         muteBadge.setContentHuggingPriority(show ? .required : .defaultLow, for: .horizontal)
         muteBadge.setContentCompressionResistancePriority(show ? .required : .defaultLow, for: .horizontal)
         applyIcon()
+        syncMeter()
     }
 
     private func applyIcon() {
@@ -692,13 +692,18 @@ final class RowView: NSView {
         mark.alphaValue = on ? 1 : 0.4
         iconView.alphaValue = on ? 1 : 0.55
         nameField.alphaValue = on ? 1 : 0.55
-        meter.active = mark.isOn && on
+        syncMeter()
     }
 
     func applyLevel(_ device: RecordingDeviceRow, level: Float) {
         mark.isOn = device.isEnabled
         meter.level = level
-        meter.active = device.isEnabled && device.canCapture && sectionEnabled
+        syncMeter()
+    }
+
+    private func syncMeter() {
+        meter.muted = isMuted
+        meter.active = mark.isOn && canCapture && sectionEnabled && !isMuted
     }
 
     @objc private func changed() {
@@ -852,6 +857,11 @@ final class LevelBar: NSView {
             if active != oldValue { needsDisplay = true }
         }
     }
+    var muted = false {
+        didSet {
+            if muted != oldValue { needsDisplay = true }
+        }
+    }
 
     override var intrinsicContentSize: NSSize { NSSize(width: 96, height: 7) }
 
@@ -859,10 +869,13 @@ final class LevelBar: NSView {
         let bounds = self.bounds
         NSColor.labelColor.withAlphaComponent(0.08).setFill()
         NSBezierPath(roundedRect: bounds, xRadius: 3.5, yRadius: 3.5).fill()
-        let width = max(3, bounds.width * CGFloat(min(1, max(0, level))))
+        let width = bounds.width * CGFloat(min(1, max(0, level)))
+        guard width >= 1 else { return }
         let fill = NSRect(x: bounds.minX, y: bounds.minY, width: width, height: bounds.height)
         let color: NSColor
-        if !active {
+        if muted {
+            color = NSColor.systemOrange.withAlphaComponent(0.7)
+        } else if !active {
             color = NSColor.secondaryLabelColor.withAlphaComponent(0.35)
         } else if level > 0.85 {
             color = .systemOrange

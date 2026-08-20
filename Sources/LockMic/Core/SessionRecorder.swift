@@ -1,4 +1,5 @@
 import AVFoundation
+import Combine
 import CoreAudio
 import Foundation
 import os.log
@@ -26,6 +27,7 @@ final class SessionRecorder: ObservableObject {
     @Published private(set) var followDefaultOutput = true
 
     private let audio: AudioDeviceService
+    private let mic: MicController
     private var micCapture: InputDeviceCapture?
     private var playback: PlaybackCapturing?
     private var sessionStart: CFTimeInterval = 0
@@ -41,18 +43,25 @@ final class SessionRecorder: ObservableObject {
     private var devicesToken: UUID?
     private var outputChangeWork: DispatchWorkItem?
     private var sessionBitRate: Int = RecordingBitRate.default.bitsPerSecond
+    private var micCancellables = Set<AnyCancellable>()
 
     nonisolated static let micFileName = "microphone.m4a"
     nonisolated static let playbackFileName = "playback.m4a"
     nonisolated static let pendingMixFileName = "pending-mix.json"
 
-    init(audio: AudioDeviceService = AudioDeviceService()) {
+    init(audio: AudioDeviceService = AudioDeviceService(), mic: MicController) {
         self.audio = audio
+        self.mic = mic
         devicesToken = audio.onDevicesChanged { [weak self] in
             Task { @MainActor in
                 self?.scheduleOutputRetarget()
             }
         }
+        Publishers.CombineLatest(mic.$state, mic.$inputDevices)
+            .sink { [weak self] _, _ in
+                self?.syncInputMuteToCapture()
+            }
+            .store(in: &micCancellables)
     }
 
     deinit {
@@ -138,6 +147,7 @@ final class SessionRecorder: ObservableObject {
                 throw error
             }
             micCapture = mic
+            syncInputMuteToCapture()
             playback = tap
             if let outID = try? audio.defaultOutputDeviceID(), !audio.isLockMicRecorder(outID) {
                 playbackDeviceUID = audio.deviceUID(outID) ?? ""
@@ -514,6 +524,7 @@ final class SessionRecorder: ObservableObject {
             do {
                 try micCapture.retarget(deviceID: device.id)
                 selectedInputUID = uid
+                syncInputMuteToCapture()
             } catch {
                 lastError = error.localizedDescription
                 log.error("Mic retarget failed: \(error.localizedDescription, privacy: .public)")
@@ -521,6 +532,21 @@ final class SessionRecorder: ObservableObject {
             return
         }
         selectedInputUID = uid
+        syncInputMuteToCapture()
+    }
+
+    /// HAL mute does not always zero this process's IO proc. Gate the stem explicitly.
+    private func syncInputMuteToCapture() {
+        micCapture?.captureEnabled = !isRecordedInputMuted()
+    }
+
+    private func isRecordedInputMuted() -> Bool {
+        guard mic.effectiveMuted else { return false }
+        if selectedInputUID.isEmpty { return true }
+        guard let row = mic.inputDevices.first(where: { $0.uid == selectedInputUID }) else {
+            return true
+        }
+        return row.isInScope && !row.isVirtual
     }
 
     private func rememberDeviceOrder() {
