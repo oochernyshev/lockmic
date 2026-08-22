@@ -6,9 +6,9 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "LiveMixer")
 
 /// Mixes mic + playback to 48 kHz stereo AAC as the session runs.
 ///
-/// Mixed PCM is held in RAM for 30 seconds, encoded to ADTS AAC, then appended
-/// as raw frames onto the dated `.aac` mix (no re-encode). A crash only loses
-/// the unflushed slice. Slices that fail to fold are kept and retried.
+/// Mixed PCM is held in RAM for 30 seconds, then fed through one continuous
+/// AAC encoder. Completed ADTS packets are synced at every checkpoint, so a
+/// crash only loses the unflushed slice without adding encoder gaps.
 final class LiveMixer: @unchecked Sendable {
     static let sampleRate: Double = RecordingCodec.sampleRate
     static let segmentSeconds: Double = 30
@@ -24,6 +24,11 @@ final class LiveMixer: @unchecked Sendable {
     private let sessionStart: CFTimeInterval
 
     private var pendingPCM: [AVAudioPCMBuffer] = []
+    private var aacConverter: AVAudioConverter?
+    private var aacFormat: AVAudioFormat?
+    private var aacInput: AVAudioPCMBuffer?
+    private var aacOutput: AVAudioCompressedBuffer?
+    private var aacHandle: FileHandle?
 
     private var segmentBuffer: AVAudioPCMBuffer?
     private var mixChunkBuffer: AVAudioPCMBuffer?
@@ -72,8 +77,9 @@ final class LiveMixer: @unchecked Sendable {
             ringLock.unlock()
             startedOutput = false
             try prepare()
-            startTimer()
         }
+        try appendQueue.sync { try prepareAACWriter() }
+        queue.sync { startTimer() }
     }
 
     func stop() {
@@ -92,6 +98,7 @@ final class LiveMixer: @unchecked Sendable {
         }
         appendQueue.sync {
             self.drainPending()
+            self.finishAACWriter()
             self.finalizeToM4A()
         }
     }
@@ -408,7 +415,8 @@ final class LiveMixer: @unchecked Sendable {
         unflushedLock.unlock()
     }
 
-    /// Encode a closed playable slice and fold it onto the dated mix. Keep PCM on failure.
+    /// Feed closed PCM slices into one session-long AAC encoder. ADTS packets
+    /// are checkpointed after every slice without resetting encoder state.
     private func fold(_ pcm: AVAudioPCMBuffer) {
         pendingPCM.append(pcm)
         drainPending()
@@ -436,69 +444,98 @@ final class LiveMixer: @unchecked Sendable {
     }
 
     private func commitSlice(_ pcm: AVAudioPCMBuffer) throws {
-        let fm = FileManager.default
-        let slice = fm.temporaryDirectory.appendingPathComponent("lockmic-slice-\(UUID().uuidString).aac")
+        try encodeAAC(pcm)
+        try checkpointAACFile()
+    }
+
+    /// Close/reopen only the raw file handle so Finder observes the new size.
+    /// The AAC converter remains alive, preserving gapless encoder state.
+    private func checkpointAACFile() throws {
+        guard let handle = aacHandle else { throw SessionRecorderError.fileFailed }
+        try handle.synchronize()
+        try handle.close()
+        aacHandle = nil
+
+        let next = try FileHandle(forWritingTo: url)
         do {
-            try encodeClosedM4A(pcm, to: slice)
-            try SessionMix.appendSegment(slice, onto: url)
+            _ = try next.seekToEnd()
+            aacHandle = next
         } catch {
-            try? fm.removeItem(at: slice)
+            try? next.close()
             throw error
         }
     }
 
-    private func encodeClosedM4A(_ pcm: AVAudioPCMBuffer, to output: URL) throws {
-        try? FileManager.default.removeItem(at: output)
-        var file: AVAudioFile? = try AVAudioFile(
-            forWriting: output,
-            settings: RecordingCodec.aacSettings(channels: 2, bitRate: bitRate),
-            commonFormat: .pcmFormatFloat32,
-            interleaved: false
+    private func prepareAACWriter() throws {
+        try? FileManager.default.removeItem(at: url)
+        guard let outputFormat = AVAudioFormat(
+            settings: RecordingCodec.aacSettings(channels: 2, bitRate: bitRate)
+        ), let converter = AVAudioConverter(
+            from: RecordingCodec.pcmFormat(channels: 2),
+            to: outputFormat
+        ) else { throw SessionRecorderError.fileFailed }
+        converter.bitRate = bitRate
+        converter.bitRateStrategy = AVAudioBitRateStrategy_Constant
+        guard let input = AVAudioPCMBuffer(
+            pcmFormat: RecordingCodec.pcmFormat(channels: 2),
+            frameCapacity: Self.encodeFrames
+        ) else { throw SessionRecorderError.fileFailed }
+        let packetSize = max(4096, converter.maximumOutputPacketSize)
+        let output = AVAudioCompressedBuffer(
+            format: outputFormat,
+            packetCapacity: 64,
+            maximumPacketSize: packetSize
         )
-        defer { file = nil }
-        guard let file else { throw SessionRecorderError.fileFailed }
-        let destFormat = file.processingFormat
-        if pcm.format.sampleRate == destFormat.sampleRate,
-           pcm.format.channelCount == destFormat.channelCount,
-           pcm.format.commonFormat == destFormat.commonFormat
-        {
-            try writePCM(pcm, to: file)
-            return
-        }
-        guard let converter = AVAudioConverter(from: pcm.format, to: destFormat) else {
+        guard FileManager.default.createFile(atPath: url.path, contents: nil) else {
             throw SessionRecorderError.fileFailed
         }
-        let ratio = destFormat.sampleRate / max(1, pcm.format.sampleRate)
-        let outCap = AVAudioFrameCount(Double(Self.encodeFrames) * ratio + 4096)
-        guard let resampled = AVAudioPCMBuffer(pcmFormat: destFormat, frameCapacity: outCap),
-              let input = AVAudioPCMBuffer(pcmFormat: pcm.format, frameCapacity: Self.encodeFrames)
-        else {
+        aacHandle = try FileHandle(forWritingTo: url)
+        aacFormat = outputFormat
+        aacConverter = converter
+        aacInput = input
+        aacOutput = output
+    }
+
+    private func encodeAAC(_ pcm: AVAudioPCMBuffer) throws {
+        guard let converter = aacConverter, let input = aacInput else {
             throw SessionRecorderError.fileFailed
         }
         var offset: AVAudioFrameCount = 0
         while offset < pcm.frameLength {
-            let take = min(Self.encodeFrames, pcm.frameLength - offset)
+            let take = min(input.frameCapacity, pcm.frameLength - offset)
             input.frameLength = take
             Self.copyFrames(from: pcm, at: offset, to: input, at: 0, count: take)
-            try Self.pullConverter(converter, input: input, endOfStream: false, dest: resampled, file: file)
+            try pullAAC(converter, input: input, endOfStream: false)
             offset += take
         }
-        try Self.pullConverter(converter, input: nil, endOfStream: true, dest: resampled, file: file)
     }
 
-    /// Keep pulling until the converter has no more output (needed for 48 kHz → 32 kHz).
-    private static func pullConverter(
+    private func finishAACWriter() {
+        if let converter = aacConverter {
+            do { try pullAAC(converter, input: nil, endOfStream: true) }
+            catch { log.error("AAC finish failed: \(error.localizedDescription, privacy: .public)") }
+        }
+        try? aacHandle?.synchronize()
+        try? aacHandle?.close()
+        aacHandle = nil
+        aacConverter = nil
+        aacFormat = nil
+        aacInput = nil
+        aacOutput = nil
+    }
+
+    private func pullAAC(
         _ converter: AVAudioConverter,
         input: AVAudioPCMBuffer?,
-        endOfStream: Bool,
-        dest: AVAudioPCMBuffer,
-        file: AVAudioFile
+        endOfStream: Bool
     ) throws {
         var supplied = false
         while true {
-            dest.frameLength = 0
+            guard let output = aacOutput else { throw SessionRecorderError.fileFailed }
+            output.packetCount = 0
+            output.byteLength = 0
             var error: NSError?
-            let status = converter.convert(to: dest, error: &error) { _, status in
+            let status = converter.convert(to: output, error: &error) { _, status in
                 if endOfStream {
                     status.pointee = .endOfStream
                     return nil
@@ -512,14 +549,51 @@ final class LiveMixer: @unchecked Sendable {
                 return input
             }
             if let error { throw error }
-            if dest.frameLength > 0 {
-                try file.write(from: dest)
-            }
+            if output.packetCount > 0 { try writeADTS(output) }
             if status == .error { throw SessionRecorderError.fileFailed }
             if status == .endOfStream { break }
-            if dest.frameLength == 0 { break }
-            if !endOfStream, dest.frameLength < dest.frameCapacity { break }
+            if output.packetCount == 0 { break }
+            if !endOfStream, status == .inputRanDry { break }
         }
+    }
+
+    private func writeADTS(_ buffer: AVAudioCompressedBuffer) throws {
+        guard let handle = aacHandle, let format = aacFormat else {
+            throw SessionRecorderError.fileFailed
+        }
+        let descriptions = buffer.packetDescriptions
+        let bytes = buffer.data.assumingMemoryBound(to: UInt8.self)
+        for index in 0..<Int(buffer.packetCount) {
+            let offset: Int
+            let size: Int
+            if let descriptions {
+                offset = Int(descriptions[index].mStartOffset)
+                size = Int(descriptions[index].mDataByteSize)
+            } else {
+                size = Int(buffer.byteLength) / Int(buffer.packetCount)
+                offset = index * size
+            }
+            let header = Self.adtsHeader(payloadBytes: size, format: format)
+            try handle.write(contentsOf: header)
+            try handle.write(contentsOf: Data(bytes: bytes + offset, count: size))
+        }
+    }
+
+    private static func adtsHeader(payloadBytes: Int, format: AVAudioFormat) -> Data {
+        let rates = [96_000, 88_200, 64_000, 48_000, 44_100, 32_000, 24_000, 22_050,
+                     16_000, 12_000, 11_025, 8_000, 7_350]
+        let rate = Int(format.sampleRate.rounded())
+        let frequencyIndex = rates.firstIndex(of: rate) ?? 3
+        let channels = Int(format.channelCount)
+        let frameLength = payloadBytes + 7
+        return Data([
+            0xFF, 0xF1,
+            UInt8((1 << 6) | (frequencyIndex << 2) | (channels >> 2)),
+            UInt8(((channels & 3) << 6) | ((frameLength >> 11) & 3)),
+            UInt8((frameLength >> 3) & 0xFF),
+            UInt8(((frameLength & 7) << 5) | 0x1F),
+            0xFC,
+        ])
     }
 
     private func finalizeToM4A() {

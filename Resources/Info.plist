@@ -17,9 +17,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.4.14</string>
+	<string>1.4.15</string>
 	<key>CFBundleVersion</key>
-	<string>154</string>
+	<string>155</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
@@ -36,4 +36,3 @@
 	<string>LockMic records system playback (what you hear) together with your microphone.</string>
 </dict>
 </plist>
-

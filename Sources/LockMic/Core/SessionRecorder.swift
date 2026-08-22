@@ -11,7 +11,8 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "SessionRecorde
 ///
 /// Playback is a Core Audio process tap (macOS 14.2+). Mic is a HAL IO capture
 /// that can move mid-session. Mixed PCM is held in RAM for up to 30 seconds,
-/// then encoded into the final m4a (a crash only loses the current slice).
+/// then checkpointed through one continuous AAC encoder (a crash only loses
+/// the current slice).
 @MainActor
 final class SessionRecorder: ObservableObject {
     @Published private(set) var isRecording = false
