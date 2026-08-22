@@ -529,6 +529,7 @@ final class RowView: NSView {
     private static let markWidth: CGFloat = 16
     private static let iconWidth: CGFloat = 16
     private static let meterWidth: CGFloat = 88
+    private static let meterHeight: CGFloat = 10
 
     private let mark = ChoiceMark()
     private let iconView = NSImageView()
@@ -615,7 +616,7 @@ final class RowView: NSView {
             meter.trailingAnchor.constraint(equalTo: trailingAnchor),
             meter.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
             meter.widthAnchor.constraint(equalToConstant: Self.meterWidth),
-            meter.heightAnchor.constraint(equalToConstant: 6),
+            meter.heightAnchor.constraint(equalToConstant: Self.meterHeight),
 
             detailField.leadingAnchor.constraint(equalTo: nameField.leadingAnchor),
             detailField.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10),
@@ -692,11 +693,34 @@ final class RowView: NSView {
 
     private func applyEnabledLook() {
         let on = canCapture && sectionEnabled
+        let enabledChanged = mark.isEnabled != on
         mark.isEnabled = on
         mark.alphaValue = on ? 1 : 0.4
         iconView.alphaValue = on ? 1 : 0.55
         nameField.alphaValue = on ? 1 : 0.55
         syncMeter()
+        if enabledChanged {
+            window?.invalidateCursorRects(for: self)
+        }
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    /// Own every click in the row so labels/icon/meter don’t swallow it.
+    /// `super` does the superview→local conversion; testing `bounds` directly
+    /// only hit the first row, then a selected radio ignored the rest.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        super.hitTest(point) == nil ? nil : self
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        mark.performClick(self)
+    }
+
+    override func resetCursorRects() {
+        if mark.isEnabled {
+            addCursorRect(bounds, cursor: .pointingHand)
+        }
     }
 
     func applyLevel(_ device: RecordingDeviceRow, level: Float) {
@@ -838,7 +862,9 @@ final class ChoiceMark: NSControl {
         }
     }
 
-    override func mouseDown(with event: NSEvent) {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func performClick(_ sender: Any?) {
         guard isEnabled else { return }
         if style == .radio {
             guard !isOn else { return }
@@ -848,12 +874,44 @@ final class ChoiceMark: NSControl {
         }
         sendAction(action, to: target)
     }
+
+    override func mouseDown(with event: NSEvent) {
+        performClick(self)
+    }
+
+    override func resetCursorRects() {
+        if isEnabled {
+            addCursorRect(bounds, cursor: .pointingHand)
+        }
+    }
 }
 
+/// Segmented LED strip. Redraws only when the lit count / state changes.
 final class LevelBar: NSView {
+    private static let segmentCount = 16
+    private static let yellowStart = 10
+    private static let redStart = 13
+    private static let gap: CGFloat = 1
+    private static let greenOn = NSColor.systemGreen.withAlphaComponent(0.95)
+    private static let greenOff = NSColor.systemGreen.withAlphaComponent(0.18)
+    private static let yellowOn = NSColor.systemYellow.withAlphaComponent(0.95)
+    private static let yellowOff = NSColor.systemYellow.withAlphaComponent(0.18)
+    private static let redOn = NSColor.systemRed.withAlphaComponent(0.95)
+    private static let redOff = NSColor.systemRed.withAlphaComponent(0.18)
+    private static let mutedOn = NSColor.systemOrange.withAlphaComponent(0.95)
+    private static let mutedOff = NSColor.systemOrange.withAlphaComponent(0.18)
+    private static let idleOn = NSColor.secondaryLabelColor.withAlphaComponent(0.55)
+    private static let idleOff = NSColor.secondaryLabelColor.withAlphaComponent(0.14)
+
+    private var litCount = 0
+
     var level: Float = 0 {
         didSet {
-            if abs(level - oldValue) > 0.02 { needsDisplay = true }
+            let next = Self.litSegments(level)
+            if next != litCount {
+                litCount = next
+                needsDisplay = true
+            }
         }
     }
     var active = true {
@@ -867,27 +925,41 @@ final class LevelBar: NSView {
         }
     }
 
-    override var intrinsicContentSize: NSSize { NSSize(width: 96, height: 7) }
+    override var intrinsicContentSize: NSSize { NSSize(width: 88, height: 10) }
+    override var isOpaque: Bool { false }
 
     override func draw(_ dirtyRect: NSRect) {
-        let bounds = self.bounds
-        NSColor.labelColor.withAlphaComponent(0.08).setFill()
-        NSBezierPath(roundedRect: bounds, xRadius: 3.5, yRadius: 3.5).fill()
-        let width = bounds.width * CGFloat(min(1, max(0, level)))
-        guard width >= 1 else { return }
-        let fill = NSRect(x: bounds.minX, y: bounds.minY, width: width, height: bounds.height)
-        let color: NSColor
-        if muted {
-            color = NSColor.systemOrange.withAlphaComponent(0.7)
-        } else if !active {
-            color = NSColor.secondaryLabelColor.withAlphaComponent(0.35)
-        } else if level > 0.85 {
-            color = .systemOrange
-        } else {
-            color = .controlAccentColor
+        let count = Self.segmentCount
+        let gap = Self.gap
+        let width = (bounds.width - gap * CGFloat(count - 1)) / CGFloat(count)
+        guard width > 0, bounds.height > 0 else { return }
+        let radius = min(width, bounds.height) / 2
+        let path = NSBezierPath()
+        for i in 0..<count {
+            let rect = NSRect(
+                x: CGFloat(i) * (width + gap),
+                y: 0,
+                width: width,
+                height: bounds.height
+            )
+            path.removeAllPoints()
+            path.appendRoundedRect(rect, xRadius: radius, yRadius: radius)
+            Self.color(segment: i, lit: i < litCount, muted: muted, active: active).setFill()
+            path.fill()
         }
-        color.setFill()
-        NSBezierPath(roundedRect: fill, xRadius: 3.5, yRadius: 3.5).fill()
+    }
+
+    private static func litSegments(_ level: Float) -> Int {
+        let clamped = min(1, max(0, level))
+        return min(segmentCount, Int((clamped * Float(segmentCount)).rounded(.toNearestOrAwayFromZero)))
+    }
+
+    private static func color(segment: Int, lit: Bool, muted: Bool, active: Bool) -> NSColor {
+        if muted { return lit ? mutedOn : mutedOff }
+        if !active { return lit ? idleOn : idleOff }
+        if segment >= redStart { return lit ? redOn : redOff }
+        if segment >= yellowStart { return lit ? yellowOn : yellowOff }
+        return lit ? greenOn : greenOff
     }
 }
 
