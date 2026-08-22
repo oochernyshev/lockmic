@@ -39,6 +39,10 @@
 "general.options.hud.caption" = "ミュート切替時と、トーク / ミュート / フリップの長押し中に短い表示。";
 "general.options.dock" = "Dockに表示";
 "general.options.dock.caption" = "常にDockとCmd+Tabに表示します。オフでも、メニューバーのアイコンがカメラ部や他のアイコンで隠れたときは自動的にDockに表示します。";
+"general.options.appearance" = "外観";
+"general.options.appearance.system" = "システム";
+"general.options.appearance.light" = "ライト";
+"general.options.appearance.dark" = "ダーク";
 "general.options.login" = "ログイン時に起動";
 "general.options.sound" = "ミュート / 解除時に音を再生";
 "general.status.device" = "デバイス";

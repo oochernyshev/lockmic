@@ -39,6 +39,10 @@
 "general.options.hud.caption" = "Краткий индикатор при mute/unmute и при удержании talk / mute / flip.";
 "general.options.dock" = "Показывать в Dock";
 "general.options.dock.caption" = "Всегда в Dock и Cmd+Tab. Если выключено, LockMic всё равно появится в Dock автоматически, когда иконка в строке меню скрыта вырезом камеры или другими значками.";
+"general.options.appearance" = "Оформление";
+"general.options.appearance.system" = "Системная";
+"general.options.appearance.light" = "Светлая";
+"general.options.appearance.dark" = "Тёмная";
 "general.options.login" = "Запускать при входе";
 "general.options.sound" = "Звук при mute / unmute";
 "general.status.device" = "Устройство";

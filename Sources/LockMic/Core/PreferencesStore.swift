@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import os.log
 import ServiceManagement
@@ -7,6 +8,24 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "Preferences")
 extension Notification.Name {
     /// Posted when `PreferencesStore.showInDock` changes so AppDelegate can update activation policy.
     static let lockMicShowInDockDidChange = Notification.Name("LockMic.showInDockDidChange")
+}
+
+/// User's preferred UI appearance. `.system` follows macOS's current setting.
+enum AppAppearance: String, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    /// `nil` tells AppKit to follow the system appearance.
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .system: return nil
+        case .light: return NSAppearance(named: .aqua)
+        case .dark: return NSAppearance(named: .darkAqua)
+        }
+    }
 }
 
 @MainActor
@@ -25,6 +44,7 @@ final class PreferencesStore: ObservableObject {
         static let shareAnonymousUsage = "shareAnonymousUsage"
         /// When true, show a Dock icon so Preferences stay reachable if the menu bar is full.
         static let showInDock = "showInDock"
+        static let appAppearance = "appAppearance"
 
         static let toggleEnabled = "hotkeyToggleEnabled"
         static let toggleKeyCode = "hotkeyToggleKeyCode"
@@ -175,6 +195,14 @@ final class PreferencesStore: ObservableObject {
         }
     }
 
+    /// Light / dark / follow-system.
+    @Published var appAppearance: AppAppearance {
+        didSet {
+            UserDefaults.standard.set(appAppearance.rawValue, forKey: Keys.appAppearance)
+            NSApp.appearance = appAppearance.nsAppearance
+        }
+    }
+
     /// Required opt-in: anonymous GA4 usage. When false, LockMic features stay disabled.
     @Published var shareAnonymousUsage: Bool {
         didSet {
@@ -263,6 +291,8 @@ final class PreferencesStore: ObservableObject {
         }
         showInDock = defaults.bool(forKey: Keys.showInDock)
 
+        appAppearance = AppAppearance(rawValue: defaults.string(forKey: Keys.appAppearance) ?? "") ?? .system
+
         // Opt-in only — unset key means not agreed (features disabled).
         if defaults.object(forKey: Keys.shareAnonymousUsage) == nil {
             defaults.set(false, forKey: Keys.shareAnonymousUsage)
@@ -283,6 +313,8 @@ final class PreferencesStore: ObservableObject {
         pushToToggleShortcut = Self.load(Self.pttogSpec, from: defaults)
         pushToTalkShortcut = Self.load(Self.pttSpec, from: defaults)
         pushToMuteShortcut = Self.load(Self.ptmSpec, from: defaults)
+
+        NSApp.appearance = appAppearance.nsAppearance
     }
 
     private struct HotkeySpec {

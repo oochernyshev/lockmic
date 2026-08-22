@@ -39,6 +39,10 @@
 "general.options.hud.caption" = "Indicator scurt la mute/unmute și în timp ce țineți talk / mute / flip.";
 "general.options.dock" = "Afișează în Dock";
 "general.options.dock.caption" = "Mereu în Dock și Cmd+Tab. Dezactivat, LockMic tot apare automat în Dock dacă iconița din bara de meniu e ascunsă de carcasa camerei sau de alte iconițe.";
+"general.options.appearance" = "Aspect";
+"general.options.appearance.system" = "Sistem";
+"general.options.appearance.light" = "Deschis";
+"general.options.appearance.dark" = "Închis";
 "general.options.login" = "Lansează la autentificare";
 "general.options.sound" = "Redă sunet la mute / unmute";
 "general.status.device" = "Dispozitiv";

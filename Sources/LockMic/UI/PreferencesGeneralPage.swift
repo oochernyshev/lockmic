@@ -47,6 +47,14 @@ struct PreferencesGeneralPage: View {
 
                 Toggle(L10n.generalOptionsDock, isOn: $preferences.showInDock)
                 PreferencesChrome.caption(L10n.generalOptionsDockCaption)
+
+                Picker(L10n.generalOptionsAppearance, selection: $preferences.appAppearance) {
+                    Text(L10n.generalOptionsAppearanceSystem).tag(AppAppearance.system)
+                    Text(L10n.generalOptionsAppearanceLight).tag(AppAppearance.light)
+                    Text(L10n.generalOptionsAppearanceDark).tag(AppAppearance.dark)
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 320)
             }
         }
     }

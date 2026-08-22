@@ -39,6 +39,10 @@
 "general.options.hud.caption" = "Mute/unmute ve talk / mute / flip basılı tutarken kısa gösterge.";
 "general.options.dock" = "Dock’ta göster";
 "general.options.dock.caption" = "Her zaman Dock ve Cmd+Tab’da. Kapalıyken bile menü çubuğu simgesi kamera yuvası veya diğer simgeler tarafından gizlenirse LockMic otomatik olarak Dock’ta görünür.";
+"general.options.appearance" = "Görünüm";
+"general.options.appearance.system" = "Sistem";
+"general.options.appearance.light" = "Açık";
+"general.options.appearance.dark" = "Koyu";
 "general.options.login" = "Oturum açılışında başlat";
 "general.options.sound" = "Sessize alma / açmada ses çal";
 "general.status.device" = "Aygıt";

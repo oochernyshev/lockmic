@@ -39,6 +39,10 @@
 "general.options.hud.caption" = "Krátký indikátor při mute/unmute a při držení talk / mute / flip.";
 "general.options.dock" = "Zobrazit v Docku";
 "general.options.dock.caption" = "Vždy v Docku a Cmd+Tab. Když je vypnuto, LockMic se v Docku stejně objeví automaticky, pokud je ikona v liště skrytá výřezem kamery nebo jinými ikonami.";
+"general.options.appearance" = "Vzhled";
+"general.options.appearance.system" = "Systém";
+"general.options.appearance.light" = "Světlý";
+"general.options.appearance.dark" = "Tmavý";
 "general.options.login" = "Spustit po přihlášení";
 "general.options.sound" = "Přehrát zvuk při mute / unmute";
 "general.status.device" = "Zařízení";

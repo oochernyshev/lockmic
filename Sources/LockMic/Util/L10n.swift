@@ -47,6 +47,10 @@ enum L10n {
     static var generalOptionsLogin: String { tr("general.options.login") }
     static var generalOptionsDock: String { tr("general.options.dock") }
     static var generalOptionsDockCaption: String { tr("general.options.dock.caption") }
+    static var generalOptionsAppearance: String { tr("general.options.appearance") }
+    static var generalOptionsAppearanceSystem: String { tr("general.options.appearance.system") }
+    static var generalOptionsAppearanceLight: String { tr("general.options.appearance.light") }
+    static var generalOptionsAppearanceDark: String { tr("general.options.appearance.dark") }
 
     // MARK: - Devices
 

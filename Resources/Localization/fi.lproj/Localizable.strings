@@ -39,6 +39,10 @@
 "general.options.hud.caption" = "Lyhyt ilmaisin mykistyksessä ja talk / mute / flip -pidon aikana.";
 "general.options.dock" = "Näytä Dockissa";
 "general.options.dock.caption" = "Aina Dockissa ja Cmd+Tab-listassa. Pois päältäkin LockMic tulee Dockiin automaattisesti, jos valikkorivin kuvake piiloutuu kamerakotelon tai muiden kuvakkeiden taakse.";
+"general.options.appearance" = "Ulkoasu";
+"general.options.appearance.system" = "Järjestelmä";
+"general.options.appearance.light" = "Vaalea";
+"general.options.appearance.dark" = "Tumma";
 "general.options.login" = "Käynnistä kirjautuessa";
 "general.options.sound" = "Toista ääni mykistyksessä / purussa";
 "general.status.device" = "Laite";

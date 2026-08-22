@@ -15,8 +15,10 @@ enum AppInstanceGuard {
         for app in others {
             app.terminate()
         }
-        // Give the other process time to stop capture and wrap the mix.
-        let deadline = Date().addingTimeInterval(5.0)
+        // Give the other process time to stop capture and wrap the mix — a session in
+        // progress needs to flush buffered audio and remux the whole file to .m4a, which
+        // can take a while, so don't force-kill it mid-write.
+        let deadline = Date().addingTimeInterval(20.0)
         while Date() < deadline {
             if others.allSatisfy(\.isTerminated) { break }
             usleep(50_000)

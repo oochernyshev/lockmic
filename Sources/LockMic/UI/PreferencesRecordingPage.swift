@@ -88,14 +88,7 @@ struct PreferencesRecordingPage: View {
                     }
                 }
                 PreferencesChrome.caption(L10n.recordingFollowDefaultOutputCaption)
-                HStack(spacing: 8) {
-                    Image(systemName: preferences.recordAllPlayback ? "checkmark.square.fill" : "square")
-                        .foregroundStyle(Color.accentColor)
-                    Text(L10n.recordingPlaybackToggle)
-                    Spacer(minLength: 0)
-                }
-                .contentShape(Rectangle())
-                .onTapGesture {
+                prefsCheckRow(L10n.recordingPlaybackToggle, isOn: preferences.recordAllPlayback) {
                     preferences.recordAllPlayback.toggle()
                     if preferences.recordAllPlayback {
                         preferences.followDefaultOutput = false
@@ -153,14 +146,8 @@ struct PreferencesRecordingPage: View {
     }
 
     private func prefsCheckRow(_ title: String, isOn: Bool, action: @escaping () -> Void) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: isOn ? "checkmark.square.fill" : "square")
-                .foregroundStyle(Color.accentColor)
-            Text(title)
-            Spacer(minLength: 0)
-        }
-        .contentShape(Rectangle())
-        .onTapGesture(perform: action)
+        Toggle(title, isOn: Binding(get: { isOn }, set: { _ in action() }))
+            .toggleStyle(.checkbox)
     }
 
     private func prefsTextButton(_ title: String, action: @escaping () -> Void) -> some View {

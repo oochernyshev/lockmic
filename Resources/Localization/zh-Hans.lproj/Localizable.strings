@@ -39,6 +39,10 @@
 "general.options.hud.caption" = "静音/取消静音时，以及按住 talk / mute / flip 时显示简短指示。";
 "general.options.dock" = "在程序坞中显示";
 "general.options.dock.caption" = "始终显示在程序坞和 Cmd+Tab 中。关闭时，若菜单栏图标被摄像头凹槽或其他图标遮挡，LockMic 仍会自动出现在程序坞。";
+"general.options.appearance" = "外观";
+"general.options.appearance.system" = "系统";
+"general.options.appearance.light" = "浅色";
+"general.options.appearance.dark" = "深色";
 "general.options.login" = "登录时启动";
 "general.options.sound" = "静音/取消静音时播放声音";
 "general.status.device" = "设备";

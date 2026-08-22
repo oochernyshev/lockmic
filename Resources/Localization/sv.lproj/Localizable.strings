@@ -39,6 +39,10 @@
 "general.options.hud.caption" = "Kort indikator vid mute/unmute och under håll av talk / mute / flip.";
 "general.options.dock" = "Visa i Dock";
 "general.options.dock.caption" = "Alltid i Dock och Cmd+Tab. Avstängt visas LockMic ändå automatiskt i Dock om menyradsikonen döljs av kamerahuset eller andra ikoner.";
+"general.options.appearance" = "Utseende";
+"general.options.appearance.system" = "System";
+"general.options.appearance.light" = "Ljust";
+"general.options.appearance.dark" = "Mörkt";
 "general.options.login" = "Starta vid inloggning";
 "general.options.sound" = "Spela ljud vid mute / unmute";
 "general.status.device" = "Enhet";

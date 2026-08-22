@@ -39,6 +39,10 @@
 "general.options.hud.caption" = "Brief indicator on mute/unmute, and while holding talk / mute / flip.";
 "general.options.dock" = "Show in Dock";
 "general.options.dock.caption" = "Always show in Dock. When off, LockMic still appears in the Dock if the menu bar icon is hidden by the camera housing or other icons.";
+"general.options.appearance" = "Appearance";
+"general.options.appearance.system" = "System";
+"general.options.appearance.light" = "Light";
+"general.options.appearance.dark" = "Dark";
 "general.options.login" = "Launch at login";
 "general.options.sound" = "Play sound when muting / unmuting";
 "general.status.device" = "Device";

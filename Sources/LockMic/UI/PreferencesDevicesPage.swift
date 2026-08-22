@@ -42,7 +42,7 @@ struct PreferencesDevicesPage: View {
                             deviceRow(device)
                             if index < mic.inputDevices.count - 1 {
                                 Divider()
-                                    .padding(.leading, 26)
+                                    .padding(.leading, 30)
                                     .opacity(0.55)
                             }
                         }
@@ -68,9 +68,10 @@ struct PreferencesDevicesPage: View {
     private func deviceRow(_ device: InputDeviceRow) -> some View {
         HStack(alignment: .center, spacing: 8) {
             Image(systemName: deviceIcon(device))
-                .font(.body)
-                .foregroundStyle(device.supportsMute ? Color.accentColor : Color.secondary)
-                .frame(width: 18, alignment: .center)
+                .font(.system(size: 20))
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, device.supportsMute ? Color.accentColor : Color.secondary)
+                .frame(width: 22, height: 22, alignment: .center)
 
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 6) {
@@ -109,9 +110,9 @@ struct PreferencesDevicesPage: View {
     }
 
     private func deviceIcon(_ device: InputDeviceRow) -> String {
-        if device.isVirtual { return "waveform" }
-        if device.supportsMute { return "mic.fill" }
-        return "mic.slash"
+        if device.isVirtual { return "waveform.circle.fill" }
+        if device.supportsMute { return "mic.circle.fill" }
+        return "mic.slash.circle.fill"
     }
 
     private func deviceSubtitle(_ device: InputDeviceRow) -> String {
