@@ -165,6 +165,7 @@ final class SessionRecorder: ObservableObject {
             sessionFile = mixURL
             recordingStartedAt = Date()
             isRecording = true
+            RecordingSessionLock.acquire()
             microphoneAccess = .granted
             playbackAccess = .granted
             refreshDeviceRows()
@@ -237,6 +238,7 @@ final class SessionRecorder: ObservableObject {
         recordingStartedAt = nil
         devices = []
         outputChangeWork?.cancel()
+        RecordingSessionLock.release()
         log.info("Recording stopped: \(finalFile.lastPathComponent, privacy: .public)")
         return finalFile
     }
