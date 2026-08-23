@@ -54,7 +54,14 @@ final class RecordingCoordinator {
     }
 
     func startIfIdle(source: UsageReporter.ActivationSource) {
-        guard !recorder.isRecording else { return }
+        if recorder.isRecording {
+            if isMonitorVisible {
+                monitor.hide()
+            } else {
+                showMonitor()
+            }
+            return
+        }
         guard preferences.featuresEnabled else { return }
         Task { await start(source: source) }
     }

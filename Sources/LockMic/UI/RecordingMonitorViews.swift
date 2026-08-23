@@ -796,9 +796,20 @@ final class RowView: NSView {
         let on = canCapture && sectionEnabled
         let enabledChanged = mark.isEnabled != on
         mark.isEnabled = on
-        mark.alphaValue = on ? 1 : 0.4
-        iconView.alphaValue = on ? 1 : 0.55
-        nameField.alphaValue = on ? 1 : 0.55
+        let dim: CGFloat
+        if !on {
+            dim = 0.4
+        } else if !mark.isOn {
+            dim = 0.42
+        } else {
+            dim = 1
+        }
+        mark.alphaValue = dim
+        iconView.alphaValue = dim
+        nameField.alphaValue = dim
+        badge.alphaValue = dim
+        detailField.alphaValue = dim
+        meter.alphaValue = on ? 1 : 0.4
         syncMeter()
         if enabledChanged {
             window?.invalidateCursorRects(for: self)
@@ -825,7 +836,11 @@ final class RowView: NSView {
     }
 
     func applyLevel(_ device: RecordingDeviceRow, level: Float, noSignal: Bool = false) {
+        let wasOn = mark.isOn
         mark.isOn = device.isEnabled
+        if wasOn != mark.isOn {
+            applyEnabledLook()
+        }
         meter.level = level
         setNoSignal(noSignal)
         syncMeter()
@@ -995,15 +1010,26 @@ final class LevelBar: NSView {
     private static let redStart = 13
     private static let gap: CGFloat = 1
     private static let greenOn = NSColor.systemGreen.withAlphaComponent(0.95)
-    private static let greenOff = NSColor.systemGreen.withAlphaComponent(0.18)
+    private static let greenOff = NSColor.systemGreen.withAlphaComponent(0.32)
     private static let yellowOn = NSColor.systemYellow.withAlphaComponent(0.95)
-    private static let yellowOff = NSColor.systemYellow.withAlphaComponent(0.18)
+    private static let yellowOff = NSColor.systemYellow.withAlphaComponent(0.32)
     private static let redOn = NSColor.systemRed.withAlphaComponent(0.95)
-    private static let redOff = NSColor.systemRed.withAlphaComponent(0.18)
+    private static let redOff = NSColor.systemRed.withAlphaComponent(0.32)
     private static let mutedOn = NSColor.systemOrange.withAlphaComponent(0.95)
-    private static let mutedOff = NSColor.systemOrange.withAlphaComponent(0.18)
-    private static let idleOn = NSColor.secondaryLabelColor.withAlphaComponent(0.55)
-    private static let idleOff = NSColor.secondaryLabelColor.withAlphaComponent(0.14)
+    private static let mutedOff = NSColor.systemOrange.withAlphaComponent(0.32)
+    /// Gray LEDs that stay readable on HUD glass in both light and dark.
+    private static let idleOn = NSColor(name: nil) { appearance in
+        if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            return NSColor(white: 0.88, alpha: 0.52)
+        }
+        return NSColor(white: 0.22, alpha: 0.48)
+    }
+    private static let idleOff = NSColor(name: nil) { appearance in
+        if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
+            return NSColor(white: 0.88, alpha: 0.16)
+        }
+        return NSColor(white: 0.22, alpha: 0.14)
+    }
 
     private var litCount = 0
 
@@ -1030,7 +1056,16 @@ final class LevelBar: NSView {
     override var intrinsicContentSize: NSSize { NSSize(width: 88, height: 10) }
     override var isOpaque: Bool { false }
 
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        needsDisplay = true
+    }
+
     override func draw(_ dirtyRect: NSRect) {
+        effectiveAppearance.performAsCurrentDrawingAppearance { drawSegments() }
+    }
+
+    private func drawSegments() {
         let count = Self.segmentCount
         let gap = Self.gap
         let width = (bounds.width - gap * CGFloat(count - 1)) / CGFloat(count)
