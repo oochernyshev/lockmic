@@ -29,8 +29,8 @@ final class SessionRecorder: ObservableObject {
 
     /// Follow-default plus the current input UID. Set by `RecordingCoordinator` to persist prefs.
     var persistInputSelection: ((Bool, String) -> Void)?
-    /// Follow-default plus the current output UIDs.
-    var persistOutputSelection: ((Bool, Set<String>) -> Void)?
+    /// Follow-default, current output UIDs, and whether every live output is selected.
+    var persistOutputSelection: ((Bool, Set<String>, Bool) -> Void)?
 
     private let audio: AudioDeviceService
     private let mic: MicController
@@ -41,6 +41,7 @@ final class SessionRecorder: ObservableObject {
     private var playbackScope: PlaybackRecordScope = .default
     private var selectedInputUID = ""
     private var selectedOutputUIDs: Set<String> = []
+    private var recordsAllPlayback = false
     private var inputOrder: [String] = []
     private var outputOrder: [String] = []
     private var playbackDeviceUID = ""
@@ -196,6 +197,7 @@ final class SessionRecorder: ObservableObject {
         selectedOutputUIDs = []
         followDefaultInput = true
         followDefaultOutput = true
+        recordsAllPlayback = false
         inputOrder = []
         outputOrder = []
     }
@@ -231,6 +233,7 @@ final class SessionRecorder: ObservableObject {
         selectedInputUID = ""
         followDefaultInput = true
         followDefaultOutput = true
+        recordsAllPlayback = false
         selectedOutputUIDs = []
         inputOrder = []
         outputOrder = []
@@ -272,10 +275,22 @@ final class SessionRecorder: ObservableObject {
         let defaultMoved = uid != playbackDeviceUID
         if defaultMoved {
             playbackDeviceUID = uid
-            if followDefaultOutput {
+        }
+        if followDefaultOutput {
+            if defaultMoved {
                 selectedOutputUIDs = [uid]
+                applyOutputSelection()
+            } else {
+                scheduleSyncPlaybackTaps()
             }
-            applyOutputSelection()
+        } else if recordsAllPlayback {
+            let live = liveOutputUIDs()
+            if selectedOutputUIDs != live {
+                selectedOutputUIDs = live
+                applyOutputSelection()
+            } else {
+                scheduleSyncPlaybackTaps()
+            }
         } else {
             scheduleSyncPlaybackTaps()
         }
@@ -286,6 +301,7 @@ final class SessionRecorder: ObservableObject {
         guard isRecording else { return }
         if id.hasPrefix("out.") {
             followDefaultOutput = false
+            recordsAllPlayback = false
             let uid = String(id.dropFirst(4))
             if enabled {
                 selectedOutputUIDs.insert(uid)
@@ -326,8 +342,23 @@ final class SessionRecorder: ObservableObject {
     func setFollowDefaultOutput(_ follow: Bool) {
         guard isRecording else { return }
         followDefaultOutput = follow
-        if follow, !playbackDeviceUID.isEmpty {
-            selectedOutputUIDs = [playbackDeviceUID]
+        if follow {
+            recordsAllPlayback = false
+            if !playbackDeviceUID.isEmpty {
+                selectedOutputUIDs = [playbackDeviceUID]
+            }
+        }
+        applyOutputSelection()
+        rememberOutputSelection()
+        refreshDeviceRows()
+    }
+
+    func setRecordAllPlayback(_ on: Bool) {
+        guard isRecording else { return }
+        recordsAllPlayback = on
+        if on {
+            followDefaultOutput = false
+            selectedOutputUIDs = liveOutputUIDs()
         }
         applyOutputSelection()
         rememberOutputSelection()
@@ -468,6 +499,7 @@ final class SessionRecorder: ObservableObject {
         followDefaultInput = followInput
         selectedInputUID = resolvedInputUID(followInput: followInput, preferred: preferredInputUID)
         followDefaultOutput = followOutput && scope != .all
+        recordsAllPlayback = scope == .all
         selectedOutputUIDs = resolvedOutputUIDs(
             followOutput: followDefaultOutput,
             preferred: preferredOutputUIDs,
@@ -481,7 +513,11 @@ final class SessionRecorder: ObservableObject {
     }
 
     private func rememberOutputSelection() {
-        persistOutputSelection?(followDefaultOutput, selectedOutputUIDs)
+        persistOutputSelection?(followDefaultOutput, selectedOutputUIDs, recordsAllPlayback)
+    }
+
+    private func liveOutputUIDs() -> Set<String> {
+        Set(audio.listOutputDevices().filter { !$0.isVirtual }.map(\.uid))
     }
 
     private func resolvedOutputUIDs(
@@ -491,10 +527,10 @@ final class SessionRecorder: ObservableObject {
     ) -> Set<String> {
         let fallback: Set<String> = playbackDeviceUID.isEmpty ? [] : [playbackDeviceUID]
         if followOutput { return fallback }
-        let live = Set(audio.listOutputDevices().filter { !$0.isVirtual }.map(\.uid))
+        let live = liveOutputUIDs()
+        if scope == .all { return live }
         let kept = Set(preferred.filter { live.contains($0) })
         if !kept.isEmpty { return kept }
-        if scope == .all { return live }
         return fallback
     }
 

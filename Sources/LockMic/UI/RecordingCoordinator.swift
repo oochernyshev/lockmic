@@ -27,15 +27,21 @@ final class RecordingCoordinator {
                 self.preferences.recordingInputUID = uid
             }
         }
-        recorder.persistOutputSelection = { [weak self] follow, uids in
+        recorder.persistOutputSelection = { [weak self] follow, uids, recordAll in
             guard let self else { return }
             if self.preferences.followDefaultOutput != follow {
                 self.preferences.followDefaultOutput = follow
             }
-            if !follow {
-                if self.preferences.recordAllPlayback {
-                    self.preferences.recordAllPlayback = false
+            if recordAll {
+                if !self.preferences.recordAllPlayback {
+                    self.preferences.recordAllPlayback = true
                 }
+                return
+            }
+            if self.preferences.recordAllPlayback {
+                self.preferences.recordAllPlayback = false
+            }
+            if !follow {
                 let list = uids.sorted()
                 if self.preferences.recordingOutputUIDs != list {
                     self.preferences.recordingOutputUIDs = list

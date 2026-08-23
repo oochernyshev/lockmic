@@ -92,9 +92,9 @@ struct PreferencesRecordingPage: View {
                     preferences.recordAllPlayback.toggle()
                     if preferences.recordAllPlayback {
                         preferences.followDefaultOutput = false
-                        if recorder.isRecording {
-                            recorder.setFollowDefaultOutput(false)
-                        }
+                    }
+                    if recorder.isRecording {
+                        recorder.setRecordAllPlayback(preferences.recordAllPlayback)
                     }
                 }
                 PreferencesChrome.caption(
