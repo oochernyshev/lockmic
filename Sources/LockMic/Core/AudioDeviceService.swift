@@ -147,6 +147,7 @@ final class AudioDeviceService: @unchecked Sendable {
 
     func setMuted(_ muted: Bool, deviceID: AudioDeviceID) throws {
         guard supportsMute(deviceID) else { throw AudioDeviceServiceError.muteUnsupported }
+        if let current = try? isMuted(deviceID), current == muted { return }
         var address = propertyAddress(
             kAudioDevicePropertyMute,
             kAudioDevicePropertyScopeInput,
@@ -293,6 +294,16 @@ final class AudioDeviceService: @unchecked Sendable {
     /// No name/UID heuristics — drivers that mis-report transport will be treated as normal devices.
     private func isVirtualInput(deviceID: AudioDeviceID) -> Bool {
         transportType(deviceID) == kAudioDeviceTransportTypeVirtual
+    }
+
+    /// USB composites expose input as `AppleUSBAudioEngine:…:1` and output as `…:2`.
+    /// Starting HAL input IO on the same dongle as a process tap glitches 16 kHz playback.
+    static func usbAudioFamily(uid: String) -> String? {
+        guard uid.hasPrefix("AppleUSBAudioEngine:") else { return nil }
+        guard let idx = uid.lastIndex(of: ":") else { return uid }
+        let suffix = uid[uid.index(after: idx)...]
+        guard !suffix.isEmpty, suffix.allSatisfy(\.isNumber) else { return uid }
+        return String(uid[..<idx])
     }
 
     private func transportType(_ deviceID: AudioDeviceID) -> UInt32? {

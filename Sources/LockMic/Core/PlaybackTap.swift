@@ -2,13 +2,14 @@ import AVFoundation
 import CoreAudio
 import Foundation
 import os.log
-import QuartzCore
 
 private let log = Logger(subsystem: "com.lockmic.app", category: "PlaybackTap")
 
 protocol PlaybackCapturing: AnyObject {
     func stop()
-    var captureEnabled: Bool { get set }
+    /// Core Audio stops IO procs after an output sample-rate change (Jabra 48→16 kHz).
+    func ensureRunning()
+    func setMixEnabled(_ on: Bool)
     var level: Float { get }
 }
 
@@ -22,95 +23,86 @@ final class PlaybackTap: PlaybackCapturing {
     private var tapID: AudioObjectID = 0
     private var aggregateID: AudioDeviceID = 0
     private var ioProcID: AudioDeviceIOProcID?
-    private var writer: CompressedStemWriter?
     weak var mixer: LiveMixer?
     private var scratch: AVAudioPCMBuffer?
+    private var mix48: AVAudioPCMBuffer?
+    private let mixResampler = MixRateResampler(channels: 2)
     private var loggedFirstBuffer = false
-    private let sessionStart: CFTimeInterval
-    private let bitRate: Int
-    /// Output device this tap is bound to — also the LiveMixer playback source id.
     let sourceID: String
+    /// Off until SessionRecorder enables this tap for the mix.
+    private var mixEnabled = false
     private var tapDeviceUID: String
     private var tapStreamIndex: UInt = 0
-    private var didAlignToSession = false
-    /// Set when IO is torn down for a retarget; first buffer after restart pads this gap.
-    private var ioGapStartedAt: CFTimeInterval = 0
+    private var ioFormat: AVAudioFormat?
+    private var formatListener: AudioObjectPropertyListenerBlock?
     private let lock = NSLock()
     private var _level: Float = 0
-    private var _enabled = true
-
-    var captureEnabled: Bool {
-        get { lock.lock(); defer { lock.unlock() }; return _enabled }
-        set { lock.lock(); _enabled = newValue; lock.unlock() }
-    }
 
     var level: Float {
         lock.lock(); defer { lock.unlock() }
         return RecordingLevelDisplay.fromLinearPeak(_level)
     }
 
-    init(
-        audio: AudioDeviceService,
-        deviceUID: String,
-        fileURL: URL?,
-        sessionStart: CFTimeInterval,
-        bitRate: Int
-    ) async throws {
-        self.sessionStart = sessionStart
-        self.bitRate = bitRate
-        self.sourceID = deviceUID
-        self.tapDeviceUID = deviceUID
-        try attachHardware(using: audio, fileURL: fileURL)
+    init(audio: AudioDeviceService, deviceUID: String?) async throws {
+        self.sourceID = deviceUID ?? PlaybackMix.systemSourceID
+        self.tapDeviceUID = deviceUID ?? ""
+        try attachHardware(using: audio)
         try await waitForIOStart()
-    }
-
-    func retarget(using audio: AudioDeviceService, deviceUID: String? = nil) throws {
-        lock.lock()
-        ioGapStartedAt = CACurrentMediaTime()
-        lock.unlock()
-        if let deviceUID {
-            tapDeviceUID = deviceUID
-        }
-        detachHardware()
-        try attachHardware(using: audio, fileURL: nil)
-        let aggregate = aggregateID
-        let proc = ioProcID
-        queue.async {
-            _ = AudioDeviceStart(aggregate, proc)
-        }
     }
 
     func stop() {
         detachHardware()
-        writer?.finish()
-        writer = nil
     }
 
-    private func attachHardware(
-        using audio: AudioDeviceService,
-        fileURL: URL?
-    ) throws {
-        guard let device = audio.listOutputDevices().first(where: { $0.uid == tapDeviceUID }),
-              !audio.isLockMicRecorder(device.id)
-        else {
-            throw AudioDeviceServiceError.propertyFailed("output UID")
-        }
-        let outputID = device.id
-        let outputUID = device.uid
+    func setMixEnabled(_ on: Bool) {
+        lock.lock()
+        mixEnabled = on
+        lock.unlock()
+    }
 
+    func ensureRunning() {
+        let aggregate = aggregateID
+        let proc = ioProcID
+        guard aggregate != 0, let proc else { return }
+        reloadFormat()
+        queue.async {
+            let status = AudioDeviceStart(aggregate, proc)
+            if status != noErr {
+                log.error(
+                    "Playback tap restart failed (\(status, privacy: .public)) device=\(self.tapDeviceUID, privacy: .public)"
+                )
+            }
+        }
+    }
+
+    private func attachHardware(using audio: AudioDeviceService) throws {
         var exclude: [AudioObjectID] = []
         if let selfProcess = audio.processObjectID(for: ProcessInfo.processInfo.processIdentifier) {
             exclude.append(selfProcess)
         }
 
-        // Device-bound tap must not also list that device as a sub-device —
-        // that pair hangs a mixdown on the speakers.
-        tapStreamIndex = Self.preferredOutputStreamIndex(outputID)
-        let description = CATapDescription(
-            excludingProcesses: exclude,
-            deviceUID: outputUID,
-            stream: tapStreamIndex
-        )
+        let description: CATapDescription
+        if tapDeviceUID.isEmpty {
+            // System mix, not a hardware device. Switching default output
+            // (speakers → Jabra) does not stop this tap; a device-bound tap
+            // goes silent while USB/DECT reconfigures.
+            description = CATapDescription(stereoGlobalTapButExcludeProcesses: exclude)
+            tapStreamIndex = 0
+        } else {
+            guard let device = audio.listOutputDevices().first(where: { $0.uid == tapDeviceUID }),
+                  !audio.isLockMicRecorder(device.id)
+            else {
+                throw AudioDeviceServiceError.propertyFailed("output UID")
+            }
+            // Device-bound tap must not also list that device as a sub-device —
+            // that pair hangs a mixdown on the speakers.
+            tapStreamIndex = Self.preferredOutputStreamIndex(device.id)
+            description = CATapDescription(
+                excludingProcesses: exclude,
+                deviceUID: device.uid,
+                stream: tapStreamIndex
+            )
+        }
         description.name = "LockMic Playback"
         description.uuid = UUID()
         description.isPrivate = true
@@ -135,7 +127,8 @@ final class PlaybackTap: PlaybackCapturing {
             kAudioAggregateDeviceTapListKey: [
                 [
                     kAudioSubTapUIDKey: description.uuid.uuidString,
-                    kAudioSubTapDriftCompensationKey: 0,
+                    // Device taps (Jabra USB) drift vs the mix aggregate.
+                    kAudioSubTapDriftCompensationKey: tapDeviceUID.isEmpty ? 0 : 1,
                 ],
             ],
         ]
@@ -149,36 +142,21 @@ final class PlaybackTap: PlaybackCapturing {
         aggregateID = createdAggregate
         // Private aggregate only — never change the user's speaker buffer or rate.
         Self.setPreferredBufferFrameSize(createdAggregate, 2048)
+        if tapDeviceUID.isEmpty {
+            // Mix tap only. Pinning 48 kHz on a Jabra device tap stalls its meter.
+            Self.setNominalSampleRate(createdAggregate, RecordingCodec.sampleRate)
+        }
 
-        var asbd = try Self.tapStreamFormat(createdTap)
-        guard let tapFormat = AVAudioFormat(streamDescription: &asbd), tapFormat.channelCount > 0 else {
+        guard reloadFormat() != nil else {
             detachHardware()
             throw SessionRecorderError.invalidTapFormat
         }
-        // Stem stays stereo so a 1-channel tap does not crash fill and mix stays aligned.
-        guard let ioFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: tapFormat.sampleRate,
-            channels: 2,
-            interleaved: false
-        ) else {
-            detachHardware()
-            throw SessionRecorderError.invalidTapFormat
-        }
-        if writer == nil, let fileURL {
-            log.info(
-                "Playback write format AAC \(ioFormat.sampleRate, privacy: .public) Hz tap=\(tapFormat.sampleRate, privacy: .public)/\(tapFormat.channelCount, privacy: .public)ch stream=\(self.tapStreamIndex, privacy: .public) device=\(self.tapDeviceUID, privacy: .public)"
-            )
-            writer = try CompressedStemWriter(
-                url: fileURL,
-                channels: 2,
-                bitRate: bitRate
-            )
-        }
+
+        listenForFormatChanges()
 
         var proc: AudioDeviceIOProcID?
         let ioStatus = AudioDeviceCreateIOProcIDWithBlock(&proc, aggregateID, queue) { [weak self] _, inInput, _, _, _ in
-            self?.write(inInput, ioFormat: ioFormat, tapFormat: tapFormat)
+            self?.write(inInput)
         }
         guard ioStatus == noErr, let proc else {
             detachHardware()
@@ -207,6 +185,7 @@ final class PlaybackTap: PlaybackCapturing {
     }
 
     private func detachHardware() {
+        removeFormatListener()
         if let proc = ioProcID, aggregateID != 0 {
             AudioDeviceStop(aggregateID, proc)
             AudioDeviceDestroyIOProcID(aggregateID, proc)
@@ -224,67 +203,36 @@ final class PlaybackTap: PlaybackCapturing {
 
     deinit { stop() }
 
-    private func write(
-        _ input: UnsafePointer<AudioBufferList>,
-        ioFormat: AVAudioFormat,
-        tapFormat: AVAudioFormat
-    ) {
+    private func write(_ input: UnsafePointer<AudioBufferList>) {
         let abl = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         guard !abl.isEmpty else { return }
 
-        lock.lock()
-        let needsSessionAlign = !didAlignToSession
-        let gapStart = ioGapStartedAt
-        if needsSessionAlign {
-            didAlignToSession = true
-            ioGapStartedAt = 0
-        } else if gapStart > 0 {
-            ioGapStartedAt = 0
-        }
-        lock.unlock()
-
-        if needsSessionAlign {
-            let delay = max(0, CACurrentMediaTime() - sessionStart)
-            if delay > 0.001 {
-                writer?.writeSilence(seconds: delay)
-                log.info("Aligned playback with \(String(format: "%.3f", delay), privacy: .public)s of leading silence")
-            }
-        } else if gapStart > 0 {
-            let gap = max(0, CACurrentMediaTime() - gapStart)
-            if gap > 0.001 {
-                writer?.writeSilence(seconds: gap)
-                log.info("Padded playback retarget gap \(String(format: "%.3f", gap), privacy: .public)s")
-            }
-        }
-
         let frames = Self.tapFrameCount(in: abl)
-        lock.lock()
-        let enabled = _enabled
-        lock.unlock()
-
         if !loggedFirstBuffer {
             loggedFirstBuffer = true
             let layout = abl.map { "ch\($0.mNumberChannels):\($0.mDataByteSize)b" }.joined(separator: ",")
             log.info("First playback buffer: buffers=\(abl.count, privacy: .public) layout=\(layout, privacy: .public) stream=\(self.tapStreamIndex, privacy: .public)")
         }
-
         guard frames > 0 else { return }
+
         let peak = RecordingDSP.peak(in: abl)
         lock.lock()
         _level = max(peak, _level * 0.65)
+        let mixOn = mixEnabled
+        let ioFormat = self.ioFormat
         lock.unlock()
-        guard enabled else { return }
-        if mixer?.pushPlayback(abl, format: tapFormat, source: sourceID) == true {
-            return
-        }
+
+        guard mixOn, let ioFormat else { return }
         guard let dest = stereoScratch(frames: frames, format: ioFormat),
               Self.fillStereo(from: abl, into: dest)
-        else {
-            writer?.padSilence(inputFrames: frames, sampleRate: ioFormat.sampleRate)
-            return
+        else { return }
+        if dest.format.sampleRate != RecordingCodec.sampleRate, mix48 == nil {
+            log.info(
+                "Playback SRC \(Int(dest.format.sampleRate), privacy: .public) Hz → \(Int(RecordingCodec.sampleRate), privacy: .public) Hz device=\(self.tapDeviceUID, privacy: .public)"
+            )
         }
-        writer?.write(dest)
-        mixer?.pushPlayback(dest, source: sourceID)
+        guard let mixed = RecordingDSP.convertToMixRate(dest, dest: &mix48, using: mixResampler) else { return }
+        mixer?.pushPlayback(mixed, source: sourceID)
     }
 
     private func stereoScratch(frames: AVAudioFrameCount, format: AVAudioFormat) -> AVAudioPCMBuffer? {
@@ -408,6 +356,71 @@ final class PlaybackTap: PlaybackCapturing {
         return asbd.mChannelsPerFrame
     }
 
+    @discardableResult
+    private func reloadFormat() -> AVAudioFormat? {
+        guard tapID != 0 else { return nil }
+        do {
+            var asbd = try Self.tapStreamFormat(tapID)
+            guard let tapFormat = AVAudioFormat(streamDescription: &asbd), tapFormat.channelCount > 0 else {
+                return nil
+            }
+            guard let next = AVAudioFormat(
+                commonFormat: .pcmFormatFloat32,
+                sampleRate: tapFormat.sampleRate,
+                channels: 2,
+                interleaved: false
+            ) else { return nil }
+            lock.lock()
+            let changed = ioFormat?.sampleRate != next.sampleRate
+                || ioFormat?.channelCount != next.channelCount
+            ioFormat = next
+            if changed {
+                scratch = nil
+                mix48 = nil
+                mixResampler.reset()
+            }
+            lock.unlock()
+            if changed {
+                log.info(
+                    "Playback tap format \(Int(next.sampleRate), privacy: .public) Hz device=\(self.tapDeviceUID, privacy: .public)"
+                )
+            }
+            return next
+        } catch {
+            return nil
+        }
+    }
+
+    private func listenForFormatChanges() {
+        removeFormatListener()
+        guard tapID != 0 else { return }
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioTapPropertyFormat,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+            self?.reloadFormat()
+            self?.ensureRunning()
+        }
+        formatListener = block
+        AudioObjectAddPropertyListenerBlock(tapID, &address, queue, block)
+    }
+
+    private func removeFormatListener() {
+        guard let block = formatListener, tapID != 0 else {
+            formatListener = nil
+            return
+        }
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioTapPropertyFormat,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        AudioObjectRemovePropertyListenerBlock(tapID, &address, queue, block)
+        formatListener = nil
+    }
+
     /// IO period on the private tap aggregate only. Does not change speaker latency.
     @discardableResult
     private static func setPreferredBufferFrameSize(_ deviceID: AudioDeviceID, _ preferred: UInt32) -> Bool {
@@ -431,6 +444,18 @@ final class PlaybackTap: PlaybackCapturing {
         )
         var value = frames
         let size = UInt32(MemoryLayout<UInt32>.size)
+        return AudioObjectSetPropertyData(deviceID, &address, 0, nil, size, &value) == noErr
+    }
+
+    @discardableResult
+    private static func setNominalSampleRate(_ deviceID: AudioDeviceID, _ rate: Double) -> Bool {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyNominalSampleRate,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var value = rate
+        let size = UInt32(MemoryLayout<Double>.size)
         return AudioObjectSetPropertyData(deviceID, &address, 0, nil, size, &value) == noErr
     }
 

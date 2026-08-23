@@ -1,11 +1,14 @@
 import AVFoundation
 import Foundation
 import os.log
+import QuartzCore
 
 private let log = Logger(subsystem: "com.lockmic.app", category: "LiveMixer")
 
 /// Mixes mic + playback to 48 kHz stereo AAC as the session runs.
 ///
+/// The mix timer is the recording clock (1×). Each tick sums whatever samples
+/// have arrived on every bus; a bus with nothing this tick contributes silence.
 /// Mixed PCM is held in RAM for 10 seconds, then fed through one continuous
 /// AAC encoder. Completed ADTS packets are synced at every checkpoint, so a
 /// crash only loses the unflushed slice without adding encoder gaps.
@@ -51,6 +54,7 @@ final class LiveMixer: @unchecked Sendable {
 
     private var micConverter: AVAudioConverter?
     private var micFrom: AVAudioFormat?
+    private let micResampler = MixRateResampler(channels: 1)
 
     private var micRing = FloatRing(capacity: Int(sampleRate) * ringSeconds)
     private var playbackBuses: [String: PlaybackBus] = [:]
@@ -157,12 +161,16 @@ final class LiveMixer: @unchecked Sendable {
 
     private func push(_ buffer: AVAudioPCMBuffer, asMic: Bool, source: String) {
         if enqueueNative(buffer, asMic: asMic, source: source) { return }
-        guard let copy = checkoutIngest(buffer) else { return }
-        queue.async { [weak self] in
-            guard let self else { return }
-            self.ingest(copy, asMic: asMic, source: source)
-            self.checkinIngest(copy)
+        if asMic {
+            guard let copy = checkoutIngest(buffer) else { return }
+            queue.async { [weak self] in
+                guard let self else { return }
+                self.ingest(copy, asMic: true, source: source)
+                self.checkinIngest(copy)
+            }
+            return
         }
+        ingestPlayback(buffer, source: source)
     }
 
     /// 48 kHz float already — copy into the mix rings here, no extra buffer or hop.
@@ -268,7 +276,8 @@ final class LiveMixer: @unchecked Sendable {
             channels: 1,
             converter: &micConverter,
             from: &micFrom,
-            destBuffer: &micConvertDest
+            destBuffer: &micConvertDest,
+            resampler: micResampler
         ) else { return }
         guard let samples = dest.floatChannelData else { return }
         ringLock.lock()
@@ -278,25 +287,34 @@ final class LiveMixer: @unchecked Sendable {
 
     private func ingestPlayback(_ buffer: AVAudioPCMBuffer, source: String) {
         ringLock.lock()
+        if stopped {
+            ringLock.unlock()
+            return
+        }
         let bus = playbackBusLocked(source)
         ringLock.unlock()
-        guard let dest = convert(
+        bus.convertLock.lock()
+        let dest = convert(
             buffer,
             channels: 2,
             converter: &bus.converter,
             from: &bus.from,
-            destBuffer: &bus.dest
-        ) else { return }
+            destBuffer: &bus.dest,
+            resampler: bus.resampler
+        )
+        bus.convertLock.unlock()
+        guard let dest else { return }
         guard let samples = dest.floatChannelData else { return }
         let n = Int(dest.frameLength)
         ringLock.lock()
+        defer { ringLock.unlock() }
+        guard !stopped else { return }
         bus.left.write(samples[0], count: n)
         if dest.format.channelCount > 1 {
             bus.right.write(samples[1], count: n)
         } else {
             bus.right.write(samples[0], count: n)
         }
-        ringLock.unlock()
     }
 
     private func convert(
@@ -305,15 +323,31 @@ final class LiveMixer: @unchecked Sendable {
         converter: inout AVAudioConverter?,
         from: inout AVAudioFormat?,
         destBuffer: inout AVAudioPCMBuffer?,
+        resampler: MixRateResampler,
         recovering: Bool = false
     ) -> AVAudioPCMBuffer? {
         let target = RecordingCodec.pcmFormat(channels: channels)
         if Self.isMixFormat(buffer.format, channels: channels) {
+            resampler.reset()
             return buffer
+        }
+        // Streaming linear SRC keeps phase across IO callbacks. Per-buffer
+        // endpoint mapping clicked at every USB period (~90 ms on Jabra).
+        if RecordingDSP.isLinearFloat32(buffer.format) {
+            if from != buffer.format {
+                from = buffer.format
+                log.info(
+                    "Live mix SRC \(Int(buffer.format.sampleRate), privacy: .public) Hz \(buffer.format.channelCount, privacy: .public)ch → \(Int(target.sampleRate), privacy: .public) Hz \(channels, privacy: .public)ch"
+                )
+            }
+            return resampler.convert(buffer, dest: &destBuffer)
         }
         if converter == nil || from != buffer.format {
             converter = AVAudioConverter(from: buffer.format, to: target)
             from = buffer.format
+            log.info(
+                "Live mix SRC \(Int(buffer.format.sampleRate), privacy: .public) Hz \(buffer.format.channelCount, privacy: .public)ch → \(Int(target.sampleRate), privacy: .public) Hz \(channels, privacy: .public)ch (converter)"
+            )
         }
         guard let active = converter else { return nil }
         let ratio = target.sampleRate / max(1, buffer.format.sampleRate)
@@ -347,6 +381,7 @@ final class LiveMixer: @unchecked Sendable {
                 converter: &converter,
                 from: &from,
                 destBuffer: &destBuffer,
+                resampler: resampler,
                 recovering: true
             )
         }
@@ -358,7 +393,7 @@ final class LiveMixer: @unchecked Sendable {
     private func startTimer() {
         let timer = DispatchSource.makeTimerSource(queue: queue)
         let interval = Double(Self.chunkFrames) / Self.sampleRate
-        timer.schedule(deadline: .now() + interval, repeating: interval, leeway: .milliseconds(8))
+        timer.schedule(deadline: .now() + interval, repeating: interval, leeway: .milliseconds(2))
         timer.setEventHandler { [weak self] in
             self?.mixTick()
         }
@@ -369,11 +404,6 @@ final class LiveMixer: @unchecked Sendable {
     private func mixTick() {
         guard !stopped, segmentBuffer != nil else { return }
         if !startedOutput {
-            ringLock.lock()
-            let hasAudio = micRing.count > 0
-                || playbackBuses.values.contains { $0.left.count > 0 }
-            ringLock.unlock()
-            guard hasAudio else { return }
             startedOutput = true
             let delay = max(0, CACurrentMediaTime() - sessionStart)
             if delay > 0.02 {
@@ -895,6 +925,8 @@ private final class PlaybackBus {
     var converter: AVAudioConverter?
     var from: AVAudioFormat?
     var dest: AVAudioPCMBuffer?
+    let resampler = MixRateResampler(channels: 2)
+    let convertLock = NSLock()
 }
 
 private struct FloatRing {

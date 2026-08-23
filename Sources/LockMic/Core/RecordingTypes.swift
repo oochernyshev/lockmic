@@ -1,6 +1,11 @@
 import Darwin
 import Foundation
 
+/// Mixer bus id for the system process tap (current default output).
+enum PlaybackMix {
+    static let systemSourceID = "system"
+}
+
 /// Which playback to capture. Mic is always the system default input only.
 enum PlaybackRecordScope: Sendable {
     /// Audio routed to the default output device.

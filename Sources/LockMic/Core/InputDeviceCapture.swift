@@ -12,6 +12,8 @@ final class InputDeviceCapture: @unchecked Sendable {
     weak var mixer: LiveMixer?
     private var format: AVAudioFormat?
     private var scratch: AVAudioPCMBuffer?
+    private var mix48: AVAudioPCMBuffer?
+    private let mixResampler = MixRateResampler(channels: 1)
     private let sessionStart: CFTimeInterval
     private var didAlign = false
     private var ioGapStartedAt: CFTimeInterval = 0
@@ -64,6 +66,9 @@ final class InputDeviceCapture: @unchecked Sendable {
         ioGapStartedAt = CACurrentMediaTime()
         lock.unlock()
         detachIO()
+        mixResampler.reset()
+        mix48 = nil
+        scratch = nil
         deviceID = newID
         do {
             try attachIO()
@@ -148,14 +153,12 @@ final class InputDeviceCapture: @unchecked Sendable {
         _level = max(peak, _level * 0.65)
         lock.unlock()
         guard enabled else { return }
-        if mixer?.pushMic(abl, format: format) == true {
-            return
-        }
         guard let dest = scratchBuffer(frames: frames, format: format) else { return }
         RecordingDSP.copy(abl, into: dest)
         dest.frameLength = frames
         writer?.write(dest)
-        mixer?.pushMic(dest)
+        guard let mixed = RecordingDSP.convertToMixRate(dest, dest: &mix48, using: mixResampler) else { return }
+        mixer?.pushMic(mixed)
     }
 
     private func scratchBuffer(frames: AVAudioFrameCount, format: AVAudioFormat) -> AVAudioPCMBuffer? {
