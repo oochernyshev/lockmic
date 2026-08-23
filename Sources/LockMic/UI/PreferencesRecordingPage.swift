@@ -103,6 +103,15 @@ struct PreferencesRecordingPage: View {
                         : L10n.recordingPlaybackCaptionDefault
                 )
             }
+
+            PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader(L10n.recordingMonitorTitle)
+                prefsCheckRow(L10n.recordingMonitorUnselected, isOn: preferences.monitorUnselectedDevices) {
+                    preferences.monitorUnselectedDevices.toggle()
+                    recorder.setMonitorUnselectedDevices(preferences.monitorUnselectedDevices)
+                }
+                PreferencesChrome.caption(L10n.recordingMonitorUnselectedCaption)
+            }
         }
         .fileImporter(
             isPresented: $pickingFolder,

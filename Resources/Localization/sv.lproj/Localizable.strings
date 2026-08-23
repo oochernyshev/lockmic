@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Systemuppspelning (det du hör)";
 "recording.source.included" = "Ingår i systemuppspelningens mix";
 "recording.source.outside" = "Inte i den här inspelningen";
+"recording.monitor.not_recording" = "Spelas inte in";
 "recording.inputs.header" = "Ingångar";
 "recording.outputs.header" = "Utgångar";
 "recording.monitor.title" = "Inspelning";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Följ standardutgången";
 "recording.follow.mic.caption" = "När systemets standardmikrofon byts, fortsätt spela in den.";
 "recording.follow.output.caption" = "När systemets standardutgång byts, fortsätt spela in den.";
+"recording.monitor.unselected" = "Övervaka ovalda enheter";
+"recording.monitor.unselected.caption" = "Mät ingångar och utgångar som inte är i mixen och varna om de har ljud.";
 "recording.monitor.hint" = "Använd inspelningsfönstret för nivåer och av/på. Det förblir öppet medan du spelar in.";
 "recording.permission.mic.title" = "Mikrofonåtkomst nekad";
 "recording.permission.mic.caption" = "Tillåt mikrofonen i Systeminställningar och försök igen.";

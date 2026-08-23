@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Systemavspilling (det du hører)";
 "recording.source.included" = "Inkludert i systemavspillingsmiks";
 "recording.source.outside" = "Ikke i dette opptaket";
+"recording.monitor.not_recording" = "Tas ikke opp";
 "recording.inputs.header" = "Innganger";
 "recording.outputs.header" = "Utganger";
 "recording.monitor.title" = "Opptak";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Følg standardutgang";
 "recording.follow.mic.caption" = "Når standardmikrofonen endres, fortsett å ta den opp.";
 "recording.follow.output.caption" = "Når standardutgangen endres, fortsett å ta den opp.";
+"recording.monitor.unselected" = "Overvåk fravalgt utstyr";
+"recording.monitor.unselected.caption" = "Mål innganger og utganger som ikke er i miksen, og varsle hvis de har lyd.";
 "recording.monitor.hint" = "Bruk opptaksvinduet til nivåer og av/på. Det blir stående åpent mens du tar opp.";
 "recording.permission.mic.title" = "Mikrofontilgang avvist";
 "recording.permission.mic.caption" = "Tillat mikrofonen i Systeminnstillinger, og prøv igjen.";

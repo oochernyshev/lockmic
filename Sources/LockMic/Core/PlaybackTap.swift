@@ -269,17 +269,11 @@ final class PlaybackTap: PlaybackCapturing {
         }
 
         guard frames > 0 else { return }
-        if !enabled {
-            lock.lock()
-            _level *= 0.65
-            lock.unlock()
-            writer?.padSilence(inputFrames: frames, sampleRate: ioFormat.sampleRate)
-            return
-        }
         let peak = RecordingDSP.peak(in: abl)
         lock.lock()
         _level = max(peak, _level * 0.65)
         lock.unlock()
+        guard enabled else { return }
         if mixer?.pushPlayback(abl, format: tapFormat, source: sourceID) == true {
             return
         }

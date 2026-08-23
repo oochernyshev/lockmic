@@ -103,6 +103,7 @@ enum L10n {
     static var recordingSourceSystemPlayback: String { tr("recording.source.system_playback") }
     static var recordingSourceIncluded: String { tr("recording.source.included") }
     static var recordingSourceOutside: String { tr("recording.source.outside") }
+    static var recordingNoSignal: String { tr("recording.monitor.not_recording") }
     static var recordingInputsHeader: String { tr("recording.inputs.header") }
     static var recordingOutputsHeader: String { tr("recording.outputs.header") }
     static var recordingMonitorTitle: String { tr("recording.monitor.title") }
@@ -110,6 +111,8 @@ enum L10n {
     static var recordingFollowDefaultOutput: String { tr("recording.monitor.follow_default_output") }
     static var recordingFollowDefaultMicCaption: String { tr("recording.follow.mic.caption") }
     static var recordingFollowDefaultOutputCaption: String { tr("recording.follow.output.caption") }
+    static var recordingMonitorUnselected: String { tr("recording.monitor.unselected") }
+    static var recordingMonitorUnselectedCaption: String { tr("recording.monitor.unselected.caption") }
     static var recordingMonitorHint: String { tr("recording.monitor.hint") }
     static var recordingPermissionMicTitle: String { tr("recording.permission.mic.title") }
     static var recordingPermissionMicCaption: String { tr("recording.permission.mic.caption") }

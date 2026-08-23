@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Riproduzione di sistema (quello che senti)";
 "recording.source.included" = "Incluso nel mix di riproduzione";
 "recording.source.outside" = "Non in questa registrazione";
+"recording.monitor.not_recording" = "Non in registrazione";
 "recording.inputs.header" = "Ingressi";
 "recording.outputs.header" = "Uscite";
 "recording.monitor.title" = "Registrazione";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Segui l’uscita predefinita";
 "recording.follow.mic.caption" = "Se il microfono predefinito cambia, continua a registrarlo.";
 "recording.follow.output.caption" = "Se l’uscita predefinita cambia, continua a registrarla.";
+"recording.monitor.unselected" = "Monitora i dispositivi non selezionati";
+"recording.monitor.unselected.caption" = "Misura ingressi e uscite fuori dal mix e avvisa se hanno audio.";
 "recording.monitor.hint" = "Usa la finestra di registrazione per livelli e mute. Resta aperta durante la registrazione.";
 "recording.permission.mic.title" = "Accesso al microfono negato";
 "recording.permission.mic.caption" = "Consenti il microfono in Impostazioni di Sistema, poi riprova.";

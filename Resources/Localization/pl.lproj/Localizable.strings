@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Odtwarzanie systemowe (to, co słyszysz)";
 "recording.source.included" = "W miksie odtwarzania systemowego";
 "recording.source.outside" = "Poza tym nagraniem";
+"recording.monitor.not_recording" = "Nie nagrywane";
 "recording.inputs.header" = "Wejścia";
 "recording.outputs.header" = "Wyjścia";
 "recording.monitor.title" = "Nagrywanie";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Śledź domyślne wyjście";
 "recording.follow.mic.caption" = "Gdy zmieni się domyślny mikrofon, nadal go nagrywaj.";
 "recording.follow.output.caption" = "Gdy zmieni się domyślne wyjście, nadal je nagrywaj.";
+"recording.monitor.unselected" = "Monitoruj niezaznaczone urządzenia";
+"recording.monitor.unselected.caption" = "Mierz wejścia i wyjścia poza miksem i ostrzegaj, gdy mają dźwięk.";
 "recording.monitor.hint" = "Poziomy i wyłączanie źródeł są w oknie nagrywania. Zostaje otwarte w trakcie nagrania.";
 "recording.permission.mic.title" = "Odmowa dostępu do mikrofonu";
 "recording.permission.mic.caption" = "Zezwól na mikrofon w Ustawieniach systemowych i spróbuj ponownie.";

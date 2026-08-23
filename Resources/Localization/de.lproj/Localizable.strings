@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Systemwiedergabe (was Sie hören)";
 "recording.source.included" = "Im Systemwiedergabe-Mix enthalten";
 "recording.source.outside" = "Nicht in dieser Aufnahme";
+"recording.monitor.not_recording" = "Nicht in Aufnahme";
 "recording.inputs.header" = "Eingänge";
 "recording.outputs.header" = "Ausgänge";
 "recording.monitor.title" = "Aufnahme";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Standardausgabe folgen";
 "recording.follow.mic.caption" = "Wenn sich das Standardmikrofon ändert, weiter dieses aufnehmen.";
 "recording.follow.output.caption" = "Wenn sich die Standardausgabe ändert, weiter diese aufnehmen.";
+"recording.monitor.unselected" = "Nicht ausgewählte Geräte überwachen";
+"recording.monitor.unselected.caption" = "Eingänge und Ausgänge messen, die nicht im Mix sind, und warnen, wenn sie Audio haben.";
 "recording.monitor.hint" = "Pegel und Stummschaltung der Quellen sind im Aufnahmefenster. Es bleibt während der Aufnahme offen.";
 "recording.permission.mic.title" = "Mikrofonzugriff verweigert";
 "recording.permission.mic.caption" = "Erlauben Sie das Mikrofon in den Systemeinstellungen und versuchen Sie es erneut.";

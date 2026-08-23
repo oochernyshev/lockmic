@@ -36,6 +36,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var waveSessionStart: Date?
     private var lastElapsedSeconds = -1
     private var timerForRecording = false
+    private var warnLatch: [String: WarnLatch] = [:]
     private var recorderCancellables = Set<AnyCancellable>()
     private var micCancellables = Set<AnyCancellable>()
 
@@ -62,6 +63,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             waveform?.reset()
             waveSessionStart = recorder.recordingStartedAt
             lastElapsedSeconds = -1
+            warnLatch.removeAll()
         }
         observeRecorder(recorder)
         observeMic(mic)
@@ -84,6 +86,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         micCancellables.removeAll()
         timer?.invalidate()
         timer = nil
+        warnLatch.removeAll()
         window?.orderOut(nil)
     }
 
@@ -329,13 +332,11 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             syncChrome()
             return
         }
-        if let start = recorder.recordingStartedAt {
-            let seconds = max(0, Int(Date().timeIntervalSince(start)))
-            if seconds != lastElapsedSeconds {
-                lastElapsedSeconds = seconds
-                elapsedField?.stringValue = Self.elapsedText(seconds)
-                sizeField?.stringValue = recorder.mixSizeChipText()
-            }
+        let seconds = recorder.recordedElapsedSeconds()
+        if seconds != lastElapsedSeconds {
+            lastElapsedSeconds = seconds
+            elapsedField?.stringValue = Self.elapsedText(seconds)
+            sizeField?.stringValue = recorder.mixSizeChipText()
         }
         syncRowLevels()
         waveform?.push(recorder.liveWaveformLevel())
@@ -375,9 +376,73 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
     private func syncRowLevels() {
         guard let recorder else { return }
+        let now = Date()
+        let selectedInputPeak = recorder.devices
+            .filter { $0.kind == .input && $0.isEnabled }
+            .map { recorder.meterLinearPeak(for: $0) }
+            .max() ?? 0
         for device in recorder.devices {
-            rows[device.id]?.applyLevel(device, level: recorder.meterLevel(for: device))
+            let level = recorder.meterLevel(for: device)
+            var missed = recorder.isRecording
+                && !device.isEnabled
+                && !isInputMuted(device)
+            if missed, device.kind == .input {
+                let peak = recorder.meterLinearPeak(for: device)
+                missed = peak >= Self.inputBleedFloor
+                    && peak >= selectedInputPeak * Self.inputBleedRatio
+            } else if missed {
+                missed = level >= Self.signalFloor
+            }
+            rows[device.id]?.applyLevel(
+                device,
+                level: level,
+                noSignal: latchedWarning(id: device.id, want: missed, selected: device.isEnabled, now: now)
+            )
         }
+    }
+
+    private static let signalFloor: Float = 0.04
+    /// Linear peak: unselected must be ~10 dB hotter than the chosen mic.
+    private static let inputBleedFloor: Float = 0.02
+    private static let inputBleedRatio: Float = 3
+    private static let warnNeedAudio: TimeInterval = 1
+    private static let warnNeedPause: TimeInterval = 1
+    private static let warnHold: TimeInterval = 2
+
+    private struct WarnLatch {
+        var visible = false
+        var holdUntil = Date.distantPast
+        var heardSince: Date?
+        var silentSince: Date?
+    }
+
+    /// Show after ~1 s of audio; hide after ~1 s of pause. 2 s cooldown after hide.
+    private func latchedWarning(id: String, want: Bool, selected: Bool, now: Date) -> Bool {
+        if selected {
+            warnLatch[id] = WarnLatch()
+            return false
+        }
+        var latch = warnLatch[id] ?? WarnLatch()
+        if want {
+            latch.silentSince = nil
+            if latch.heardSince == nil { latch.heardSince = now }
+        } else {
+            latch.heardSince = nil
+            if latch.silentSince == nil { latch.silentSince = now }
+        }
+        let meaningful = latch.heardSince.map { now.timeIntervalSince($0) >= Self.warnNeedAudio } ?? false
+        let paused = latch.silentSince.map { now.timeIntervalSince($0) >= Self.warnNeedPause } ?? false
+        let held = now < latch.holdUntil
+        if latch.visible {
+            if paused {
+                latch.visible = false
+                latch.holdUntil = now.addingTimeInterval(Self.warnHold)
+            }
+        } else if meaningful, !held {
+            latch.visible = true
+        }
+        warnLatch[id] = latch
+        return latch.visible
     }
 
     private func rebuildSections(from devices: [RecordingDeviceRow]? = nil) {

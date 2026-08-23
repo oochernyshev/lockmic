@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Αναπαραγωγή συστήματος (ό,τι ακούτε)";
 "recording.source.included" = "Συμπεριλαμβάνεται στο μείγμα συστήματος";
 "recording.source.outside" = "Όχι σε αυτή την εγγραφή";
+"recording.monitor.not_recording" = "Δεν ηχογραφείται";
 "recording.inputs.header" = "Είσοδοι";
 "recording.outputs.header" = "Έξοδοι";
 "recording.monitor.title" = "Εγγραφή";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Ακολούθησε την προεπιλεγμένη έξοδο";
 "recording.follow.mic.caption" = "Όταν αλλάζει το προεπιλεγμένο μικρόφωνο, συνέχισε την εγγραφή του.";
 "recording.follow.output.caption" = "Όταν αλλάζει η προεπιλεγμένη έξοδος, συνέχισε την εγγραφή της.";
+"recording.monitor.unselected" = "Παρακολούθηση μη επιλεγμένων συσκευών";
+"recording.monitor.unselected.caption" = "Μέτρηση εισόδων και εξόδων εκτός μίξης και προειδοποίηση αν έχουν ήχο.";
 "recording.monitor.hint" = "Χρησιμοποιήστε το παράθυρο εγγραφής για στάθμες και διακόπτες. Μένει ανοιχτό όσο γράφετε.";
 "recording.permission.mic.title" = "Η πρόσβαση στο μικρόφωνο απορρίφθηκε";
 "recording.permission.mic.caption" = "Επιτρέψτε το μικρόφωνο στις Ρυθμίσεις συστήματος και δοκιμάστε ξανά.";

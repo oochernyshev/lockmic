@@ -41,6 +41,7 @@ final class LiveMixer: @unchecked Sendable {
     private let unflushedLock = NSLock()
     private var unflushedFrames: AVAudioFrameCount = 0
     private var pendingFrames: AVAudioFrameCount = 0
+    private var flushedFrames: AVAudioFrameCount = 0
     private var timer: DispatchSourceTimer?
     private var startedOutput = false
     private var stopped = false
@@ -140,6 +141,14 @@ final class LiveMixer: @unchecked Sendable {
     func unflushedDuration() -> TimeInterval {
         unflushedLock.lock()
         let frames = unflushedFrames + pendingFrames
+        unflushedLock.unlock()
+        return Double(frames) / Self.sampleRate
+    }
+
+    /// Duration of the current mix file plus PCM not yet flushed.
+    func recordedDuration() -> TimeInterval {
+        unflushedLock.lock()
+        let frames = flushedFrames + unflushedFrames + pendingFrames
         unflushedLock.unlock()
         return Double(frames) / Self.sampleRate
     }
@@ -522,6 +531,12 @@ final class LiveMixer: @unchecked Sendable {
         unflushedLock.unlock()
     }
 
+    private func addFlushed(_ frames: AVAudioFrameCount) {
+        unflushedLock.lock()
+        flushedFrames += frames
+        unflushedLock.unlock()
+    }
+
     /// Feed closed PCM slices into one session-long AAC encoder. ADTS packets
     /// are checkpointed after every slice without resetting encoder state.
     private func fold(_ pcm: AVAudioPCMBuffer) {
@@ -534,6 +549,7 @@ final class LiveMixer: @unchecked Sendable {
             do {
                 try commitSlice(pcm)
                 pendingPCM.removeFirst()
+                addFlushed(pcm.frameLength)
                 setUnflushed(ram: unflushedRam(), pendingDelta: -Int(pcm.frameLength))
                 log.info("Live mix flushed \(pcm.frameLength) frames → \(self.url.lastPathComponent, privacy: .public)")
             } catch {
@@ -551,8 +567,49 @@ final class LiveMixer: @unchecked Sendable {
     }
 
     private func commitSlice(_ pcm: AVAudioPCMBuffer) throws {
-        try encodeAAC(pcm)
-        try checkpointAACFile()
+        var recovered = false
+        while true {
+            do {
+                try ensureAACWriter()
+                try encodeAAC(pcm)
+                try checkpointAACFile()
+                return
+            } catch {
+                if recovered { throw error }
+                recovered = true
+                try recoverAACWriter()
+            }
+        }
+    }
+
+    private func mixFileMissing() -> Bool {
+        !FileManager.default.fileExists(atPath: url.path)
+    }
+
+    /// Recreate the mix file if it was deleted mid-session. Resets the AAC
+    /// encoder so the new file starts on a valid ADTS frame.
+    private func ensureAACWriter() throws {
+        if aacHandle != nil, !mixFileMissing() { return }
+        try recoverAACWriter()
+    }
+
+    private func recoverAACWriter() throws {
+        try? aacHandle?.close()
+        aacHandle = nil
+        try makeAACEncoder()
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try? FileManager.default.removeItem(at: url)
+        guard FileManager.default.createFile(atPath: url.path, contents: nil) else {
+            throw SessionRecorderError.fileFailed
+        }
+        aacHandle = try FileHandle(forWritingTo: url)
+        unflushedLock.lock()
+        flushedFrames = 0
+        unflushedLock.unlock()
+        log.info("Live mix file \(self.url.lastPathComponent, privacy: .public)")
     }
 
     /// Close/reopen only the raw file handle so Finder observes the new size.
@@ -562,7 +619,9 @@ final class LiveMixer: @unchecked Sendable {
         try handle.synchronize()
         try handle.close()
         aacHandle = nil
-
+        if mixFileMissing() {
+            throw SessionRecorderError.fileFailed
+        }
         let next = try FileHandle(forWritingTo: url)
         do {
             _ = try next.seekToEnd()
@@ -574,7 +633,10 @@ final class LiveMixer: @unchecked Sendable {
     }
 
     private func prepareAACWriter() throws {
-        try? FileManager.default.removeItem(at: url)
+        try recoverAACWriter()
+    }
+
+    private func makeAACEncoder() throws {
         guard let outputFormat = AVAudioFormat(
             settings: RecordingCodec.aacSettings(channels: 2, bitRate: bitRate)
         ), let converter = AVAudioConverter(
@@ -593,10 +655,6 @@ final class LiveMixer: @unchecked Sendable {
             packetCapacity: 64,
             maximumPacketSize: packetSize
         )
-        guard FileManager.default.createFile(atPath: url.path, contents: nil) else {
-            throw SessionRecorderError.fileFailed
-        }
-        aacHandle = try FileHandle(forWritingTo: url)
         aacFormat = outputFormat
         aacConverter = converter
         aacInput = input

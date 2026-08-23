@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "系统播放（你听到的声音）";
 "recording.source.included" = "已包含在系统播放混音中";
 "recording.source.outside" = "不在本次录音中";
+"recording.monitor.not_recording" = "未录制";
 "recording.inputs.header" = "输入";
 "recording.outputs.header" = "输出";
 "recording.monitor.title" = "录音";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "跟随默认输出";
 "recording.follow.mic.caption" = "系统默认麦克风更改时，继续录制该麦克风。";
 "recording.follow.output.caption" = "系统默认输出更改时，继续录制该输出。";
+"recording.monitor.unselected" = "监视未选中的设备";
+"recording.monitor.unselected.caption" = "为未混入的输入和输出显示电平，有声音时发出警告。";
 "recording.monitor.hint" = "请在录音窗口中查看电平和开关源。录音期间该窗口保持打开。";
 "recording.permission.mic.title" = "已拒绝麦克风访问";
 "recording.permission.mic.caption" = "请在系统设置中允许麦克风，然后重试。";

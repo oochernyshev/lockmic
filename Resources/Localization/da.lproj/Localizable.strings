@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Systemafspilning (det du hører)";
 "recording.source.included" = "Inkluderet i systemafspilningsmix";
 "recording.source.outside" = "Ikke i denne optagelse";
+"recording.monitor.not_recording" = "Optages ikke";
 "recording.inputs.header" = "Indgange";
 "recording.outputs.header" = "Udgang";
 "recording.monitor.title" = "Optagelse";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Følg standardudgang";
 "recording.follow.mic.caption" = "Når systemets standardmikrofon skifter, så bliv ved med at optage den.";
 "recording.follow.output.caption" = "Når systemets standardudgang skifter, så bliv ved med at optage den.";
+"recording.monitor.unselected" = "Overvåg fravalgte enheder";
+"recording.monitor.unselected.caption" = "Mål ind- og udgange, der ikke er i mixet, og advar hvis de har lyd.";
 "recording.monitor.hint" = "Brug optagelsesvinduet til niveauer og til/fra. Det bliver åbent mens du optager.";
 "recording.permission.mic.title" = "Mikrofonadgang nægtet";
 "recording.permission.mic.caption" = "Tillad mikrofonen i Systemindstillinger, og prøv igen.";

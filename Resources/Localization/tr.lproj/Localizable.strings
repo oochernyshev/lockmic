@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Sistem oynatma (duyduğun ses)";
 "recording.source.included" = "Sistem oynatma karışımında";
 "recording.source.outside" = "Bu kayıtta yok";
+"recording.monitor.not_recording" = "Kaydedilmiyor";
 "recording.inputs.header" = "Girişler";
 "recording.outputs.header" = "Çıkışlar";
 "recording.monitor.title" = "Kayıt";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Varsayılan çıkışı izle";
 "recording.follow.mic.caption" = "Sistem varsayılan mikrofonu değişirse onu kaydetmeye devam et.";
 "recording.follow.output.caption" = "Sistem varsayılan çıkışı değişirse onu kaydetmeye devam et.";
+"recording.monitor.unselected" = "Seçilmeyen aygıtları izle";
+"recording.monitor.unselected.caption" = "Karışımda olmayan giriş ve çıkışları ölç ve ses varsa uyar.";
 "recording.monitor.hint" = "Seviyeler ve kaynak aç/kapa için Kayıt penceresini kullan. Kayıt boyunca açık kalır.";
 "recording.permission.mic.title" = "Mikrofon erişimi reddedildi";
 "recording.permission.mic.caption" = "Sistem Ayarları’nda mikrofona izin verin, sonra yeniden deneyin.";

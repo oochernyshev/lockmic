@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Lecture système (ce que vous entendez)";
 "recording.source.included" = "Inclus dans le mix de lecture système";
 "recording.source.outside" = "Hors de cet enregistrement";
+"recording.monitor.not_recording" = "Non enregistré";
 "recording.inputs.header" = "Entrées";
 "recording.outputs.header" = "Sorties";
 "recording.monitor.title" = "Enregistrement";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Suivre la sortie par défaut";
 "recording.follow.mic.caption" = "Si le micro par défaut change, continuer à l’enregistrer.";
 "recording.follow.output.caption" = "Si la sortie par défaut change, continuer à l’enregistrer.";
+"recording.monitor.unselected" = "Surveiller les appareils non sélectionnés";
+"recording.monitor.unselected.caption" = "Mesurer les entrées et sorties hors mix et avertir s’il y a du son.";
 "recording.monitor.hint" = "Utilisez la fenêtre d’enregistrement pour les niveaux et les coupures. Elle reste ouverte pendant l’enregistrement.";
 "recording.permission.mic.title" = "Accès au micro refusé";
 "recording.permission.mic.caption" = "Autorisez le micro dans Réglages Système, puis réessayez.";

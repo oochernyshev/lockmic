@@ -3,9 +3,9 @@ import CoreAudio
 import Foundation
 import QuartzCore
 
-/// HAL input capture for the selected microphone. One writer; `retarget` moves IO to another device.
+/// HAL input capture. Mixes only while `captureEnabled`; otherwise peak-only for the monitor.
 final class InputDeviceCapture: @unchecked Sendable {
-    private let queue = DispatchQueue(label: "com.lockmic.input-capture")
+    private let queue: DispatchQueue
     private var deviceID: AudioDeviceID
     private var ioProcID: AudioDeviceIOProcID?
     private var writer: CompressedStemWriter?
@@ -31,8 +31,15 @@ final class InputDeviceCapture: @unchecked Sendable {
         return RecordingLevelDisplay.fromLinearPeak(_level)
     }
 
+    /// Raw 0…1 peak before the meter dB mapping — for bleed comparison.
+    var linearPeak: Float {
+        lock.lock(); defer { lock.unlock() }
+        return _level
+    }
+
     init(deviceID: AudioDeviceID, fileURL: URL?, sessionStart: CFTimeInterval, bitRate: Int) throws {
         self.deviceID = deviceID
+        self.queue = DispatchQueue(label: "com.lockmic.input-capture.\(deviceID)")
         self.fileURL = fileURL ?? URL(fileURLWithPath: "/dev/null")
         self.sessionStart = sessionStart
 
@@ -136,26 +143,19 @@ final class InputDeviceCapture: @unchecked Sendable {
         let frames = RecordingSilence.frameCount(in: abl, format: format)
         guard frames > 0 else { return }
 
-        if enabled {
-            let peak = RecordingDSP.peak(in: abl)
-            lock.lock()
-            _level = max(peak, _level * 0.65)
-            lock.unlock()
-            if mixer?.pushMic(abl, format: format) == true {
-                return
-            }
-            guard let dest = scratchBuffer(frames: frames, format: format) else { return }
-            RecordingDSP.copy(abl, into: dest)
-            dest.frameLength = frames
-            writer?.write(dest)
-            mixer?.pushMic(dest)
+        let peak = RecordingDSP.peak(in: abl)
+        lock.lock()
+        _level = max(peak, _level * 0.65)
+        lock.unlock()
+        guard enabled else { return }
+        if mixer?.pushMic(abl, format: format) == true {
             return
         }
-
-        lock.lock()
-        _level *= 0.65
-        lock.unlock()
-        writer?.padSilence(inputFrames: frames, sampleRate: format.sampleRate)
+        guard let dest = scratchBuffer(frames: frames, format: format) else { return }
+        RecordingDSP.copy(abl, into: dest)
+        dest.frameLength = frames
+        writer?.write(dest)
+        mixer?.pushMic(dest)
     }
 
     private func scratchBuffer(frames: AVAudioFrameCount, format: AVAudioFormat) -> AVAudioPCMBuffer? {

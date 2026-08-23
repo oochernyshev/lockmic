@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "시스템 재생(들리는 소리)";
 "recording.source.included" = "시스템 재생 믹스에 포함됨";
 "recording.source.outside" = "이 녹음에 없음";
+"recording.monitor.not_recording" = "녹음 안 함";
 "recording.inputs.header" = "입력";
 "recording.outputs.header" = "출력";
 "recording.monitor.title" = "녹음";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "기본 출력 따르기";
 "recording.follow.mic.caption" = "시스템 기본 마이크가 바뀌면 그 마이크를 계속 녹음합니다.";
 "recording.follow.output.caption" = "시스템 기본 출력이 바뀌면 그 출력을 계속 녹음합니다.";
+"recording.monitor.unselected" = "선택하지 않은 장치 모니터링";
+"recording.monitor.unselected.caption" = "믹스에 없는 입출력을 측정하고 오디오가 있으면 경고합니다.";
 "recording.monitor.hint" = "레벨과 소스 켜기/끄기는 녹음 창에서 하세요. 녹음 중에는 계속 열려 있습니다.";
 "recording.permission.mic.title" = "마이크 접근이 거부됨";
 "recording.permission.mic.caption" = "시스템 설정에서 마이크를 허용한 다음 다시 시도하세요.";

@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Sistemska reprodukcija (ono što čuješ)";
 "recording.source.included" = "U miksu sistemske reprodukcije";
 "recording.source.outside" = "Nije u ovom snimanju";
+"recording.monitor.not_recording" = "Ne snima se";
 "recording.inputs.header" = "Ulazi";
 "recording.outputs.header" = "Izlazi";
 "recording.monitor.title" = "Snimanje";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Prati podrazumevani izlaz";
 "recording.follow.mic.caption" = "Kada se promeni podrazumevani mikrofon, nastavi da ga snimaš.";
 "recording.follow.output.caption" = "Kada se promeni podrazumevani izlaz, nastavi da ga snimaš.";
+"recording.monitor.unselected" = "Prati neizabrane uređaje";
+"recording.monitor.unselected.caption" = "Meri ulaze i izlaze koji nisu u miksu i upozori ako imaju zvuk.";
 "recording.monitor.hint" = "Nivoe i prekidače izvora koristi u prozoru za snimanje. Ostaje otvoren tokom snimanja.";
 "recording.permission.mic.title" = "Pristup mikrofonu je odbijen";
 "recording.permission.mic.caption" = "Dozvolite mikrofon u Podešavanjima sistema, pa pokušajte ponovo.";

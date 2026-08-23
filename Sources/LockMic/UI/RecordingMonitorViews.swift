@@ -525,6 +525,65 @@ final class MuteBadgeView: NSView {
     }
 }
 
+/// Warning triangle when an unselected source has audio that is not in the mix.
+final class NoSignalBadgeView: NSView {
+    private let iconView = NSImageView()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.cornerRadius = 8
+        layer?.masksToBounds = true
+        toolTip = L10n.recordingNoSignal
+        setAccessibilityLabel(L10n.recordingNoSignal)
+
+        iconView.image = NSImage(
+            systemSymbolName: "exclamationmark.triangle.fill",
+            accessibilityDescription: L10n.recordingNoSignal
+        )
+        iconView.imageScaling = .scaleProportionallyDown
+        iconView.contentTintColor = .systemYellow
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(iconView)
+        NSLayoutConstraint.activate([
+            iconView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5),
+            iconView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
+            iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 12),
+            iconView.heightAnchor.constraint(equalToConstant: 12),
+            heightAnchor.constraint(equalToConstant: 18),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: NSSize { NSSize(width: 22, height: 18) }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = NSColor.systemYellow.withAlphaComponent(0.22).cgColor
+        iconView.contentTintColor = .systemYellow
+    }
+
+    func setBlinking(_ on: Bool) {
+        layer?.removeAnimation(forKey: "blink")
+        if on {
+            let anim = CABasicAnimation(keyPath: "opacity")
+            anim.fromValue = 1
+            anim.toValue = 0.28
+            anim.duration = 0.55
+            anim.autoreverses = true
+            anim.repeatCount = .infinity
+            anim.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            layer?.add(anim, forKey: "blink")
+        } else {
+            layer?.opacity = 1
+        }
+    }
+}
+
 final class RowView: NSView {
     private static let markWidth: CGFloat = 16
     private static let iconWidth: CGFloat = 16
@@ -536,21 +595,26 @@ final class RowView: NSView {
     private let nameField = NSTextField(labelWithString: "")
     private let badge = NSTextField(labelWithString: "")
     private let muteBadge = MuteBadgeView()
+    private let warnBadge = NoSignalBadgeView()
     private let detailField = NSTextField(labelWithString: "")
     private let meter = LevelBar()
     private var nameBottom: NSLayoutConstraint?
     private var detailBottom: NSLayoutConstraint?
     private var badgeWidth: NSLayoutConstraint?
     private var muteWidth: NSLayoutConstraint?
+    private var warnWidth: NSLayoutConstraint?
     private var badgeToMeter: NSLayoutConstraint?
     private var badgeToMute: NSLayoutConstraint?
     private var muteToMeter: NSLayoutConstraint?
+    private var badgeToWarn: NSLayoutConstraint?
+    private var warnToMeter: NSLayoutConstraint?
     private let onToggle: (String, Bool) -> Void
     private var deviceID = ""
     private var kind: RecordingDeviceKind = .input
     private var canCapture = true
     private var sectionEnabled = true
     private var isMuted = false
+    private var showNoSignal = false
 
     init(device: RecordingDeviceRow, muted: Bool, onToggle: @escaping (String, Bool) -> Void) {
         self.onToggle = onToggle
@@ -576,13 +640,16 @@ final class RowView: NSView {
 
         muteBadge.setContentHuggingPriority(.defaultLow, for: .horizontal)
         muteBadge.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        warnBadge.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        warnBadge.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        warnBadge.isHidden = true
 
         detailField.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
         detailField.textColor = .secondaryLabelColor
         detailField.lineBreakMode = .byTruncatingTail
         detailField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        [mark, iconView, nameField, badge, muteBadge, detailField, meter].forEach {
+        [mark, iconView, nameField, badge, muteBadge, warnBadge, detailField, meter].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             addSubview($0)
         }
@@ -591,9 +658,12 @@ final class RowView: NSView {
         detailBottom = detailField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
         badgeWidth = badge.widthAnchor.constraint(equalToConstant: 0)
         muteWidth = muteBadge.widthAnchor.constraint(equalToConstant: 0)
+        warnWidth = warnBadge.widthAnchor.constraint(equalToConstant: 0)
         badgeToMeter = badge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10)
         badgeToMute = badge.trailingAnchor.constraint(equalTo: muteBadge.leadingAnchor, constant: -6)
         muteToMeter = muteBadge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10)
+        badgeToWarn = badge.trailingAnchor.constraint(equalTo: warnBadge.leadingAnchor, constant: -6)
+        warnToMeter = warnBadge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10)
 
         NSLayoutConstraint.activate([
             mark.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -612,6 +682,7 @@ final class RowView: NSView {
 
             badge.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
             muteBadge.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
+            warnBadge.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
 
             meter.trailingAnchor.constraint(equalTo: trailingAnchor),
             meter.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
@@ -657,15 +728,36 @@ final class RowView: NSView {
     func applyMute(_ muted: Bool) {
         let show = muted && kind == .input
         isMuted = show
-        muteBadge.isHidden = !show
-        muteWidth?.isActive = !show
-        badgeToMute?.isActive = show
-        muteToMeter?.isActive = show
-        badgeToMeter?.isActive = !show
-        muteBadge.setContentHuggingPriority(show ? .required : .defaultLow, for: .horizontal)
-        muteBadge.setContentCompressionResistancePriority(show ? .required : .defaultLow, for: .horizontal)
         applyIcon()
+        layoutTrailingBadges()
         syncMeter()
+    }
+
+    func setNoSignal(_ on: Bool) {
+        let show = on && !isMuted
+        guard showNoSignal != show else { return }
+        showNoSignal = show
+        layoutTrailingBadges()
+    }
+
+    private func layoutTrailingBadges() {
+        let mute = isMuted
+        let warn = showNoSignal && !mute
+        muteBadge.isHidden = !mute
+        warnBadge.isHidden = !warn
+        muteWidth?.isActive = !mute
+        warnWidth?.isActive = !warn
+        badgeToMute?.isActive = mute
+        muteToMeter?.isActive = mute
+        badgeToWarn?.isActive = warn
+        warnToMeter?.isActive = warn
+        badgeToMeter?.isActive = !mute && !warn
+        muteBadge.setContentHuggingPriority(mute ? .required : .defaultLow, for: .horizontal)
+        muteBadge.setContentCompressionResistancePriority(mute ? .required : .defaultLow, for: .horizontal)
+        warnBadge.setContentHuggingPriority(warn ? .required : .defaultLow, for: .horizontal)
+        warnBadge.setContentCompressionResistancePriority(warn ? .required : .defaultLow, for: .horizontal)
+        warnBadge.setBlinking(warn)
+        applyIcon()
     }
 
     private static var symbolCache: [String: NSImage] = [:]
@@ -732,9 +824,10 @@ final class RowView: NSView {
         }
     }
 
-    func applyLevel(_ device: RecordingDeviceRow, level: Float) {
+    func applyLevel(_ device: RecordingDeviceRow, level: Float, noSignal: Bool = false) {
         mark.isOn = device.isEnabled
         meter.level = level
+        setNoSignal(noSignal)
         syncMeter()
     }
 

@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Системне відтворення (те, що чути)";
 "recording.source.included" = "Входить у мікс системного відтворення";
 "recording.source.outside" = "Не в цьому записі";
+"recording.monitor.not_recording" = "Не записується";
 "recording.inputs.header" = "Входи";
 "recording.outputs.header" = "Виходи";
 "recording.monitor.title" = "Запис";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Стежити за типовим виходом";
 "recording.follow.mic.caption" = "Якщо типовий мікрофон зміниться, продовжувати його записувати.";
 "recording.follow.output.caption" = "Якщо типовий вихід зміниться, продовжувати його записувати.";
+"recording.monitor.unselected" = "Стежити за невибраними пристроями";
+"recording.monitor.unselected.caption" = "Вимірювати входи й виходи поза зведенням і попереджати, якщо на них є звук.";
 "recording.monitor.hint" = "Рівні й вимикання джерел — у вікні запису. Воно лишається відкритим під час запису.";
 "recording.permission.mic.title" = "Доступ до мікрофона заборонено";
 "recording.permission.mic.caption" = "Дозвольте мікрофон у Системних параметрах і спробуйте знову.";

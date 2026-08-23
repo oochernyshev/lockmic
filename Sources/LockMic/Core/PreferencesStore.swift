@@ -40,6 +40,8 @@ final class PreferencesStore: ObservableObject {
         static let followDefaultMic = "followDefaultMic"
         static let followDefaultOutput = "followDefaultOutput"
         static let recordingInputUID = "recordingInputUID"
+        static let recordingOutputUIDs = "recordingOutputUIDs"
+        static let monitorUnselectedDevices = "monitorUnselectedDevices"
         static let recordingBitRate = "recordingBitRate"
         static let recordingsFolderPath = "recordingsFolderPath"
         static let shareAnonymousUsage = "shareAnonymousUsage"
@@ -136,6 +138,16 @@ final class PreferencesStore: ObservableObject {
 
     @Published var followDefaultOutput: Bool {
         didSet { UserDefaults.standard.set(followDefaultOutput, forKey: Keys.followDefaultOutput) }
+    }
+
+    /// Last explicitly chosen playback outputs. Used when `followDefaultOutput` is off.
+    @Published var recordingOutputUIDs: [String] {
+        didSet { UserDefaults.standard.set(recordingOutputUIDs, forKey: Keys.recordingOutputUIDs) }
+    }
+
+    /// Meter unselected inputs/outputs and warn if they have audio.
+    @Published var monitorUnselectedDevices: Bool {
+        didSet { UserDefaults.standard.set(monitorUnselectedDevices, forKey: Keys.monitorUnselectedDevices) }
     }
 
     /// AAC bitrate for microphone, playback, and the mix.
@@ -288,6 +300,11 @@ final class PreferencesStore: ObservableObject {
             defaults.set(true, forKey: Keys.followDefaultOutput)
         }
         followDefaultOutput = defaults.bool(forKey: Keys.followDefaultOutput)
+        recordingOutputUIDs = defaults.stringArray(forKey: Keys.recordingOutputUIDs) ?? []
+        if defaults.object(forKey: Keys.monitorUnselectedDevices) == nil {
+            defaults.set(true, forKey: Keys.monitorUnselectedDevices)
+        }
+        monitorUnselectedDevices = defaults.bool(forKey: Keys.monitorUnselectedDevices)
         recordingBitRate = RecordingBitRate.resolved(defaults.integer(forKey: Keys.recordingBitRate))
         recordingsFolderPath = defaults.string(forKey: Keys.recordingsFolderPath) ?? ""
 

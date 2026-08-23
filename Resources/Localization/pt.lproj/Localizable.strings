@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Reprodução do sistema (o que ouves)";
 "recording.source.included" = "Incluído na mistura de reprodução";
 "recording.source.outside" = "Fora desta gravação";
+"recording.monitor.not_recording" = "Sem gravar";
 "recording.inputs.header" = "Entradas";
 "recording.outputs.header" = "Saídas";
 "recording.monitor.title" = "Gravação";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Seguir a saída predefinida";
 "recording.follow.mic.caption" = "Se o microfone predefinido mudar, continue a gravá-lo.";
 "recording.follow.output.caption" = "Se a saída predefinida mudar, continue a gravá-la.";
+"recording.monitor.unselected" = "Monitorizar dispositivos não selecionados";
+"recording.monitor.unselected.caption" = "Medir entradas e saídas fora da mistura e avisar se tiverem áudio.";
 "recording.monitor.hint" = "Usa a janela de gravação para níveis e ligar/desligar fontes. Fica aberta enquanto grava.";
 "recording.permission.mic.title" = "Acesso ao microfone recusado";
 "recording.permission.mic.caption" = "Permita o microfone nas Definições do Sistema e tente novamente.";

@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Rendszerlejátszás (amit hallasz)";
 "recording.source.included" = "Benne van a rendszerlejátszás keverésben";
 "recording.source.outside" = "Nincs ebben a felvételben";
+"recording.monitor.not_recording" = "Nincs felvéve";
 "recording.inputs.header" = "Bemenetek";
 "recording.outputs.header" = "Kimenetek";
 "recording.monitor.title" = "Felvétel";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Alapértelmezett kimenet követése";
 "recording.follow.mic.caption" = "Ha változik az alapértelmezett mikrofon, továbbra is azt vegye fel.";
 "recording.follow.output.caption" = "Ha változik az alapértelmezett kimenet, továbbra is azt vegye fel.";
+"recording.monitor.unselected" = "Nem kijelölt eszközök figyelése";
+"recording.monitor.unselected.caption" = "Mérje a keverésben nem szereplő bemeneteket és kimeneteket, és figyelmeztessen, ha van hang.";
 "recording.monitor.hint" = "A szintek és a forráskapcsolók a felvételi ablakban vannak. Felvétel közben nyitva marad.";
 "recording.permission.mic.title" = "A mikrofonhozzáférés megtagadva";
 "recording.permission.mic.caption" = "Engedélyezze a mikrofont a Rendszerbeállításokban, majd próbálja újra.";

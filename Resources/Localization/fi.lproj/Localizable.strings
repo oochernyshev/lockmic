@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Järjestelmän toisto (mitä kuulet)";
 "recording.source.included" = "Mukana järjestelmän toistomixissä";
 "recording.source.outside" = "Ei tässä tallennuksessa";
+"recording.monitor.not_recording" = "Ei tallennu";
 "recording.inputs.header" = "Tulot";
 "recording.outputs.header" = "Lähdöt";
 "recording.monitor.title" = "Tallennus";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Seuraa oletuslähtöä";
 "recording.follow.mic.caption" = "Kun järjestelmän oletusmikrofoni vaihtuu, jatka sen tallennusta.";
 "recording.follow.output.caption" = "Kun järjestelmän oletuslähtö vaihtuu, jatka sen tallennusta.";
+"recording.monitor.unselected" = "Tarkkaile valitsemattomia laitteita";
+"recording.monitor.unselected.caption" = "Mittaa mixiin kuulumattomat tulot ja lähdöt ja varoita, jos niissä on ääntä.";
 "recording.monitor.hint" = "Tasot ja lähdekytkimet ovat tallennusikkunassa. Se pysyy auki tallennuksen ajan.";
 "recording.permission.mic.title" = "Mikrofonin käyttö estetty";
 "recording.permission.mic.caption" = "Salli mikrofoni Järjestelmäasetuksissa ja yritä uudelleen.";

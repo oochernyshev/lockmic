@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Systémové přehrávání (co slyšíte)";
 "recording.source.included" = "Součást mixu systémového přehrávání";
 "recording.source.outside" = "Není v tomto nahrávání";
+"recording.monitor.not_recording" = "Nenahrává se";
 "recording.inputs.header" = "Vstupy";
 "recording.outputs.header" = "Výstupy";
 "recording.monitor.title" = "Nahrávání";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Sledovat výchozí výstup";
 "recording.follow.mic.caption" = "Když se změní výchozí mikrofon, dál ho nahrávej.";
 "recording.follow.output.caption" = "Když se změní výchozí výstup, dál ho nahrávej.";
+"recording.monitor.unselected" = "Sledovat nevybraná zařízení";
+"recording.monitor.unselected.caption" = "Měřit vstupy a výstupy, které nejsou ve směsi, a upozornit, když mají zvuk.";
 "recording.monitor.hint" = "Úrovně a vypínání zdrojů jsou v okně Nahrávání. Zůstane otevřené po dobu nahrávání.";
 "recording.permission.mic.title" = "Přístup k mikrofonu byl odepřen";
 "recording.permission.mic.caption" = "Povolte mikrofon v Nastavení systému a zkuste to znovu.";

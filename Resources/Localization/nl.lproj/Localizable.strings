@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Systeemweergave (wat je hoort)";
 "recording.source.included" = "Opgenomen in de systeemweergavemix";
 "recording.source.outside" = "Niet in deze opname";
+"recording.monitor.not_recording" = "Niet opgenomen";
 "recording.inputs.header" = "Ingangen";
 "recording.outputs.header" = "Uitgangen";
 "recording.monitor.title" = "Opname";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Standaarduitvoer volgen";
 "recording.follow.mic.caption" = "Als de standaardmicrofoon wijzigt, blijf die opnemen.";
 "recording.follow.output.caption" = "Als de standaarduitvoer wijzigt, blijf die opnemen.";
+"recording.monitor.unselected" = "Niet-geselecteerde apparaten bewaken";
+"recording.monitor.unselected.caption" = "Meet in- en uitgangen die niet in de mix zitten en waarschuw als ze audio hebben.";
 "recording.monitor.hint" = "Gebruik het opnamevenster voor niveaus en aan/uit. Het blijft open tijdens opnemen.";
 "recording.permission.mic.title" = "Microfoontoegang geweigerd";
 "recording.permission.mic.caption" = "Sta de microfoon toe in Systeeminstellingen en probeer het opnieuw.";

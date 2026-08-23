@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Системное воспроизведение (то, что слышно)";
 "recording.source.included" = "Входит в микс системного воспроизведения";
 "recording.source.outside" = "Не в этой записи";
+"recording.monitor.not_recording" = "Не пишется";
 "recording.inputs.header" = "Входы";
 "recording.outputs.header" = "Выходы";
 "recording.monitor.title" = "Запись";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Следовать выходу по умолчанию";
 "recording.follow.mic.caption" = "Если системный микрофон по умолчанию сменится, продолжать записывать его.";
 "recording.follow.output.caption" = "Если системный выход по умолчанию сменится, продолжать записывать его.";
+"recording.monitor.unselected" = "Следить за невыбранными устройствами";
+"recording.monitor.unselected.caption" = "Измерять входы и выходы вне сведения и предупреждать, если на них есть звук.";
 "recording.monitor.hint" = "Уровни и выключение источников — в окне записи. Оно остаётся открытым на время записи.";
 "recording.permission.mic.title" = "Доступ к микрофону запрещён";
 "recording.permission.mic.caption" = "Разрешите микрофон в Системных настройках и попробуйте снова.";

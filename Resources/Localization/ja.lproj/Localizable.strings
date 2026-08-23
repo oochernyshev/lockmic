@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "システム再生（聞こえている音）";
 "recording.source.included" = "システム再生ミックスに含まれます";
 "recording.source.outside" = "この録音には含まれません";
+"recording.monitor.not_recording" = "未録音";
 "recording.inputs.header" = "入力";
 "recording.outputs.header" = "出力";
 "recording.monitor.title" = "録音";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "デフォルトの出力に従う";
 "recording.follow.mic.caption" = "システムのデフォルトマイクが変わっても、そのマイクを録音し続けます。";
 "recording.follow.output.caption" = "システムのデフォルト出力が変わっても、その出力を録音し続けます。";
+"recording.monitor.unselected" = "未選択のデバイスを監視";
+"recording.monitor.unselected.caption" = "ミックスに含まれない入出力をメーターし、音声があれば警告します。";
 "recording.monitor.hint" = "レベルと入力のオン/オフは録音ウィンドウで行います。録音中は開いたままです。";
 "recording.permission.mic.title" = "マイクへのアクセスが拒否されました";
 "recording.permission.mic.caption" = "システム設定でマイクを許可してから、もう一度お試しください。";

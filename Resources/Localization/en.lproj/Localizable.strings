@@ -135,6 +135,7 @@
 "recording.source.system_playback" = "System playback (what you hear)";
 "recording.source.included" = "Included in system playback mix";
 "recording.source.outside" = "Not in this recording";
+"recording.monitor.not_recording" = "Not recording";
 "recording.inputs.header" = "Inputs";
 "recording.outputs.header" = "Outputs";
 "recording.monitor.title" = "Recording";
@@ -142,6 +143,8 @@
 "recording.monitor.follow_default_output" = "Follow default output";
 "recording.follow.mic.caption" = "When the system default microphone changes, keep recording it.";
 "recording.follow.output.caption" = "When the system default output changes, keep recording it.";
+"recording.monitor.unselected" = "Monitor unselected devices";
+"recording.monitor.unselected.caption" = "Meter inputs and outputs that are not in the mix, and warn if they have audio.";
 "recording.monitor.hint" = "Use the Recording window to watch levels and mute sources. It stays open while you record.";
 "recording.permission.mic.title" = "Microphone access denied";
 "recording.permission.mic.caption" = "Allow the microphone in System Settings, then try again.";

@@ -175,6 +175,7 @@
 "recording.source.system_playback" = "Redare de sistem (ce auzi)";
 "recording.source.included" = "Inclus în mixul de redare";
 "recording.source.outside" = "Nu e în această înregistrare";
+"recording.monitor.not_recording" = "Nu se înregistrează";
 "recording.inputs.header" = "Intrări";
 "recording.outputs.header" = "Ieșiri";
 "recording.monitor.title" = "Înregistrare";
@@ -182,6 +183,8 @@
 "recording.monitor.follow_default_output" = "Urmărește ieșirea implicită";
 "recording.follow.mic.caption" = "Când se schimbă microfonul implicit, continuă înregistrarea lui.";
 "recording.follow.output.caption" = "Când se schimbă ieșirea implicită, continuă înregistrarea ei.";
+"recording.monitor.unselected" = "Monitorizează dispozitivele neselectate";
+"recording.monitor.unselected.caption" = "Măsoară intrările și ieșirile care nu sunt în mix și avertizează dacă au sunet.";
 "recording.monitor.hint" = "Folosește fereastra de înregistrare pentru niveluri și comutatoare. Rămâne deschisă cât înregistrezi.";
 "recording.permission.mic.title" = "Accesul la microfon a fost refuzat";
 "recording.permission.mic.caption" = "Permite microfonul în Setări sistem, apoi încearcă din nou.";
