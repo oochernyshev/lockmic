@@ -324,9 +324,11 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         if recorder.isRecording != timerForRecording {
             startTimer()
         }
-        // Access can flip while still not recording (TCC allow / Settings return).
-        syncChrome()
-        guard recorder.isRecording else { return }
+        if !recorder.isRecording {
+            // Access can flip while still not recording (TCC allow / Settings return).
+            syncChrome()
+            return
+        }
         if let start = recorder.recordingStartedAt {
             let seconds = max(0, Int(Date().timeIntervalSince(start)))
             if seconds != lastElapsedSeconds {
@@ -335,28 +337,29 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
                 sizeField?.stringValue = recorder.mixSizeChipText()
             }
         }
-        syncDeviceRows()
         syncRowLevels()
-        syncFollowToggles()
         waveform?.push(recorder.liveWaveformLevel())
     }
 
-    private func syncRows() {
+    private func syncRows(from devices: [RecordingDeviceRow]? = nil) {
         guard let recorder else { return }
-        for device in recorder.devices {
+        for device in devices ?? recorder.devices {
             rows[device.id]?.apply(device, muted: isInputMuted(device))
         }
     }
 
     /// Default badge and selection live on `devices`, not the meter tick.
     /// Same IDs with a new default must `apply`, not only `applyLevel`.
-    private func syncDeviceRows() {
+    /// `$devices` emits in `willSet` — use the published array, not `recorder.devices`.
+    private func syncDeviceRows(from devices: [RecordingDeviceRow]? = nil) {
         guard let recorder, inputsCard != nil else { return }
-        let ids = Set(recorder.devices.map(\.id))
+        let devices = devices ?? recorder.devices
+        let ids = Set(devices.map(\.id))
         if ids != Set(rows.keys) {
-            rebuildSections()
+            rebuildSections(from: devices)
         } else {
-            syncRows()
+            syncRows(from: devices)
+            syncFollowToggles()
         }
     }
 
@@ -377,8 +380,9 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         }
     }
 
-    private func rebuildSections() {
+    private func rebuildSections(from devices: [RecordingDeviceRow]? = nil) {
         guard let recorder, let inputsCard, let outputsCard else { return }
+        let devices = devices ?? recorder.devices
         rows.removeAll()
         inputsCard.setTitle(L10n.recordingInputsHeader)
         outputsCard.setTitle(L10n.recordingOutputsHeader)
@@ -386,7 +390,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         inputsCard.removeRows()
         outputsCard.removeRows()
 
-        for device in recorder.devices where device.kind == .input {
+        for device in devices where device.kind == .input {
             let row = RowView(device: device, muted: isInputMuted(device)) { [weak self] id, on in
                 self?.recorder?.setDeviceEnabled(id, enabled: on)
                 self?.syncRows()
@@ -394,7 +398,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             rows[device.id] = row
             inputsCard.addRow(row)
         }
-        for device in recorder.devices where device.kind == .output {
+        for device in devices where device.kind == .output {
             let row = RowView(device: device, muted: false) { [weak self] id, on in
                 self?.recorder?.setDeviceEnabled(id, enabled: on)
                 self?.syncRows()
@@ -423,8 +427,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         .store(in: &recorderCancellables)
 
         recorder.$devices
-            .sink { [weak self] _ in
-                self?.syncDeviceRows()
+            .sink { [weak self] devices in
+                self?.syncDeviceRows(from: devices)
             }
             .store(in: &recorderCancellables)
     }

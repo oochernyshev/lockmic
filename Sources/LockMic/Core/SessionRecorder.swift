@@ -10,7 +10,7 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "SessionRecorde
 /// Records selected mic + system playback, mixed live to a dated `LockMic yyyy-MM-dd HH.mm.aac`.
 ///
 /// Playback is a Core Audio process tap (macOS 14.2+). Mic is a HAL IO capture
-/// that can move mid-session. Mixed PCM is held in RAM for up to 30 seconds,
+/// that can move mid-session. Mixed PCM is held in RAM for up to 10 seconds,
 /// then checkpointed through one continuous AAC encoder (a crash only loses
 /// the current slice).
 @MainActor
@@ -27,10 +27,14 @@ final class SessionRecorder: ObservableObject {
     /// When true, playback selection tracks the system default output.
     @Published private(set) var followDefaultOutput = true
 
+    /// Follow-default plus the current input UID. Set by `RecordingCoordinator` to persist prefs.
+    var persistInputSelection: ((Bool, String) -> Void)?
+
     private let audio: AudioDeviceService
     private let mic: MicController
     private var micCapture: InputDeviceCapture?
-    private var playback: PlaybackCapturing?
+    private var playbackTaps: [String: PlaybackCapturing] = [:]
+    private var playbackTapSync = 0
     private var sessionStart: CFTimeInterval = 0
     private var playbackScope: PlaybackRecordScope = .default
     private var selectedInputUID = ""
@@ -66,7 +70,7 @@ final class SessionRecorder: ObservableObject {
             audio.removeDevicesChangedHandler(devicesToken)
         }
         micCapture?.stop()
-        playback?.stop()
+        for tap in playbackTaps.values { tap.stop() }
         liveMixer?.stop()
     }
 
@@ -74,10 +78,16 @@ final class SessionRecorder: ObservableObject {
     func previewSession(
         playback scope: PlaybackRecordScope = .default,
         followInput: Bool = true,
-        followOutput: Bool = true
+        followOutput: Bool = true,
+        preferredInputUID: String = ""
     ) {
         lastError = nil
-        applySessionSelection(scope: scope, followInput: followInput, followOutput: followOutput)
+        applySessionSelection(
+            scope: scope,
+            followInput: followInput,
+            followOutput: followOutput,
+            preferredInputUID: preferredInputUID
+        )
         refreshCaptureAccess()
         refreshDeviceRows()
     }
@@ -86,13 +96,21 @@ final class SessionRecorder: ObservableObject {
     func start(
         playback scope: PlaybackRecordScope = .default,
         bitRate: RecordingBitRate = .default,
-        in baseDirectory: URL
+        in baseDirectory: URL,
+        followInput: Bool = true,
+        followOutput: Bool = true,
+        preferredInputUID: String = ""
     ) async throws {
         guard !isRecording else { throw SessionRecorderError.alreadyRecording }
         guard #available(macOS 14.2, *) else { throw SessionRecorderError.needsMacOS142 }
 
         lastError = nil
-        applySessionSelection(scope: scope, followInput: followDefaultInput, followOutput: followDefaultOutput)
+        applySessionSelection(
+            scope: scope,
+            followInput: followInput,
+            followOutput: followOutput,
+            preferredInputUID: preferredInputUID
+        )
         refreshCaptureAccess()
         refreshDeviceRows()
         do {
@@ -132,24 +150,15 @@ final class SessionRecorder: ObservableObject {
             )
             mic.mixer = mixer
 
-            let tap: PlaybackTap
+            micCapture = mic
+            syncInputMuteToCapture()
             do {
-                tap = try await PlaybackTap(
-                    audio: audio,
-                    scope: scope,
-                    fileURL: nil,
-                    sessionStart: sessionStart,
-                    bitRate: sessionBitRate
-                )
-                tap.mixer = mixer
+                try await syncPlaybackTaps()
             } catch {
                 mic.stop()
                 mixer.stop()
                 throw error
             }
-            micCapture = mic
-            syncInputMuteToCapture()
-            playback = tap
             if let outID = try? audio.defaultOutputDeviceID(), !audio.isLockMicRecorder(outID) {
                 playbackDeviceUID = audio.deviceUID(outID) ?? ""
             }
@@ -165,8 +174,7 @@ final class SessionRecorder: ObservableObject {
             liveMixer = nil
             micCapture?.stop()
             micCapture = nil
-            playback?.stop()
-            playback = nil
+            stopPlaybackTaps()
             sessionFile = nil
             try? FileManager.default.removeItem(at: mixURL)
             if case .playbackDenied? = error as? SessionRecorderError {
@@ -214,8 +222,7 @@ final class SessionRecorder: ObservableObject {
         }
         micCapture?.stop()
         micCapture = nil
-        playback?.stop()
-        playback = nil
+        stopPlaybackTaps()
         liveMixer?.stop()
         let finalFile = liveMixer?.url ?? file
         liveMixer = nil
@@ -261,23 +268,11 @@ final class SessionRecorder: ObservableObject {
             return
         }
         if uid != playbackDeviceUID {
+            playbackDeviceUID = uid
             if followDefaultOutput {
                 selectedOutputUIDs = [uid]
             }
-            if #available(macOS 14.2, *), let tap = playback as? PlaybackTap, followDefaultOutput {
-                do {
-                    try tap.retarget(using: audio, scope: playbackScope)
-                    playbackDeviceUID = uid
-                    applyOutputSelection()
-                    log.info("Playback tap moved to \(self.audio.deviceName(outID), privacy: .public)")
-                } catch {
-                    lastError = error.localizedDescription
-                    log.error("Playback retarget failed: \(error.localizedDescription, privacy: .public)")
-                }
-            } else {
-                playbackDeviceUID = uid
-                applyOutputSelection()
-            }
+            applyOutputSelection()
         }
         rememberDeviceOrder()
         refreshDeviceRows()
@@ -300,6 +295,7 @@ final class SessionRecorder: ObservableObject {
         if enabled {
             followDefaultInput = false
             selectMic(id)
+            rememberInputSelection()
         }
         refreshDeviceRows()
     }
@@ -310,6 +306,7 @@ final class SessionRecorder: ObservableObject {
         if follow, let uid = currentDefaultInputUID() {
             selectMic(uid)
         }
+        rememberInputSelection()
         refreshDeviceRows()
     }
 
@@ -324,39 +321,77 @@ final class SessionRecorder: ObservableObject {
     }
 
     private func applyOutputSelection() {
-        let anySelected = !selectedOutputUIDs.isEmpty
-        playback?.captureEnabled = anySelected
-        let nextScope: PlaybackRecordScope =
-            selectedOutputUIDs.contains(where: { $0 != playbackDeviceUID }) ? .all : .default
-        let scopeChanged = nextScope != playbackScope
-        playbackScope = nextScope
-        if scopeChanged {
-            rebuildPlaybackTap()
+        playbackScope = selectedOutputUIDs.contains(where: { $0 != playbackDeviceUID }) ? .all : .default
+        scheduleSyncPlaybackTaps()
+    }
+
+    private func scheduleSyncPlaybackTaps() {
+        guard isRecording else { return }
+        playbackTapSync += 1
+        let token = playbackTapSync
+        Task { @MainActor in
+            guard token == self.playbackTapSync, self.isRecording else { return }
+            do {
+                try await self.syncPlaybackTaps()
+            } catch {
+                self.lastError = error.localizedDescription
+                log.error("Playback tap sync failed: \(error.localizedDescription, privacy: .public)")
+            }
+            self.refreshDeviceRows()
         }
     }
 
-    private func rebuildPlaybackTap() {
-        guard #available(macOS 14.2, *), let tap = playback as? PlaybackTap else { return }
-        do {
-            try tap.retarget(using: audio, scope: playbackScope)
-            log.info("Playback tap scope \(String(describing: self.playbackScope), privacy: .public)")
-        } catch {
-            lastError = error.localizedDescription
-            log.error("Playback retarget failed: \(error.localizedDescription, privacy: .public)")
+    private func stopPlaybackTaps() {
+        for tap in playbackTaps.values { tap.stop() }
+        playbackTaps.removeAll()
+        liveMixer?.removeAllPlaybackSources()
+    }
+
+    /// One device-bound process tap per selected output so each row has its own meter.
+    private func syncPlaybackTaps() async throws {
+        guard #available(macOS 14.2, *) else { return }
+        let wanted = selectedOutputUIDs
+        for uid in playbackTaps.keys where !wanted.contains(uid) {
+            playbackTaps[uid]?.stop()
+            playbackTaps.removeValue(forKey: uid)
+            liveMixer?.removePlaybackSource(uid)
+        }
+        var failed: Error?
+        for uid in wanted where playbackTaps[uid] == nil {
+            do {
+                let tap = try await PlaybackTap(
+                    audio: audio,
+                    deviceUID: uid,
+                    fileURL: nil,
+                    sessionStart: sessionStart,
+                    bitRate: sessionBitRate
+                )
+                tap.mixer = liveMixer
+                playbackTaps[uid] = tap
+                log.info("Playback tap on \(uid, privacy: .public)")
+            } catch {
+                selectedOutputUIDs.remove(uid)
+                failed = error
+                log.error("Playback tap failed for \(uid, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
+        if !wanted.isEmpty, playbackTaps.isEmpty, let failed {
+            throw failed
         }
     }
 
     private func applySessionSelection(
         scope: PlaybackRecordScope,
         followInput: Bool,
-        followOutput: Bool
+        followOutput: Bool,
+        preferredInputUID: String = ""
     ) {
         playbackScope = scope
         if let outID = try? audio.defaultOutputDeviceID(), !audio.isLockMicRecorder(outID) {
             playbackDeviceUID = audio.deviceUID(outID) ?? ""
         }
         followDefaultInput = followInput
-        selectedInputUID = currentDefaultInputUID() ?? ""
+        selectedInputUID = resolvedInputUID(followInput: followInput, preferred: preferredInputUID)
         followDefaultOutput = followOutput && scope != .all
         selectedOutputUIDs = playbackDeviceUID.isEmpty ? [] : [playbackDeviceUID]
         if scope == .all, !followDefaultOutput {
@@ -365,6 +400,18 @@ final class SessionRecorder: ObservableObject {
             }
         }
         rememberDeviceOrder()
+    }
+
+    private func rememberInputSelection() {
+        persistInputSelection?(followDefaultInput, selectedInputUID)
+    }
+
+    private func resolvedInputUID(followInput: Bool, preferred: String) -> String {
+        let fallback = currentDefaultInputUID() ?? ""
+        guard !followInput else { return fallback }
+        let uid = preferred.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !uid.isEmpty, inputDevice(uid: uid) != nil else { return fallback }
+        return uid
     }
 
     private func currentDefaultInputUID() -> String? {
@@ -489,7 +536,8 @@ final class SessionRecorder: ObservableObject {
         case .input:
             return micCapture?.level ?? 0
         case .output:
-            return playback?.level ?? 0
+            let uid = String(row.id.dropFirst(4))
+            return playbackTaps[uid]?.level ?? 0
         }
     }
 
@@ -511,7 +559,7 @@ final class SessionRecorder: ObservableObject {
     /// Peak of mic + playback — for the monitor waveform.
     func liveWaveformLevel() -> Float {
         let mic = devices.contains(where: { $0.kind == .input && $0.isEnabled }) ? (micCapture?.level ?? 0) : 0
-        let play = selectedOutputUIDs.isEmpty ? 0 : (playback?.level ?? 0)
+        let play = playbackTaps.values.map(\.level).max() ?? 0
         return min(1, max(mic, play))
     }
 

@@ -6,13 +6,13 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "LiveMixer")
 
 /// Mixes mic + playback to 48 kHz stereo AAC as the session runs.
 ///
-/// Mixed PCM is held in RAM for 30 seconds, then fed through one continuous
+/// Mixed PCM is held in RAM for 10 seconds, then fed through one continuous
 /// AAC encoder. Completed ADTS packets are synced at every checkpoint, so a
 /// crash only loses the unflushed slice without adding encoder gaps.
 final class LiveMixer: @unchecked Sendable {
     static let sampleRate: Double = RecordingCodec.sampleRate
-    static let segmentSeconds: Double = 30
-    private static let chunkFrames: AVAudioFrameCount = 1024
+    static let segmentSeconds: Double = 10
+    private static let chunkFrames: AVAudioFrameCount = 2048
     private static let segmentFrames = AVAudioFrameCount(sampleRate * segmentSeconds)
     private static let encodeFrames: AVAudioFrameCount = 8192
     private static let ringSeconds = 4
@@ -33,10 +33,11 @@ final class LiveMixer: @unchecked Sendable {
     private var segmentBuffer: AVAudioPCMBuffer?
     private var mixChunkBuffer: AVAudioPCMBuffer?
     private var micConvertDest: AVAudioPCMBuffer?
-    private var playConvertDest: AVAudioPCMBuffer?
     private var micScratch: [Float] = []
     private var playLScratch: [Float] = []
     private var playRScratch: [Float] = []
+    private var playAddL: [Float] = []
+    private var playAddR: [Float] = []
     private let unflushedLock = NSLock()
     private var unflushedFrames: AVAudioFrameCount = 0
     private var pendingFrames: AVAudioFrameCount = 0
@@ -49,12 +50,9 @@ final class LiveMixer: @unchecked Sendable {
 
     private var micConverter: AVAudioConverter?
     private var micFrom: AVAudioFormat?
-    private var playConverter: AVAudioConverter?
-    private var playFrom: AVAudioFormat?
 
     private var micRing = FloatRing(capacity: Int(sampleRate) * ringSeconds)
-    private var playLRing = FloatRing(capacity: Int(sampleRate) * ringSeconds)
-    private var playRRing = FloatRing(capacity: Int(sampleRate) * ringSeconds)
+    private var playbackBuses: [String: PlaybackBus] = [:]
     private let ringLock = NSLock()
 
     private var duckGain: Float = MixDuck.openMicGain
@@ -104,11 +102,38 @@ final class LiveMixer: @unchecked Sendable {
     }
 
     func pushMic(_ buffer: AVAudioPCMBuffer) {
-        push(buffer, asMic: true)
+        push(buffer, asMic: true, source: "")
     }
 
-    func pushPlayback(_ buffer: AVAudioPCMBuffer) {
-        push(buffer, asMic: false)
+    func pushPlayback(_ buffer: AVAudioPCMBuffer, source: String) {
+        push(buffer, asMic: false, source: source)
+    }
+
+    /// 48 kHz float — copy HAL samples into the mix rings, no scratch buffer or converter.
+    @discardableResult
+    func pushMic(_ abl: UnsafeMutableAudioBufferListPointer, format: AVAudioFormat) -> Bool {
+        enqueueNative(abl: abl, format: format, asMic: true, source: "")
+    }
+
+    @discardableResult
+    func pushPlayback(
+        _ abl: UnsafeMutableAudioBufferListPointer,
+        format: AVAudioFormat,
+        source: String
+    ) -> Bool {
+        enqueueNative(abl: abl, format: format, asMic: false, source: source)
+    }
+
+    func removePlaybackSource(_ source: String) {
+        ringLock.lock()
+        playbackBuses.removeValue(forKey: source)
+        ringLock.unlock()
+    }
+
+    func removeAllPlaybackSources() {
+        ringLock.lock()
+        playbackBuses.removeAll()
+        ringLock.unlock()
     }
 
     /// Seconds of mixed PCM not yet in the dated mix file.
@@ -121,42 +146,110 @@ final class LiveMixer: @unchecked Sendable {
 
     // MARK: - Ingest
 
-    private func push(_ buffer: AVAudioPCMBuffer, asMic: Bool) {
-        if enqueueNative(buffer, asMic: asMic) { return }
+    private func push(_ buffer: AVAudioPCMBuffer, asMic: Bool, source: String) {
+        if enqueueNative(buffer, asMic: asMic, source: source) { return }
         guard let copy = checkoutIngest(buffer) else { return }
         queue.async { [weak self] in
             guard let self else { return }
-            self.ingest(copy, asMic: asMic)
+            self.ingest(copy, asMic: asMic, source: source)
             self.checkinIngest(copy)
         }
     }
 
     /// 48 kHz float already — copy into the mix rings here, no extra buffer or hop.
-    private func enqueueNative(_ buffer: AVAudioPCMBuffer, asMic: Bool) -> Bool {
-        let channels: AVAudioChannelCount = asMic ? 1 : 2
-        guard Self.isMixFormat(buffer.format, channels: channels),
-              buffer.frameLength > 0,
-              let samples = buffer.floatChannelData
+    /// Stereo mics use channel 0; any 48 kHz float layout is accepted (converter is only for SRC).
+    private func enqueueNative(_ buffer: AVAudioPCMBuffer, asMic: Bool, source: String) -> Bool {
+        guard buffer.frameLength > 0,
+              buffer.format.sampleRate == Self.sampleRate,
+              RecordingDSP.isLinearFloat32(buffer.format)
         else { return false }
         let n = Int(buffer.frameLength)
         ringLock.lock()
         defer { ringLock.unlock() }
         guard !stopped else { return true }
+        if let samples = buffer.floatChannelData {
+            if asMic {
+                micRing.write(samples[0], count: n)
+            } else {
+                let bus = playbackBusLocked(source)
+                bus.left.write(samples[0], count: n)
+                bus.right.write(samples[buffer.format.channelCount > 1 ? 1 : 0], count: n)
+            }
+            return true
+        }
+        let abl = UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList)
+        return writeRingsLocked(abl: abl, frames: n, asMic: asMic, source: source)
+    }
+
+    private func enqueueNative(
+        abl: UnsafeMutableAudioBufferListPointer,
+        format: AVAudioFormat,
+        asMic: Bool,
+        source: String
+    ) -> Bool {
+        guard format.sampleRate == Self.sampleRate,
+              RecordingDSP.isLinearFloat32(format)
+        else { return false }
+        let frames = RecordingDSP.floatFrames(in: abl)
+        guard frames > 0 else { return false }
+        ringLock.lock()
+        defer { ringLock.unlock() }
+        guard !stopped else { return true }
+        return writeRingsLocked(abl: abl, frames: frames, asMic: asMic, source: source)
+    }
+
+    /// Caller holds `ringLock`.
+    private func playbackBusLocked(_ source: String) -> PlaybackBus {
+        if let bus = playbackBuses[source] { return bus }
+        let bus = PlaybackBus()
+        playbackBuses[source] = bus
+        return bus
+    }
+
+    /// Caller holds `ringLock`.
+    private func writeRingsLocked(
+        abl: UnsafeMutableAudioBufferListPointer,
+        frames: Int,
+        asMic: Bool,
+        source: String
+    ) -> Bool {
+        guard let first = abl.first, let raw = first.mData else { return false }
+        let src = raw.assumingMemoryBound(to: Float.self)
         if asMic {
-            micRing.write(samples[0], count: n)
+            if abl.count == 1 {
+                micRing.write(src, count: frames, stride: max(1, Int(first.mNumberChannels)))
+            } else {
+                micRing.write(src, count: frames)
+            }
+            return true
+        }
+        let bus = playbackBusLocked(source)
+        if abl.count == 1 {
+            let channels = max(1, Int(first.mNumberChannels))
+            if channels == 1 {
+                bus.left.write(src, count: frames)
+                bus.right.write(src, count: frames)
+            } else {
+                bus.left.write(src, count: frames, stride: channels)
+                bus.right.write(src + 1, count: frames, stride: channels)
+            }
+            return true
+        }
+        bus.left.write(src, count: frames)
+        if let right = abl[1].mData {
+            bus.right.write(right.assumingMemoryBound(to: Float.self), count: frames)
         } else {
-            playLRing.write(samples[0], count: n)
-            playRRing.write(samples[buffer.format.channelCount > 1 ? 1 : 0], count: n)
+            bus.right.write(src, count: frames)
         }
         return true
     }
 
-    private func ingest(_ buffer: AVAudioPCMBuffer?, asMic: Bool) {
+    private func ingest(_ buffer: AVAudioPCMBuffer?, asMic: Bool, source: String) {
         guard !stopped, let buffer, buffer.frameLength > 0 else { return }
         if asMic {
             ingestMic(buffer)
         } else {
-            ingestPlayback(buffer)
+            ingestPlayback(buffer, source: source)
         }
     }
 
@@ -174,22 +267,25 @@ final class LiveMixer: @unchecked Sendable {
         ringLock.unlock()
     }
 
-    private func ingestPlayback(_ buffer: AVAudioPCMBuffer) {
+    private func ingestPlayback(_ buffer: AVAudioPCMBuffer, source: String) {
+        ringLock.lock()
+        let bus = playbackBusLocked(source)
+        ringLock.unlock()
         guard let dest = convert(
             buffer,
             channels: 2,
-            converter: &playConverter,
-            from: &playFrom,
-            destBuffer: &playConvertDest
+            converter: &bus.converter,
+            from: &bus.from,
+            destBuffer: &bus.dest
         ) else { return }
         guard let samples = dest.floatChannelData else { return }
         let n = Int(dest.frameLength)
         ringLock.lock()
-        playLRing.write(samples[0], count: n)
+        bus.left.write(samples[0], count: n)
         if dest.format.channelCount > 1 {
-            playRRing.write(samples[1], count: n)
+            bus.right.write(samples[1], count: n)
         } else {
-            playRRing.write(samples[0], count: n)
+            bus.right.write(samples[0], count: n)
         }
         ringLock.unlock()
     }
@@ -253,7 +349,7 @@ final class LiveMixer: @unchecked Sendable {
     private func startTimer() {
         let timer = DispatchSource.makeTimerSource(queue: queue)
         let interval = Double(Self.chunkFrames) / Self.sampleRate
-        timer.schedule(deadline: .now() + interval, repeating: interval, leeway: .milliseconds(2))
+        timer.schedule(deadline: .now() + interval, repeating: interval, leeway: .milliseconds(8))
         timer.setEventHandler { [weak self] in
             self?.mixTick()
         }
@@ -265,7 +361,8 @@ final class LiveMixer: @unchecked Sendable {
         guard !stopped, segmentBuffer != nil else { return }
         if !startedOutput {
             ringLock.lock()
-            let hasAudio = micRing.count > 0 || playLRing.count > 0
+            let hasAudio = micRing.count > 0
+                || playbackBuses.values.contains { $0.left.count > 0 }
             ringLock.unlock()
             guard hasAudio else { return }
             startedOutput = true
@@ -283,6 +380,8 @@ final class LiveMixer: @unchecked Sendable {
             micScratch = [Float](repeating: 0, count: frames)
             playLScratch = [Float](repeating: 0, count: frames)
             playRScratch = [Float](repeating: 0, count: frames)
+            playAddL = [Float](repeating: 0, count: frames)
+            playAddR = [Float](repeating: 0, count: frames)
         }
         guard let mixed = mixChunkBuffer ?? AVAudioPCMBuffer(
             pcmFormat: RecordingCodec.pcmFormat(channels: 2),
@@ -292,17 +391,19 @@ final class LiveMixer: @unchecked Sendable {
         mixed.frameLength = Self.chunkFrames
         guard let out = mixed.floatChannelData else { return }
 
+        RecordingDSP.clear(&playLScratch, frames: frames)
+        RecordingDSP.clear(&playRScratch, frames: frames)
         ringLock.lock()
         micRing.read(&micScratch, count: frames)
-        playLRing.read(&playLScratch, count: frames)
-        playRRing.read(&playRScratch, count: frames)
+        for bus in playbackBuses.values {
+            bus.left.read(&playAddL, count: frames)
+            bus.right.read(&playAddR, count: frames)
+            RecordingDSP.add(&playAddL, onto: &playLScratch, frames: frames)
+            RecordingDSP.add(&playAddR, onto: &playRScratch, frames: frames)
+        }
         ringLock.unlock()
 
-        var playSum: Float = 0
-        for i in 0..<frames {
-            playSum += playLScratch[i] * playLScratch[i] + playRScratch[i] * playRScratch[i]
-        }
-        let playRMS = sqrt(playSum / Float(frames * 2))
+        let playRMS = RecordingDSP.rms(left: &playLScratch, right: &playRScratch, frames: frames)
         if playRMS > MixDuck.playbackRMSThreshold {
             wantDuck = true
         } else if playRMS < MixDuck.playbackRMSOff {
@@ -313,18 +414,24 @@ final class LiveMixer: @unchecked Sendable {
         let coeff = target < duckGain ? MixDuck.attack(dt) : MixDuck.release(dt)
         duckGain += (target - duckGain) * coeff
 
-        let voiceGain = duckGain
-        for i in 0..<frames {
-            let voice = micScratch[i] * voiceGain
-            out[0][i] = max(-1, min(1, playLScratch[i] + voice))
-            out[1][i] = max(-1, min(1, playRScratch[i] + voice))
-        }
+        RecordingDSP.mixMonoOntoStereo(
+            mono: &micScratch,
+            playLeft: &playLScratch,
+            playRight: &playRScratch,
+            gain: duckGain,
+            frames: frames,
+            outLeft: out[0],
+            outRight: out[1]
+        )
         appendToSegment(mixed)
     }
 
     private func drainRings() {
         ringLock.lock()
-        let leftover = max(micRing.count, max(playLRing.count, playRRing.count))
+        var leftover = micRing.count
+        for bus in playbackBuses.values {
+            leftover = max(leftover, max(bus.left.count, bus.right.count))
+        }
         ringLock.unlock()
         var remain = leftover
         while remain > 0 {
@@ -724,6 +831,14 @@ final class LiveMixer: @unchecked Sendable {
     }
 }
 
+private final class PlaybackBus {
+    var left = FloatRing(capacity: Int(LiveMixer.sampleRate) * 4)
+    var right = FloatRing(capacity: Int(LiveMixer.sampleRate) * 4)
+    var converter: AVAudioConverter?
+    var from: AVAudioFormat?
+    var dest: AVAudioPCMBuffer?
+}
+
 private struct FloatRing {
     private var buf: [Float]
     private var read = 0
@@ -734,13 +849,13 @@ private struct FloatRing {
         buf = [Float](repeating: 0, count: max(capacity, 1024))
     }
 
-    mutating func write(_ src: UnsafePointer<Float>, count n: Int) {
-        guard n > 0 else { return }
+    mutating func write(_ src: UnsafePointer<Float>, count n: Int, stride: Int = 1) {
+        guard n > 0, stride > 0 else { return }
         let cap = buf.count
         var n = n
         var src = src
         if n >= cap {
-            src += n - cap
+            src += (n - cap) * stride
             n = cap
             read = 0
             write = 0
@@ -755,10 +870,28 @@ private struct FloatRing {
         buf.withUnsafeMutableBufferPointer { dst in
             guard let base = dst.baseAddress else { return }
             let first = min(n, cap - write)
-            base.advanced(by: write).update(from: src, count: first)
+            if stride == 1 {
+                base.advanced(by: write).update(from: src, count: first)
+            } else {
+                RecordingDSP.copyStrided(
+                    source: src,
+                    stride: stride,
+                    frames: first,
+                    dest: base.advanced(by: write)
+                )
+            }
             let second = n - first
             if second > 0 {
-                base.update(from: src + first, count: second)
+                if stride == 1 {
+                    base.update(from: src + first, count: second)
+                } else {
+                    RecordingDSP.copyStrided(
+                        source: src + first * stride,
+                        stride: stride,
+                        frames: second,
+                        dest: base
+                    )
+                }
             }
         }
         write = (write + n) % cap

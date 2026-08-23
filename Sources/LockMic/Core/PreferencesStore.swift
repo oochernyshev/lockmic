@@ -39,6 +39,7 @@ final class PreferencesStore: ObservableObject {
         static let recordAllPlayback = "recordAllPlayback"
         static let followDefaultMic = "followDefaultMic"
         static let followDefaultOutput = "followDefaultOutput"
+        static let recordingInputUID = "recordingInputUID"
         static let recordingBitRate = "recordingBitRate"
         static let recordingsFolderPath = "recordingsFolderPath"
         static let shareAnonymousUsage = "shareAnonymousUsage"
@@ -126,6 +127,11 @@ final class PreferencesStore: ObservableObject {
 
     @Published var followDefaultMic: Bool {
         didSet { UserDefaults.standard.set(followDefaultMic, forKey: Keys.followDefaultMic) }
+    }
+
+    /// Last explicitly chosen recording mic. Used when `followDefaultMic` is off.
+    @Published var recordingInputUID: String {
+        didSet { UserDefaults.standard.set(recordingInputUID, forKey: Keys.recordingInputUID) }
     }
 
     @Published var followDefaultOutput: Bool {
@@ -277,6 +283,7 @@ final class PreferencesStore: ObservableObject {
             defaults.set(true, forKey: Keys.followDefaultMic)
         }
         followDefaultMic = defaults.bool(forKey: Keys.followDefaultMic)
+        recordingInputUID = defaults.string(forKey: Keys.recordingInputUID) ?? ""
         if defaults.object(forKey: Keys.followDefaultOutput) == nil {
             defaults.set(true, forKey: Keys.followDefaultOutput)
         }

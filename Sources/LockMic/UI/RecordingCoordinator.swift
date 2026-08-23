@@ -18,6 +18,15 @@ final class RecordingCoordinator {
         self.recorder = recorder
         self.preferences = preferences
         self.mic = mic
+        recorder.persistInputSelection = { [weak self] follow, uid in
+            guard let self else { return }
+            if self.preferences.followDefaultMic != follow {
+                self.preferences.followDefaultMic = follow
+            }
+            if !follow, !uid.isEmpty, self.preferences.recordingInputUID != uid {
+                self.preferences.recordingInputUID = uid
+            }
+        }
     }
 
     func toggle(source: UsageReporter.ActivationSource) {
@@ -40,7 +49,8 @@ final class RecordingCoordinator {
         recorder.previewSession(
             playback: scope,
             followInput: preferences.followDefaultMic,
-            followOutput: preferences.followDefaultOutput
+            followOutput: preferences.followDefaultOutput,
+            preferredInputUID: preferences.recordingInputUID
         )
         await nextMainRunLoopTurn()
         showMonitor()
@@ -128,7 +138,10 @@ final class RecordingCoordinator {
             try await recorder.start(
                 playback: scope,
                 bitRate: preferences.recordingBitRate,
-                in: preferences.recordingsDirectory
+                in: preferences.recordingsDirectory,
+                followInput: preferences.followDefaultMic,
+                followOutput: preferences.followDefaultOutput,
+                preferredInputUID: preferences.recordingInputUID
             )
             UsageReporter.record(.startRecording, source: source)
             onSessionChanged?()

@@ -668,6 +668,15 @@ final class RowView: NSView {
         syncMeter()
     }
 
+    private static var symbolCache: [String: NSImage] = [:]
+
+    private static func symbolImage(_ name: String) -> NSImage? {
+        if let cached = symbolCache[name] { return cached }
+        let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)
+        if let image { symbolCache[name] = image }
+        return image
+    }
+
     private func applyIcon() {
         let symbol: String
         if kind == .output {
@@ -677,7 +686,7 @@ final class RowView: NSView {
         } else {
             symbol = "mic.fill"
         }
-        iconView.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+        iconView.image = Self.symbolImage(symbol)
         if isMuted {
             iconView.contentTintColor = .systemOrange
         } else {

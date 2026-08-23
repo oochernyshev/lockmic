@@ -136,13 +136,17 @@ final class InputDeviceCapture: @unchecked Sendable {
         let frames = RecordingSilence.frameCount(in: abl, format: format)
         guard frames > 0 else { return }
 
-        if enabled, let dest = scratchBuffer(frames: frames, format: format) {
-            RecordingDSP.copy(abl, into: dest)
-            dest.frameLength = frames
-            let peak = RecordingDSP.peak(in: dest)
+        if enabled {
+            let peak = RecordingDSP.peak(in: abl)
             lock.lock()
             _level = max(peak, _level * 0.65)
             lock.unlock()
+            if mixer?.pushMic(abl, format: format) == true {
+                return
+            }
+            guard let dest = scratchBuffer(frames: frames, format: format) else { return }
+            RecordingDSP.copy(abl, into: dest)
+            dest.frameLength = frames
             writer?.write(dest)
             mixer?.pushMic(dest)
             return

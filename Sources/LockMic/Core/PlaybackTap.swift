@@ -28,7 +28,9 @@ final class PlaybackTap: PlaybackCapturing {
     private var loggedFirstBuffer = false
     private let sessionStart: CFTimeInterval
     private let bitRate: Int
-    private var tapScope: PlaybackRecordScope = .default
+    /// Output device this tap is bound to — also the LiveMixer playback source id.
+    let sourceID: String
+    private var tapDeviceUID: String
     private var tapStreamIndex: UInt = 0
     private var didAlignToSession = false
     /// Set when IO is torn down for a retarget; first buffer after restart pads this gap.
@@ -49,24 +51,28 @@ final class PlaybackTap: PlaybackCapturing {
 
     init(
         audio: AudioDeviceService,
-        scope: PlaybackRecordScope,
+        deviceUID: String,
         fileURL: URL?,
         sessionStart: CFTimeInterval,
         bitRate: Int
     ) async throws {
         self.sessionStart = sessionStart
         self.bitRate = bitRate
-        self.tapScope = scope
-        try attachHardware(using: audio, fileURL: fileURL, scope: scope)
+        self.sourceID = deviceUID
+        self.tapDeviceUID = deviceUID
+        try attachHardware(using: audio, fileURL: fileURL)
         try await waitForIOStart()
     }
 
-    func retarget(using audio: AudioDeviceService, scope: PlaybackRecordScope? = nil) throws {
+    func retarget(using audio: AudioDeviceService, deviceUID: String? = nil) throws {
         lock.lock()
         ioGapStartedAt = CACurrentMediaTime()
         lock.unlock()
+        if let deviceUID {
+            tapDeviceUID = deviceUID
+        }
         detachHardware()
-        try attachHardware(using: audio, fileURL: nil, scope: scope)
+        try attachHardware(using: audio, fileURL: nil)
         let aggregate = aggregateID
         let proc = ioProcID
         queue.async {
@@ -82,16 +88,15 @@ final class PlaybackTap: PlaybackCapturing {
 
     private func attachHardware(
         using audio: AudioDeviceService,
-        fileURL: URL?,
-        scope: PlaybackRecordScope?
+        fileURL: URL?
     ) throws {
-        if let scope {
-            tapScope = scope
-        }
-        let outputID = try audio.defaultOutputDeviceID()
-        guard !audio.isLockMicRecorder(outputID), let outputUID = audio.deviceUID(outputID) else {
+        guard let device = audio.listOutputDevices().first(where: { $0.uid == tapDeviceUID }),
+              !audio.isLockMicRecorder(device.id)
+        else {
             throw AudioDeviceServiceError.propertyFailed("output UID")
         }
+        let outputID = device.id
+        let outputUID = device.uid
 
         var exclude: [AudioObjectID] = []
         if let selfProcess = audio.processObjectID(for: ProcessInfo.processInfo.processIdentifier) {
@@ -100,18 +105,12 @@ final class PlaybackTap: PlaybackCapturing {
 
         // Device-bound tap must not also list that device as a sub-device —
         // that pair hangs a mixdown on the speakers.
-        let description: CATapDescription
-        if tapScope == .all {
-            tapStreamIndex = 0
-            description = CATapDescription(stereoGlobalTapButExcludeProcesses: exclude)
-        } else {
-            tapStreamIndex = Self.preferredOutputStreamIndex(outputID)
-            description = CATapDescription(
-                excludingProcesses: exclude,
-                deviceUID: outputUID,
-                stream: tapStreamIndex
-            )
-        }
+        tapStreamIndex = Self.preferredOutputStreamIndex(outputID)
+        let description = CATapDescription(
+            excludingProcesses: exclude,
+            deviceUID: outputUID,
+            stream: tapStreamIndex
+        )
         description.name = "LockMic Playback"
         description.uuid = UUID()
         description.isPrivate = true
@@ -168,7 +167,7 @@ final class PlaybackTap: PlaybackCapturing {
         }
         if writer == nil, let fileURL {
             log.info(
-                "Playback write format AAC \(ioFormat.sampleRate, privacy: .public) Hz tap=\(tapFormat.sampleRate, privacy: .public)/\(tapFormat.channelCount, privacy: .public)ch stream=\(self.tapStreamIndex, privacy: .public) scope=\(String(describing: self.tapScope), privacy: .public)"
+                "Playback write format AAC \(ioFormat.sampleRate, privacy: .public) Hz tap=\(tapFormat.sampleRate, privacy: .public)/\(tapFormat.channelCount, privacy: .public)ch stream=\(self.tapStreamIndex, privacy: .public) device=\(self.tapDeviceUID, privacy: .public)"
             )
             writer = try CompressedStemWriter(
                 url: fileURL,
@@ -179,7 +178,7 @@ final class PlaybackTap: PlaybackCapturing {
 
         var proc: AudioDeviceIOProcID?
         let ioStatus = AudioDeviceCreateIOProcIDWithBlock(&proc, aggregateID, queue) { [weak self] _, inInput, _, _, _ in
-            self?.write(inInput, ioFormat: ioFormat)
+            self?.write(inInput, ioFormat: ioFormat, tapFormat: tapFormat)
         }
         guard ioStatus == noErr, let proc else {
             detachHardware()
@@ -225,7 +224,11 @@ final class PlaybackTap: PlaybackCapturing {
 
     deinit { stop() }
 
-    private func write(_ input: UnsafePointer<AudioBufferList>, ioFormat: AVAudioFormat) {
+    private func write(
+        _ input: UnsafePointer<AudioBufferList>,
+        ioFormat: AVAudioFormat,
+        tapFormat: AVAudioFormat
+    ) {
         let abl = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         guard !abl.isEmpty else { return }
 
@@ -273,18 +276,21 @@ final class PlaybackTap: PlaybackCapturing {
             writer?.padSilence(inputFrames: frames, sampleRate: ioFormat.sampleRate)
             return
         }
+        let peak = RecordingDSP.peak(in: abl)
+        lock.lock()
+        _level = max(peak, _level * 0.65)
+        lock.unlock()
+        if mixer?.pushPlayback(abl, format: tapFormat, source: sourceID) == true {
+            return
+        }
         guard let dest = stereoScratch(frames: frames, format: ioFormat),
               Self.fillStereo(from: abl, into: dest)
         else {
             writer?.padSilence(inputFrames: frames, sampleRate: ioFormat.sampleRate)
             return
         }
-        let peak = RecordingDSP.peak(in: dest)
-        lock.lock()
-        _level = max(peak, _level * 0.65)
-        lock.unlock()
         writer?.write(dest)
-        mixer?.pushPlayback(dest)
+        mixer?.pushPlayback(dest, source: sourceID)
     }
 
     private func stereoScratch(frames: AVAudioFrameCount, format: AVAudioFormat) -> AVAudioPCMBuffer? {

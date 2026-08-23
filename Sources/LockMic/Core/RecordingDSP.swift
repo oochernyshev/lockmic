@@ -48,6 +48,26 @@ enum RecordingDSP {
         return min(1, peak)
     }
 
+    static func isLinearFloat32(_ format: AVAudioFormat) -> Bool {
+        if format.commonFormat == .pcmFormatFloat32 { return true }
+        let asbd = format.streamDescription.pointee
+        return asbd.mFormatID == kAudioFormatLinearPCM
+            && asbd.mBitsPerChannel == 32
+            && (asbd.mFormatFlags & kAudioFormatFlagIsFloat) != 0
+    }
+
+    /// Frame count from a float ABL. Uses the buffer layout, not `AVAudioFormat` interleaving.
+    static func floatFrames(in abl: UnsafeMutableAudioBufferListPointer) -> Int {
+        guard let first = abl.first, first.mDataByteSize > 0 else { return 0 }
+        let channels = max(1, Int(first.mNumberChannels))
+        var count = Int(first.mDataByteSize) / (channels * MemoryLayout<Float>.size)
+        if abl.count > 1, abl[1].mDataByteSize > 0 {
+            let ch = max(1, Int(abl[1].mNumberChannels))
+            count = min(count, Int(abl[1].mDataByteSize) / (ch * MemoryLayout<Float>.size))
+        }
+        return max(0, count)
+    }
+
     static func copy(_ abl: UnsafeMutableAudioBufferListPointer, into dest: AVAudioPCMBuffer) {
         let dst = UnsafeMutableAudioBufferListPointer(dest.mutableAudioBufferList)
         for (from, to) in zip(abl, dst) {
@@ -78,6 +98,56 @@ enum RecordingDSP {
         copyStrided(source: source + leftOffset, stride: sourceChannels, frames: frames, dest: left)
         let rightOffset = min(leftOffset + 1, sourceChannels - 1)
         copyStrided(source: source + rightOffset, stride: sourceChannels, frames: frames, dest: right)
+    }
+
+    /// RMS of two equal-length channels (playback ducking).
+    static func rms(
+        left: UnsafePointer<Float>,
+        right: UnsafePointer<Float>,
+        frames: Int
+    ) -> Float {
+        guard frames > 0 else { return 0 }
+        var sumL: Float = 0
+        var sumR: Float = 0
+        let n = vDSP_Length(frames)
+        vDSP_svesq(left, 1, &sumL, n)
+        vDSP_svesq(right, 1, &sumR, n)
+        return sqrt((sumL + sumR) / Float(frames * 2))
+    }
+
+    static func clear(_ dest: UnsafeMutablePointer<Float>, frames: Int) {
+        guard frames > 0 else { return }
+        vDSP_vclr(dest, 1, vDSP_Length(frames))
+    }
+
+    static func add(
+        _ source: UnsafePointer<Float>,
+        onto dest: UnsafeMutablePointer<Float>,
+        frames: Int
+    ) {
+        guard frames > 0 else { return }
+        vDSP_vadd(source, 1, dest, 1, dest, 1, vDSP_Length(frames))
+    }
+
+    /// `out = clamp(play + mono * gain, -1, 1)` on both channels.
+    static func mixMonoOntoStereo(
+        mono: UnsafePointer<Float>,
+        playLeft: UnsafePointer<Float>,
+        playRight: UnsafePointer<Float>,
+        gain: Float,
+        frames: Int,
+        outLeft: UnsafeMutablePointer<Float>,
+        outRight: UnsafeMutablePointer<Float>
+    ) {
+        guard frames > 0 else { return }
+        var scalar = gain
+        let n = vDSP_Length(frames)
+        vDSP_vsma(mono, 1, &scalar, playLeft, 1, outLeft, 1, n)
+        vDSP_vsma(mono, 1, &scalar, playRight, 1, outRight, 1, n)
+        var lo: Float = -1
+        var hi: Float = 1
+        vDSP_vclip(outLeft, 1, &lo, &hi, outLeft, 1, n)
+        vDSP_vclip(outRight, 1, &lo, &hi, outRight, 1, n)
     }
 }
 
