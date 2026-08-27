@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Погодитись і ввімкнути LockMic";
 "menu.agree.hint" = "Погодьтесь на анонімну статистику, щоб увімкнути mute";
 "menu.device" = "Пристрій: %@";
+"menu.display.above" = "%@ — Зверху";
+"menu.display.below" = "%@ — Знизу";
+"menu.display.center" = "%@ — По центру";
+"menu.display.left" = "%@ — Ліворуч";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Праворуч";
 "menu.floating_hud" = "Плаваючий HUD";
+"menu.hide_all_displays" = "Сховати на всіх дисплеях";
 "menu.hide_this_display" = "Сховати на цьому дисплеї";
 "menu.mute_all" = "Вимикати всі пристрої введення";
 "menu.mute_mic" = "Вимкнути мікрофон";

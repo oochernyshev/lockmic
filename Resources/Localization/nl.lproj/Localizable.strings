@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Akkoord & LockMic inschakelen";
 "menu.agree.hint" = "Ga akkoord met anonieme stats om dempen in te schakelen";
 "menu.device" = "Apparaat: %@";
+"menu.display.above" = "%@ — Boven";
+"menu.display.below" = "%@ — Onder";
+"menu.display.center" = "%@ — Midden";
+"menu.display.left" = "%@ — Links";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Rechts";
 "menu.floating_hud" = "Zwevende HUD";
+"menu.hide_all_displays" = "Op alle schermen verbergen";
 "menu.hide_this_display" = "Verbergen op dit scherm";
 "menu.mute_all" = "Alle invoerapparaten dempen";
 "menu.mute_mic" = "Microfoon dempen";

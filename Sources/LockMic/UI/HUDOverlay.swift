@@ -10,7 +10,9 @@ final class HUDOverlay: NSObject {
     /// Called from the HUD context menu while a session is recording.
     var onStopRecording: (() -> Void)?
 
-    private var panels: [ObjectIdentifier: (screen: NSScreen, panel: NSPanel)] = [:]
+    /// Keyed by `displayID(for:)` — `ObjectIdentifier(NSScreen)` is not stable across
+    /// reconfiguration, and identical monitors share `localizedName`.
+    private var panels: [String: (screen: NSScreen, panel: NSPanel)] = [:]
     private var hideWorkItem: DispatchWorkItem?
     private enum Presentation {
         case toast(persistent: Bool)
@@ -180,11 +182,13 @@ final class HUDOverlay: NSObject {
     // MARK: - Per-display visibility
 
     func screenVisibilities() -> [ScreenVisibility] {
-        NSScreen.screens.map { screen in
+        let screens = Self.screensSortedSpatially(NSScreen.screens)
+        let names = Self.disambiguatedNames(for: screens)
+        return zip(screens, names).map { screen, name in
             let id = displayID(for: screen)
             return ScreenVisibility(
                 id: id,
-                name: screen.localizedName,
+                name: name,
                 isVisible: !isDisplayHidden(id)
             )
         }
@@ -203,6 +207,12 @@ final class HUDOverlay: NSObject {
         }
     }
 
+    /// Flip from stored visibility, not `NSMenuItem.state` — macOS 14+ may rewrite
+    /// item state for a same-target/action selection group before the action runs.
+    func toggleDisplayHidden(_ displayID: String) {
+        setDisplayHidden(displayID, hidden: !isDisplayHidden(displayID))
+    }
+
     func setAllDisplaysHidden(_ hidden: Bool) {
         if hidden {
             saveHiddenDisplayIDs(Set(NSScreen.screens.map { displayID(for: $0) }))
@@ -215,20 +225,22 @@ final class HUDOverlay: NSObject {
     }
 
     func hasAnyHiddenDisplay() -> Bool {
-        !loadHiddenDisplayIDs().isEmpty
+        screenVisibilities().contains { !$0.isVisible }
+    }
+
+    func hasAnyVisibleDisplay() -> Bool {
+        screenVisibilities().contains { $0.isVisible }
     }
 
     // MARK: - Panels
 
     private func ensurePanels() {
         let screens = NSScreen.screens
-        let screenSet = Set(screens.map { ObjectIdentifier($0) })
+        let ids = Set(screens.map { displayID(for: $0) })
         for (id, entry) in panels {
-            if !screenSet.contains(id) {
+            if !ids.contains(id) {
                 entry.panel.orderOut(nil)
                 panels.removeValue(forKey: id)
-            } else {
-                panels[id] = (screens.first(where: { ObjectIdentifier($0) == id }) ?? entry.screen, entry.panel)
             }
         }
         for screen in screens {
@@ -237,8 +249,10 @@ final class HUDOverlay: NSObject {
     }
 
     private func panel(for screen: NSScreen) -> NSPanel {
-        let id = ObjectIdentifier(screen)
-        if let existing = panels[id] {
+        let id = displayID(for: screen)
+        if var existing = panels[id] {
+            existing.screen = screen
+            panels[id] = existing
             return existing.panel
         }
 
@@ -350,6 +364,7 @@ final class HUDOverlay: NSObject {
         let screen = (view as? HUDContentView)?.assignedScreen ?? screen(for: view.window)
         let menu = NSMenu()
         menu.autoenablesItems = false
+        menu.selectionMode = .selectAny
 
         if lastRecording {
             let stop = NSMenuItem(
@@ -496,12 +511,61 @@ final class HUDOverlay: NSObject {
         if let num = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber {
             return String(num.uint32Value)
         }
-        return screen.localizedName
+        // Never fall back to `localizedName` alone — identical monitors share it.
+        let origin = screen.frame.origin
+        return "\(screen.localizedName)@\(Int(origin.x.rounded())),\(Int(origin.y.rounded()))"
     }
 
     private func screen(for window: NSWindow?) -> NSScreen? {
         guard let window else { return nil }
         return panels.first(where: { $0.value.panel === window })?.value.screen
+    }
+
+    /// Left-to-right, then top-to-bottom. `NSScreen.screens` is main-first, which
+    /// makes identical-named displays look randomly ordered in the menu.
+    private static func screensSortedSpatially(_ screens: [NSScreen]) -> [NSScreen] {
+        screens.sorted { a, b in
+            let rowThreshold = max(a.frame.height, b.frame.height) * 0.25
+            if abs(a.frame.midY - b.frame.midY) > rowThreshold {
+                return a.frame.midY > b.frame.midY
+            }
+            return a.frame.minX < b.frame.minX
+        }
+    }
+
+    private static func disambiguatedNames(for screens: [NSScreen]) -> [String] {
+        var counts: [String: Int] = [:]
+        for screen in screens {
+            counts[screen.localizedName, default: 0] += 1
+        }
+        return screens.map { screen in
+            let base = screen.localizedName
+            guard counts[base, default: 0] > 1 else { return base }
+            let peers = screens.filter { $0.localizedName == base }
+            return L10n.menuDisplayNamed(base, role: spatialRole(of: screen, among: peers))
+        }
+    }
+
+    private static func spatialRole(of screen: NSScreen, among peers: [NSScreen]) -> L10n.DisplaySpatialRole {
+        guard peers.count > 1 else { return .center }
+        let xSpan = (peers.map(\.frame.midX).max() ?? 0) - (peers.map(\.frame.midX).min() ?? 0)
+        let ySpan = (peers.map(\.frame.midY).max() ?? 0) - (peers.map(\.frame.midY).min() ?? 0)
+        if xSpan >= ySpan {
+            let sorted = peers.sorted { $0.frame.midX < $1.frame.midX }
+            guard let idx = sorted.firstIndex(where: { $0.frame == screen.frame }) else { return .center }
+            if sorted.count == 2 { return idx == 0 ? .left : .right }
+            if idx == 0 { return .left }
+            if idx == sorted.count - 1 { return .right }
+            if sorted.count == 3 { return .center }
+            return .index(idx + 1)
+        }
+        let sorted = peers.sorted { $0.frame.midY > $1.frame.midY }
+        guard let idx = sorted.firstIndex(where: { $0.frame == screen.frame }) else { return .center }
+        if sorted.count == 2 { return idx == 0 ? .above : .below }
+        if idx == 0 { return .above }
+        if idx == sorted.count - 1 { return .below }
+        if sorted.count == 3 { return .center }
+        return .index(idx + 1)
     }
 
     private func present(_ panel: NSPanel, animated: Bool) {

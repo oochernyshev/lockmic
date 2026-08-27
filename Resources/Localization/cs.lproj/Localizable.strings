@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Souhlasit a povolit LockMic";
 "menu.agree.hint" = "Souhlaste s anonymními statistikami pro povolení mute";
 "menu.device" = "Zařízení: %@";
+"menu.display.above" = "%@ — Nahoře";
+"menu.display.below" = "%@ — Dole";
+"menu.display.center" = "%@ — Uprostřed";
+"menu.display.left" = "%@ — Vlevo";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Vpravo";
 "menu.floating_hud" = "Plovoucí HUD";
+"menu.hide_all_displays" = "Skrýt na všech displejích";
 "menu.hide_this_display" = "Skrýt na tomto displeji";
 "menu.mute_all" = "Ztlumit všechna vstupní zařízení";
 "menu.mute_mic" = "Ztlumit mikrofon";

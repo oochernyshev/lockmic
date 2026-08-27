@@ -84,7 +84,14 @@
 "menu.agree.enable" = "동의하고 LockMic 사용";
 "menu.agree.hint" = "익명 통계에 동의하여 음소거 제어 사용";
 "menu.device" = "장치: %@";
+"menu.display.above" = "%@ — 위";
+"menu.display.below" = "%@ — 아래";
+"menu.display.center" = "%@ — 가운데";
+"menu.display.left" = "%@ — 왼쪽";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — 오른쪽";
 "menu.floating_hud" = "플로팅 HUD";
+"menu.hide_all_displays" = "모든 디스플레이에서 숨기기";
 "menu.hide_this_display" = "이 디스플레이에서 숨기기";
 "menu.mute_all" = "모든 입력 장치 음소거";
 "menu.mute_mic" = "마이크 음소거";

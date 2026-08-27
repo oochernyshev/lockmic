@@ -232,9 +232,26 @@ enum L10n {
     static var menuShowRecordingMonitor: String { tr("menu.show_recording_monitor") }
     static var menuFloatingHUD: String { tr("menu.floating_hud") }
     static var menuShowAllDisplays: String { tr("menu.show_all_displays") }
+    static var menuHideAllDisplays: String { tr("menu.hide_all_displays") }
     static var menuHideThisDisplay: String { tr("menu.hide_this_display") }
     static func menuShowOnDisplay(_ name: String) -> String {
         format("menu.show_on_display", name)
+    }
+
+    /// Role appended when several displays share the same `localizedName`.
+    enum DisplaySpatialRole {
+        case left, right, above, below, center, index(Int)
+    }
+
+    static func menuDisplayNamed(_ name: String, role: DisplaySpatialRole) -> String {
+        switch role {
+        case .left: return format("menu.display.left", name)
+        case .right: return format("menu.display.right", name)
+        case .above: return format("menu.display.above", name)
+        case .below: return format("menu.display.below", name)
+        case .center: return format("menu.display.center", name)
+        case .index(let n): return format("menu.display.numbered", name, n)
+        }
     }
     static func menuUpdateAvailable(_ version: String) -> String {
         format("menu.update.available", version)

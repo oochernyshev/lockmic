@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Kabul et ve LockMic’i etkinleştir";
 "menu.agree.hint" = "Sessize alma denetimini açmak için anonim istatistikleri kabul edin";
 "menu.device" = "Aygıt: %@";
+"menu.display.above" = "%@ — Üst";
+"menu.display.below" = "%@ — Alt";
+"menu.display.center" = "%@ — Orta";
+"menu.display.left" = "%@ — Sol";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Sağ";
 "menu.floating_hud" = "Yüzen HUD";
+"menu.hide_all_displays" = "Tüm ekranlarda gizle";
 "menu.hide_this_display" = "Bu ekranda gizle";
 "menu.mute_all" = "Tüm giriş aygıtlarını sessize al";
 "menu.mute_mic" = "Mikrofonu sessize al";

@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Prihvati i omogući LockMic";
 "menu.agree.hint" = "Prihvatite anonimnu statistiku da omogućite mute";
 "menu.device" = "Uređaj: %@";
+"menu.display.above" = "%@ — Gore";
+"menu.display.below" = "%@ — Dole";
+"menu.display.center" = "%@ — Centar";
+"menu.display.left" = "%@ — Levo";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Desno";
 "menu.floating_hud" = "Plutajući HUD";
+"menu.hide_all_displays" = "Sakrij na svim ekranima";
 "menu.hide_this_display" = "Sakrij na ovom ekranu";
 "menu.mute_all" = "Utišaj sve ulazne uređaje";
 "menu.mute_mic" = "Utišaj mikrofon";

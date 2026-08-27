@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Elfogadás és LockMic engedélyezése";
 "menu.agree.hint" = "Fogadja el a névtelen statisztikát a némítás engedélyezéséhez";
 "menu.device" = "Eszköz: %@";
+"menu.display.above" = "%@ — Fent";
+"menu.display.below" = "%@ — Lent";
+"menu.display.center" = "%@ — Középen";
+"menu.display.left" = "%@ — Bal";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Jobb";
 "menu.floating_hud" = "Lebegő HUD";
+"menu.hide_all_displays" = "Elrejtés minden kijelzőn";
 "menu.hide_this_display" = "Elrejtés ezen a kijelzőn";
 "menu.mute_all" = "Összes bemeneti eszköz némítása";
 "menu.mute_mic" = "Mikrofon némítása";

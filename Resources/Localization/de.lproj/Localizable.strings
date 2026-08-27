@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Zustimmen & LockMic aktivieren";
 "menu.agree.hint" = "Anonymen Statistiken zustimmen, um Stummschaltung zu aktivieren";
 "menu.device" = "Gerät: %@";
+"menu.display.above" = "%@ — Oben";
+"menu.display.below" = "%@ — Unten";
+"menu.display.center" = "%@ — Mitte";
+"menu.display.left" = "%@ — Links";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Rechts";
 "menu.floating_hud" = "Schwebendes HUD";
+"menu.hide_all_displays" = "Auf allen Displays ausblenden";
 "menu.hide_this_display" = "Auf diesem Display ausblenden";
 "menu.mute_all" = "Alle Eingabegeräte stummschalten";
 "menu.mute_mic" = "Mikrofon stummschalten";

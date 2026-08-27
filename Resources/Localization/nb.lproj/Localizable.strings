@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Godta og aktiver LockMic";
 "menu.agree.hint" = "Godta anonyme statistikker for å aktivere mute-styring";
 "menu.device" = "Enhet: %@";
+"menu.display.above" = "%@ — Over";
+"menu.display.below" = "%@ — Under";
+"menu.display.center" = "%@ — Midten";
+"menu.display.left" = "%@ — Venstre";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Høyre";
 "menu.floating_hud" = "Flytende HUD";
+"menu.hide_all_displays" = "Skjul på alle skjermer";
 "menu.hide_this_display" = "Skjul på denne skjermen";
 "menu.mute_all" = "Demp alle inngangsenheter";
 "menu.mute_mic" = "Demp mikrofon";

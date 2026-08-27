@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Acceptă și activează LockMic";
 "menu.agree.hint" = "Acceptați statisticile anonime pentru a activa controlul mute";
 "menu.device" = "Dispozitiv: %@";
+"menu.display.above" = "%@ — Sus";
+"menu.display.below" = "%@ — Jos";
+"menu.display.center" = "%@ — Centru";
+"menu.display.left" = "%@ — Stânga";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Dreapta";
 "menu.floating_hud" = "HUD plutitor";
+"menu.hide_all_displays" = "Ascunde pe toate ecranele";
 "menu.hide_this_display" = "Ascunde pe acest ecran";
 "menu.mute_all" = "Oprește toate dispozitivele de intrare";
 "menu.mute_mic" = "Oprește microfonul";

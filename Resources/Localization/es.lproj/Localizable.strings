@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Aceptar y activar LockMic";
 "menu.agree.hint" = "Acepte estadísticas anónimas para habilitar el control de silencio";
 "menu.device" = "Dispositivo: %@";
+"menu.display.above" = "%@ — Arriba";
+"menu.display.below" = "%@ — Abajo";
+"menu.display.center" = "%@ — Centro";
+"menu.display.left" = "%@ — Izquierda";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Derecha";
 "menu.floating_hud" = "HUD flotante";
+"menu.hide_all_displays" = "Ocultar en todas las pantallas";
 "menu.hide_this_display" = "Ocultar en esta pantalla";
 "menu.mute_all" = "Silenciar todos los dispositivos de entrada";
 "menu.mute_mic" = "Silenciar micrófono";

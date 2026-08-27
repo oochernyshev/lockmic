@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Godkänn och aktivera LockMic";
 "menu.agree.hint" = "Godkänn anonym statistik för att aktivera mutekontroll";
 "menu.device" = "Enhet: %@";
+"menu.display.above" = "%@ — Ovan";
+"menu.display.below" = "%@ — Under";
+"menu.display.center" = "%@ — Mitten";
+"menu.display.left" = "%@ — Vänster";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Höger";
 "menu.floating_hud" = "Flytande HUD";
+"menu.hide_all_displays" = "Dölj på alla skärmar";
 "menu.hide_this_display" = "Dölj på den här skärmen";
 "menu.mute_all" = "Tysta alla ingångsenheter";
 "menu.mute_mic" = "Tysta mikrofon";

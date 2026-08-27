@@ -84,7 +84,14 @@
 "menu.agree.enable" = "同意并启用 LockMic";
 "menu.agree.hint" = "同意匿名统计以启用静音控制";
 "menu.device" = "设备：%@";
+"menu.display.above" = "%@ — 上方";
+"menu.display.below" = "%@ — 下方";
+"menu.display.center" = "%@ — 中间";
+"menu.display.left" = "%@ — 左侧";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — 右侧";
 "menu.floating_hud" = "浮动 HUD";
+"menu.hide_all_displays" = "在所有显示器上隐藏";
 "menu.hide_this_display" = "在此显示器上隐藏";
 "menu.mute_all" = "静音所有输入设备";
 "menu.mute_mic" = "静音麦克风";

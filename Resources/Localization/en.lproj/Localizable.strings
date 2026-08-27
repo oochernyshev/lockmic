@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Agree & Enable LockMic";
 "menu.agree.hint" = "Agree to anonymous stats to enable mute control";
 "menu.device" = "Device: %@";
+"menu.display.above" = "%@ — Above";
+"menu.display.below" = "%@ — Below";
+"menu.display.center" = "%@ — Center";
+"menu.display.left" = "%@ — Left";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Right";
 "menu.floating_hud" = "Floating HUD";
+"menu.hide_all_displays" = "Hide on All Displays";
 "menu.hide_this_display" = "Hide on This Display";
 "menu.mute_all" = "Mute All Input Devices";
 "menu.mute_mic" = "Mute Microphone";

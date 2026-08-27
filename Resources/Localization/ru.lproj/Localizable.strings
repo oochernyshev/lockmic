@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Согласиться и включить LockMic";
 "menu.agree.hint" = "Согласитесь на анонимную статистику, чтобы включить mute";
 "menu.device" = "Устройство: %@";
+"menu.display.above" = "%@ — Сверху";
+"menu.display.below" = "%@ — Снизу";
+"menu.display.center" = "%@ — По центру";
+"menu.display.left" = "%@ — Слева";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Справа";
 "menu.floating_hud" = "Плавающий HUD";
+"menu.hide_all_displays" = "Скрыть на всех дисплеях";
 "menu.hide_this_display" = "Скрыть на этом дисплее";
 "menu.mute_all" = "Отключать все устройства ввода";
 "menu.mute_mic" = "Выключить микрофон";

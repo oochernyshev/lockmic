@@ -84,7 +84,14 @@
 "menu.agree.enable" = "同意して LockMic を有効化";
 "menu.agree.hint" = "匿名統計に同意するとミュート制御が有効になります";
 "menu.device" = "デバイス: %@";
+"menu.display.above" = "%@ — 上";
+"menu.display.below" = "%@ — 下";
+"menu.display.center" = "%@ — 中央";
+"menu.display.left" = "%@ — 左";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — 右";
 "menu.floating_hud" = "フローティング HUD";
+"menu.hide_all_displays" = "すべてのディスプレイで非表示";
 "menu.hide_this_display" = "このディスプレイで非表示";
 "menu.mute_all" = "すべての入力デバイスをミュート";
 "menu.mute_mic" = "マイクをミュート";

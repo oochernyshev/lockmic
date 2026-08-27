@@ -308,6 +308,9 @@ final class StatusItemController {
     /// Shared menu for the status item and Dock tile.
     private func makeContextMenu(includeQuit: Bool) -> NSMenu {
         let menu = NSMenu()
+        // Display HUD checkboxes share one action; `.automatic` can treat that as
+        // select-one (radio), so one monitor stays checked and "deselect all" fails.
+        menu.selectionMode = .selectAny
 
         if !featuresEnabled {
             let disabled = NSMenuItem(
@@ -439,10 +442,23 @@ final class StatusItemController {
                 )
                 item.target = self
                 item.representedObject = screen.id
+                item.identifier = NSUserInterfaceItemIdentifier("lockmic.hud.display.\(screen.id)")
+                if let numeric = UInt32(screen.id) {
+                    item.tag = Int(numeric)
+                }
                 item.state = screen.isVisible ? .on : .off
                 menu.addItem(item)
             }
 
+            if hud.overlay.hasAnyVisibleDisplay() {
+                let hideAll = NSMenuItem(
+                    title: L10n.menuHideAllDisplays,
+                    action: #selector(hideFloatingHUDOnAllDisplays),
+                    keyEquivalent: ""
+                )
+                hideAll.target = self
+                menu.addItem(hideAll)
+            }
             if hud.overlay.hasAnyHiddenDisplay() {
                 let showAll = NSMenuItem(
                     title: L10n.menuShowAllDisplays,
@@ -559,13 +575,27 @@ final class StatusItemController {
     }
 
     @objc private func toggleFloatingHUDOnDisplay(_ sender: NSMenuItem) {
-        guard let id = sender.representedObject as? String else { return }
-        let currentlyVisible = sender.state == .on
-        hud.overlay.setDisplayHidden(id, hidden: currentlyVisible)
+        guard let id = displayID(from: sender) else { return }
+        hud.overlay.toggleDisplayHidden(id)
+    }
+
+    @objc private func hideFloatingHUDOnAllDisplays() {
+        hud.overlay.setAllDisplaysHidden(true)
     }
 
     @objc private func showFloatingHUDOnAllDisplays() {
         hud.overlay.setAllDisplaysHidden(false)
+    }
+
+    /// Dock menus copy items and may drop `representedObject`; `tag` survives.
+    private func displayID(from item: NSMenuItem) -> String? {
+        if let id = item.representedObject as? String, !id.isEmpty {
+            return id
+        }
+        if item.tag != 0 {
+            return String(UInt32(truncatingIfNeeded: item.tag))
+        }
+        return nil
     }
 
     @objc private func openPreferences() {

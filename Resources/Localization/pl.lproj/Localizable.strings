@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Zgadzam się i włącz LockMic";
 "menu.agree.hint" = "Zaakceptuj anonimowe statystyki, aby włączyć sterowanie mute";
 "menu.device" = "Urządzenie: %@";
+"menu.display.above" = "%@ — Góra";
+"menu.display.below" = "%@ — Dół";
+"menu.display.center" = "%@ — Środek";
+"menu.display.left" = "%@ — Lewo";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Prawo";
 "menu.floating_hud" = "Pływający HUD";
+"menu.hide_all_displays" = "Ukryj na wszystkich wyświetlaczach";
 "menu.hide_this_display" = "Ukryj na tym wyświetlaczu";
 "menu.mute_all" = "Wycisz wszystkie urządzenia wejściowe";
 "menu.mute_mic" = "Wycisz mikrofon";

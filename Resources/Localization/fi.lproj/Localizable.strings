@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Hyväksy ja ota LockMic käyttöön";
 "menu.agree.hint" = "Hyväksy anonyymit tilastot ottaaksesi mykistyksen käyttöön";
 "menu.device" = "Laite: %@";
+"menu.display.above" = "%@ — Yllä";
+"menu.display.below" = "%@ — Alla";
+"menu.display.center" = "%@ — Keskellä";
+"menu.display.left" = "%@ — Vasen";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Oikea";
 "menu.floating_hud" = "Kelluva HUD";
+"menu.hide_all_displays" = "Piilota kaikilla näytöillä";
 "menu.hide_this_display" = "Piilota tällä näytöllä";
 "menu.mute_all" = "Mykistä kaikki syöttölaitteet";
 "menu.mute_mic" = "Mykistä mikrofoni";

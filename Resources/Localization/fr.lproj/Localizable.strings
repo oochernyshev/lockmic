@@ -84,7 +84,14 @@
 "menu.agree.enable" = "Accepter et activer LockMic";
 "menu.agree.hint" = "Accepter les stats anonymes pour activer la sourdine";
 "menu.device" = "Appareil : %@";
+"menu.display.above" = "%@ — Haut";
+"menu.display.below" = "%@ — Bas";
+"menu.display.center" = "%@ — Centre";
+"menu.display.left" = "%@ — Gauche";
+"menu.display.numbered" = "%@ — %d";
+"menu.display.right" = "%@ — Droite";
 "menu.floating_hud" = "HUD flottant";
+"menu.hide_all_displays" = "Masquer sur tous les écrans";
 "menu.hide_this_display" = "Masquer sur cet écran";
 "menu.mute_all" = "Couper tous les périphériques d’entrée";
 "menu.mute_mic" = "Couper le micro";
