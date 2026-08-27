@@ -38,25 +38,17 @@ https://github.com/oochernyshev/lockmic/releases/download/v1.4.21/LockMic-1.4.21
 ```bash
 brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew trust --cask oochernyshev/lockmic/lockmic
-brew install --cask lockmic
+brew update
+brew install --cask --force lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
 
 Homebrew 6+ requires trusting third-party casks once; `brew trust --cask` only trusts LockMic.
 
-## Update
+Same commands to install, update, or restore a deleted app. `brew install` / `brew upgrade` without `--force` skip if Homebrew already has the cask, even after the user trashes `/Applications/LockMic.app`. Uninstall: `brew uninstall --cask lockmic`.
 
-### Homebrew
-
-```bash
-brew update
-brew upgrade --cask --yes lockmic
-xattr -dr com.apple.quarantine /Applications/LockMic.app
-open /Applications/LockMic.app
-```
-
-### DMG
+## Update (DMG)
 
 1. Download the latest DMG from https://lockmic.com/#download or GitHub Releases
 2. Drag LockMic to Applications and choose Replace

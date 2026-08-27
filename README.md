@@ -94,23 +94,33 @@ LockMic is **not** in the official Homebrew core cask list yet. Install from thi
 ```bash
 brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew trust --cask oochernyshev/lockmic/lockmic
-brew install --cask lockmic
+brew update
+brew install --cask --force lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
+
+Same commands to install, update, or restore a deleted app (`--force` overwrites even if Homebrew still has the cask).
 
 Homebrew 6+ requires trusting third-party casks once (`brew trust --cask …` trusts only LockMic, not every package in the tap).
 
 From a local clone (no tap):
 
 ```bash
-brew install --cask ./Casks/lockmic.rb
+brew install --cask --force ./Casks/lockmic.rb
 xattr -dr com.apple.quarantine /Applications/LockMic.app
+```
+
+Uninstall (dragging the app to Trash is not enough):
+
+```bash
+brew uninstall --cask lockmic
 ```
 
 Cask: [`Casks/lockmic.rb`](./Casks/lockmic.rb) (must stay under root `Casks/` for the tap to work).
 
 `xattr` clears Gatekeeper quarantine until the app is Developer ID–notarized.
+
 ### Local build without a public release
 
 ```bash

@@ -1,14 +1,18 @@
 # Homebrew Cask for LockMic (must live at repo-root Casks/ for `brew tap`).
 #
-# Install (Homebrew 6+ needs brew trust for third-party casks):
+# Install, update, or restore (Homebrew 6+ needs brew trust for third-party casks):
 #   brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 #   brew trust --cask oochernyshev/lockmic/lockmic
-#   brew install --cask lockmic
+#   brew update
+#   brew install --cask --force lockmic
 #   xattr -dr com.apple.quarantine /Applications/LockMic.app
 #   open /Applications/LockMic.app
 #
+# Uninstall:
+#   brew uninstall --cask lockmic
+#
 # Or from a local clone (no tap):
-#   brew install --cask ./Casks/lockmic.rb
+#   brew install --cask --force ./Casks/lockmic.rb
 #   xattr -dr com.apple.quarantine /Applications/LockMic.app
 #
 # xattr clears Gatekeeper quarantine until Developer ID + notarization.
