@@ -39,14 +39,14 @@ https://github.com/oochernyshev/lockmic/releases/download/v1.4.21/LockMic-1.4.21
 brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew trust --cask oochernyshev/lockmic/lockmic
 brew update
-brew install --cask --force lockmic
+brew reinstall --cask --yes lockmic || brew install --cask lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
 
 Homebrew 6+ requires trusting third-party casks once; `brew trust --cask` only trusts LockMic.
 
-Same commands to install, update, or restore a deleted app. `brew install` / `brew upgrade` without `--force` skip if Homebrew already has the cask, even after the user trashes `/Applications/LockMic.app`. Uninstall: `brew uninstall --cask lockmic`.
+Same commands to install, update, or restore a deleted app. On Homebrew 6, `brew install --cask --force` of an already-current cask is treated as an upgrade and skips (“Not upgrading … latest version is already installed”) even if `/Applications/LockMic.app` was deleted. Use `reinstall`. Uninstall: `brew uninstall --cask lockmic`.
 
 ## Update (DMG)
 

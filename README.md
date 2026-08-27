@@ -95,19 +95,19 @@ LockMic is **not** in the official Homebrew core cask list yet. Install from thi
 brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew trust --cask oochernyshev/lockmic/lockmic
 brew update
-brew install --cask --force lockmic
+brew reinstall --cask --yes lockmic || brew install --cask lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
 
-Same commands to install, update, or restore a deleted app (`--force` overwrites even if Homebrew still has the cask).
+Same commands to install, update, or restore a deleted app. Homebrew 6 `install --force` still skips if the cask version is already current, so `reinstall` is required after deleting the `.app`.
 
 Homebrew 6+ requires trusting third-party casks once (`brew trust --cask …` trusts only LockMic, not every package in the tap).
 
 From a local clone (no tap):
 
 ```bash
-brew install --cask --force ./Casks/lockmic.rb
+brew reinstall --cask --yes --force ./Casks/lockmic.rb || brew install --cask ./Casks/lockmic.rb
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 ```
 

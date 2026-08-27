@@ -13,7 +13,7 @@ struct PreferencesAboutPage: View {
 
     private static let brewUpdateCommand = """
     brew update
-    brew install --cask --force lockmic
+    brew reinstall --cask --yes lockmic
     xattr -dr com.apple.quarantine /Applications/LockMic.app
     open /Applications/LockMic.app
     """

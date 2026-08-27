@@ -203,7 +203,7 @@
         "name": "How do I update LockMic?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Homebrew: run the same commands as install (brew update && brew install --cask --force lockmic). DMG: download the latest DMG, replace the app in Applications, then open it."
+          "text": "Homebrew: run the same commands as install (brew reinstall --cask --yes lockmic, or brew install --cask lockmic if it was never installed). DMG: download the latest DMG, replace the app in Applications, then open it."
         }
       },
       {
@@ -211,7 +211,7 @@
         "name": "I deleted LockMic.app. How do I install it again?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Run the Homebrew commands in the Download section again. brew install --cask --force lockmic puts the app back. To uninstall completely: brew uninstall --cask lockmic. DMG users can download the DMG and drag LockMic back to Applications."
+          "text": "Run the Homebrew commands in the Download section again. brew reinstall --cask --yes lockmic puts the app back. Homebrew 6 install --force still skips if the cask version is current. To uninstall completely: brew uninstall --cask lockmic. DMG users can download the DMG and drag LockMic back to Applications."
         }
       },
       {
@@ -585,12 +585,12 @@
         <div class="code-block" role="region" aria-label="Homebrew">
           <div class="code-header">
             <span>Homebrew</span>
-            <button type="button" class="copy-btn" data-copy="brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew trust --cask oochernyshev/lockmic/lockmic && brew update && brew install --cask --force lockmic && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app" aria-label="Copy Homebrew command">Copy</button>
+            <button type="button" class="copy-btn" data-copy="brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew trust --cask oochernyshev/lockmic/lockmic && brew update && { brew reinstall --cask --yes lockmic || brew install --cask lockmic; } && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app" aria-label="Copy Homebrew command">Copy</button>
           </div>
           <pre><code>brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew trust --cask oochernyshev/lockmic/lockmic
 brew update
-brew install --cask --force lockmic
+brew reinstall --cask --yes lockmic || brew install --cask lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app</code></pre>
           <p class="code-note">Same commands to install, update, or restore a deleted app. Uninstall: <code>brew uninstall --cask lockmic</code>.</p>
@@ -654,7 +654,7 @@ open /Applications/LockMic.app</code></pre>
           <summary>I deleted LockMic.app. How do I install it again?</summary>
           <p>
             Run the Homebrew commands in <a href="#download">Download</a> again —
-            <code>--force</code> puts the app back. To uninstall completely:
+            <code>reinstall</code> puts the app back. To uninstall completely:
             <code>brew uninstall --cask lockmic</code>.
             DMG users can download the DMG and drag LockMic back to Applications.
           </p>

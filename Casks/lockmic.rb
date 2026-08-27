@@ -4,7 +4,7 @@
 #   brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 #   brew trust --cask oochernyshev/lockmic/lockmic
 #   brew update
-#   brew install --cask --force lockmic
+#   brew reinstall --cask --yes lockmic || brew install --cask lockmic
 #   xattr -dr com.apple.quarantine /Applications/LockMic.app
 #   open /Applications/LockMic.app
 #
@@ -12,7 +12,7 @@
 #   brew uninstall --cask lockmic
 #
 # Or from a local clone (no tap):
-#   brew install --cask --force ./Casks/lockmic.rb
+#   brew reinstall --cask --yes --force ./Casks/lockmic.rb || brew install --cask ./Casks/lockmic.rb
 #   xattr -dr com.apple.quarantine /Applications/LockMic.app
 #
 # xattr clears Gatekeeper quarantine until Developer ID + notarization.
