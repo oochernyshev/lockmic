@@ -7,6 +7,7 @@ struct AudioInputDevice: Identifiable, Equatable, Sendable {
     let name: String
     let supportsMute: Bool
     let isVirtual: Bool
+    let isBluetooth: Bool
 }
 
 struct AudioOutputDevice: Identifiable, Equatable, Sendable {
@@ -14,6 +15,7 @@ struct AudioOutputDevice: Identifiable, Equatable, Sendable {
     let uid: String
     let name: String
     let isVirtual: Bool
+    let isBluetooth: Bool
 }
 
 enum AudioDeviceServiceError: LocalizedError {
@@ -222,7 +224,8 @@ final class AudioDeviceService: @unchecked Sendable {
                 uid: uid,
                 name: name,
                 supportsMute: supportsMute(id),
-                isVirtual: isVirtualInput(deviceID: id)
+                isVirtual: isVirtualInput(deviceID: id),
+                isBluetooth: isBluetooth(id)
             )
         }
     }
@@ -260,7 +263,8 @@ final class AudioDeviceService: @unchecked Sendable {
                 id: id,
                 uid: deviceUID(id) ?? "\(id)",
                 name: deviceName(id),
-                isVirtual: isVirtualInput(deviceID: id)
+                isVirtual: isVirtualInput(deviceID: id),
+                isBluetooth: isBluetooth(id)
             )
         }
     }
@@ -304,6 +308,32 @@ final class AudioDeviceService: @unchecked Sendable {
         let suffix = uid[uid.index(after: idx)...]
         guard !suffix.isEmpty, suffix.allSatisfy(\.isNumber) else { return uid }
         return String(uid[..<idx])
+    }
+
+    /// Pair a Bluetooth headset input `…:input` with its `…:output`.
+    static func bluetoothFamily(uid: String) -> String {
+        let lower = uid.lowercased()
+        for marker in [":input", ":output"] {
+            if lower.hasSuffix(marker) {
+                return String(uid.dropLast(marker.count))
+            }
+        }
+        return uid
+    }
+
+    static func sameBluetoothHeadset(inputUID: String, outputUID: String) -> Bool {
+        if inputUID == outputUID { return true }
+        return bluetoothFamily(uid: inputUID) == bluetoothFamily(uid: outputUID)
+    }
+
+    /// AirPods / Redmi-style buds switch the whole device to HFP when any process opens the mic.
+    func isBluetooth(_ deviceID: AudioDeviceID) -> Bool {
+        switch transportType(deviceID) {
+        case kAudioDeviceTransportTypeBluetooth?, kAudioDeviceTransportTypeBluetoothLE?:
+            return true
+        default:
+            return false
+        }
     }
 
     private func transportType(_ deviceID: AudioDeviceID) -> UInt32? {

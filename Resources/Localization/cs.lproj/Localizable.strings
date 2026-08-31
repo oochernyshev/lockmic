@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Systémové přehrávání (co slyšíte)";
 "recording.source.included" = "Součást mixu systémového přehrávání";
 "recording.source.outside" = "Není v tomto nahrávání";
+"recording.badge.call_quality" = "Nízká kvalita";
+"recording.badge.call_quality.tooltip" = "Zvuk Bluetooth je snížený, protože se používá mikrofon těchto sluchátek.";
 "recording.monitor.not_recording" = "Nenahrává se";
 "recording.inputs.header" = "Vstupy";
 "recording.outputs.header" = "Výstupy";

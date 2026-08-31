@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "システム再生（聞こえている音）";
 "recording.source.included" = "システム再生ミックスに含まれます";
 "recording.source.outside" = "この録音には含まれません";
+"recording.badge.call_quality" = "低品質";
+"recording.badge.call_quality.tooltip" = "このヘッドセットのマイクを使っているため、Bluetoothの音質が下がっています。";
 "recording.monitor.not_recording" = "未録音";
 "recording.inputs.header" = "入力";
 "recording.outputs.header" = "出力";

@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Reprodução do sistema (o que ouves)";
 "recording.source.included" = "Incluído na mistura de reprodução";
 "recording.source.outside" = "Fora desta gravação";
+"recording.badge.call_quality" = "Qualidade baixa";
+"recording.badge.call_quality.tooltip" = "O som Bluetooth está reduzido porque o microfone destes auscultadores está a ser usado.";
 "recording.monitor.not_recording" = "Sem gravar";
 "recording.inputs.header" = "Entradas";
 "recording.outputs.header" = "Saídas";

@@ -525,6 +525,59 @@ final class MuteBadgeView: NSView {
     }
 }
 
+/// Bluetooth headset is in HFP because its microphone is open.
+final class CallQualityBadgeView: NSView {
+    private let dot = NSView()
+    private let label = NSTextField(labelWithString: L10n.recordingBadgeCallQuality)
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.cornerRadius = 8
+        layer?.masksToBounds = true
+        toolTip = L10n.recordingBadgeCallQualityTooltip
+        setAccessibilityLabel(L10n.recordingBadgeCallQualityTooltip)
+
+        dot.wantsLayer = true
+        dot.layer?.cornerRadius = 3
+        dot.translatesAutoresizingMaskIntoConstraints = false
+
+        label.font = .systemFont(ofSize: 11, weight: .semibold)
+        label.textColor = .labelColor
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        addSubview(dot)
+        addSubview(label)
+        NSLayoutConstraint.activate([
+            dot.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 7),
+            dot.centerYAnchor.constraint(equalTo: centerYAnchor),
+            dot.widthAnchor.constraint(equalToConstant: 6),
+            dot.heightAnchor.constraint(equalToConstant: 6),
+            label.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 5),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -7),
+            label.topAnchor.constraint(equalTo: topAnchor, constant: 3),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -3),
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: NSSize {
+        let text = label.intrinsicContentSize
+        return NSSize(width: 7 + 6 + 5 + text.width + 7, height: 18)
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = NSColor.systemYellow.withAlphaComponent(0.22).cgColor
+        dot.layer?.backgroundColor = NSColor.systemYellow.cgColor
+    }
+}
+
 /// Warning triangle when an unselected source has audio that is not in the mix.
 final class NoSignalBadgeView: NSView {
     private let iconView = NSImageView()
@@ -595,6 +648,7 @@ final class RowView: NSView {
     private let nameField = NSTextField(labelWithString: "")
     private let badge = NSTextField(labelWithString: "")
     private let muteBadge = MuteBadgeView()
+    private let qualityBadge = CallQualityBadgeView()
     private let warnBadge = NoSignalBadgeView()
     private let detailField = NSTextField(labelWithString: "")
     private let meter = LevelBar()
@@ -602,12 +656,17 @@ final class RowView: NSView {
     private var detailBottom: NSLayoutConstraint?
     private var badgeWidth: NSLayoutConstraint?
     private var muteWidth: NSLayoutConstraint?
+    private var qualityWidth: NSLayoutConstraint?
     private var warnWidth: NSLayoutConstraint?
     private var badgeToMeter: NSLayoutConstraint?
     private var badgeToMute: NSLayoutConstraint?
+    private var badgeToQuality: NSLayoutConstraint?
     private var muteToMeter: NSLayoutConstraint?
     private var badgeToWarn: NSLayoutConstraint?
     private var warnToMeter: NSLayoutConstraint?
+    private var qualityToMute: NSLayoutConstraint?
+    private var qualityToWarn: NSLayoutConstraint?
+    private var qualityToMeter: NSLayoutConstraint?
     private let onToggle: (String, Bool) -> Void
     private var deviceID = ""
     private var kind: RecordingDeviceKind = .input
@@ -615,6 +674,7 @@ final class RowView: NSView {
     private var sectionEnabled = true
     private var isMuted = false
     private var showNoSignal = false
+    private var showCallQuality = false
 
     init(device: RecordingDeviceRow, muted: Bool, onToggle: @escaping (String, Bool) -> Void) {
         self.onToggle = onToggle
@@ -640,6 +700,9 @@ final class RowView: NSView {
 
         muteBadge.setContentHuggingPriority(.defaultLow, for: .horizontal)
         muteBadge.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        qualityBadge.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        qualityBadge.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        qualityBadge.isHidden = true
         warnBadge.setContentHuggingPriority(.defaultLow, for: .horizontal)
         warnBadge.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         warnBadge.isHidden = true
@@ -649,7 +712,7 @@ final class RowView: NSView {
         detailField.lineBreakMode = .byTruncatingTail
         detailField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        [mark, iconView, nameField, badge, muteBadge, warnBadge, detailField, meter].forEach {
+        [mark, iconView, nameField, badge, qualityBadge, muteBadge, warnBadge, detailField, meter].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             addSubview($0)
         }
@@ -658,12 +721,17 @@ final class RowView: NSView {
         detailBottom = detailField.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8)
         badgeWidth = badge.widthAnchor.constraint(equalToConstant: 0)
         muteWidth = muteBadge.widthAnchor.constraint(equalToConstant: 0)
+        qualityWidth = qualityBadge.widthAnchor.constraint(equalToConstant: 0)
         warnWidth = warnBadge.widthAnchor.constraint(equalToConstant: 0)
         badgeToMeter = badge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10)
         badgeToMute = badge.trailingAnchor.constraint(equalTo: muteBadge.leadingAnchor, constant: -6)
+        badgeToQuality = badge.trailingAnchor.constraint(equalTo: qualityBadge.leadingAnchor, constant: -6)
         muteToMeter = muteBadge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10)
         badgeToWarn = badge.trailingAnchor.constraint(equalTo: warnBadge.leadingAnchor, constant: -6)
         warnToMeter = warnBadge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10)
+        qualityToMute = qualityBadge.trailingAnchor.constraint(equalTo: muteBadge.leadingAnchor, constant: -6)
+        qualityToWarn = qualityBadge.trailingAnchor.constraint(equalTo: warnBadge.leadingAnchor, constant: -6)
+        qualityToMeter = qualityBadge.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10)
 
         NSLayoutConstraint.activate([
             mark.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -681,6 +749,7 @@ final class RowView: NSView {
             nameField.trailingAnchor.constraint(equalTo: badge.leadingAnchor, constant: -6),
 
             badge.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
+            qualityBadge.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
             muteBadge.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
             warnBadge.centerYAnchor.constraint(equalTo: nameField.centerYAnchor),
 
@@ -722,6 +791,7 @@ final class RowView: NSView {
         nameBottom?.isActive = !hasDetail
         detailBottom?.isActive = hasDetail
         invalidateIntrinsicContentSize()
+        showCallQuality = device.isCallQuality
         applyMute(muted)
     }
 
@@ -743,17 +813,30 @@ final class RowView: NSView {
     private func layoutTrailingBadges() {
         let mute = isMuted
         let warn = showNoSignal && !mute
+        let quality = showCallQuality
         muteBadge.isHidden = !mute
         warnBadge.isHidden = !warn
+        qualityBadge.isHidden = !quality
         muteWidth?.isActive = !mute
         warnWidth?.isActive = !warn
-        badgeToMute?.isActive = mute
+        qualityWidth?.isActive = !quality
+
+        badgeToQuality?.isActive = quality
+        badgeToMute?.isActive = mute && !quality
+        badgeToWarn?.isActive = warn && !quality
+        badgeToMeter?.isActive = !mute && !warn && !quality
+
+        qualityToMute?.isActive = quality && mute
+        qualityToWarn?.isActive = quality && warn
+        qualityToMeter?.isActive = quality && !mute && !warn
+
         muteToMeter?.isActive = mute
-        badgeToWarn?.isActive = warn
         warnToMeter?.isActive = warn
-        badgeToMeter?.isActive = !mute && !warn
+
         muteBadge.setContentHuggingPriority(mute ? .required : .defaultLow, for: .horizontal)
         muteBadge.setContentCompressionResistancePriority(mute ? .required : .defaultLow, for: .horizontal)
+        qualityBadge.setContentHuggingPriority(quality ? .required : .defaultLow, for: .horizontal)
+        qualityBadge.setContentCompressionResistancePriority(quality ? .required : .defaultLow, for: .horizontal)
         warnBadge.setContentHuggingPriority(warn ? .required : .defaultLow, for: .horizontal)
         warnBadge.setContentCompressionResistancePriority(warn ? .required : .defaultLow, for: .horizontal)
         warnBadge.setBlinking(warn)
@@ -808,6 +891,7 @@ final class RowView: NSView {
         iconView.alphaValue = dim
         nameField.alphaValue = dim
         badge.alphaValue = dim
+        qualityBadge.alphaValue = 1
         detailField.alphaValue = dim
         meter.alphaValue = on ? 1 : 0.4
         syncMeter()

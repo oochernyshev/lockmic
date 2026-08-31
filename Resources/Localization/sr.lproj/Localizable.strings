@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Sistemska reprodukcija (ono što čuješ)";
 "recording.source.included" = "U miksu sistemske reprodukcije";
 "recording.source.outside" = "Nije u ovom snimanju";
+"recording.badge.call_quality" = "Nizak kvalitet";
+"recording.badge.call_quality.tooltip" = "Bluetooth zvuk je snižen jer se koristi mikrofon ovih slušalica.";
 "recording.monitor.not_recording" = "Ne snima se";
 "recording.inputs.header" = "Ulazi";
 "recording.outputs.header" = "Izlazi";

@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Järjestelmän toisto (mitä kuulet)";
 "recording.source.included" = "Mukana järjestelmän toistomixissä";
 "recording.source.outside" = "Ei tässä tallennuksessa";
+"recording.badge.call_quality" = "Heikko laatu";
+"recording.badge.call_quality.tooltip" = "Bluetooth-ääni on heikompi, koska näiden kuulokkeiden mikrofonia käytetään.";
 "recording.monitor.not_recording" = "Ei tallennu";
 "recording.inputs.header" = "Tulot";
 "recording.outputs.header" = "Lähdöt";

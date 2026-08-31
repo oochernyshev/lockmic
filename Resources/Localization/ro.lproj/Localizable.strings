@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Redare de sistem (ce auzi)";
 "recording.source.included" = "Inclus în mixul de redare";
 "recording.source.outside" = "Nu e în această înregistrare";
+"recording.badge.call_quality" = "Calitate scăzută";
+"recording.badge.call_quality.tooltip" = "Sunetul Bluetooth este redus pentru că microfonul acestor căști este folosit.";
 "recording.monitor.not_recording" = "Nu se înregistrează";
 "recording.inputs.header" = "Intrări";
 "recording.outputs.header" = "Ieșiri";

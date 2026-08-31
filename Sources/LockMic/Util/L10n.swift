@@ -103,6 +103,8 @@ enum L10n {
     static var recordingSourceSystemPlayback: String { tr("recording.source.system_playback") }
     static var recordingSourceIncluded: String { tr("recording.source.included") }
     static var recordingSourceOutside: String { tr("recording.source.outside") }
+    static var recordingBadgeCallQuality: String { tr("recording.badge.call_quality") }
+    static var recordingBadgeCallQualityTooltip: String { tr("recording.badge.call_quality.tooltip") }
     static var recordingNoSignal: String { tr("recording.monitor.not_recording") }
     static var recordingInputsHeader: String { tr("recording.inputs.header") }
     static var recordingOutputsHeader: String { tr("recording.outputs.header") }

@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Lecture système (ce que vous entendez)";
 "recording.source.included" = "Inclus dans le mix de lecture système";
 "recording.source.outside" = "Hors de cet enregistrement";
+"recording.badge.call_quality" = "Qualité réduite";
+"recording.badge.call_quality.tooltip" = "Le son Bluetooth est réduit car le micro de ce casque est utilisé.";
 "recording.monitor.not_recording" = "Non enregistré";
 "recording.inputs.header" = "Entrées";
 "recording.outputs.header" = "Sorties";

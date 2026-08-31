@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Sistem oynatma (duyduğun ses)";
 "recording.source.included" = "Sistem oynatma karışımında";
 "recording.source.outside" = "Bu kayıtta yok";
+"recording.badge.call_quality" = "Düşük kalite";
+"recording.badge.call_quality.tooltip" = "Bu kulaklığın mikrofonu kullanıldığı için Bluetooth sesi düştü.";
 "recording.monitor.not_recording" = "Kaydedilmiyor";
 "recording.inputs.header" = "Girişler";
 "recording.outputs.header" = "Çıkışlar";

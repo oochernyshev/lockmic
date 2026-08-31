@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Riproduzione di sistema (quello che senti)";
 "recording.source.included" = "Incluso nel mix di riproduzione";
 "recording.source.outside" = "Non in questa registrazione";
+"recording.badge.call_quality" = "Bassa qualità";
+"recording.badge.call_quality.tooltip" = "Il suono Bluetooth è ridotto perché è in uso il microfono di questa cuffia.";
 "recording.monitor.not_recording" = "Non in registrazione";
 "recording.inputs.header" = "Ingressi";
 "recording.outputs.header" = "Uscite";

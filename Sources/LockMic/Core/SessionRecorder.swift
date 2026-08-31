@@ -671,6 +671,8 @@ final class SessionRecorder: ObservableObject {
         let defaultInUID = currentDefaultInputUID()
         let defaultOutUID = currentDefaultOutputUID()
         let inputsByUID = Dictionary(uniqueKeysWithValues: audio.listInputDevices().map { ($0.uid, $0) })
+        let outputsByUID = Dictionary(uniqueKeysWithValues: audio.listOutputDevices().map { ($0.uid, $0) })
+        let callQuality = callQualityHeadsetUIDs(inputs: inputsByUID, outputs: outputsByUID)
         var rows: [RecordingDeviceRow] = []
 
         for uid in inputOrder {
@@ -687,12 +689,12 @@ final class SessionRecorder: ObservableObject {
                     canCapture: true,
                     isEnabled: selected,
                     level: 0,
-                    detail: nil
+                    detail: nil,
+                    isCallQuality: callQuality.inputs.contains(uid)
                 )
             )
         }
 
-        let outputsByUID = Dictionary(uniqueKeysWithValues: audio.listOutputDevices().map { ($0.uid, $0) })
         for uid in outputOrder {
             guard let device = outputsByUID[uid] else { continue }
             let id = "out.\(uid)"
@@ -710,11 +712,34 @@ final class SessionRecorder: ObservableObject {
                     level: 0,
                     detail: isDefault ? L10n.recordingSourceSystemPlayback : (
                         selected ? L10n.recordingSourceIncluded : L10n.recordingSourceOutside
-                    )
+                    ),
+                    isCallQuality: callQuality.outputs.contains(uid)
                 )
             )
         }
         devices = rows
+    }
+
+    /// Bluetooth headset whose mic HAL is running — that forces HFP on the matching output.
+    private func callQualityHeadsetUIDs(
+        inputs: [String: AudioInputDevice],
+        outputs: [String: AudioOutputDevice]
+    ) -> (inputs: Set<String>, outputs: Set<String>) {
+        let openMics = Set(inputCaptures.keys.filter { inputs[$0]?.isBluetooth == true })
+        var flaggedIn = Set<String>()
+        var flaggedOut = Set<String>()
+        for inUID in openMics {
+            flaggedIn.insert(inUID)
+            let inName = inputs[inUID]?.name
+            for (outUID, outDev) in outputs where outDev.isBluetooth {
+                if AudioDeviceService.sameBluetoothHeadset(inputUID: inUID, outputUID: outUID)
+                    || outDev.name == inName
+                {
+                    flaggedOut.insert(outUID)
+                }
+            }
+        }
+        return (flaggedIn, flaggedOut)
     }
 
     /// Live meter for the monitor. Does not publish `devices` (that rebuilt SwiftUI).

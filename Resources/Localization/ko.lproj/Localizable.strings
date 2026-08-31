@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "시스템 재생(들리는 소리)";
 "recording.source.included" = "시스템 재생 믹스에 포함됨";
 "recording.source.outside" = "이 녹음에 없음";
+"recording.badge.call_quality" = "낮은 음질";
+"recording.badge.call_quality.tooltip" = "이 헤드셋의 마이크를 사용 중이라 블루투스 음질이 떨어집니다.";
 "recording.monitor.not_recording" = "녹음 안 함";
 "recording.inputs.header" = "입력";
 "recording.outputs.header" = "출력";

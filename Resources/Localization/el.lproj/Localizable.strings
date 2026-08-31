@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Αναπαραγωγή συστήματος (ό,τι ακούτε)";
 "recording.source.included" = "Συμπεριλαμβάνεται στο μείγμα συστήματος";
 "recording.source.outside" = "Όχι σε αυτή την εγγραφή";
+"recording.badge.call_quality" = "Χαμηλή ποιότητα";
+"recording.badge.call_quality.tooltip" = "Ο ήχος Bluetooth είναι μειωμένος επειδή χρησιμοποιείται το μικρόφωνο αυτού του ακουστικού.";
 "recording.monitor.not_recording" = "Δεν ηχογραφείται";
 "recording.inputs.header" = "Είσοδοι";
 "recording.outputs.header" = "Έξοδοι";

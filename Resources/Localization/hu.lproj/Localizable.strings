@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Rendszerlejátszás (amit hallasz)";
 "recording.source.included" = "Benne van a rendszerlejátszás keverésben";
 "recording.source.outside" = "Nincs ebben a felvételben";
+"recording.badge.call_quality" = "Alacsony minőség";
+"recording.badge.call_quality.tooltip" = "A Bluetooth-hang gyengébb, mert a headset mikrofonja használatban van.";
 "recording.monitor.not_recording" = "Nincs felvéve";
 "recording.inputs.header" = "Bemenetek";
 "recording.outputs.header" = "Kimenetek";

@@ -68,4 +68,6 @@ struct RecordingDeviceRow: Identifiable, Equatable, Sendable {
     var isEnabled: Bool
     var level: Float
     var detail: String?
+    /// Bluetooth headset is in HFP because its microphone IO is running.
+    var isCallQuality: Bool
 }

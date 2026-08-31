@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Systeemweergave (wat je hoort)";
 "recording.source.included" = "Opgenomen in de systeemweergavemix";
 "recording.source.outside" = "Niet in deze opname";
+"recording.badge.call_quality" = "Lage kwaliteit";
+"recording.badge.call_quality.tooltip" = "Bluetooth-geluid is verminderd omdat de microfoon van deze headset in gebruik is.";
 "recording.monitor.not_recording" = "Niet opgenomen";
 "recording.inputs.header" = "Ingangen";
 "recording.outputs.header" = "Uitgangen";

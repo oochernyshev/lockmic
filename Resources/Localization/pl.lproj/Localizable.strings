@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Odtwarzanie systemowe (to, co słyszysz)";
 "recording.source.included" = "W miksie odtwarzania systemowego";
 "recording.source.outside" = "Poza tym nagraniem";
+"recording.badge.call_quality" = "Niska jakość";
+"recording.badge.call_quality.tooltip" = "Dźwięk Bluetooth jest obniżony, bo używany jest mikrofon tego zestawu.";
 "recording.monitor.not_recording" = "Nie nagrywane";
 "recording.inputs.header" = "Wejścia";
 "recording.outputs.header" = "Wyjścia";

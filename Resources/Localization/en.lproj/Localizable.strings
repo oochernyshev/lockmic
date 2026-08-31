@@ -142,6 +142,8 @@
 "recording.source.system_playback" = "System playback (what you hear)";
 "recording.source.included" = "Included in system playback mix";
 "recording.source.outside" = "Not in this recording";
+"recording.badge.call_quality" = "Low quality";
+"recording.badge.call_quality.tooltip" = "Bluetooth sound is reduced because this headset’s microphone is in use.";
 "recording.monitor.not_recording" = "Not recording";
 "recording.inputs.header" = "Inputs";
 "recording.outputs.header" = "Outputs";

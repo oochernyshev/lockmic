@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Systemavspilling (det du hører)";
 "recording.source.included" = "Inkludert i systemavspillingsmiks";
 "recording.source.outside" = "Ikke i dette opptaket";
+"recording.badge.call_quality" = "Lav kvalitet";
+"recording.badge.call_quality.tooltip" = "Bluetooth-lyden er redusert fordi mikrofonen på dette headsetet er i bruk.";
 "recording.monitor.not_recording" = "Tas ikke opp";
 "recording.inputs.header" = "Innganger";
 "recording.outputs.header" = "Utganger";

@@ -182,6 +182,8 @@
 "recording.source.system_playback" = "Системное воспроизведение (то, что слышно)";
 "recording.source.included" = "Входит в микс системного воспроизведения";
 "recording.source.outside" = "Не в этой записи";
+"recording.badge.call_quality" = "Низкое качество";
+"recording.badge.call_quality.tooltip" = "Звук Bluetooth снижен, потому что используется микрофон этой гарнитуры.";
 "recording.monitor.not_recording" = "Не пишется";
 "recording.inputs.header" = "Входы";
 "recording.outputs.header" = "Выходы";
