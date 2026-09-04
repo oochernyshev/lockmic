@@ -11,15 +11,25 @@ protocol PlaybackCapturing: AnyObject {
     func ensureRunning()
     func setMixEnabled(_ on: Bool)
     var level: Float { get }
+    /// `kAudioTapPropertyFormat` — can be 16 kHz (VPIO) while the speakers stay at 48 kHz.
+    var sourceSampleRate: Double { get }
+    var isNarrowband: Bool { get }
+    /// Sample rate of the buffers we mix, after the private aggregate.
+    var mixSampleRate: Double { get }
+    var isMixNarrowband: Bool { get }
+    var streamIndex: UInt { get }
+    var onFormatChange: (() -> Void)? { get set }
 }
 
 // MARK: - Playback tap (system audio)
 
 /// Private tap-only aggregate. Do not put the output UID in the composition.
 @available(macOS 14.2, *)
-final class PlaybackTap: PlaybackCapturing {
+final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
     /// Non-nil queue is required — `nil` silently fails to register the IO block on macOS 26.
     private let queue = DispatchQueue(label: "com.lockmic.playback-tap", qos: .userInitiated)
+    private static let ioQueueKey = DispatchSpecificKey<UInt8>()
+    private static let haltQueue = DispatchQueue(label: "com.lockmic.playback-tap.halt")
     private var tapID: AudioObjectID = 0
     private var aggregateID: AudioDeviceID = 0
     private var ioProcID: AudioDeviceIOProcID?
@@ -37,21 +47,124 @@ final class PlaybackTap: PlaybackCapturing {
     private var formatListener: AudioObjectPropertyListenerBlock?
     private let lock = NSLock()
     private var _level: Float = 0
+    private var _sourceSampleRate: Double = 0
+    private var _onFormatChange: (() -> Void)?
+    private var stopped = false
 
     var level: Float {
         lock.lock(); defer { lock.unlock() }
         return RecordingLevelDisplay.fromLinearPeak(_level)
     }
 
+    var sourceSampleRate: Double {
+        lock.lock(); defer { lock.unlock() }
+        return _sourceSampleRate
+    }
+
+    var isNarrowband: Bool {
+        let rate = sourceSampleRate
+        return rate > 0 && rate < 44_100
+    }
+
+    var mixSampleRate: Double {
+        lock.lock(); defer { lock.unlock() }
+        return ioFormat?.sampleRate ?? 0
+    }
+
+    var isMixNarrowband: Bool {
+        let rate = mixSampleRate
+        return rate > 0 && rate < 44_100
+    }
+
+    var streamIndex: UInt { tapStreamIndex }
+
+    var onFormatChange: (() -> Void)? {
+        get { lock.lock(); defer { lock.unlock() }; return _onFormatChange }
+        set { lock.lock(); _onFormatChange = newValue; lock.unlock() }
+    }
+
     init(audio: AudioDeviceService, deviceUID: String?) async throws {
         self.sourceID = deviceUID ?? PlaybackMix.systemSourceID
         self.tapDeviceUID = deviceUID ?? ""
-        try attachHardware(using: audio)
-        try await waitForIOStart()
+        queue.setSpecific(key: Self.ioQueueKey, value: 1)
+        do {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                queue.async {
+                    do {
+                        try self.attachHardware(using: audio)
+                        continuation.resume()
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+            try await waitForIOStart()
+        } catch {
+            stop()
+            throw error
+        }
     }
 
     func stop() {
-        detachHardware()
+        lock.lock()
+        let already = stopped
+        stopped = true
+        let proc = ioProcID
+        let aggregate = aggregateID
+        let tap = tapID
+        let listener = formatListener
+        ioProcID = nil
+        aggregateID = 0
+        tapID = 0
+        formatListener = nil
+        lock.unlock()
+        guard !already else { return }
+
+        let listenerQueue = queue
+        let work = {
+            Self.halt(
+                proc: proc,
+                aggregate: aggregate,
+                tap: tap,
+                listener: listener,
+                listenerQueue: listenerQueue
+            )
+        }
+        // Never run Stop/Destroy on main or on the IO queue — HAL may dispatch_sync there.
+        let wait = !Thread.isMainThread && DispatchQueue.getSpecific(key: Self.ioQueueKey) == nil
+        if wait {
+            Self.haltQueue.sync(execute: work)
+        } else {
+            Self.haltQueue.async(execute: work)
+        }
+    }
+
+    /// Stop/Destroy must not run on the IO queue (HAL can `dispatch_sync` onto it).
+    private static func halt(
+        proc: AudioDeviceIOProcID?,
+        aggregate: AudioDeviceID,
+        tap: AudioObjectID,
+        listener: AudioObjectPropertyListenerBlock?,
+        listenerQueue: DispatchQueue
+    ) {
+        if let listener, tap != 0 {
+            var address = AudioObjectPropertyAddress(
+                mSelector: kAudioTapPropertyFormat,
+                mScope: kAudioObjectPropertyScopeGlobal,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            AudioObjectRemovePropertyListenerBlock(tap, &address, listenerQueue, listener)
+        }
+        if let proc, aggregate != 0 {
+            AudioDeviceStop(aggregate, proc)
+            AudioDeviceDestroyIOProcID(aggregate, proc)
+        }
+        if aggregate != 0 {
+            AudioHardwareDestroyAggregateDevice(aggregate)
+        }
+        if tap != 0 {
+            AudioHardwareDestroyProcessTap(tap)
+        }
     }
 
     func setMixEnabled(_ on: Bool) {
@@ -61,11 +174,23 @@ final class PlaybackTap: PlaybackCapturing {
     }
 
     func ensureRunning() {
+        lock.lock()
+        guard !stopped else { lock.unlock(); return }
         let aggregate = aggregateID
         let proc = ioProcID
+        let pinMixRate = tapDeviceUID.isEmpty
+        lock.unlock()
         guard aggregate != 0, let proc else { return }
+        if pinMixRate {
+            Self.setNominalSampleRate(aggregate, RecordingCodec.sampleRate)
+        }
         reloadFormat()
-        queue.async {
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.lock.lock()
+            let live = !self.stopped && self.aggregateID == aggregate && self.ioProcID != nil
+            self.lock.unlock()
+            guard live else { return }
             let status = AudioDeviceStart(aggregate, proc)
             if status != noErr {
                 log.error(
@@ -136,7 +261,7 @@ final class PlaybackTap: PlaybackCapturing {
         var createdAggregate = AudioDeviceID(kAudioObjectUnknown)
         let aggStatus = AudioHardwareCreateAggregateDevice(composition as CFDictionary, &createdAggregate)
         guard aggStatus == noErr, createdAggregate != kAudioObjectUnknown else {
-            detachHardware()
+            stop()
             throw SessionRecorderError.aggregateFailed(aggStatus)
         }
         aggregateID = createdAggregate
@@ -148,7 +273,7 @@ final class PlaybackTap: PlaybackCapturing {
         }
 
         guard reloadFormat() != nil else {
-            detachHardware()
+            stop()
             throw SessionRecorderError.invalidTapFormat
         }
 
@@ -159,7 +284,7 @@ final class PlaybackTap: PlaybackCapturing {
             self?.write(inInput)
         }
         guard ioStatus == noErr, let proc else {
-            detachHardware()
+            stop()
             throw SessionRecorderError.ioFailed(ioStatus)
         }
         ioProcID = proc
@@ -177,28 +302,11 @@ final class PlaybackTap: PlaybackCapturing {
             }
         }
         guard startStatus == noErr else {
-            detachHardware()
+            stop()
             log.error("Playback AudioDeviceStart failed (\(startStatus, privacy: .public))")
             throw SessionRecorderError.playbackDenied
         }
         log.info("Playback tap IO started")
-    }
-
-    private func detachHardware() {
-        removeFormatListener()
-        if let proc = ioProcID, aggregateID != 0 {
-            AudioDeviceStop(aggregateID, proc)
-            AudioDeviceDestroyIOProcID(aggregateID, proc)
-        }
-        ioProcID = nil
-        if aggregateID != 0 {
-            AudioHardwareDestroyAggregateDevice(aggregateID)
-            aggregateID = 0
-        }
-        if tapID != 0 {
-            AudioHardwareDestroyProcessTap(tapID)
-            tapID = 0
-        }
     }
 
     deinit { stop() }
@@ -311,8 +419,9 @@ final class PlaybackTap: PlaybackCapturing {
         return left != nil
     }
 
-    /// First output stream with stereo (or any) channels — HDMI/USB often put the mix off index 0.
-    private static func preferredOutputStreamIndex(_ deviceID: AudioDeviceID) -> UInt {
+    /// Highest-rate output stream (stereo preferred). Call/VPIO often adds a 16 kHz
+    /// stream at index 0 while media stays on another stream at 48 kHz.
+    static func preferredOutputStreamIndex(_ deviceID: AudioDeviceID) -> UInt {
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyStreams,
             mScope: kAudioDevicePropertyScopeOutput,
@@ -327,22 +436,22 @@ final class PlaybackTap: PlaybackCapturing {
         guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &streams) == noErr else {
             return 0
         }
-        var firstWithAudio: UInt = 0
-        var foundAudio = false
+        var bestIndex: UInt = 0
+        var bestScore: Double = -1
         for (index, stream) in streams.enumerated() {
-            let channels = streamChannelCount(stream)
-            if channels >= 2 {
-                return UInt(index)
-            }
-            if !foundAudio, channels > 0 {
-                firstWithAudio = UInt(index)
-                foundAudio = true
+            guard let asbd = streamVirtualFormat(stream), asbd.mChannelsPerFrame > 0 else { continue }
+            let wide: Double = asbd.mSampleRate >= 44_100 ? 1_000_000 : 0
+            let stereo: Double = asbd.mChannelsPerFrame >= 2 ? 1_000 : 0
+            let score = wide + stereo + asbd.mSampleRate
+            if score > bestScore {
+                bestScore = score
+                bestIndex = UInt(index)
             }
         }
-        return foundAudio ? firstWithAudio : 0
+        return bestIndex
     }
 
-    private static func streamChannelCount(_ stream: AudioStreamID) -> UInt32 {
+    private static func streamVirtualFormat(_ stream: AudioStreamID) -> AudioStreamBasicDescription? {
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioStreamPropertyVirtualFormat,
             mScope: kAudioObjectPropertyScopeGlobal,
@@ -351,38 +460,57 @@ final class PlaybackTap: PlaybackCapturing {
         var asbd = AudioStreamBasicDescription()
         var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
         guard AudioObjectGetPropertyData(stream, &address, 0, nil, &size, &asbd) == noErr else {
-            return 0
+            return nil
         }
-        return asbd.mChannelsPerFrame
+        return asbd
     }
 
     @discardableResult
     private func reloadFormat() -> AVAudioFormat? {
-        guard tapID != 0 else { return nil }
+        lock.lock()
+        let tap = tapID
+        let aggregate = aggregateID
+        let pinMixRate = tapDeviceUID.isEmpty
+        let live = !stopped && tap != 0
+        lock.unlock()
+        guard live else { return nil }
+        if pinMixRate, aggregate != 0 {
+            Self.setNominalSampleRate(aggregate, RecordingCodec.sampleRate)
+        }
         do {
-            var asbd = try Self.tapStreamFormat(tapID)
-            guard let tapFormat = AVAudioFormat(streamDescription: &asbd), tapFormat.channelCount > 0 else {
-                return nil
+            let tapASBD = try Self.tapStreamFormat(tap)
+            let ioRate: Double
+            if let aggregateASBD = Self.aggregateIOFormat(aggregate), aggregateASBD.mSampleRate > 0 {
+                ioRate = aggregateASBD.mSampleRate
+            } else {
+                ioRate = tapASBD.mSampleRate
             }
+            guard ioRate > 0 else { return nil }
             guard let next = AVAudioFormat(
                 commonFormat: .pcmFormatFloat32,
-                sampleRate: tapFormat.sampleRate,
+                sampleRate: ioRate,
                 channels: 2,
                 interleaved: false
             ) else { return nil }
             lock.lock()
-            let changed = ioFormat?.sampleRate != next.sampleRate
+            guard !stopped else {
+                lock.unlock()
+                return nil
+            }
+            let sourceChanged = _sourceSampleRate != tapASBD.mSampleRate
+            let ioChanged = ioFormat?.sampleRate != next.sampleRate
                 || ioFormat?.channelCount != next.channelCount
+            _sourceSampleRate = tapASBD.mSampleRate
             ioFormat = next
-            if changed {
+            if ioChanged {
                 scratch = nil
                 mix48 = nil
                 mixResampler.reset()
             }
             lock.unlock()
-            if changed {
+            if sourceChanged || ioChanged {
                 log.info(
-                    "Playback tap format \(Int(next.sampleRate), privacy: .public) Hz device=\(self.tapDeviceUID, privacy: .public)"
+                    "Playback tap source \(Int(tapASBD.mSampleRate), privacy: .public) Hz IO \(Int(ioRate), privacy: .public) Hz device=\(self.tapDeviceUID, privacy: .public)"
                 )
             }
             return next
@@ -402,6 +530,7 @@ final class PlaybackTap: PlaybackCapturing {
         let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
             self?.reloadFormat()
             self?.ensureRunning()
+            self?.onFormatChange?()
         }
         formatListener = block
         AudioObjectAddPropertyListenerBlock(tapID, &address, queue, block)
@@ -457,6 +586,30 @@ final class PlaybackTap: PlaybackCapturing {
         var value = rate
         let size = UInt32(MemoryLayout<Double>.size)
         return AudioObjectSetPropertyData(deviceID, &address, 0, nil, size, &value) == noErr
+    }
+
+    private static func aggregateIOFormat(_ deviceID: AudioDeviceID) -> AudioStreamBasicDescription? {
+        guard deviceID != 0 else { return nil }
+        let scopes: [AudioObjectPropertyScope] = [
+            kAudioDevicePropertyScopeInput,
+            kAudioObjectPropertyScopeGlobal,
+            kAudioDevicePropertyScopeOutput,
+        ]
+        for scope in scopes {
+            var address = AudioObjectPropertyAddress(
+                mSelector: kAudioDevicePropertyStreamFormat,
+                mScope: scope,
+                mElement: kAudioObjectPropertyElementMain
+            )
+            var asbd = AudioStreamBasicDescription()
+            var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
+            if AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &asbd) == noErr,
+               asbd.mSampleRate > 0
+            {
+                return asbd
+            }
+        }
+        return nil
     }
 
     private static func tapStreamFormat(_ tapID: AudioObjectID) throws -> AudioStreamBasicDescription {

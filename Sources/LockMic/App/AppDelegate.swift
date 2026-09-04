@@ -64,7 +64,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if isFinalizingForQuit {
             return .terminateLater
         }
-        guard recorder.isRecording else {
+        guard recorder.isBusy else {
             return .terminateNow
         }
         isFinalizingForQuit = true
@@ -80,7 +80,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        _ = try? recorder.stopCaptures()
+        // Mix wrap already ran in `applicationShouldTerminate`. A sync HAL
+        // teardown on main here can deadlock the quit.
         bundleReplacementWatcher?.stop()
         bundleReplacementWatcher = nil
         if let dockPreferenceObserver {

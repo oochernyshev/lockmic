@@ -34,13 +34,16 @@ enum AudioDeviceServiceError: LocalizedError {
     }
 }
 
-/// Core Audio HAL — master input mute only.
+/// Core Audio HAL — input/output devices and mute.
 final class AudioDeviceService: @unchecked Sendable {
     private var defaultDeviceListenerBlock: AudioObjectPropertyListenerBlock?
     private var defaultOutputListenerBlock: AudioObjectPropertyListenerBlock?
     private var deviceListListenerBlock: AudioObjectPropertyListenerBlock?
     private let lock = NSLock()
     private var onDevicesChangedHandlers: [UUID: () -> Void] = [:]
+    /// HAL may `dispatch_sync` onto this queue from inside Start/Stop/Destroy.
+    /// Registering on main deadlocks those calls when they run on the main thread.
+    private let listenerQueue = DispatchQueue(label: "com.lockmic.hal-listeners")
 
     init() {
         installListeners()
@@ -125,40 +128,92 @@ final class AudioDeviceService: @unchecked Sendable {
     }
 
     func supportsMute(_ deviceID: AudioDeviceID) -> Bool {
-        isSettable(
-            deviceID,
-            selector: kAudioDevicePropertyMute,
-            scope: kAudioDevicePropertyScopeInput,
-            element: kAudioObjectPropertyElementMain
-        )
+        !muteTargets(deviceID).isEmpty
     }
 
     func isMuted(_ deviceID: AudioDeviceID) throws -> Bool {
-        guard supportsMute(deviceID) else { throw AudioDeviceServiceError.muteUnsupported }
+        let targets = muteTargets(deviceID)
+        guard !targets.isEmpty else { throw AudioDeviceServiceError.muteUnsupported }
+        for target in targets {
+            if try !isMuted(deviceID, scope: target.scope, element: target.element) {
+                return false
+            }
+        }
+        return true
+    }
+
+    func setMuted(_ muted: Bool, deviceID: AudioDeviceID) throws {
+        let targets = muteTargets(deviceID)
+        guard !targets.isEmpty else { throw AudioDeviceServiceError.muteUnsupported }
+        var value: UInt32 = muted ? 1 : 0
+        let size = UInt32(MemoryLayout<UInt32>.size)
+        var wrote = false
+        var lastStatus: OSStatus = noErr
+        for target in targets {
+            var address = propertyAddress(
+                kAudioDevicePropertyMute,
+                target.scope,
+                target.element
+            )
+            // Always write. Skipping when HAL already reads muted leaves a new default live.
+            let status = AudioObjectSetPropertyData(deviceID, &address, 0, nil, size, &value)
+            if status == noErr {
+                wrote = true
+            } else {
+                lastStatus = status
+                if let current = try? isMuted(deviceID, scope: target.scope, element: target.element),
+                   current == muted
+                {
+                    wrote = true
+                }
+            }
+        }
+        guard wrote else {
+            throw AudioDeviceServiceError.propertyFailed("set mute (\(lastStatus))")
+        }
+    }
+
+    /// Master + per-channel, input and global. Drivers often expose mute only on
+    /// channels 1…N and `IsPropertySettable` lies; `HasProperty` is the filter.
+    private func muteTargets(_ deviceID: AudioDeviceID) -> [(scope: AudioObjectPropertyScope, element: AudioObjectPropertyElement)] {
+        var elements: [AudioObjectPropertyElement] = [kAudioObjectPropertyElementMain]
+        let channels = max(inputChannelCount(deviceID), 8)
+        for i in 1...channels {
+            elements.append(AudioObjectPropertyElement(i))
+        }
+        let scopes: [AudioObjectPropertyScope] = [
+            kAudioDevicePropertyScopeInput,
+            kAudioObjectPropertyScopeGlobal,
+        ]
+        var targets: [(AudioObjectPropertyScope, AudioObjectPropertyElement)] = []
+        for scope in scopes {
+            for element in elements {
+                var address = propertyAddress(kAudioDevicePropertyMute, scope, element)
+                if AudioObjectHasProperty(deviceID, &address) {
+                    targets.append((scope, element))
+                }
+            }
+        }
+        return targets
+    }
+
+    private func isMuted(
+        _ deviceID: AudioDeviceID,
+        scope: AudioObjectPropertyScope,
+        element: AudioObjectPropertyElement
+    ) throws -> Bool {
         var address = propertyAddress(
             kAudioDevicePropertyMute,
-            kAudioDevicePropertyScopeInput,
-            kAudioObjectPropertyElementMain
+            scope,
+            element
         )
         var muted: UInt32 = 0
         var size = UInt32(MemoryLayout<UInt32>.size)
         let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &muted)
-        guard status == noErr else { throw AudioDeviceServiceError.propertyFailed("get mute (\(status))") }
+        guard status == noErr else {
+            throw AudioDeviceServiceError.propertyFailed("get mute (\(status))")
+        }
         return muted != 0
-    }
-
-    func setMuted(_ muted: Bool, deviceID: AudioDeviceID) throws {
-        guard supportsMute(deviceID) else { throw AudioDeviceServiceError.muteUnsupported }
-        if let current = try? isMuted(deviceID), current == muted { return }
-        var address = propertyAddress(
-            kAudioDevicePropertyMute,
-            kAudioDevicePropertyScopeInput,
-            kAudioObjectPropertyElementMain
-        )
-        var value: UInt32 = muted ? 1 : 0
-        let size = UInt32(MemoryLayout<UInt32>.size)
-        let status = AudioObjectSetPropertyData(deviceID, &address, 0, nil, size, &value)
-        guard status == noErr else { throw AudioDeviceServiceError.propertyFailed("set mute (\(status))") }
     }
 
     struct MuteBatchResult: Sendable {
@@ -371,19 +426,6 @@ final class AudioDeviceService: @unchecked Sendable {
         AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: element)
     }
 
-    private func isSettable(
-        _ deviceID: AudioDeviceID,
-        selector: AudioObjectPropertySelector,
-        scope: AudioObjectPropertyScope,
-        element: AudioObjectPropertyElement
-    ) -> Bool {
-        var address = propertyAddress(selector, scope, element)
-        guard AudioObjectHasProperty(deviceID, &address) else { return false }
-        var settable: DarwinBoolean = false
-        guard AudioObjectIsPropertySettable(deviceID, &address, &settable) == noErr else { return false }
-        return settable.boolValue
-    }
-
     private func inputChannelCount(_ deviceID: AudioDeviceID) -> Int {
         channelCount(deviceID, scope: kAudioDevicePropertyScopeInput)
     }
@@ -431,7 +473,7 @@ final class AudioDeviceService: @unchecked Sendable {
         AudioObjectAddPropertyListenerBlock(
             AudioObjectID(kAudioObjectSystemObject),
             &defaultAddress,
-            DispatchQueue.main,
+            listenerQueue,
             block
         )
 
@@ -443,7 +485,7 @@ final class AudioDeviceService: @unchecked Sendable {
         AudioObjectAddPropertyListenerBlock(
             AudioObjectID(kAudioObjectSystemObject),
             &defaultOutputAddress,
-            DispatchQueue.main,
+            listenerQueue,
             block
         )
 
@@ -455,7 +497,7 @@ final class AudioDeviceService: @unchecked Sendable {
         AudioObjectAddPropertyListenerBlock(
             AudioObjectID(kAudioObjectSystemObject),
             &listAddress,
-            DispatchQueue.main,
+            listenerQueue,
             block
         )
     }
@@ -470,7 +512,7 @@ final class AudioDeviceService: @unchecked Sendable {
         AudioObjectRemovePropertyListenerBlock(
             AudioObjectID(kAudioObjectSystemObject),
             &defaultAddress,
-            DispatchQueue.main,
+            listenerQueue,
             block
         )
         var defaultOutputAddress = propertyAddress(
@@ -481,7 +523,7 @@ final class AudioDeviceService: @unchecked Sendable {
         AudioObjectRemovePropertyListenerBlock(
             AudioObjectID(kAudioObjectSystemObject),
             &defaultOutputAddress,
-            DispatchQueue.main,
+            listenerQueue,
             block
         )
         var listAddress = propertyAddress(
@@ -492,7 +534,7 @@ final class AudioDeviceService: @unchecked Sendable {
         AudioObjectRemovePropertyListenerBlock(
             AudioObjectID(kAudioObjectSystemObject),
             &listAddress,
-            DispatchQueue.main,
+            listenerQueue,
             block
         )
     }

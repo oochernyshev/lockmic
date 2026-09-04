@@ -925,7 +925,7 @@ final class RowView: NSView {
         if wasOn != mark.isOn {
             applyEnabledLook()
         }
-        meter.level = level
+        meter.level = isMuted ? 0 : level
         setNoSignal(noSignal)
         syncMeter()
     }

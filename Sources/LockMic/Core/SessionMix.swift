@@ -28,6 +28,11 @@ enum SessionMix {
         try? fm.removeItem(at: segment)
     }
 
+    /// Decode `AppLogo` on the main thread before a background wrap touches metadata.
+    static func prepareArtwork() {
+        _ = albumArtPNG
+    }
+
     /// Copy ADTS packets into an m4a so Finder/QuickTime duration matches playback (no re-encode).
     static func wrapADTStoM4A(from input: URL, to output: URL) throws {
         try? FileManager.default.removeItem(at: output)

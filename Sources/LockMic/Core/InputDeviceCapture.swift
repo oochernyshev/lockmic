@@ -20,6 +20,8 @@ final class InputDeviceCapture: @unchecked Sendable {
     private let lock = NSLock()
     private var _level: Float = 0
     private var _enabled = true
+    private static let haltQueue = DispatchQueue(label: "com.lockmic.input-capture.halt")
+    private static let ioQueueKey = DispatchSpecificKey<UInt8>()
 
     let fileURL: URL
 
@@ -39,9 +41,16 @@ final class InputDeviceCapture: @unchecked Sendable {
         return _level
     }
 
-    init(deviceID: AudioDeviceID, fileURL: URL?, sessionStart: CFTimeInterval, bitRate: Int) throws {
+    init(
+        deviceID: AudioDeviceID,
+        fileURL: URL?,
+        sessionStart: CFTimeInterval,
+        bitRate: Int,
+        startIO: Bool = true
+    ) throws {
         self.deviceID = deviceID
         self.queue = DispatchQueue(label: "com.lockmic.input-capture.\(deviceID)")
+        self.queue.setSpecific(key: Self.ioQueueKey, value: 1)
         self.fileURL = fileURL ?? URL(fileURLWithPath: "/dev/null")
         self.sessionStart = sessionStart
 
@@ -56,7 +65,21 @@ final class InputDeviceCapture: @unchecked Sendable {
                 bitRate: bitRate
             )
         }
-        try attachIO()
+        if startIO {
+            try attachIO()
+        }
+    }
+
+    /// Stop HAL IO so system mute can stick (Jabra unmutes while an IO proc is running).
+    func setIORunning(_ on: Bool) {
+        if on {
+            if ioProcID == nil { try? attachIO() }
+        } else {
+            detachIO()
+            lock.lock()
+            _level = 0
+            lock.unlock()
+        }
     }
 
     func retarget(deviceID newID: AudioDeviceID) throws {
@@ -102,7 +125,9 @@ final class InputDeviceCapture: @unchecked Sendable {
             throw SessionRecorderError.ioFailed(ioStatus)
         }
         ioProcID = proc
-        let startStatus = AudioDeviceStart(deviceID, proc)
+        let startStatus = Self.runHAL {
+            AudioDeviceStart(deviceID, proc)
+        }
         guard startStatus == noErr else {
             detachIO()
             throw SessionRecorderError.ioFailed(startStatus)
@@ -110,11 +135,32 @@ final class InputDeviceCapture: @unchecked Sendable {
     }
 
     private func detachIO() {
-        if let proc = ioProcID {
-            AudioDeviceStop(deviceID, proc)
-            AudioDeviceDestroyIOProcID(deviceID, proc)
-        }
+        lock.lock()
+        let proc = ioProcID
+        let device = deviceID
         ioProcID = nil
+        lock.unlock()
+        guard let proc else { return }
+        let work = {
+            AudioDeviceStop(device, proc)
+            AudioDeviceDestroyIOProcID(device, proc)
+        }
+        if Thread.isMainThread || DispatchQueue.getSpecific(key: Self.ioQueueKey) != nil {
+            Self.haltQueue.async(execute: work)
+        } else {
+            Self.haltQueue.sync(execute: work)
+        }
+    }
+
+    /// HAL Start from main or the IO queue can deadlock. Hop to `haltQueue`.
+    @discardableResult
+    private static func runHAL(_ body: () -> OSStatus) -> OSStatus {
+        if Thread.isMainThread || DispatchQueue.getSpecific(key: ioQueueKey) != nil {
+            var status: OSStatus = noErr
+            haltQueue.sync { status = body() }
+            return status
+        }
+        return body()
     }
 
     private func write(_ input: UnsafePointer<AudioBufferList>, format: AVAudioFormat) {

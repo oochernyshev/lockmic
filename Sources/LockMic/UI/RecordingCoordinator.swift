@@ -73,6 +73,7 @@ final class RecordingCoordinator {
     }
 
     func start(source: UsageReporter.ActivationSource) async {
+        if recorder.isRecording { return }
         let scope = currentPlaybackScope()
         recorder.previewSession(
             playback: scope,
@@ -87,6 +88,9 @@ final class RecordingCoordinator {
     }
 
     func stop(source: UsageReporter.ActivationSource) {
+        if recorder.isBusy, !recorder.isRecording {
+            return
+        }
         if !recorder.isRecording {
             monitor.hide()
             recorder.cancelPreview()
@@ -94,28 +98,35 @@ final class RecordingCoordinator {
             return
         }
         monitor.hide()
-        let file: URL
-        do {
-            file = try recorder.stopCaptures()
-        } catch {
+        Task {
+            let file: URL
+            do {
+                file = try await recorder.stopCaptures { [weak self] in
+                    self?.onSessionChanged?()
+                }
+            } catch SessionRecorderError.notRecording {
+                onSessionChanged?()
+                return
+            } catch {
+                onSessionChanged?()
+                onPresentError?(error)
+                return
+            }
+            UsageReporter.record(.stopRecording, source: source)
             onSessionChanged?()
-            onPresentError?(error)
-            return
-        }
-        UsageReporter.record(.stopRecording, source: source)
-        onSessionChanged?()
-        if !FileManager.default.fileExists(atPath: file.path) {
-            UsageReporter.record(.mixFailed, source: source)
+            if !FileManager.default.fileExists(atPath: file.path) {
+                UsageReporter.record(.mixFailed, source: source)
+            }
         }
     }
 
     func finalizeForQuit() async {
-        let wasRecording = recorder.isRecording
-        if wasRecording {
+        let wasActive = recorder.isBusy
+        if recorder.isRecording {
             monitor.hide()
         }
         let mixed = await recorder.finalizeAndMix()
-        if wasRecording {
+        if wasActive {
             UsageReporter.record(.stopRecording, source: .menu)
         }
         onSessionChanged?()
@@ -149,7 +160,7 @@ final class RecordingCoordinator {
     }
 
     func retryCaptureIfAccessGranted() {
-        guard !recorder.isRecording, monitor.isVisible else { return }
+        guard !recorder.isBusy, monitor.isVisible else { return }
         let blocked = recorder.microphoneAccess == .denied || recorder.playbackAccess == .denied
         guard blocked else { return }
         recorder.refreshCaptureAccess()
@@ -177,6 +188,8 @@ final class RecordingCoordinator {
             UsageReporter.record(.startRecording, source: source)
             onSessionChanged?()
             showMonitor()
+        } catch SessionRecorderError.alreadyRecording {
+            return
         } catch SessionRecorderError.microphoneDenied, SessionRecorderError.playbackDenied {
             showMonitor()
         } catch {
