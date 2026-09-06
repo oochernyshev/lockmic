@@ -20,8 +20,9 @@ final class InputDeviceCapture: @unchecked Sendable {
     private let lock = NSLock()
     private var _level: Float = 0
     private var _enabled = true
-    private static let haltQueue = DispatchQueue(label: "com.lockmic.input-capture.halt")
+    private let haltQueue = DispatchQueue(label: "com.lockmic.input-capture.halt")
     private static let ioQueueKey = DispatchSpecificKey<UInt8>()
+    private var haltScheduled = false
 
     let fileURL: URL
 
@@ -47,7 +48,7 @@ final class InputDeviceCapture: @unchecked Sendable {
         sessionStart: CFTimeInterval,
         bitRate: Int,
         startIO: Bool = true
-    ) throws {
+    ) async throws {
         self.deviceID = deviceID
         self.queue = DispatchQueue(label: "com.lockmic.input-capture.\(deviceID)")
         self.queue.setSpecific(key: Self.ioQueueKey, value: 1)
@@ -66,19 +67,26 @@ final class InputDeviceCapture: @unchecked Sendable {
             )
         }
         if startIO {
-            try attachIO()
+            try await attachIO()
         }
     }
 
     /// Stop HAL IO so system mute can stick (Jabra unmutes while an IO proc is running).
     func setIORunning(_ on: Bool) {
-        if on {
-            if ioProcID == nil { try? attachIO() }
-        } else {
-            detachIO()
-            lock.lock()
-            _level = 0
-            lock.unlock()
+        haltQueue.async { [weak self] in
+            guard let self else { return }
+            self.lock.lock()
+            let dead = self.haltScheduled
+            self.lock.unlock()
+            guard !dead else { return }
+            if on {
+                if self.ioProcID == nil { try? self.attachIOOnHalt() }
+            } else {
+                self.detachIOOnHalt()
+                self.lock.lock()
+                self._level = 0
+                self.lock.unlock()
+            }
         }
     }
 
@@ -88,29 +96,64 @@ final class InputDeviceCapture: @unchecked Sendable {
         lock.lock()
         ioGapStartedAt = CACurrentMediaTime()
         lock.unlock()
-        detachIO()
-        mixResampler.reset()
-        mix48 = nil
-        scratch = nil
-        deviceID = newID
-        do {
-            try attachIO()
-        } catch {
-            deviceID = previous
-            try? attachIO()
-            throw error
+        var caught: Error?
+        haltQueue.sync {
+            self.detachIOOnHalt()
+            self.mixResampler.reset()
+            self.mix48 = nil
+            self.scratch = nil
+            self.deviceID = newID
+            do {
+                try self.attachIOOnHalt()
+            } catch {
+                self.deviceID = previous
+                try? self.attachIOOnHalt()
+                caught = error
+            }
         }
+        if let caught { throw caught }
     }
 
     func stop() {
-        detachIO()
+        scheduleHalt()
         writer?.finish()
         writer = nil
     }
 
+    func waitUntilStopped() async {
+        scheduleHalt()
+        _ = await AudioHAL.run(on: haltQueue, timeout: AudioHAL.haltSeconds) {}
+    }
+
     deinit { stop() }
 
-    private func attachIO() throws {
+    private func scheduleHalt() {
+        lock.lock()
+        guard !haltScheduled else {
+            lock.unlock()
+            return
+        }
+        haltScheduled = true
+        lock.unlock()
+        // Read ioProcID inside the haltQueue block, not at schedule time: an
+        // attachIO() dispatched just before us may still be pending on this
+        // same serial queue and hasn't set it yet.
+        AudioHAL.haltAsync(on: haltQueue) { [self] in
+            self.detachIOOnHalt()
+        }
+    }
+
+    private func attachIO() async throws {
+        let result: Result<Void, Error>? = await AudioHAL.run(on: haltQueue, timeout: AudioHAL.startSeconds) {
+            Result { try self.attachIOOnHalt() }
+        }
+        guard let result else {
+            throw SessionRecorderError.ioFailed(-2)
+        }
+        try result.get()
+    }
+
+    private func attachIOOnHalt() throws {
         var asbd = try Self.inputStreamFormat(deviceID)
         guard let format = AVAudioFormat(streamDescription: &asbd), format.channelCount > 0 else {
             throw SessionRecorderError.invalidTapFormat
@@ -125,42 +168,31 @@ final class InputDeviceCapture: @unchecked Sendable {
             throw SessionRecorderError.ioFailed(ioStatus)
         }
         ioProcID = proc
-        let startStatus = Self.runHAL {
-            AudioDeviceStart(deviceID, proc)
-        }
+        let startStatus = AudioDeviceStart(deviceID, proc)
         guard startStatus == noErr else {
-            detachIO()
+            detachIOOnHalt()
             throw SessionRecorderError.ioFailed(startStatus)
+        }
+        lock.lock()
+        let haltedAlready = haltScheduled
+        lock.unlock()
+        if haltedAlready {
+            // scheduleHalt() ran (and found nothing to tear down) before we
+            // finished attaching. Don't leave this IO proc running forever.
+            detachIOOnHalt()
+            throw SessionRecorderError.notRecording
         }
     }
 
-    private func detachIO() {
+    private func detachIOOnHalt() {
         lock.lock()
         let proc = ioProcID
         let device = deviceID
         ioProcID = nil
         lock.unlock()
         guard let proc else { return }
-        let work = {
-            AudioDeviceStop(device, proc)
-            AudioDeviceDestroyIOProcID(device, proc)
-        }
-        if Thread.isMainThread || DispatchQueue.getSpecific(key: Self.ioQueueKey) != nil {
-            Self.haltQueue.async(execute: work)
-        } else {
-            Self.haltQueue.sync(execute: work)
-        }
-    }
-
-    /// HAL Start from main or the IO queue can deadlock. Hop to `haltQueue`.
-    @discardableResult
-    private static func runHAL(_ body: () -> OSStatus) -> OSStatus {
-        if Thread.isMainThread || DispatchQueue.getSpecific(key: ioQueueKey) != nil {
-            var status: OSStatus = noErr
-            haltQueue.sync { status = body() }
-            return status
-        }
-        return body()
+        AudioDeviceStop(device, proc)
+        AudioDeviceDestroyIOProcID(device, proc)
     }
 
     private func write(_ input: UnsafePointer<AudioBufferList>, format: AVAudioFormat) {

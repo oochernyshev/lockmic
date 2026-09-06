@@ -7,6 +7,7 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "PlaybackTap")
 
 protocol PlaybackCapturing: AnyObject {
     func stop()
+    func waitUntilStopped() async
     /// Core Audio stops IO procs after an output sample-rate change (Jabra 48→16 kHz).
     func ensureRunning()
     func setMixEnabled(_ on: Bool)
@@ -26,10 +27,11 @@ protocol PlaybackCapturing: AnyObject {
 /// Private tap-only aggregate. Do not put the output UID in the composition.
 @available(macOS 14.2, *)
 final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
-    /// Non-nil queue is required — `nil` silently fails to register the IO block on macOS 26.
+    /// IO callbacks only. Start/Stop/Destroy run on `haltQueue`.
     private let queue = DispatchQueue(label: "com.lockmic.playback-tap", qos: .userInitiated)
     private static let ioQueueKey = DispatchSpecificKey<UInt8>()
-    private static let haltQueue = DispatchQueue(label: "com.lockmic.playback-tap.halt")
+    /// Per tap so a hung Destroy cannot block Start on another output.
+    private let haltQueue = DispatchQueue(label: "com.lockmic.playback-tap.halt")
     private var tapID: AudioObjectID = 0
     private var aggregateID: AudioDeviceID = 0
     private var ioProcID: AudioDeviceIOProcID?
@@ -50,6 +52,7 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
     private var _sourceSampleRate: Double = 0
     private var _onFormatChange: (() -> Void)?
     private var stopped = false
+    private var haltScheduled = false
 
     var level: Float {
         lock.lock(); defer { lock.unlock() }
@@ -88,17 +91,8 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
         self.tapDeviceUID = deviceUID ?? ""
         queue.setSpecific(key: Self.ioQueueKey, value: 1)
         do {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                queue.async {
-                    do {
-                        try self.attachHardware(using: audio)
-                        continuation.resume()
-                    } catch {
-                        continuation.resume(throwing: error)
-                    }
-                }
-            }
-            try await waitForIOStart()
+            try await attachHardware(using: audio)
+            try await startIO()
         } catch {
             stop()
             throw error
@@ -106,22 +100,39 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
     }
 
     func stop() {
+        scheduleHalt()
+    }
+
+    func waitUntilStopped() async {
+        scheduleHalt()
+        _ = await AudioHAL.run(on: haltQueue, timeout: AudioHAL.haltSeconds) {}
+    }
+
+    private func scheduleHalt() {
         lock.lock()
-        let already = stopped
         stopped = true
-        let proc = ioProcID
-        let aggregate = aggregateID
-        let tap = tapID
-        let listener = formatListener
-        ioProcID = nil
-        aggregateID = 0
-        tapID = 0
-        formatListener = nil
+        guard !haltScheduled else {
+            lock.unlock()
+            return
+        }
+        haltScheduled = true
         lock.unlock()
-        guard !already else { return }
 
         let listenerQueue = queue
-        let work = {
+        // Read the IDs inside the haltQueue block, not at schedule time: an
+        // attachHardwareOnHalt()/startIO() dispatched just before us may still
+        // be pending on this same serial queue and hasn't set them yet.
+        AudioHAL.haltAsync(on: haltQueue) { [self] in
+            self.lock.lock()
+            let proc = self.ioProcID
+            let aggregate = self.aggregateID
+            let tap = self.tapID
+            let listener = self.formatListener
+            self.ioProcID = nil
+            self.aggregateID = 0
+            self.tapID = 0
+            self.formatListener = nil
+            self.lock.unlock()
             Self.halt(
                 proc: proc,
                 aggregate: aggregate,
@@ -129,13 +140,6 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
                 listener: listener,
                 listenerQueue: listenerQueue
             )
-        }
-        // Never run Stop/Destroy on main or on the IO queue — HAL may dispatch_sync there.
-        let wait = !Thread.isMainThread && DispatchQueue.getSpecific(key: Self.ioQueueKey) == nil
-        if wait {
-            Self.haltQueue.sync(execute: work)
-        } else {
-            Self.haltQueue.async(execute: work)
         }
     }
 
@@ -185,7 +189,8 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
             Self.setNominalSampleRate(aggregate, RecordingCodec.sampleRate)
         }
         reloadFormat()
-        queue.async { [weak self] in
+        // Start on haltQueue, never the IO queue — HAL Start there deadlocks.
+        haltQueue.async { [weak self] in
             guard let self else { return }
             self.lock.lock()
             let live = !self.stopped && self.aggregateID == aggregate && self.ioProcID != nil
@@ -200,7 +205,18 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
         }
     }
 
-    private func attachHardware(using audio: AudioDeviceService) throws {
+    private func attachHardware(using audio: AudioDeviceService) async throws {
+        let result: Result<Void, Error>? = await AudioHAL.run(on: haltQueue, timeout: AudioHAL.startSeconds) {
+            Result { try self.attachHardwareOnHalt(using: audio) }
+        }
+        guard let result else {
+            stop()
+            throw SessionRecorderError.ioFailed(-2)
+        }
+        try result.get()
+    }
+
+    private func attachHardwareOnHalt(using audio: AudioDeviceService) throws {
         var exclude: [AudioObjectID] = []
         if let selfProcess = audio.processObjectID(for: ProcessInfo.processInfo.processIdentifier) {
             exclude.append(selfProcess)
@@ -288,18 +304,39 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
             throw SessionRecorderError.ioFailed(ioStatus)
         }
         ioProcID = proc
+
+        lock.lock()
+        let haltedAlready = haltScheduled
+        let aggregate = aggregateID
+        let tap = tapID
+        let listener = formatListener
+        if haltedAlready {
+            ioProcID = nil
+            aggregateID = 0
+            tapID = 0
+            formatListener = nil
+        }
+        lock.unlock()
+        guard haltedAlready else { return }
+        // scheduleHalt() already ran (and found nothing to tear down, since we
+        // hadn't set these fields yet) before we finished attaching. stop()
+        // is now a no-op, so tear down directly.
+        Self.halt(proc: proc, aggregate: aggregate, tap: tap, listener: listener, listenerQueue: queue)
+        throw SessionRecorderError.notRecording
     }
 
-    /// `AudioDeviceStart` is when macOS shows the system-audio sheet. Wait for
-    /// it off the main thread so a denial is visible before we mark recording.
-    private func waitForIOStart() async throws {
-        let aggregate = aggregateID
-        let proc = ioProcID
-        let startStatus: OSStatus = await withCheckedContinuation { continuation in
-            queue.async {
-                let status = AudioDeviceStart(aggregate, proc)
-                continuation.resume(returning: status)
-            }
+    /// `AudioDeviceStart` is when macOS shows the system-audio sheet. Never call
+    /// it on the IO queue — HAL Start there deadlocks.
+    private func startIO() async throws {
+        let startStatus = await AudioHAL.run(on: haltQueue, timeout: AudioHAL.startSeconds) { () -> OSStatus in
+            let aggregate = self.aggregateID
+            guard aggregate != 0, let proc = self.ioProcID else { return -1 }
+            return AudioDeviceStart(aggregate, proc)
+        }
+        guard let startStatus else {
+            stop()
+            log.error("Playback AudioDeviceStart timed out")
+            throw SessionRecorderError.playbackDenied
         }
         guard startStatus == noErr else {
             stop()

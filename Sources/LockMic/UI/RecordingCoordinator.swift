@@ -51,7 +51,7 @@ final class RecordingCoordinator {
     }
 
     func toggle(source: UsageReporter.ActivationSource) {
-        if recorder.isRecording {
+        if recorder.isRecording || recorder.isBusy {
             stop(source: source)
             return
         }
@@ -82,22 +82,17 @@ final class RecordingCoordinator {
             preferredInputUID: preferences.recordingInputUID,
             preferredOutputUIDs: preferences.recordingOutputUIDs
         )
-        await nextMainRunLoopTurn()
         showMonitor()
         await beginCapture(scope: scope, source: source)
     }
 
     func stop(source: UsageReporter.ActivationSource) {
-        if recorder.isBusy, !recorder.isRecording {
-            return
-        }
-        if !recorder.isRecording {
-            monitor.hide()
+        monitor.hide()
+        if !recorder.isRecording, !recorder.isBusy {
             recorder.cancelPreview()
             onSessionChanged?()
             return
         }
-        monitor.hide()
         Task {
             let file: URL
             do {
@@ -105,6 +100,7 @@ final class RecordingCoordinator {
                     self?.onSessionChanged?()
                 }
             } catch SessionRecorderError.notRecording {
+                recorder.cancelPreview()
                 onSessionChanged?()
                 return
             } catch {
@@ -188,7 +184,7 @@ final class RecordingCoordinator {
             UsageReporter.record(.startRecording, source: source)
             onSessionChanged?()
             showMonitor()
-        } catch SessionRecorderError.alreadyRecording {
+        } catch SessionRecorderError.alreadyRecording, SessionRecorderError.notRecording {
             return
         } catch SessionRecorderError.microphoneDenied, SessionRecorderError.playbackDenied {
             showMonitor()
@@ -235,11 +231,4 @@ final class RecordingCoordinator {
         }
     }
 
-    private func nextMainRunLoopTurn() async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            DispatchQueue.main.async {
-                continuation.resume()
-            }
-        }
-    }
 }

@@ -54,6 +54,7 @@
 		E7476AF3C6061511AF856AB6 /* PlaybackTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BF46D371BFBCB0BC6F1628 /* PlaybackTap.swift */; };
 		ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */; };
 		F004DB315B6F5162DE075031 /* DockIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 481D6112DE20013988EEC0FD /* DockIconRenderer.swift */; };
+		F7E3CD6E603CE3C004D16E3D /* AudioHAL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A9FD3B593297945FD73999 /* AudioHAL.swift */; };
 		FEE8EBDBBF2899014964D9EB /* HUDOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */; };
 /* End PBXBuildFile section */
 
@@ -91,6 +92,7 @@
 		6D93F1024B71207F8831FB2E /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesView.swift; sourceTree = "<group>"; };
 		6DCBF140C7338A9FBDC5EA31 /* ThinTransparentScroller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThinTransparentScroller.swift; sourceTree = "<group>"; };
 		6EFE0DEA6A9D4F148BD30475 /* HotkeyCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyCoordinator.swift; sourceTree = "<group>"; };
+		71A9FD3B593297945FD73999 /* AudioHAL.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioHAL.swift; sourceTree = "<group>"; };
 		7E3364D1BD68964EA0E478CE /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/Localizable.strings; sourceTree = "<group>"; };
 		83B05802BA0C62099286E966 /* UsageReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageReporter.swift; sourceTree = "<group>"; };
 		85D3C494D4898BA8C2268DB1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 			children = (
 				D8A8DD329C0A00C7F98AB6DF /* AppInstallMethod.swift */,
 				B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */,
+				71A9FD3B593297945FD73999 /* AudioHAL.swift */,
 				D38D0E203797E6588D537F34 /* CompressedStemWriter.swift */,
 				23C3675125FEA46D7196900C /* HotkeyManager.swift */,
 				B35F1D3335235FFC0A1CFD00 /* HotkeyTypes.swift */,
@@ -357,6 +360,7 @@
 				6507DC18A3CA52D862E30880 /* AppInstallMethod.swift in Sources */,
 				7BCF28B6E67FFB6A7D883F39 /* AppInstanceGuard.swift in Sources */,
 				ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */,
+				F7E3CD6E603CE3C004D16E3D /* AudioHAL.swift in Sources */,
 				958180F202E06B74C7FF70B8 /* Comparable+Clamped.swift in Sources */,
 				2BA758F4F6801B9775F202FD /* CompressedStemWriter.swift in Sources */,
 				F004DB315B6F5162DE075031 /* DockIconRenderer.swift in Sources */,
@@ -473,7 +477,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 164;
+				CURRENT_PROJECT_VERSION = 165;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_LANGUAGE = en;
 				DEVELOPMENT_TEAM = "";
@@ -495,7 +499,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.4.24;
+				MARKETING_VERSION = 1.4.25;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -513,12 +517,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 164;
+				CURRENT_PROJECT_VERSION = 165;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
-				MARKETING_VERSION = 1.4.24;
+				MARKETING_VERSION = 1.4.25;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -560,7 +564,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 164;
+				CURRENT_PROJECT_VERSION = 165;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_LANGUAGE = en;
 				DEVELOPMENT_TEAM = "";
@@ -576,7 +580,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.4.24;
+				MARKETING_VERSION = 1.4.25;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = LockMic;
@@ -593,12 +597,12 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Resources/LockMic.entitlements;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 164;
+				CURRENT_PROJECT_VERSION = 165;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
-				MARKETING_VERSION = 1.4.24;
+				MARKETING_VERSION = 1.4.25;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.app;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;

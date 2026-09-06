@@ -18,11 +18,11 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "SessionRecorde
 /// never waits for recording.
 final class SessionRecorder: ObservableObject, @unchecked Sendable {
     @Published private(set) var isRecording = false
-    /// Recording or still tearing down HAL / wrapping the mix file. Any-thread.
+    /// Starting, recording, or tearing down HAL / wrapping the mix. Any-thread.
     var isBusy: Bool {
         flagLock.lock()
         defer { flagLock.unlock() }
-        return flagRecording || flagStopping
+        return flagPhase != .idle
     }
     @Published private(set) var lastError: String?
     @Published private(set) var devices: [RecordingDeviceRow] = []
@@ -64,14 +64,15 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     private var micCancellables = Set<AnyCancellable>()
     private var liveMixer: LiveMixer?
     private var sessionFile: URL?
-    /// True between flipping `isRecording` off and finishing HAL/mix teardown.
-    private var isStopping = false
     private var stopWaiters: [CheckedContinuation<URL, Error>] = []
     private let queue: DispatchQueue
     private static let queueKey = DispatchSpecificKey<UInt8>()
     private let flagLock = NSLock()
-    private var flagRecording = false
-    private var flagStopping = false
+    private enum Phase { case idle, starting, recording, stopping }
+    private var phase: Phase = .idle
+    private var flagPhase: Phase = .idle
+    /// Bumped to cancel an in-flight start when the user hits stop.
+    private var startGeneration = 0
     private let levelLock = NSLock()
     private var levelSnapshot = LevelSnapshot()
     private var mixInputMuted = false
@@ -107,11 +108,12 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         if let devicesToken {
             audio.removeDevicesChangedHandler(devicesToken)
         }
-        let inputs = Array(inputCaptures.values)
-        let taps = Array(playbackTaps.values) + [systemPlaybackTap].compactMap { $0 }
+        for capture in inputCaptures.values { capture.stop() }
+        for tap in playbackTaps.values { tap.stop() }
+        systemPlaybackTap?.stop()
         let mixer = liveMixer
-        queue.async {
-            _ = Self.stopHardware(inputs: inputs, taps: taps, mixer: mixer)
+        DispatchQueue.global(qos: .utility).async {
+            mixer?.stop()
         }
     }
 
@@ -134,19 +136,20 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         }
     }
 
-    private func setSessionLive(_ on: Bool) {
-        sessionLive = on
+    private func setPhase(_ new: Phase) {
+        phase = new
+        sessionLive = new == .recording
         flagLock.lock()
-        flagRecording = on
+        flagPhase = new
         flagLock.unlock()
-        publishUI { $0.isRecording = on }
+        publishUI { $0.isRecording = new == .recording }
     }
 
-    private func setStopping(_ on: Bool) {
-        isStopping = on
-        flagLock.lock()
-        flagStopping = on
-        flagLock.unlock()
+    private func mutate<T>(_ work: @escaping () -> T) async -> T {
+        if onRecordingQueue { return work() }
+        return await withCheckedContinuation { continuation in
+            queue.async { continuation.resume(returning: work()) }
+        }
     }
 
     private func publishLevels() {
@@ -184,6 +187,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     }
 
     /// Fill the device list so the monitor can appear before TCC prompts.
+    /// Safe on the main thread — does not wait for HAL.
     func previewSession(
         playback scope: PlaybackRecordScope = .default,
         followInput: Bool = true,
@@ -191,18 +195,38 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         preferredInputUID: String = "",
         preferredOutputUIDs: [String] = []
     ) {
-        perform {
-            self.publishUI { $0.lastError = nil }
-            self.applySessionSelection(
+        let apply = { [self] in
+            lastError = nil
+            applySessionSelection(
                 scope: scope,
                 followInput: followInput,
                 followOutput: followOutput,
                 preferredInputUID: preferredInputUID,
                 preferredOutputUIDs: preferredOutputUIDs
             )
-            self.refreshCaptureAccess()
-            self.refreshDeviceRows()
+            refreshCaptureAccess()
+            refreshDeviceRows()
         }
+        if Thread.isMainThread, !onRecordingQueue {
+            // Show rows immediately even if a previous stop is still tearing down HAL.
+            lastError = nil
+            followDefaultInput = followInput
+            followDefaultOutput = followOutput && scope != .all
+            refreshCaptureAccess()
+            let defaultOut = currentDefaultOutputUID() ?? ""
+            devices = Self.previewDeviceRows(
+                audio: audio,
+                selectedInputUID: resolvedInputUID(followInput: followInput, preferred: preferredInputUID),
+                selectedOutputUIDs: resolvedOutputUIDs(
+                    followOutput: followOutput && scope != .all,
+                    preferred: preferredOutputUIDs,
+                    scope: scope,
+                    fallbackUID: defaultOut
+                ),
+                playbackDeviceUID: defaultOut
+            )
+        }
+        perform(apply)
     }
 
     /// Start capturing default mic + playback into `baseDirectory/LockMic yyyy-MM-dd HH.mm.aac`.
@@ -245,94 +269,168 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         SessionMix.prepareArtwork()
 
         let mixURL = try Self.makeSessionFile(in: baseDirectory)
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            self.queue.async {
-                do {
-                    try self.startHardwareOnQueue(
-                        scope: scope,
-                        bitRate: bitRate,
-                        mixURL: mixURL,
-                        followInput: followInput,
-                        followOutput: followOutput,
-                        preferredInputUID: preferredInputUID,
-                        preferredOutputUIDs: preferredOutputUIDs,
-                        monitorUnselected: monitorUnselected
-                    )
-                    continuation.resume()
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
+        let generation = await mutate { () -> Int in
+            guard self.phase == .idle else { return 0 }
+            self.startGeneration += 1
+            self.monitorUnselectedDevices = monitorUnselected
+            self.applySessionSelection(
+                scope: scope,
+                followInput: followInput,
+                followOutput: followOutput,
+                preferredInputUID: preferredInputUID,
+                preferredOutputUIDs: preferredOutputUIDs
+            )
+            self.refreshCaptureAccess()
+            self.refreshDeviceRows()
+            self.sessionBitRate = bitRate.bitsPerSecond
+            self.sessionStart = CACurrentMediaTime()
+            self.setPhase(.starting)
+            return self.startGeneration
+        }
+        guard generation > 0 else { throw SessionRecorderError.alreadyRecording }
+
+        do {
+            try await startHardware(
+                generation: generation,
+                bitRate: bitRate,
+                mixURL: mixURL
+            )
+        } catch {
+            await abortStart(generation: generation, mixURL: mixURL, error: error)
+            throw Self.wrapStartError(error)
         }
     }
 
     @available(macOS 14.2, *)
-    private func startHardwareOnQueue(
-        scope: PlaybackRecordScope,
+    private func startHardware(
+        generation: Int,
         bitRate: RecordingBitRate,
-        mixURL: URL,
-        followInput: Bool,
-        followOutput: Bool,
-        preferredInputUID: String,
-        preferredOutputUIDs: [String],
-        monitorUnselected: Bool
-    ) throws {
+        mixURL: URL
+    ) async throws {
         publishUI { $0.lastError = nil }
-        monitorUnselectedDevices = monitorUnselected
-        applySessionSelection(
-            scope: scope,
-            followInput: followInput,
-            followOutput: followOutput,
-            preferredInputUID: preferredInputUID,
-            preferredOutputUIDs: preferredOutputUIDs
-        )
-        refreshCaptureAccess()
-        refreshDeviceRows()
-        sessionBitRate = bitRate.bitsPerSecond
-        sessionStart = CACurrentMediaTime()
-        let mixer = LiveMixer(url: mixURL, bitRate: sessionBitRate, sessionStart: sessionStart)
+        let mixer = LiveMixer(url: mixURL, bitRate: bitRate.bitsPerSecond, sessionStart: sessionStart)
         do {
             try mixer.start()
         } catch {
             mixer.stop()
             throw error
         }
-        liveMixer = mixer
-        if let outID = try? audio.defaultOutputDeviceID(), !audio.isLockMicRecorder(outID) {
-            playbackDeviceUID = audio.deviceUID(outID) ?? ""
+        guard await stillStarting(generation) else {
+            mixer.stop()
+            throw SessionRecorderError.notRecording
         }
-        guard let micDevice = inputDevice(uid: selectedInputUID) ?? defaultInputDevice() else {
-            teardownSessionHardwareSync()
+
+        let micDevice = await mutate {
+            self.inputDevice(uid: self.selectedInputUID) ?? self.defaultInputDevice()
+        }
+        guard let micDevice else {
+            mixer.stop()
             throw SessionRecorderError.micStartFailed
         }
-        selectedInputUID = micDevice.uid
-        do {
-            try syncInputCapturesSync()
-            try startSystemPlaybackTapSync(mixer: mixer)
-            try syncPlaybackTapsSync()
-        } catch {
-            teardownSessionHardwareSync()
-            try? FileManager.default.removeItem(at: mixURL)
-            let wrapped = Self.wrapStartError(error)
-            if case .playbackDenied? = wrapped as? SessionRecorderError {
-                publishUI { $0.playbackAccess = .denied }
-            }
-            publishUI { $0.lastError = wrapped.localizedDescription }
-            throw wrapped
+
+        let capture = try await InputDeviceCapture(
+            deviceID: micDevice.id,
+            fileURL: nil,
+            sessionStart: sessionStart,
+            bitRate: bitRate.bitsPerSecond,
+            startIO: true
+        )
+        capture.mixer = mixer
+        guard await stillStarting(generation) else {
+            capture.stop()
+            mixer.stop()
+            throw SessionRecorderError.notRecording
         }
-        sessionFile = mixURL
-        recordingStartedAt = Date()
-        setSessionLive(true)
+
+        let systemTap = try await PlaybackTap(audio: audio, deviceUID: nil)
+        systemTap.mixer = mixer
+        guard await stillStarting(generation) else {
+            systemTap.stop()
+            capture.stop()
+            mixer.stop()
+            throw SessionRecorderError.notRecording
+        }
+
+        let wentLive = await mutate { () -> Bool in
+            guard self.stillStartingLocked(generation) else { return false }
+            self.selectedInputUID = micDevice.uid
+            if let outID = try? self.audio.defaultOutputDeviceID(), !self.audio.isLockMicRecorder(outID) {
+                self.playbackDeviceUID = self.audio.deviceUID(outID) ?? ""
+            }
+            self.liveMixer = mixer
+            self.inputCaptures[micDevice.uid] = capture
+            self.attachPlaybackTap(systemTap)
+            self.systemPlaybackTap = systemTap
+            log.info("Playback mix tap (system)")
+            self.sessionFile = mixURL
+            self.recordingStartedAt = Date()
+            self.setPhase(.recording)
+            self.applyPlaybackMixGate()
+            self.syncInputMuteToCapture()
+            self.refreshDeviceRows()
+            self.publishLevels()
+            return true
+        }
+        guard wentLive else {
+            systemTap.stop()
+            capture.stop()
+            mixer.stop()
+            throw SessionRecorderError.notRecording
+        }
+
         RecordingSessionLock.acquire()
         publishUI {
             $0.microphoneAccess = .granted
             $0.playbackAccess = .granted
             $0.recordingStartedAt = Date()
         }
-        refreshDeviceRows()
-        publishLevels()
         reassertSystemMute()
         log.info("Recording started \(mixURL.lastPathComponent, privacy: .public)")
+        Task { await self.attachBackgroundTaps(generation: generation) }
+    }
+
+    private func stillStarting(_ generation: Int) async -> Bool {
+        await mutate { self.stillStartingLocked(generation) }
+    }
+
+    private func stillStartingLocked(_ generation: Int) -> Bool {
+        phase == .starting && startGeneration == generation
+    }
+
+    private func abortStart(generation: Int, mixURL: URL, error: Error) async {
+        let wrapped = Self.wrapStartError(error)
+        switch wrapped as? SessionRecorderError {
+        case .notRecording:
+            break
+        case .playbackDenied:
+            publishUI {
+                $0.playbackAccess = .denied
+                $0.lastError = wrapped.localizedDescription
+            }
+        default:
+            publishUI { $0.lastError = wrapped.localizedDescription }
+        }
+        let snapshot = await mutate { () -> HardwareSnapshot? in
+            guard self.phase == .starting, self.startGeneration == generation else { return nil }
+            return self.takeHardwareSnapshot(clearDevices: false)
+        }
+        if let snapshot {
+            _ = await Self.stopHardware(snapshot)
+        }
+        try? FileManager.default.removeItem(at: mixURL)
+        await mutate {
+            if self.phase == .starting, self.startGeneration == generation {
+                self.setPhase(.idle)
+            }
+        }
+    }
+
+    @available(macOS 14.2, *)
+    private func attachBackgroundTaps(generation: Int) async {
+        guard await mutate({ self.sessionLive && self.startGeneration == generation }) else { return }
+        await syncInputCaptures()
+        guard await mutate({ self.sessionLive && self.startGeneration == generation }) else { return }
+        await syncPlaybackTaps()
     }
 
     private func reassertSystemMute() {
@@ -379,33 +477,83 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
 
     /// Stop hardware and wrap the live mix. Quit uses `finalizeAndMix`.
     ///
-    /// HAL Stop/Destroy and the ADTS→m4a wrap run off the main thread. Doing them
-    /// on MainActor deadlocks Core Audio (listeners `dispatch_sync` onto main from
-    /// inside Destroy) and beachballs the app for the duration of the wrap.
+    /// HAL Stop/Destroy and the ADTS→m4a wrap never run on the recording queue
+    /// or MainActor — those deadlocks Core Audio and freeze the monitor.
     @discardableResult
     func stopCaptures(onIdle: (() -> Void)? = nil) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             self.perform {
-                self.stopCapturesOnQueue(onIdle: onIdle, continuation: continuation)
+                self.beginStop(onIdle: onIdle, continuation: continuation)
             }
         }
     }
 
-    private func stopCapturesOnQueue(
+    private func beginStop(
         onIdle: (() -> Void)?,
         continuation: CheckedContinuation<URL, Error>
     ) {
-        if isStopping {
+        if phase == .stopping {
             stopWaiters.append(continuation)
             return
         }
-        guard sessionLive, let file = sessionFile else {
+        if phase == .idle {
             continuation.resume(throwing: SessionRecorderError.notRecording)
             return
         }
-        setStopping(true)
+        startGeneration += 1
+        if sessionFile == nil {
+            setPhase(.idle)
+            continuation.resume(throwing: SessionRecorderError.notRecording)
+            return
+        }
+        guard let file = sessionFile else {
+            continuation.resume(throwing: SessionRecorderError.notRecording)
+            return
+        }
         outputChangeWork?.cancel()
         playbackTapSync += 1
+        let snapshot = takeHardwareSnapshot(clearDevices: false)
+        setPhase(.stopping)
+        recordingStartedAt = nil
+        publishUI { $0.recordingStartedAt = nil }
+        publishLevels()
+        if let onIdle {
+            DispatchQueue.main.async { onIdle() }
+        }
+
+        Task { [weak self] in
+            let finalFile = await Self.stopHardware(snapshot) ?? file
+            guard let self else {
+                continuation.resume(returning: finalFile)
+                return
+            }
+            self.perform {
+                self.sessionFile = finalFile
+                self.clearSessionSelection()
+                self.setPhase(.idle)
+                self.publishUI {
+                    $0.devices = []
+                    $0.followDefaultInput = true
+                    $0.followDefaultOutput = true
+                }
+                self.publishLevels()
+                log.info("Recording stopped: \(finalFile.lastPathComponent, privacy: .public)")
+                RecordingSessionLock.release()
+                let waiters = self.stopWaiters
+                self.stopWaiters.removeAll()
+                continuation.resume(returning: finalFile)
+                for waiter in waiters { waiter.resume(returning: finalFile) }
+            }
+        }
+    }
+
+    private struct HardwareSnapshot {
+        var inputs: [InputDeviceCapture]
+        var taps: [PlaybackCapturing]
+        var mixer: LiveMixer?
+    }
+
+    private func takeHardwareSnapshot(clearDevices: Bool) -> HardwareSnapshot {
         let inputs = Array(inputCaptures.values)
         inputCaptures.removeAll()
         let taps: [PlaybackCapturing] = Array(playbackTaps.values) + [systemPlaybackTap].compactMap { $0 }
@@ -413,8 +561,15 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         systemPlaybackTap = nil
         let mixer = liveMixer
         liveMixer = nil
+        mixer?.removeAllPlaybackSources()
         playbackDeviceUID = ""
-        refreshCaptureAccess()
+        if clearDevices {
+            clearSessionSelection()
+        }
+        return HardwareSnapshot(inputs: inputs, taps: taps, mixer: mixer)
+    }
+
+    private func clearSessionSelection() {
         selectedInputUID = ""
         followDefaultInput = true
         followDefaultOutput = true
@@ -422,52 +577,26 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         selectedOutputUIDs = []
         inputOrder = []
         outputOrder = []
-        setSessionLive(false)
-        recordingStartedAt = nil
-        publishUI {
-            $0.recordingStartedAt = nil
-            $0.devices = []
-            $0.followDefaultInput = true
-            $0.followDefaultOutput = true
-        }
-        publishLevels()
-        if let onIdle {
-            DispatchQueue.main.async { onIdle() }
-        }
-
-        let finalFile = Self.stopHardware(inputs: inputs, taps: taps, mixer: mixer) ?? file
-        sessionFile = finalFile
-        log.info("Recording stopped: \(finalFile.lastPathComponent, privacy: .public)")
-        let waiters = stopWaiters
-        stopWaiters.removeAll()
-        setStopping(false)
-        RecordingSessionLock.release()
-        continuation.resume(returning: finalFile)
-        for waiter in waiters { waiter.resume(returning: finalFile) }
     }
 
-    nonisolated private static func stopHardware(
-        inputs: [InputDeviceCapture],
-        taps: [PlaybackCapturing],
-        mixer: LiveMixer?
-    ) -> URL? {
-        for capture in inputs { capture.stop() }
-        for tap in taps { tap.stop() }
-        mixer?.stop()
-        return mixer?.url
-    }
-
-    private func teardownSessionHardwareSync() {
-        let inputs = Array(inputCaptures.values)
-        inputCaptures.removeAll()
-        let taps = Array(playbackTaps.values) + [systemPlaybackTap].compactMap { $0 }
-        playbackTaps.removeAll()
-        systemPlaybackTap = nil
-        let mixer = liveMixer
-        liveMixer = nil
-        mixer?.removeAllPlaybackSources()
-        _ = Self.stopHardware(inputs: inputs, taps: taps, mixer: mixer)
-        publishLevels()
+    nonisolated private static func stopHardware(_ snapshot: HardwareSnapshot) async -> URL? {
+        for capture in snapshot.inputs { capture.stop() }
+        for tap in snapshot.taps { tap.stop() }
+        await withTaskGroup(of: Void.self) { group in
+            for capture in snapshot.inputs {
+                group.addTask { await capture.waitUntilStopped() }
+            }
+            for tap in snapshot.taps {
+                group.addTask { await tap.waitUntilStopped() }
+            }
+            await group.waitForAll()
+        }
+        guard let mixer = snapshot.mixer else { return nil }
+        let mixQueue = DispatchQueue(label: "com.lockmic.mix-halt")
+        return await AudioHAL.run(on: mixQueue, timeout: 20) {
+            mixer.stop()
+            return mixer.url
+        } ?? mixer.url
     }
 
     private func restartPlaybackIO() {
@@ -705,169 +834,178 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         guard sessionLive else { return }
         playbackTapSync += 1
         let token = playbackTapSync
-        perform {
-            guard token == self.playbackTapSync, self.sessionLive else { return }
-            do {
-                if #available(macOS 14.2, *) {
-                    try self.syncPlaybackTapsSync()
-                }
-            } catch {
-                self.publishUI { $0.lastError = error.localizedDescription }
-                log.error("Playback tap sync failed: \(error.localizedDescription, privacy: .public)")
+        Task { [weak self] in
+            guard let self else { return }
+            if #available(macOS 14.2, *) {
+                await self.syncPlaybackTaps(token: token)
             }
-            self.refreshDeviceRows()
-            self.publishLevels()
         }
-    }
-
-    @available(macOS 14.2, *)
-    private func waitForPlaybackTap(deviceUID: String?) throws -> PlaybackTap {
-        let box = TapWaitBox()
-        let done = DispatchSemaphore(value: 0)
-        let audio = self.audio
-        Task {
-            do {
-                box.tap = try await PlaybackTap(audio: audio, deviceUID: deviceUID)
-            } catch {
-                box.error = error
-            }
-            done.signal()
-        }
-        done.wait()
-        if let error = box.error { throw error }
-        guard let tap = box.tap else { throw SessionRecorderError.tapFailed(-1) }
-        return tap
     }
 
     /// System mix of the current default output. Other selected outputs use
     /// device taps so they can be summed without doubling the default.
     @available(macOS 14.2, *)
-    private func startSystemPlaybackTapSync(mixer: LiveMixer) throws {
-        if systemPlaybackTap != nil { return }
-        let tap = try waitForPlaybackTap(deviceUID: nil)
-        attachPlaybackTap(tap)
-        systemPlaybackTap = tap
-        applyPlaybackMixGate()
-        log.info("Playback mix tap (system)")
+    private func makePlaybackTap(deviceUID: String?) async throws -> PlaybackTap {
+        let tap = try await PlaybackTap(audio: audio, deviceUID: deviceUID)
+        tap.mixer = liveMixer
+        return tap
     }
 
     private func syncInputCapturesInBackground() {
-        perform {
-            do {
-                try self.syncInputCapturesSync()
-                self.publishLevels()
-            } catch {
-                self.publishUI { $0.lastError = error.localizedDescription }
-                log.error("Input capture sync failed: \(error.localizedDescription, privacy: .public)")
-            }
+        Task { [weak self] in
+            await self?.syncInputCaptures()
         }
     }
 
     /// Peak-meter selected input, plus others when `monitorUnselectedDevices`.
-    private func syncInputCapturesSync() throws {
-        let devices = audio.listInputDevices().filter { !$0.isVirtual }
-        var wanted: Set<String>
-        if monitorUnselectedDevices {
-            wanted = Set(devices.map(\.uid))
-        } else {
-            wanted = selectedInputUID.isEmpty ? [] : [selectedInputUID]
+    private func syncInputCaptures() async {
+        struct Wanted {
+            var devices: [AudioInputDevice]
+            var uids: Set<String>
+            var selected: String
+            var mixer: LiveMixer?
+            var start: CFTimeInterval
+            var rate: Int
+            var muted: Bool
         }
-        // Meter HAL IO on a USB headset we are also tapping (Jabra input `:1`
-        // + output `:2`) glitches the device's output tap.
-        let outputUIDs = (monitorUnselectedDevices ? liveOutputUIDs() : selectedOutputUIDs)
-            .union(playbackTaps.keys)
-        let blockedFamilies = Set(outputUIDs.compactMap { AudioDeviceService.usbAudioFamily(uid: $0) })
-        if !blockedFamilies.isEmpty {
-            for device in devices where device.uid != selectedInputUID {
-                guard let family = AudioDeviceService.usbAudioFamily(uid: device.uid),
-                      blockedFamilies.contains(family)
-                else { continue }
-                if wanted.remove(device.uid) != nil {
-                    log.info(
-                        "Skip input meter on \(device.name, privacy: .public) while tapping its USB output"
-                    )
+        let wanted = await mutate { () -> Wanted in
+            let devices = self.audio.listInputDevices().filter { !$0.isVirtual }
+            var uids: Set<String>
+            if self.monitorUnselectedDevices {
+                uids = Set(devices.map(\.uid))
+            } else {
+                uids = self.selectedInputUID.isEmpty ? [] : [self.selectedInputUID]
+            }
+            let outputUIDs = (self.monitorUnselectedDevices ? self.liveOutputUIDs() : self.selectedOutputUIDs)
+                .union(self.playbackTaps.keys)
+            let blockedFamilies = Set(outputUIDs.compactMap { AudioDeviceService.usbAudioFamily(uid: $0) })
+            if !blockedFamilies.isEmpty {
+                for device in devices where device.uid != self.selectedInputUID {
+                    guard let family = AudioDeviceService.usbAudioFamily(uid: device.uid),
+                          blockedFamilies.contains(family)
+                    else { continue }
+                    if uids.remove(device.uid) != nil {
+                        log.info(
+                            "Skip input meter on \(device.name, privacy: .public) while tapping its USB output"
+                        )
+                    }
                 }
             }
-        }
-        var staleInputs: [InputDeviceCapture] = []
-        for uid in inputCaptures.keys where !wanted.contains(uid) {
-            if let capture = inputCaptures.removeValue(forKey: uid) {
-                staleInputs.append(capture)
+            var stale: [InputDeviceCapture] = []
+            for uid in self.inputCaptures.keys where !uids.contains(uid) {
+                if let capture = self.inputCaptures.removeValue(forKey: uid) {
+                    stale.append(capture)
+                }
             }
+            for capture in stale { capture.stop() }
+            return Wanted(
+                devices: devices,
+                uids: uids,
+                selected: self.selectedInputUID,
+                mixer: self.liveMixer,
+                start: self.sessionStart,
+                rate: self.sessionBitRate,
+                muted: self.mixInputMuted
+            )
         }
-        for capture in staleInputs { capture.stop() }
-        var selectedFailed: Error?
-        let mixer = liveMixer
-        let start = sessionStart
-        let rate = sessionBitRate
-        for device in devices where wanted.contains(device.uid) && inputCaptures[device.uid] == nil {
+
+        for device in wanted.devices where wanted.uids.contains(device.uid) {
+            let exists = await mutate { self.inputCaptures[device.uid] != nil }
+            guard !exists else { continue }
             do {
-                let capture = try InputDeviceCapture(
+                let capture = try await InputDeviceCapture(
                     deviceID: device.id,
                     fileURL: nil,
-                    sessionStart: start,
-                    bitRate: rate,
-                    startIO: !mixInputMuted
+                    sessionStart: wanted.start,
+                    bitRate: wanted.rate,
+                    startIO: !wanted.muted
                 )
-                capture.mixer = mixer
-                inputCaptures[device.uid] = capture
+                capture.mixer = wanted.mixer
+                let kept = await mutate { () -> Bool in
+                    guard self.sessionLive, self.inputCaptures[device.uid] == nil,
+                          wanted.uids.contains(device.uid) || device.uid == self.selectedInputUID
+                    else { return false }
+                    self.inputCaptures[device.uid] = capture
+                    capture.mixer = self.liveMixer
+                    return true
+                }
+                if !kept { capture.stop() }
             } catch {
                 log.error("Input meter failed for \(device.name, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                if device.uid == selectedInputUID {
-                    selectedFailed = error
+                if device.uid == wanted.selected {
+                    publishUI { $0.lastError = error.localizedDescription }
                 }
             }
         }
-        syncInputMuteToCapture()
-        for capture in inputCaptures.values {
-            capture.setIORunning(!mixInputMuted)
-        }
-        if inputCaptures[selectedInputUID] == nil {
-            throw selectedFailed ?? SessionRecorderError.micStartFailed
+
+        await mutate {
+            self.syncInputMuteToCapture()
+            for capture in self.inputCaptures.values {
+                capture.setIORunning(!self.mixInputMuted)
+            }
+            self.publishLevels()
         }
         reassertSystemMute()
     }
 
     /// Peak-meter selected outputs, plus others when `monitorUnselectedDevices`.
     @available(macOS 14.2, *)
-    private func syncPlaybackTapsSync() throws {
-        let listed = audio.listOutputDevices().filter { !$0.isVirtual }.map(\.uid)
-        let listedSet = Set(listed)
-        let keep = monitorUnselectedDevices ? listedSet : selectedOutputUIDs
+    private func syncPlaybackTaps(token: Int? = nil) async {
+        let plan = await mutate { () -> (listed: [String], keep: Set<String>, missing: [String])? in
+            if let token, token != self.playbackTapSync { return nil }
+            guard self.sessionLive else { return nil }
+            let listed = self.audio.listOutputDevices().filter { !$0.isVirtual }.map(\.uid)
+            let listedSet = Set(listed)
+            let keep = self.monitorUnselectedDevices ? listedSet : self.selectedOutputUIDs
+            var staleTaps: [PlaybackCapturing] = []
+            for uid in self.playbackTaps.keys where !keep.contains(uid) {
+                if let tap = self.playbackTaps.removeValue(forKey: uid) {
+                    staleTaps.append(tap)
+                }
+                self.liveMixer?.removePlaybackSource(uid)
+                if !listedSet.contains(uid) {
+                    self.selectedOutputUIDs.remove(uid)
+                }
+            }
+            for tap in staleTaps { tap.stop() }
+            let missing = listed.filter { keep.contains($0) && self.playbackTaps[$0] == nil }
+            return (listed, keep, missing)
+        }
+        guard let plan else { return }
 
-        var selectedFailed: Error?
-        for uid in listed where keep.contains(uid) && playbackTaps[uid] == nil {
+        for uid in plan.missing {
+            let stillNeeded = await mutate {
+                self.sessionLive && (self.monitorUnselectedDevices || self.selectedOutputUIDs.contains(uid))
+                    && self.playbackTaps[uid] == nil
+            }
+            guard stillNeeded else { continue }
             do {
-                let tap = try waitForPlaybackTap(deviceUID: uid)
-                attachPlaybackTap(tap)
-                playbackTaps[uid] = tap
-                log.info("Playback tap on \(uid, privacy: .public)")
+                let tap = try await makePlaybackTap(deviceUID: uid)
+                let kept = await mutate { () -> Bool in
+                    guard self.sessionLive, self.playbackTaps[uid] == nil else { return false }
+                    self.attachPlaybackTap(tap)
+                    self.playbackTaps[uid] = tap
+                    return true
+                }
+                if kept {
+                    log.info("Playback tap on \(uid, privacy: .public)")
+                } else {
+                    tap.stop()
+                }
             } catch {
                 log.error("Playback tap failed for \(uid, privacy: .public): \(error.localizedDescription, privacy: .public)")
-                if selectedOutputUIDs.contains(uid) {
-                    selectedOutputUIDs.remove(uid)
-                    selectedFailed = error
+                await mutate {
+                    if self.selectedOutputUIDs.contains(uid) {
+                        self.selectedOutputUIDs.remove(uid)
+                    }
                 }
             }
         }
-        let stale = playbackTaps.keys.filter { !keep.contains($0) }
-        var staleTaps: [PlaybackCapturing] = []
-        for uid in stale {
-            if let tap = playbackTaps.removeValue(forKey: uid) {
-                staleTaps.append(tap)
-            }
-            liveMixer?.removePlaybackSource(uid)
-            if !listedSet.contains(uid) {
-                selectedOutputUIDs.remove(uid)
-            }
-        }
-        for tap in staleTaps { tap.stop() }
-        applyPlaybackMixGate()
-        if !selectedOutputUIDs.isEmpty,
-           selectedOutputUIDs.allSatisfy({ playbackTaps[$0] == nil }),
-           let selectedFailed
-        {
-            throw selectedFailed
+
+        await mutate {
+            self.applyPlaybackMixGate()
+            self.refreshDeviceRows()
+            self.publishLevels()
         }
     }
 
@@ -889,7 +1027,8 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         selectedOutputUIDs = resolvedOutputUIDs(
             followOutput: followDefaultOutput,
             preferred: preferredOutputUIDs,
-            scope: scope
+            scope: scope,
+            fallbackUID: playbackDeviceUID
         )
         rememberDeviceOrder()
         publishUI {
@@ -922,9 +1061,10 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     private func resolvedOutputUIDs(
         followOutput: Bool,
         preferred: [String],
-        scope: PlaybackRecordScope
+        scope: PlaybackRecordScope,
+        fallbackUID: String
     ) -> Set<String> {
-        let fallback: Set<String> = playbackDeviceUID.isEmpty ? [] : [playbackDeviceUID]
+        let fallback: Set<String> = fallbackUID.isEmpty ? [] : [fallbackUID]
         if followOutput { return fallback }
         let live = liveOutputUIDs()
         if scope == .all { return live }
@@ -1033,6 +1173,60 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             outputOrder.append(uid)
         }
         outputOrder.removeAll { !outputs.contains($0) }
+    }
+
+    private static func previewDeviceRows(
+        audio: AudioDeviceService,
+        selectedInputUID: String,
+        selectedOutputUIDs: Set<String>,
+        playbackDeviceUID: String
+    ) -> [RecordingDeviceRow] {
+        let defaultIn = (try? audio.defaultInputDeviceID()).flatMap { id -> String? in
+            guard !audio.isLockMicRecorder(id) else { return nil }
+            return audio.deviceUID(id)
+        }
+        let defaultOut = (try? audio.defaultOutputDeviceID()).flatMap { id -> String? in
+            guard !audio.isLockMicRecorder(id) else { return nil }
+            return audio.deviceUID(id)
+        } ?? playbackDeviceUID
+        var rows: [RecordingDeviceRow] = []
+        for device in audio.listInputDevices() where !device.isVirtual {
+            rows.append(
+                RecordingDeviceRow(
+                    id: device.uid,
+                    name: device.name,
+                    kind: .input,
+                    isDefault: device.uid == defaultIn,
+                    isVirtual: false,
+                    canCapture: true,
+                    isEnabled: device.uid == selectedInputUID,
+                    level: 0,
+                    detail: nil,
+                    isCallQuality: false
+                )
+            )
+        }
+        for device in audio.listOutputDevices() where !device.isVirtual {
+            let selected = selectedOutputUIDs.contains(device.uid)
+            let isDefault = device.uid == defaultOut
+            rows.append(
+                RecordingDeviceRow(
+                    id: "out.\(device.uid)",
+                    name: device.name,
+                    kind: .output,
+                    isDefault: isDefault,
+                    isVirtual: false,
+                    canCapture: true,
+                    isEnabled: selected,
+                    level: 0,
+                    detail: isDefault ? L10n.recordingSourceSystemPlayback : (
+                        selected ? L10n.recordingSourceIncluded : L10n.recordingSourceOutside
+                    ),
+                    isCallQuality: false
+                )
+            )
+        }
+        return rows
     }
 
     private func refreshDeviceRows() {
@@ -1279,10 +1473,4 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         }
         return file
     }
-}
-
-@available(macOS 14.2, *)
-private final class TapWaitBox: @unchecked Sendable {
-    var tap: PlaybackTap?
-    var error: Error?
 }

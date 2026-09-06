@@ -91,9 +91,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        if recorder?.isRecording == true {
-            hide()
-        } else {
+        hide()
+        if recorder?.isRecording != true {
             onStop?()
         }
         return false
@@ -549,7 +548,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         outputsCard?.setDimmed(!outputsOn)
         followToggle?.setEnabled(inputsOn)
         followOutputToggle?.setEnabled(outputsOn)
-        stopButton?.isEnabled = recorder?.isRecording == true
+        stopButton?.isEnabled = true
         for device in recorder?.devices ?? [] {
             let on = device.kind == .input ? inputsOn : outputsOn
             rows[device.id]?.setSectionEnabled(on)
@@ -634,7 +633,6 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     }
 
     @objc private func stopClicked() {
-        guard recorder?.isRecording == true else { return }
         onStop?()
     }
 
