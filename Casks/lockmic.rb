@@ -21,7 +21,7 @@ cask "lockmic" do
   version "1.4.25"
   # After first GitHub Release, set sha256 from:
   #   shasum -a 256 build/dist/LockMic-1.4.25.zip
-  sha256 "7df69c10ca8f13bdda116adc8a86713fcfeadb2104861353ddb9276f665b63bd"
+  sha256 "b71fb1659f2c4fc0202bf0dccc09916ce09bdc96e3978bf8ed595c9f968502e6"
 
   # Point this at your GitHub Releases asset (or a file:// path while testing):
   url "https://github.com/oochernyshev/lockmic/releases/download/v#{version}/LockMic-#{version}.zip"
