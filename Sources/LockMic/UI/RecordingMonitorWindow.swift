@@ -32,6 +32,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var onStop: (() -> Void)?
     private var onAllowAccess: (() -> Void)?
     private var onToggleMute: (() -> Void)?
+    private var onShowRecordings: (() -> Void)?
     private var rows: [String: RowView] = [:]
     private var waveSessionStart: Date?
     private var lastElapsedSeconds = -1
@@ -48,7 +49,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         mic: MicController? = nil,
         onStop: @escaping () -> Void,
         onAllowAccess: (() -> Void)? = nil,
-        onToggleMute: (() -> Void)? = nil
+        onToggleMute: (() -> Void)? = nil,
+        onShowRecordings: (() -> Void)? = nil
     ) {
         self.recorder = recorder
         self.preferences = preferences
@@ -56,6 +58,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         self.onStop = onStop
         self.onAllowAccess = onAllowAccess
         self.onToggleMute = onToggleMute
+        self.onShowRecordings = onShowRecordings
         if window == nil {
             buildWindow()
         }
@@ -218,19 +221,21 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         muteButton = mute
         let stop = StopRecordingButton(title: L10n.menuStopRecording, target: self, action: #selector(stopClicked))
         stopButton = stop
-        let leading = NSView()
-        let trailing = NSView()
-        leading.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        trailing.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        let folder = ShowRecordingsButton(
+            title: L10n.menuShowRecordings,
+            target: self,
+            action: #selector(showRecordingsClicked)
+        )
+        let spacer = NSView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         let actions = NSStackView()
         actions.orientation = .horizontal
         actions.alignment = .centerY
         actions.spacing = 10
-        actions.addArrangedSubview(leading)
+        actions.addArrangedSubview(folder)
+        actions.addArrangedSubview(spacer)
         actions.addArrangedSubview(mute)
         actions.addArrangedSubview(stop)
-        actions.addArrangedSubview(trailing)
-        leading.widthAnchor.constraint(equalTo: trailing.widthAnchor).isActive = true
 
         root.addArrangedSubview(permission)
         root.addArrangedSubview(inputs)
@@ -638,6 +643,10 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
     @objc private func muteClicked() {
         onToggleMute?()
+    }
+
+    @objc private func showRecordingsClicked() {
+        onShowRecordings?()
     }
 
     @objc private func followDefaultClicked() {

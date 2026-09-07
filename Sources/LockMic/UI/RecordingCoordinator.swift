@@ -144,12 +144,15 @@ final class RecordingCoordinator {
             },
             onToggleMute: { [weak self] in
                 self?.onToggleMute?()
+            },
+            onShowRecordings: { [weak self] in
+                self?.showRecordingsFolder(source: .monitor)
             }
         )
     }
 
-    func showRecordingsFolder() {
-        UsageReporter.record(.showRecordings, source: .menu)
+    func showRecordingsFolder(source: UsageReporter.ActivationSource = .menu) {
+        UsageReporter.record(.showRecordings, source: source)
         let folder = preferences.recordingsDirectory
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         NSWorkspace.shared.open(folder)

@@ -133,6 +133,68 @@ final class MuteToggleButton: NSButton {
     }
 }
 
+/// Same pill chrome as Mute / Stop: icon + title, own fill so it
+/// does not go grey in a non-activating panel.
+final class ShowRecordingsButton: NSButton {
+    init(title: String, target: AnyObject?, action: Selector) {
+        super.init(frame: .zero)
+        self.target = target
+        self.action = action
+        isBordered = false
+        bezelStyle = .shadowlessSquare
+        imagePosition = .imageLeading
+        imageHugsTitle = true
+        contentTintColor = .white
+        image = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: title)
+        attributedTitle = NSAttributedString(
+            string: title,
+            attributes: [
+                .foregroundColor: NSColor.white,
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .semibold),
+            ]
+        )
+        toolTip = title
+        wantsLayer = true
+        layer?.cornerRadius = 7
+        layer?.masksToBounds = true
+        focusRingType = .none
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: NSSize {
+        var size = super.intrinsicContentSize
+        size.width += 20
+        size.height += 8
+        return size
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func highlight(_ flag: Bool) {
+        super.highlight(flag)
+        needsDisplay = true
+    }
+
+    override func updateLayer() {
+        let titleColor = NSColor.white
+        layer?.backgroundColor = NSColor.black.withAlphaComponent(isHighlighted ? 0.66 : 0.50).cgColor
+        contentTintColor = titleColor
+        attributedTitle = NSAttributedString(
+            string: attributedTitle.string,
+            attributes: [
+                .foregroundColor: titleColor,
+                .font: NSFont.systemFont(ofSize: NSFont.systemFontSize, weight: .semibold),
+            ]
+        )
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+}
+
 /// System bezels go grey in a non-activating panel. Paint our own fill.
 final class StopRecordingButton: NSButton {
     init(title: String, target: AnyObject?, action: Selector) {
