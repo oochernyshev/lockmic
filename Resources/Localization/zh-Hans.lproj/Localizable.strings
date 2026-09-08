@@ -156,11 +156,13 @@
 "recording.quality.header" = "质量";
 "recording.quality.caption" = "用于麦克风、播放和会议混音。更低占用更少空间。";
 "recording.silence.header" = "静音时停止";
-"recording.silence.caption" = "麦克风和播放持续安静这么久后结束录音。";
+"recording.silence.caption" = "麦克风和播放持续安静这么久后结束录音。忽略点击声和环境噪声。倒计时在 10 秒后、且仅在结束前 30 秒出现，点击可跳过这次静音。";
 "recording.silence.off" = "关";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "%@ 后停止";
+"recording.silence.cancel.tooltip" = "继续录音 — 等到下一次静音";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "10 分钟约 %@，1 小时约 %@。";
 "recording.quality.kbps" = "%d kbps";

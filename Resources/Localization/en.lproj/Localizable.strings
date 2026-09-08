@@ -132,11 +132,13 @@
 "recording.quality.header" = "Quality";
 "recording.quality.caption" = "Applies to the microphone, playback, and mix. Lower uses less disk space.";
 "recording.silence.header" = "Stop on silence";
-"recording.silence.caption" = "End the session when the microphone and playback stay quiet for this long.";
+"recording.silence.caption" = "End the session when the microphone and playback stay quiet for this long. Clicks and background noise are ignored. A countdown appears after 10 seconds, and only in the last 30 seconds — click it to keep recording through this silence.";
 "recording.silence.off" = "Off";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Stopping in %@";
+"recording.silence.cancel.tooltip" = "Keep recording — wait for the next silence";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "About %@ for 10 minutes, %@ per hour.";
 "recording.quality.kbps" = "%d kbps";

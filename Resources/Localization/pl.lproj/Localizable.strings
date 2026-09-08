@@ -156,11 +156,13 @@
 "recording.quality.header" = "Jakość";
 "recording.quality.caption" = "Dotyczy mikrofonu, odtwarzania i miksu. Niższa wartość zajmuje mniej miejsca.";
 "recording.silence.header" = "Zatrzymaj przy ciszy";
-"recording.silence.caption" = "Kończy sesję, gdy mikrofon i odtwarzanie pozostaną ciche tak długo.";
+"recording.silence.caption" = "Kończy sesję, gdy mikrofon i odtwarzanie pozostaną ciche tak długo. Kliknięcia i szum tła są ignorowane. Odliczanie pojawia się po 10 sekundach i tylko w ostatnich 30 — kliknij, aby kontynuować w tej ciszy.";
 "recording.silence.off" = "Wył.";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Zatrzymanie za %@";
+"recording.silence.cancel.tooltip" = "Kontynuuj nagrywanie — czekaj na następną ciszę";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Około %@ na 10 minut, %@ na godzinę.";
 "recording.quality.kbps" = "%d kbps";

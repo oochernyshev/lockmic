@@ -156,11 +156,13 @@
 "recording.quality.header" = "Kalite";
 "recording.quality.caption" = "Mikrofon, oynatma ve toplantı karışımına uygulanır. Daha düşük daha az yer kaplar.";
 "recording.silence.header" = "Sessizlikte durdur";
-"recording.silence.caption" = "Mikrofon ve oynatma bu kadar süre sessiz kalırsa kaydı bitirir.";
+"recording.silence.caption" = "Mikrofon ve oynatma bu kadar süre sessiz kalırsa kaydı bitirir. Tıklamalar ve ortam gürültüsü yok sayılır. Geri sayım 10 saniye sonra ve yalnızca son 30 saniyede çıkar — tıklayınca bu sessizlikte durmaz.";
 "recording.silence.off" = "Kapalı";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "%@ içinde duracak";
+"recording.silence.cancel.tooltip" = "Kaydı sürdür — sonraki sessizliği bekle";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "10 dakika yaklaşık %@, saatte %@.";
 "recording.quality.kbps" = "%d kbps";

@@ -467,6 +467,84 @@ final class CardView: NSView {
     }
 }
 
+/// Cancellable auto-stop countdown overlaid on the waveform.
+final class SilenceStopBadge: NSButton {
+    private var lastShownSecond = -1
+
+    init(target: AnyObject?, action: Selector) {
+        super.init(frame: .zero)
+        self.target = target
+        self.action = action
+        isBordered = false
+        bezelStyle = .shadowlessSquare
+        imagePosition = .imageTrailing
+        imageHugsTitle = true
+        contentTintColor = .white
+        image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: L10n.recordingSilenceCancelTooltip)
+        toolTip = L10n.recordingSilenceCancelTooltip
+        wantsLayer = true
+        layer?.cornerRadius = 11
+        layer?.masksToBounds = true
+        focusRingType = .none
+        translatesAutoresizingMaskIntoConstraints = false
+        apply(remaining: 0)
+    }
+
+    func apply(remaining: TimeInterval) {
+        let seconds = max(0, Int(ceil(remaining)))
+        guard seconds != lastShownSecond else { return }
+        lastShownSecond = seconds
+        let clock = String(format: "%d:%02d", seconds / 60, seconds % 60)
+        attributedTitle = NSAttributedString(
+            string: L10n.recordingSilenceStoppingIn(clock),
+            attributes: [
+                .foregroundColor: NSColor.white,
+                .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+            ]
+        )
+        invalidateIntrinsicContentSize()
+        needsDisplay = true
+    }
+
+    func resetShownSecond() {
+        lastShownSecond = -1
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: NSSize {
+        var size = super.intrinsicContentSize
+        size.width += 16
+        size.height += 6
+        return size
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func highlight(_ flag: Bool) {
+        super.highlight(flag)
+        needsDisplay = true
+    }
+
+    override func updateLayer() {
+        let orange = NSColor.systemOrange
+        layer?.backgroundColor = (isHighlighted ? orange.blended(withFraction: 0.18, of: .black) : orange)?.cgColor
+        contentTintColor = .white
+        attributedTitle = NSAttributedString(
+            string: attributedTitle.string,
+            attributes: [
+                .foregroundColor: NSColor.white,
+                .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+            ]
+        )
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+}
+
 /// Compact pill overlaid on the waveform (status / size / elapsed).
 final class MonitorChip: NSView {
     let dotView = NSView()

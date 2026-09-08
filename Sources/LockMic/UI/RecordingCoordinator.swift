@@ -9,6 +9,10 @@ final class RecordingCoordinator {
     private let monitor = RecordingMonitorController()
     private var silenceWatch: Timer?
     private var silenceBegan: Date?
+    /// Consecutive ticks of real audio — a single click never resets silence.
+    private var speechTicks = 0
+    /// After the user dismisses the countdown, wait for real audio before starting a new silence period.
+    private var skipUntilSpeech = false
 
     var onSessionChanged: (() -> Void)?
     var onToggleMute: (() -> Void)?
@@ -151,8 +155,12 @@ final class RecordingCoordinator {
             },
             onShowRecordings: { [weak self] in
                 self?.showRecordingsFolder(source: .monitor)
+            },
+            onCancelSilence: { [weak self] in
+                self?.cancelSilenceAutoStop()
             }
         )
+        monitor.setSilenceCountdown(silenceBadgeRemaining())
     }
 
     func showRecordingsFolder(source: UsageReporter.ActivationSource = .menu) {
@@ -233,24 +241,42 @@ final class RecordingCoordinator {
         ])
     }
 
-    /// Display-scale floor matching the monitor “has audio” threshold.
-    private static let silenceFloor: Float = 0.04
+    /// Display-scale floor (~−33 dB). Room hiss and fan sit below this.
+    private static let speechFloor: Float = 0.16
+    /// 0.25 s ticks × 2 = 0.5 s of sustained audio to count as speech (ignores clicks).
+    private static let speechHoldTicks = 2
+    private static let watchInterval: TimeInterval = 0.25
+    /// Show the cancellable countdown after this much confirmed silence…
+    private static let badgeDelay: TimeInterval = 10
+    /// …and only once this little time remains until auto-stop.
+    private static let badgeLead: TimeInterval = 30
 
     private func startSilenceWatch() {
         stopSilenceWatch()
-        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: Self.watchInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.checkSilence()
             }
         }
         RunLoop.main.add(timer, forMode: .common)
         silenceWatch = timer
+        checkSilence()
     }
 
     private func stopSilenceWatch() {
         silenceWatch?.invalidate()
         silenceWatch = nil
         silenceBegan = nil
+        speechTicks = 0
+        skipUntilSpeech = false
+        monitor.setSilenceCountdown(nil)
+    }
+
+    private func cancelSilenceAutoStop() {
+        skipUntilSpeech = true
+        silenceBegan = nil
+        speechTicks = 0
+        monitor.setSilenceCountdown(nil)
     }
 
     private func checkSilence() {
@@ -260,16 +286,50 @@ final class RecordingCoordinator {
         }
         guard let timeout = preferences.recordingSilenceTimeout.duration else {
             silenceBegan = nil
+            speechTicks = 0
+            skipUntilSpeech = false
+            monitor.setSilenceCountdown(nil)
             return
         }
-        if recorder.liveWaveformLevel() >= Self.silenceFloor {
+
+        if recorder.liveWaveformLevel() >= Self.speechFloor {
+            speechTicks += 1
+        } else {
+            speechTicks = 0
+        }
+
+        if speechTicks >= Self.speechHoldTicks {
+            skipUntilSpeech = false
             silenceBegan = nil
+            monitor.setSilenceCountdown(nil)
             return
         }
+
+        guard !skipUntilSpeech else { return }
+
         let started = silenceBegan ?? Date()
         silenceBegan = started
-        guard Date().timeIntervalSince(started) >= timeout else { return }
-        stop(source: .silence)
+        let silentFor = Date().timeIntervalSince(started)
+        if silentFor >= timeout {
+            monitor.setSilenceCountdown(nil)
+            stop(source: .silence)
+            return
+        }
+        monitor.setSilenceCountdown(silenceBadgeRemaining(silentFor: silentFor, timeout: timeout))
+    }
+
+    private func silenceBadgeRemaining(
+        silentFor: TimeInterval? = nil,
+        timeout: TimeInterval? = nil
+    ) -> TimeInterval? {
+        guard !skipUntilSpeech,
+              let timeout = timeout ?? preferences.recordingSilenceTimeout.duration,
+              let began = silenceBegan
+        else { return nil }
+        let elapsed = silentFor ?? Date().timeIntervalSince(began)
+        let remaining = timeout - elapsed
+        guard elapsed >= Self.badgeDelay, remaining <= Self.badgeLead else { return nil }
+        return max(0, remaining)
     }
 
     private func openSettings(_ candidates: [String]) {

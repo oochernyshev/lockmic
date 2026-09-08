@@ -156,11 +156,13 @@
 "recording.quality.header" = "Qualität";
 "recording.quality.caption" = "Gilt für Mikrofon, Wiedergabe und Mix. Niedriger spart Speicherplatz.";
 "recording.silence.header" = "Bei Stille stoppen";
-"recording.silence.caption" = "Beendet die Sitzung, wenn Mikrofon und Wiedergabe so lange still bleiben.";
+"recording.silence.caption" = "Beendet die Sitzung, wenn Mikrofon und Wiedergabe so lange still bleiben. Klicks und Hintergrundrauschen werden ignoriert. Ein Countdown erscheint nach 10 Sekunden, und nur in den letzten 30 Sekunden — klicken, um diese Stille zu überspringen.";
 "recording.silence.off" = "Aus";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Stopp in %@";
+"recording.silence.cancel.tooltip" = "Weiter aufnehmen — auf die nächste Stille warten";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Etwa %@ für 10 Minuten, %@ pro Stunde.";
 "recording.quality.kbps" = "%d kbps";

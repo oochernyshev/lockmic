@@ -156,11 +156,13 @@
 "recording.quality.header" = "Якість";
 "recording.quality.caption" = "Для мікрофона, відтворення і міксу. Нижче — менше місця на диску.";
 "recording.silence.header" = "Зупиняти за тиші";
-"recording.silence.caption" = "Завершує запис, якщо мікрофон і відтворення стільки часу тихі.";
+"recording.silence.caption" = "Завершує запис, якщо мікрофон і відтворення стільки часу тихі. Клацання та фоновий шум ігноруються. Відлік з’явиться за 10 секунд і лише в останні 30 — натисніть, щоб не зупинятись у цій тиші.";
 "recording.silence.off" = "Вимк.";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Зупинка за %@";
+"recording.silence.cancel.tooltip" = "Продовжити запис — чекати наступної тиші";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Близько %@ за 10 хвилин, %@ за годину.";
 "recording.quality.kbps" = "%d kbps";

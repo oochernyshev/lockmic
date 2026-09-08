@@ -156,11 +156,13 @@
 "recording.quality.header" = "Qualità";
 "recording.quality.caption" = "Si applica a microfono, riproduzione e mix. Un valore più basso usa meno spazio.";
 "recording.silence.header" = "Interrompi in silenzio";
-"recording.silence.caption" = "Termina la sessione quando microfono e riproduzione restano silenziosi per questo tempo.";
+"recording.silence.caption" = "Termina la sessione quando microfono e riproduzione restano silenziosi per questo tempo. Click e rumore di fondo vengono ignorati. Il conto alla rovescia compare dopo 10 secondi, e solo negli ultimi 30: clicca per continuare in questo silenzio.";
 "recording.silence.off" = "Disattivato";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Interruzione tra %@";
+"recording.silence.cancel.tooltip" = "Continua a registrare — attendi il prossimo silenzio";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Circa %@ per 10 minuti, %@ all’ora.";
 "recording.quality.kbps" = "%d kbps";

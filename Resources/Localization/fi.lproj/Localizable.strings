@@ -156,11 +156,13 @@
 "recording.quality.header" = "Laatu";
 "recording.quality.caption" = "Koskee mikrofonia, toistoa ja kokousmiksausta. Pienempi arvo vie vähemmän tilaa.";
 "recording.silence.header" = "Pysäytä hiljaisuudessa";
-"recording.silence.caption" = "Lopettaa istunnon, kun mikrofoni ja toisto pysyvät näin pitkään hiljaa.";
+"recording.silence.caption" = "Lopettaa istunnon, kun mikrofoni ja toisto pysyvät näin pitkään hiljaa. Napsautukset ja taustakohina ohitetaan. Lähtölaskenta näkyy 10 sekunnin jälkeen, ja vain viimeiset 30 sekuntia — napsauta jatkaaksesi tämän hiljaisuuden yli.";
 "recording.silence.off" = "Pois";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Pysähtyy %@ kuluttua";
+"recording.silence.cancel.tooltip" = "Jatka tallennusta — odota seuraavaa hiljaisuutta";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Noin %@ 10 minuutissa, %@ tunnissa.";
 "recording.quality.kbps" = "%d kbps";

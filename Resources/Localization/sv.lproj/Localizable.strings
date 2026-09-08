@@ -156,11 +156,13 @@
 "recording.quality.header" = "Kvalitet";
 "recording.quality.caption" = "Gäller mikrofon, uppspelning och mötesmixen. Lägre använder mindre diskutrymme.";
 "recording.silence.header" = "Stoppa vid tystnad";
-"recording.silence.caption" = "Avslutar sessionen när mikrofon och uppspelning är tysta så länge.";
+"recording.silence.caption" = "Avslutar sessionen när mikrofon och uppspelning är tysta så länge. Klick och bakgrundsbrus ignoreras. En nedräkning visas efter 10 sekunder, och bara de sista 30 — klicka för att fortsätta genom denna tystnad.";
 "recording.silence.off" = "Av";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Stoppar om %@";
+"recording.silence.cancel.tooltip" = "Fortsätt spela in — vänta på nästa tystnad";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Ungefär %@ för 10 minuter, %@ per timme.";
 "recording.quality.kbps" = "%d kbps";

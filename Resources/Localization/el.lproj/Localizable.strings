@@ -156,11 +156,13 @@
 "recording.quality.header" = "Ποιότητα";
 "recording.quality.caption" = "Ισχύει για μικρόφωνο, αναπαραγωγή και μείξη συνάντησης. Χαμηλότερη τιμή εξοικονομεί χώρο.";
 "recording.silence.header" = "Διακοπή σε σιωπή";
-"recording.silence.caption" = "Τερματίζει την εγγραφή όταν μικρόφωνο και αναπαραγωγή μείνουν ήσυχα τόσο.";
+"recording.silence.caption" = "Τερματίζει την εγγραφή όταν μικρόφωνο και αναπαραγωγή μείνουν ήσυχα τόσο. Τα κλικ και ο θόρυβος παρασκηνίου αγνοούνται. Η αντίστροφη μέτρηση εμφανίζεται μετά από 10 δευτερόλεπτα, και μόνο στα τελευταία 30 — κλικ για να συνεχίσετε αυτή τη σιωπή.";
 "recording.silence.off" = "Ανενεργό";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Διακοπή σε %@";
+"recording.silence.cancel.tooltip" = "Συνέχεια εγγραφής — αναμονή για την επόμενη σιωπή";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Περίπου %@ για 10 λεπτά, %@ ανά ώρα.";
 "recording.quality.kbps" = "%d kbps";

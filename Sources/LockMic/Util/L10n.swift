@@ -98,6 +98,10 @@ enum L10n {
     static var recordingSilence30s: String { tr("recording.silence.30s") }
     static var recordingSilence1m: String { tr("recording.silence.1m") }
     static var recordingSilence2m: String { tr("recording.silence.2m") }
+    static func recordingSilenceStoppingIn(_ clock: String) -> String {
+        format("recording.silence.stopping_in", clock)
+    }
+    static var recordingSilenceCancelTooltip: String { tr("recording.silence.cancel.tooltip") }
     static func recordingQualitySize(tenMinutes: String, hour: String) -> String {
         format("recording.quality.size", tenMinutes, hour)
     }

@@ -156,11 +156,13 @@
 "recording.quality.header" = "Minőség";
 "recording.quality.caption" = "A mikrofonra, a lejátszásra és a keverékre vonatkozik. Az alacsonyabb kevesebb helyet foglal.";
 "recording.silence.header" = "Leállítás csendben";
-"recording.silence.caption" = "Leállítja a felvételt, ha a mikrofon és a lejátszás ennyi ideig csendes.";
+"recording.silence.caption" = "Leállítja a felvételt, ha a mikrofon és a lejátszás ennyi ideig csendes. A kattintások és a háttérzaj figyelmen kívül maradnak. A visszaszámlálás 10 másodperc után jelenik meg, és csak az utolsó 30 másodpercben — kattintson, hogy ezen a csenden át folytassa.";
 "recording.silence.off" = "Ki";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Leállítás: %@";
+"recording.silence.cancel.tooltip" = "Felvétel folytatása — várjon a következő csendre";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Kb. %@ 10 perc alatt, %@ óránként.";
 "recording.quality.kbps" = "%d kbps";

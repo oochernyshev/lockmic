@@ -156,11 +156,13 @@
 "recording.quality.header" = "Kwaliteit";
 "recording.quality.caption" = "Geldt voor microfoon, weergave en de mix. Lager gebruikt minder schijfruimte.";
 "recording.silence.header" = "Stoppen bij stilte";
-"recording.silence.caption" = "Beëindigt de sessie wanneer microfoon en weergave zo lang stil blijven.";
+"recording.silence.caption" = "Beëindigt de sessie wanneer microfoon en weergave zo lang stil blijven. Klikken en achtergrondruis worden genegeerd. Een countdown verschijnt na 10 seconden, en alleen in de laatste 30 — klik om deze stilte over te slaan.";
 "recording.silence.off" = "Uit";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Stopt over %@";
+"recording.silence.cancel.tooltip" = "Blijf opnemen — wacht op de volgende stilte";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Ongeveer %@ voor 10 minuten, %@ per uur.";
 "recording.quality.kbps" = "%d kbps";

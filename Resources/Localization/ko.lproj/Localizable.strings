@@ -156,11 +156,13 @@
 "recording.quality.header" = "품질";
 "recording.quality.caption" = "마이크, 재생, 회의 믹스에 적용됩니다. 낮을수록 용량을 덜 씁니다.";
 "recording.silence.header" = "무음 시 중지";
-"recording.silence.caption" = "마이크와 재생이 이 시간 동안 조용하면 녹음을 끝냅니다.";
+"recording.silence.caption" = "마이크와 재생이 이 시간 동안 조용하면 녹음을 끝냅니다. 클릭과 배경 소음은 무시합니다. 카운트다운은 10초 후, 종료 30초 전부터 나타나며, 클릭하면 이번 무음은 건너뜁니다.";
 "recording.silence.off" = "끄기";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "%@ 후 중지";
+"recording.silence.cancel.tooltip" = "녹음 유지 — 다음 무음까지 기다림";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "10분 약 %@, 1시간 약 %@.";
 "recording.quality.kbps" = "%d kbps";

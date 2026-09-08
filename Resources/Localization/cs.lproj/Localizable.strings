@@ -156,11 +156,13 @@
 "recording.quality.header" = "Kvalita";
 "recording.quality.caption" = "Platí pro mikrofon, přehrávání i výsledný mix. Nižší hodnota šetří místo na disku.";
 "recording.silence.header" = "Zastavit při tichu";
-"recording.silence.caption" = "Ukončí relaci, když mikrofon i přehrávání zůstanou takto dlouho tiché.";
+"recording.silence.caption" = "Ukončí relaci, když mikrofon i přehrávání zůstanou takto dlouho tiché. Kliknutí a šum na pozadí se ignorují. Odpočet se objeví po 10 sekundách, a jen v posledních 30 sekundách — kliknutím nahrávání v tomto tichu ponecháte.";
 "recording.silence.off" = "Vypnuto";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Zastavení za %@";
+"recording.silence.cancel.tooltip" = "Pokračovat v nahrávání — čekat na další ticho";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Asi %@ za 10 minut, %@ za hodinu.";
 "recording.quality.kbps" = "%d kbps";

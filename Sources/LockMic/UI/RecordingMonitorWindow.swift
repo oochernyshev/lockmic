@@ -33,6 +33,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var onAllowAccess: (() -> Void)?
     private var onToggleMute: (() -> Void)?
     private var onShowRecordings: (() -> Void)?
+    private var onCancelSilence: (() -> Void)?
+    private var silenceBadge: SilenceStopBadge?
     private var rows: [String: RowView] = [:]
     private var waveSessionStart: Date?
     private var lastElapsedSeconds = -1
@@ -50,7 +52,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         onStop: @escaping () -> Void,
         onAllowAccess: (() -> Void)? = nil,
         onToggleMute: (() -> Void)? = nil,
-        onShowRecordings: (() -> Void)? = nil
+        onShowRecordings: (() -> Void)? = nil,
+        onCancelSilence: (() -> Void)? = nil
     ) {
         self.recorder = recorder
         self.preferences = preferences
@@ -59,6 +62,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         self.onAllowAccess = onAllowAccess
         self.onToggleMute = onToggleMute
         self.onShowRecordings = onShowRecordings
+        self.onCancelSilence = onCancelSilence
         if window == nil {
             buildWindow()
         }
@@ -90,7 +94,21 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         timer?.invalidate()
         timer = nil
         warnLatch.removeAll()
+        silenceBadge?.resetShownSecond()
+        silenceBadge?.isHidden = true
         window?.orderOut(nil)
+    }
+
+    /// `nil` hides the silence countdown. Remaining seconds until auto-stop.
+    func setSilenceCountdown(_ remaining: TimeInterval?) {
+        guard let silenceBadge else { return }
+        if let remaining, remaining > 0 {
+            silenceBadge.apply(remaining: remaining)
+            silenceBadge.isHidden = false
+        } else if !silenceBadge.isHidden {
+            silenceBadge.resetShownSecond()
+            silenceBadge.isHidden = true
+        }
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -192,10 +210,16 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             monospaced: true
         )
         sizeField = sizeChip.label
+        let silence = SilenceStopBadge(target: self, action: #selector(cancelSilenceClicked))
+        silence.isHidden = true
+        silence.wantsLayer = true
+        silence.layer?.zPosition = 2
+        silenceBadge = silence
         waveBox.addSubview(wave)
         waveBox.addSubview(statusChip)
         waveBox.addSubview(sizeChip)
         waveBox.addSubview(elapsedChip)
+        waveBox.addSubview(silence)
         NSLayoutConstraint.activate([
             wave.leadingAnchor.constraint(equalTo: waveBox.leadingAnchor),
             wave.trailingAnchor.constraint(equalTo: waveBox.trailingAnchor),
@@ -208,6 +232,10 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             elapsedChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
             sizeChip.trailingAnchor.constraint(equalTo: elapsedChip.leadingAnchor, constant: -6),
             sizeChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
+            silence.centerXAnchor.constraint(equalTo: waveBox.centerXAnchor),
+            silence.bottomAnchor.constraint(equalTo: waveBox.bottomAnchor, constant: -8),
+            silence.leadingAnchor.constraint(greaterThanOrEqualTo: waveBox.leadingAnchor, constant: 8),
+            silence.trailingAnchor.constraint(lessThanOrEqualTo: waveBox.trailingAnchor, constant: -8),
         ])
         waveCard.addRow(waveBox)
         waveform = wave
@@ -554,6 +582,9 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         followToggle?.setEnabled(inputsOn)
         followOutputToggle?.setEnabled(outputsOn)
         stopButton?.isEnabled = true
+        if recorder?.isRecording != true {
+            setSilenceCountdown(nil)
+        }
         for device in recorder?.devices ?? [] {
             let on = device.kind == .input ? inputsOn : outputsOn
             rows[device.id]?.setSectionEnabled(on)
@@ -647,6 +678,10 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
     @objc private func showRecordingsClicked() {
         onShowRecordings?()
+    }
+
+    @objc private func cancelSilenceClicked() {
+        onCancelSilence?()
     }
 
     @objc private func followDefaultClicked() {

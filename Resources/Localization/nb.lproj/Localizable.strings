@@ -156,11 +156,13 @@
 "recording.quality.header" = "Kvalitet";
 "recording.quality.caption" = "Gjelder mikrofon, avspilling og møtemiks. Lavere bruker mindre diskplass.";
 "recording.silence.header" = "Stopp ved stillhet";
-"recording.silence.caption" = "Avslutt økten når mikrofon og avspilling er stille så lenge.";
+"recording.silence.caption" = "Avslutt økten når mikrofon og avspilling er stille så lenge. Klikk og bakgrunnsstøy ignoreres. En nedtelling vises etter 10 sekunder, og bare i de siste 30 sekundene — klikk for å fortsette gjennom denne stillheten.";
 "recording.silence.off" = "Av";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Stopper om %@";
+"recording.silence.cancel.tooltip" = "Fortsett opptaket — vent på neste stillhet";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Omtrent %@ for 10 minutter, %@ per time.";
 "recording.quality.kbps" = "%d kbps";

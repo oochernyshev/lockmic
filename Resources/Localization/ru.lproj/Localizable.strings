@@ -156,11 +156,13 @@
 "recording.quality.header" = "Качество";
 "recording.quality.caption" = "Для микрофона, воспроизведения и микса. Меньше — меньше места на диске.";
 "recording.silence.header" = "Останавливать при тишине";
-"recording.silence.caption" = "Завершает запись, если микрофон и воспроизведение столько времени тихие.";
+"recording.silence.caption" = "Завершает запись, если микрофон и воспроизведение столько времени тихие. Щелчки и фоновый шум игнорируются. Отсчёт появится через 10 секунд и только за последние 30 — нажмите, чтобы не останавливаться в этой тишине.";
 "recording.silence.off" = "Выкл.";
 "recording.silence.30s" = "30s";
 "recording.silence.1m" = "1m";
 "recording.silence.2m" = "2m";
+"recording.silence.stopping_in" = "Остановка через %@";
+"recording.silence.cancel.tooltip" = "Продолжить запись — ждать следующей тишины";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Около %@ за 10 минут, %@ за час.";
 "recording.quality.kbps" = "%d kbps";
