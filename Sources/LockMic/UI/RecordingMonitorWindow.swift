@@ -35,6 +35,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var onShowRecordings: (() -> Void)?
     private var onCancelSilence: (() -> Void)?
     private var silenceBadge: SilenceStopBadge?
+    private var silenceModeChip: SilenceModeChip?
     private var rows: [String: RowView] = [:]
     private var waveSessionStart: Date?
     private var lastElapsedSeconds = -1
@@ -63,6 +64,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         self.onToggleMute = onToggleMute
         self.onShowRecordings = onShowRecordings
         self.onCancelSilence = onCancelSilence
+        waveform?.setSilenceVisualizationEnabled(preferences?.recordingSilenceTimeout.duration != nil)
         if window == nil {
             buildWindow()
         }
@@ -211,6 +213,10 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             monospaced: true
         )
         sizeField = sizeChip.label
+        let silenceMode = SilenceModeChip()
+        silenceMode.onAdvance = { [weak self] in self?.advanceSilenceSelection() }
+        silenceModeChip = silenceMode
+        syncSilenceModeChip()
         let silence = SilenceStopBadge(target: self, action: #selector(cancelSilenceClicked))
         silence.isHidden = true
         silence.wantsLayer = true
@@ -218,6 +224,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         silenceBadge = silence
         waveBox.addSubview(wave)
         waveBox.addSubview(statusChip)
+        waveBox.addSubview(silenceMode)
         waveBox.addSubview(sizeChip)
         waveBox.addSubview(elapsedChip)
         waveBox.addSubview(silence)
@@ -229,6 +236,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             wave.heightAnchor.constraint(equalToConstant: Self.waveformHeight),
             statusChip.leadingAnchor.constraint(equalTo: waveBox.leadingAnchor, constant: 8),
             statusChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
+            silenceMode.leadingAnchor.constraint(equalTo: statusChip.trailingAnchor, constant: 6),
+            silenceMode.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
             elapsedChip.trailingAnchor.constraint(equalTo: waveBox.trailingAnchor, constant: -8),
             elapsedChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
             sizeChip.trailingAnchor.constraint(equalTo: elapsedChip.leadingAnchor, constant: -6),
@@ -372,7 +381,34 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             sizeField?.stringValue = recorder.mixSizeChipText()
         }
         syncRowLevels()
+        syncSilenceModeChip()
+        waveform?.setSilenceVisualizationEnabled(preferences?.recordingSilenceTimeout.duration != nil)
         waveform?.push(recorder.liveWaveformLevel())
+    }
+
+    private func syncSilenceModeChip() {
+        guard let chip = silenceModeChip, let option = preferences?.recordingSilenceTimeout else { return }
+        chip.apply(enabled: option != .off, duration: silenceDurationTitle(option))
+    }
+
+    private func advanceSilenceSelection() {
+        guard let preferences else { return }
+        switch preferences.recordingSilenceTimeout {
+        case .off: preferences.recordingSilenceTimeout = .seconds30
+        case .seconds30: preferences.recordingSilenceTimeout = .minutes1
+        case .minutes1: preferences.recordingSilenceTimeout = .minutes2
+        case .minutes2: preferences.recordingSilenceTimeout = .off
+        }
+        syncSilenceModeChip()
+    }
+
+    private func silenceDurationTitle(_ option: RecordingSilenceTimeout) -> String {
+        switch option {
+        case .off: return L10n.recordingSilenceOff
+        case .seconds30: return L10n.recordingSilence30s
+        case .minutes1: return L10n.recordingSilence1m
+        case .minutes2: return L10n.recordingSilence2m
+        }
     }
 
     private func syncRows(from devices: [RecordingDeviceRow]? = nil) {

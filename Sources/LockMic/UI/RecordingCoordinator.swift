@@ -11,6 +11,7 @@ final class RecordingCoordinator {
     private var silenceBegan: Date?
     private var speechTicks = 0
     private var smoothedEnergy: Float?
+    private var watchedSilenceTimeout: TimeInterval?
     /// After the user dismisses the countdown, wait for real audio before starting a new silence period.
     private var skipUntilSpeech = false
 
@@ -251,6 +252,7 @@ final class RecordingCoordinator {
 
     private func startSilenceWatch() {
         stopSilenceWatch()
+        watchedSilenceTimeout = preferences.recordingSilenceTimeout.duration
         let timer = Timer(timeInterval: Self.watchInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.checkSilence()
@@ -267,6 +269,7 @@ final class RecordingCoordinator {
         silenceBegan = nil
         speechTicks = 0
         smoothedEnergy = nil
+        watchedSilenceTimeout = nil
         skipUntilSpeech = false
         setSilenceCountdown(nil)
     }
@@ -284,9 +287,19 @@ final class RecordingCoordinator {
             return
         }
         guard let timeout = preferences.recordingSilenceTimeout.duration else {
+            watchedSilenceTimeout = nil
             silenceBegan = nil
             speechTicks = 0
             skipUntilSpeech = false
+            setSilenceCountdown(nil)
+            return
+        }
+
+        if watchedSilenceTimeout != timeout {
+            watchedSilenceTimeout = timeout
+            silenceBegan = Date()
+            speechTicks = 0
+            smoothedEnergy = nil
             setSilenceCountdown(nil)
             return
         }

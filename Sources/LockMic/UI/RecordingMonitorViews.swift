@@ -614,6 +614,80 @@ final class MonitorChip: NSView {
     }
 }
 
+/// Silence mode control: left side toggles, right side cycles the timeout.
+final class SilenceModeChip: NSView {
+    var onAdvance: (() -> Void)?
+
+    private let dot = NSView()
+    private let toggleButton = NSButton(title: L10n.recordingSilenceHeader, target: nil, action: nil)
+    private let durationButton = NSButton(title: L10n.recordingSilence30s, target: nil, action: nil)
+    private let clickButton = NSButton()
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.cornerRadius = 11
+        layer?.masksToBounds = true
+        translatesAutoresizingMaskIntoConstraints = false
+
+        dot.wantsLayer = true
+        dot.layer?.cornerRadius = 3.5
+        dot.translatesAutoresizingMaskIntoConstraints = false
+        for button in [toggleButton, durationButton] {
+            button.isBordered = false
+            button.font = .systemFont(ofSize: 11, weight: .semibold)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(button)
+        }
+        addSubview(dot, positioned: .below, relativeTo: toggleButton)
+
+        clickButton.isBordered = false
+        clickButton.title = ""
+        clickButton.target = self
+        clickButton.action = #selector(advanceClicked)
+        clickButton.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(clickButton)
+
+        NSLayoutConstraint.activate([
+            dot.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            dot.centerYAnchor.constraint(equalTo: centerYAnchor),
+            dot.widthAnchor.constraint(equalToConstant: 7),
+            dot.heightAnchor.constraint(equalToConstant: 7),
+            toggleButton.leadingAnchor.constraint(equalTo: dot.trailingAnchor, constant: 3),
+            toggleButton.topAnchor.constraint(equalTo: topAnchor, constant: 2),
+            toggleButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -2),
+            durationButton.leadingAnchor.constraint(equalTo: toggleButton.trailingAnchor, constant: 1),
+            durationButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -5),
+            durationButton.centerYAnchor.constraint(equalTo: centerYAnchor),
+            clickButton.leadingAnchor.constraint(equalTo: leadingAnchor),
+            clickButton.trailingAnchor.constraint(equalTo: trailingAnchor),
+            clickButton.topAnchor.constraint(equalTo: topAnchor),
+            clickButton.bottomAnchor.constraint(equalTo: bottomAnchor),
+        ])
+        apply(enabled: false, duration: L10n.recordingSilence30s)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    func apply(enabled: Bool, duration: String) {
+        durationButton.title = duration
+        dot.layer?.backgroundColor = (enabled ? NSColor.systemGreen : NSColor.secondaryLabelColor).cgColor
+        toggleButton.contentTintColor = enabled ? .labelColor : .secondaryLabelColor
+        durationButton.contentTintColor = enabled ? .labelColor : .secondaryLabelColor
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.82).cgColor
+        layer?.borderWidth = 1
+        layer?.borderColor = NSColor.labelColor.withAlphaComponent(0.12).cgColor
+    }
+
+    @objc private func advanceClicked() { onAdvance?() }
+}
+
 /// Compact orange “Muted” capsule matching Preferences device status.
 final class MuteBadgeView: NSView {
     private let dot = NSView()
@@ -1350,6 +1424,7 @@ final class WaveformView: NSView {
     private var silenceBars: [CALayer] = []
     private var silencePool: [CALayer] = []
     private var smoothedEnergy: Float?
+    private var silenceVisualizationEnabled = false
     private var nextBarX: CGFloat = 0
     private var lastCommit: Date?
     private var pendingPeak: Float = 0
@@ -1436,6 +1511,15 @@ final class WaveformView: NSView {
         CATransaction.commit()
     }
 
+    func setSilenceVisualizationEnabled(_ enabled: Bool) {
+        guard enabled != silenceVisualizationEnabled else { return }
+        silenceVisualizationEnabled = enabled
+        smoothedEnergy = nil
+        if !enabled {
+            for bar in silenceBars { bar.isHidden = true }
+        }
+    }
+
     private var scale: CGFloat { window?.backingScaleFactor ?? 2 }
     private var pixel: CGFloat { 1 / scale }
     private var step: CGFloat { pixel * 2 }
@@ -1506,16 +1590,22 @@ final class WaveformView: NSView {
         strip.addSublayer(bar)
         bars.append(bar)
 
-        smoothedEnergy = SilenceEnergyDetector.smoothed(
-            previous: smoothedEnergy,
-            current: amplitude,
-            interval: secondsPerBar
-        )
-        let silence = SilenceEnergyDetector.silenceProbability(smoothedEnergy ?? amplitude)
         let silenceBar = silencePool.popLast() ?? CALayer()
         silenceBar.actions = Self.noAnim
         silenceBar.zPosition = 0
         silenceBar.backgroundColor = NSColor.systemGreen.withAlphaComponent(0.3).cgColor
+        silenceBar.isHidden = !silenceVisualizationEnabled
+        let silence: Float
+        if silenceVisualizationEnabled {
+            smoothedEnergy = SilenceEnergyDetector.smoothed(
+                previous: smoothedEnergy,
+                current: amplitude,
+                interval: secondsPerBar
+            )
+            silence = SilenceEnergyDetector.silenceProbability(smoothedEnergy ?? amplitude)
+        } else {
+            silence = 0
+        }
         let silenceHeight = max(pixel, CGFloat(silence) * maxBar)
         silenceBar.frame = CGRect(
             x: nextBarX,

@@ -18,10 +18,10 @@
 # xattr clears Gatekeeper quarantine until Developer ID + notarization.
 
 cask "lockmic" do
-  version "1.4.29"
+  version "1.4.30"
   # After first GitHub Release, set sha256 from:
-  #   shasum -a 256 build/dist/LockMic-1.4.29.zip
-  sha256 "07e2adecefc149694751c549cb29ac4a6b2b400bcba446e5c1fd63847bf1059e"
+  #   shasum -a 256 build/dist/LockMic-1.4.30.zip
+  sha256 "08c0122dae7516bb1e55babe9d06f327202353b506dd7a724455e46710402573"
 
   # Point this at your GitHub Releases asset (or a file:// path while testing):
   url "https://github.com/oochernyshev/lockmic/releases/download/v#{version}/LockMic-#{version}.zip"
