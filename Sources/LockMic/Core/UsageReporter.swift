@@ -29,6 +29,8 @@ enum UsageReporter {
         case dock
         /// Recording monitor window.
         case monitor
+        /// Auto-stop after configured silence on the mix.
+        case silence
     }
 
     enum Action: String, CaseIterable {

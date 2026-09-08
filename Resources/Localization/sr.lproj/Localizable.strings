@@ -155,6 +155,12 @@
 "recording.playback.caption.default" = "Snima zvuk koji ide na podrazumevani izlazni uređaj.";
 "recording.quality.header" = "Kvalitet";
 "recording.quality.caption" = "Važi za mikrofon, reprodukciju i miks. Niže koristi manje prostora.";
+"recording.silence.header" = "Zaustavi na tišini";
+"recording.silence.caption" = "Završava sesiju kada mikrofon i reprodukcija ostanu tihi toliko dugo.";
+"recording.silence.off" = "Isključeno";
+"recording.silence.30s" = "30s";
+"recording.silence.1m" = "1m";
+"recording.silence.2m" = "2m";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Oko %@ za 10 minuta, %@ na sat.";
 "recording.quality.kbps" = "%d kbps";

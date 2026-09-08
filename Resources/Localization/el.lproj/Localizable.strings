@@ -155,6 +155,12 @@
 "recording.playback.caption.default" = "Καταγράφει ήχο που πηγαίνει στην προεπιλεγμένη συσκευή εξόδου.";
 "recording.quality.header" = "Ποιότητα";
 "recording.quality.caption" = "Ισχύει για μικρόφωνο, αναπαραγωγή και μείξη συνάντησης. Χαμηλότερη τιμή εξοικονομεί χώρο.";
+"recording.silence.header" = "Διακοπή σε σιωπή";
+"recording.silence.caption" = "Τερματίζει την εγγραφή όταν μικρόφωνο και αναπαραγωγή μείνουν ήσυχα τόσο.";
+"recording.silence.off" = "Ανενεργό";
+"recording.silence.30s" = "30s";
+"recording.silence.1m" = "1m";
+"recording.silence.2m" = "2m";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Περίπου %@ για 10 λεπτά, %@ ανά ώρα.";
 "recording.quality.kbps" = "%d kbps";

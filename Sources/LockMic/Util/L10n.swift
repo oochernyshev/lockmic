@@ -92,6 +92,12 @@ enum L10n {
     static var recordingQualityHeader: String { tr("recording.quality.header") }
     static var recordingQualityCaption: String { tr("recording.quality.caption") }
     static var recordingQualityUnit: String { tr("recording.quality.unit") }
+    static var recordingSilenceHeader: String { tr("recording.silence.header") }
+    static var recordingSilenceCaption: String { tr("recording.silence.caption") }
+    static var recordingSilenceOff: String { tr("recording.silence.off") }
+    static var recordingSilence30s: String { tr("recording.silence.30s") }
+    static var recordingSilence1m: String { tr("recording.silence.1m") }
+    static var recordingSilence2m: String { tr("recording.silence.2m") }
     static func recordingQualitySize(tenMinutes: String, hour: String) -> String {
         format("recording.quality.size", tenMinutes, hour)
     }

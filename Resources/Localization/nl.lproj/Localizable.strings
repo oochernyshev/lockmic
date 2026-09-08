@@ -155,6 +155,12 @@
 "recording.playback.caption.default" = "Neemt audio op die naar het standaarduitvoerapparaat gaat.";
 "recording.quality.header" = "Kwaliteit";
 "recording.quality.caption" = "Geldt voor microfoon, weergave en de mix. Lager gebruikt minder schijfruimte.";
+"recording.silence.header" = "Stoppen bij stilte";
+"recording.silence.caption" = "Beëindigt de sessie wanneer microfoon en weergave zo lang stil blijven.";
+"recording.silence.off" = "Uit";
+"recording.silence.30s" = "30s";
+"recording.silence.1m" = "1m";
+"recording.silence.2m" = "2m";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Ongeveer %@ voor 10 minuten, %@ per uur.";
 "recording.quality.kbps" = "%d kbps";

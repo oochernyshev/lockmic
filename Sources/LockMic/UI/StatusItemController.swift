@@ -58,6 +58,9 @@ final class StatusItemController {
         hud.overlay.onStopRecording = { [weak self] in
             self?.recording.stop(source: .hud)
         }
+        hud.overlay.onDisplayVisibilityChange = { [weak self] in
+            self?.handleMuteChanged(showHUD: false)
+        }
     }
 
     func start() {

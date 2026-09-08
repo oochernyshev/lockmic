@@ -2,7 +2,7 @@
 
 LockMic is a native macOS menu-bar utility that mutes system microphone input at the Core Audio level so mute works in every app (Zoom, Teams, Meet, FaceTime, browsers, etc.).
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.4.26
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.4.27
 
 **Distribution priority:** Homebrew (Developer ID / notarized `.app`) first; Mac App Store later with the same codebase and a sandboxed flavor.
 
@@ -140,7 +140,7 @@ When **Keep HUD indicator floating** is enabled:
 | Right-click | Hide this display; show hidden displays; show all |
 | Menu bar → Floating HUD | Checkbox per display + show all |
 
-Toast mode (`Show on-screen HUD when muting`) is disabled while floating is on. Toast panels ignore mouse events; floating panels do not.
+Toast mode (`Show on-screen HUD when muting`) is skipped while a floating HUD is visible on at least one display. If the floating HUD is hidden on every display, mute/hold still shows the toast HUD when that option is on. Turning floating off and back on restores the indicator on all displays. Toast panels ignore mouse events; floating panels do not.
 
 Preferences window: resizable, frosted material background (`regularMaterial` / clear window).
 
@@ -149,7 +149,7 @@ Preferences window: resizable, frosted material background (`regularMaterial` / 
 `UserDefaults`-backed `@Published` settings:
 
 - HUD toast, floating HUD, sound, launch at login, show in Dock, mute-all
-- Recording folder, bitrate, all-playback vs default output, keep stem files
+- Recording folder, bitrate, stop-on-silence (off / 30s / 1m / 2m), all-playback vs default output, keep stem files
 - Shortcut enable flags + chords (toggle / mute / unmute / F5 / flip / talk / mute-hold)
 - Defaults: mute-all on; toast + sound on; floating off; mute/unmute shortcuts off
 
@@ -330,6 +330,7 @@ Local:
 | **1.4.24** | Mute after input switch; Stop Recording no longer hangs; mute works while recording | Done |
 | **1.4.25** | Recording start/stop no longer hangs the monitor; Close always works; mute stays live | Done |
 | **1.4.26** | Show Recordings button on the recording monitor | Done |
+| **1.4.27** | Toast HUD when floating is hidden on every display; restore floating on re-enable; stop recording after silence | Done |
 | **HB-1.x** | Push-to-talk / push-to-mute, shortcut conflict warnings | Done |
 | **HB-2** | Richer status, polish, notarized releases | Planned |
 | **Pro** (optional) | Paid add-ons in separate closed modules (open core remains MIT) | Future |

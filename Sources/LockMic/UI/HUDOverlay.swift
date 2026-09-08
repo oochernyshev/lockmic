@@ -9,6 +9,8 @@ final class HUDOverlay: NSObject {
     var onToggle: (() -> Void)?
     /// Called from the HUD context menu while a session is recording.
     var onStopRecording: (() -> Void)?
+    /// Called after per-display hide/show so the presenter can fall back to toast or restore floating.
+    var onDisplayVisibilityChange: (() -> Void)?
 
     /// Keyed by `displayID(for:)` — `ObjectIdentifier(NSScreen)` is not stable across
     /// reconfiguration, and identical monitors share `localizedName`.
@@ -202,9 +204,7 @@ final class HUDOverlay: NSObject {
             hiddenIDs.remove(displayID)
         }
         saveHiddenDisplayIDs(hiddenIDs)
-        if isFloating {
-            showFloating(muted: lastMuted, hold: lastHold, recording: lastRecording)
-        }
+        notifyDisplayVisibilityChange()
     }
 
     /// Flip from stored visibility, not `NSMenuItem.state` — macOS 14+ may rewrite
@@ -219,9 +219,12 @@ final class HUDOverlay: NSObject {
         } else {
             saveHiddenDisplayIDs([])
         }
-        if isFloating {
-            showFloating(muted: lastMuted, hold: lastHold, recording: lastRecording)
-        }
+        notifyDisplayVisibilityChange()
+    }
+
+    /// Clear per-display hides without presenting. Used when the floating preference is turned back on.
+    func restoreAllDisplays() {
+        saveHiddenDisplayIDs([])
     }
 
     func hasAnyHiddenDisplay() -> Bool {
@@ -230,6 +233,14 @@ final class HUDOverlay: NSObject {
 
     func hasAnyVisibleDisplay() -> Bool {
         screenVisibilities().contains { $0.isVisible }
+    }
+
+    private func notifyDisplayVisibilityChange() {
+        if let onDisplayVisibilityChange {
+            onDisplayVisibilityChange()
+        } else if isFloating {
+            showFloating(muted: lastMuted, hold: lastHold, recording: lastRecording)
+        }
     }
 
     // MARK: - Panels

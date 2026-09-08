@@ -155,6 +155,12 @@
 "recording.playback.caption.default" = "Kaappaa oletustoistolaitteeseen menevän äänen.";
 "recording.quality.header" = "Laatu";
 "recording.quality.caption" = "Koskee mikrofonia, toistoa ja kokousmiksausta. Pienempi arvo vie vähemmän tilaa.";
+"recording.silence.header" = "Pysäytä hiljaisuudessa";
+"recording.silence.caption" = "Lopettaa istunnon, kun mikrofoni ja toisto pysyvät näin pitkään hiljaa.";
+"recording.silence.off" = "Pois";
+"recording.silence.30s" = "30s";
+"recording.silence.1m" = "1m";
+"recording.silence.2m" = "2m";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Noin %@ 10 minuutissa, %@ tunnissa.";
 "recording.quality.kbps" = "%d kbps";

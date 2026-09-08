@@ -155,6 +155,12 @@
 "recording.playback.caption.default" = "Captura o áudio enviado para o dispositivo de saída predefinido.";
 "recording.quality.header" = "Qualidade";
 "recording.quality.caption" = "Aplica-se ao microfone, à reprodução e à mistura. Um valor mais baixo usa menos espaço.";
+"recording.silence.header" = "Parar em silêncio";
+"recording.silence.caption" = "Termina a sessão quando o microfone e a reprodução ficam silenciosos durante este tempo.";
+"recording.silence.off" = "Desligado";
+"recording.silence.30s" = "30s";
+"recording.silence.1m" = "1m";
+"recording.silence.2m" = "2m";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Cerca de %@ em 10 minutos, %@ por hora.";
 "recording.quality.kbps" = "%d kbps";

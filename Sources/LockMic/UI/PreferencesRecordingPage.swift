@@ -66,6 +66,12 @@ struct PreferencesRecordingPage: View {
             }
 
             PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader(L10n.recordingSilenceHeader)
+                silencePicker
+                PreferencesChrome.caption(L10n.recordingSilenceCaption)
+            }
+
+            PreferencesChrome.sectionCard {
                 PreferencesChrome.sectionHeader(L10n.recordingInputsHeader)
                 prefsCheckRow(L10n.recordingFollowDefaultMic, isOn: preferences.followDefaultMic) {
                     preferences.followDefaultMic.toggle()
@@ -144,6 +150,34 @@ struct PreferencesRecordingPage: View {
         }
         .background(Color.primary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+    }
+
+    private var silencePicker: some View {
+        HStack(spacing: 0) {
+            ForEach(RecordingSilenceTimeout.allCases) { option in
+                let selected = preferences.recordingSilenceTimeout == option
+                Text(silenceTitle(option))
+                    .font(.callout.monospacedDigit().weight(selected ? .semibold : .regular))
+                    .lineLimit(1)
+                    .minimumScaleFactor(1)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 5)
+                    .background(selected ? Color.accentColor.opacity(0.22) : Color.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { preferences.recordingSilenceTimeout = option }
+            }
+        }
+        .background(Color.primary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+    }
+
+    private func silenceTitle(_ option: RecordingSilenceTimeout) -> String {
+        switch option {
+        case .off: return L10n.recordingSilenceOff
+        case .seconds30: return L10n.recordingSilence30s
+        case .minutes1: return L10n.recordingSilence1m
+        case .minutes2: return L10n.recordingSilence2m
+        }
     }
 
     private var qualitySizeEstimate: String {

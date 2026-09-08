@@ -23,7 +23,9 @@ final class HUDPresenter {
             return
         }
 
-        if preferences.hudFloating {
+        // Floating wins only while at least one display still shows it. If the user
+        // hid every screen, mute/hold/recording fall back to the appearing toast HUD.
+        if preferences.hudFloating, overlay.hasAnyVisibleDisplay() {
             overlay.showFloating(muted: muted, hold: hold, recording: recording)
             return
         }
@@ -64,12 +66,20 @@ final class HUDPresenter {
         let floating = preferences.hudFloating
         guard force || floating != lastHudFloating else { return }
 
-        if floating {
-            overlay.showFloating(muted: muted, hold: hold, recording: recording)
-        } else if lastHudFloating == true {
-            overlay.hide()
-        }
+        // Turning the preference back on is an explicit “show it” — restore every display.
+        let turningFloatingOn = floating && lastHudFloating == false
         lastHudFloating = floating
+        if turningFloatingOn {
+            overlay.restoreAllDisplays()
+        }
+
+        present(
+            muted: muted,
+            userInitiated: false,
+            hold: hold,
+            recording: recording,
+            featuresEnabled: true
+        )
     }
 
     func hide() {

@@ -155,6 +155,12 @@
 "recording.playback.caption.default" = "Capturează sunetul trimis către dispozitivul de ieșire implicit.";
 "recording.quality.header" = "Calitate";
 "recording.quality.caption" = "Se aplică microfonului, redării și mixului. Mai mic ocupă mai puțin spațiu.";
+"recording.silence.header" = "Oprește la tăcere";
+"recording.silence.caption" = "Încheie sesiunea când microfonul și redarea rămân tăcute atât timp.";
+"recording.silence.off" = "Oprit";
+"recording.silence.30s" = "30s";
+"recording.silence.1m" = "1m";
+"recording.silence.2m" = "2m";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Circa %@ pentru 10 minute, %@ pe oră.";
 "recording.quality.kbps" = "%d kbps";

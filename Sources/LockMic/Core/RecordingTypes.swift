@@ -57,6 +57,25 @@ enum RecordingDeviceKind: Equatable, Sendable {
     case output
 }
 
+/// Consecutive quiet time on the mix before the session stops itself.
+enum RecordingSilenceTimeout: Int, CaseIterable, Equatable, Sendable, Identifiable {
+    case off = 0
+    case seconds30 = 30
+    case minutes1 = 60
+    case minutes2 = 120
+
+    var id: Int { rawValue }
+
+    /// `nil` means never stop for silence.
+    var duration: TimeInterval? {
+        rawValue > 0 ? TimeInterval(rawValue) : nil
+    }
+
+    static func resolved(_ stored: Int) -> RecordingSilenceTimeout {
+        RecordingSilenceTimeout(rawValue: stored) ?? .off
+    }
+}
+
 struct RecordingDeviceRow: Identifiable, Equatable, Sendable {
     let id: String
     let name: String

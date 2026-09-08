@@ -43,6 +43,7 @@ final class PreferencesStore: ObservableObject {
         static let recordingOutputUIDs = "recordingOutputUIDs"
         static let monitorUnselectedDevices = "monitorUnselectedDevices"
         static let recordingBitRate = "recordingBitRate"
+        static let recordingSilenceTimeout = "recordingSilenceTimeout"
         static let recordingsFolderPath = "recordingsFolderPath"
         static let shareAnonymousUsage = "shareAnonymousUsage"
         /// When true, show a Dock icon so Preferences stay reachable if the menu bar is full.
@@ -153,6 +154,11 @@ final class PreferencesStore: ObservableObject {
     /// AAC bitrate for microphone, playback, and the mix.
     @Published var recordingBitRate: RecordingBitRate {
         didSet { UserDefaults.standard.set(recordingBitRate.rawValue, forKey: Keys.recordingBitRate) }
+    }
+
+    /// Stop recording after this much consecutive silence on mic and playback. `.off` never auto-stops.
+    @Published var recordingSilenceTimeout: RecordingSilenceTimeout {
+        didSet { UserDefaults.standard.set(recordingSilenceTimeout.rawValue, forKey: Keys.recordingSilenceTimeout) }
     }
 
     /// Empty means `defaultRecordingsDirectory` (`~/Movies/LockMic`).
@@ -306,6 +312,10 @@ final class PreferencesStore: ObservableObject {
         }
         monitorUnselectedDevices = defaults.bool(forKey: Keys.monitorUnselectedDevices)
         recordingBitRate = RecordingBitRate.resolved(defaults.integer(forKey: Keys.recordingBitRate))
+        if defaults.object(forKey: Keys.recordingSilenceTimeout) == nil {
+            defaults.set(RecordingSilenceTimeout.off.rawValue, forKey: Keys.recordingSilenceTimeout)
+        }
+        recordingSilenceTimeout = RecordingSilenceTimeout.resolved(defaults.integer(forKey: Keys.recordingSilenceTimeout))
         recordingsFolderPath = defaults.string(forKey: Keys.recordingsFolderPath) ?? ""
 
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)

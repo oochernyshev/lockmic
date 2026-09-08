@@ -155,6 +155,12 @@
 "recording.playback.caption.default" = "デフォルトの出力デバイスに送られる音声を取り込みます。";
 "recording.quality.header" = "品質";
 "recording.quality.caption" = "マイク、再生、会議ミックスに適用します。低いほど容量を節約します。";
+"recording.silence.header" = "無音で停止";
+"recording.silence.caption" = "マイクと再生がこの時間無音のままなら録音を終了します。";
+"recording.silence.off" = "オフ";
+"recording.silence.30s" = "30s";
+"recording.silence.1m" = "1m";
+"recording.silence.2m" = "2m";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "10分で約%@、1時間で約%@。";
 "recording.quality.kbps" = "%d kbps";

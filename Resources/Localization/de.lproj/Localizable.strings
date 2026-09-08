@@ -155,6 +155,12 @@
 "recording.playback.caption.default" = "Nimmt Audio auf, das an das Standardausgabegerät geht.";
 "recording.quality.header" = "Qualität";
 "recording.quality.caption" = "Gilt für Mikrofon, Wiedergabe und Mix. Niedriger spart Speicherplatz.";
+"recording.silence.header" = "Bei Stille stoppen";
+"recording.silence.caption" = "Beendet die Sitzung, wenn Mikrofon und Wiedergabe so lange still bleiben.";
+"recording.silence.off" = "Aus";
+"recording.silence.30s" = "30s";
+"recording.silence.1m" = "1m";
+"recording.silence.2m" = "2m";
 "recording.quality.unit" = "kbps";
 "recording.quality.size" = "Etwa %@ für 10 Minuten, %@ pro Stunde.";
 "recording.quality.kbps" = "%d kbps";

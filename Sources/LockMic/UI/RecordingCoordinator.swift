@@ -7,6 +7,8 @@ final class RecordingCoordinator {
     private let preferences: PreferencesStore
     private let mic: MicController
     private let monitor = RecordingMonitorController()
+    private var silenceWatch: Timer?
+    private var silenceBegan: Date?
 
     var onSessionChanged: (() -> Void)?
     var onToggleMute: (() -> Void)?
@@ -87,6 +89,7 @@ final class RecordingCoordinator {
     }
 
     func stop(source: UsageReporter.ActivationSource) {
+        stopSilenceWatch()
         monitor.hide()
         if !recorder.isRecording, !recorder.isBusy {
             recorder.cancelPreview()
@@ -117,6 +120,7 @@ final class RecordingCoordinator {
     }
 
     func finalizeForQuit() async {
+        stopSilenceWatch()
         let wasActive = recorder.isBusy
         if recorder.isRecording {
             monitor.hide()
@@ -187,6 +191,7 @@ final class RecordingCoordinator {
             UsageReporter.record(.startRecording, source: source)
             onSessionChanged?()
             showMonitor()
+            startSilenceWatch()
         } catch SessionRecorderError.alreadyRecording, SessionRecorderError.notRecording {
             return
         } catch SessionRecorderError.microphoneDenied, SessionRecorderError.playbackDenied {
@@ -226,6 +231,45 @@ final class RecordingCoordinator {
             "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_ScreenCapture",
             "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
         ])
+    }
+
+    /// Display-scale floor matching the monitor “has audio” threshold.
+    private static let silenceFloor: Float = 0.04
+
+    private func startSilenceWatch() {
+        stopSilenceWatch()
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.checkSilence()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        silenceWatch = timer
+    }
+
+    private func stopSilenceWatch() {
+        silenceWatch?.invalidate()
+        silenceWatch = nil
+        silenceBegan = nil
+    }
+
+    private func checkSilence() {
+        guard recorder.isRecording else {
+            stopSilenceWatch()
+            return
+        }
+        guard let timeout = preferences.recordingSilenceTimeout.duration else {
+            silenceBegan = nil
+            return
+        }
+        if recorder.liveWaveformLevel() >= Self.silenceFloor {
+            silenceBegan = nil
+            return
+        }
+        let started = silenceBegan ?? Date()
+        silenceBegan = started
+        guard Date().timeIntervalSince(started) >= timeout else { return }
+        stop(source: .silence)
     }
 
     private func openSettings(_ candidates: [String]) {
