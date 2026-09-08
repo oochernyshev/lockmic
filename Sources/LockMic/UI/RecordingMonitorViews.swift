@@ -467,84 +467,6 @@ final class CardView: NSView {
     }
 }
 
-/// Cancellable auto-stop countdown overlaid on the waveform.
-final class SilenceStopBadge: NSButton {
-    private var lastShownSecond = -1
-
-    init(target: AnyObject?, action: Selector) {
-        super.init(frame: .zero)
-        self.target = target
-        self.action = action
-        isBordered = false
-        bezelStyle = .shadowlessSquare
-        imagePosition = .imageTrailing
-        imageHugsTitle = true
-        contentTintColor = .white
-        image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: L10n.recordingSilenceCancelTooltip)
-        toolTip = L10n.recordingSilenceCancelTooltip
-        wantsLayer = true
-        layer?.cornerRadius = 11
-        layer?.masksToBounds = true
-        focusRingType = .none
-        translatesAutoresizingMaskIntoConstraints = false
-        apply(remaining: 0)
-    }
-
-    func apply(remaining: TimeInterval) {
-        let seconds = max(0, Int(ceil(remaining)))
-        guard seconds != lastShownSecond else { return }
-        lastShownSecond = seconds
-        let clock = String(format: "%d:%02d", seconds / 60, seconds % 60)
-        attributedTitle = NSAttributedString(
-            string: L10n.recordingSilenceStoppingIn(clock),
-            attributes: [
-                .foregroundColor: NSColor.white,
-                .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
-            ]
-        )
-        invalidateIntrinsicContentSize()
-        needsDisplay = true
-    }
-
-    func resetShownSecond() {
-        lastShownSecond = -1
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
-
-    override var intrinsicContentSize: NSSize {
-        var size = super.intrinsicContentSize
-        size.width += 16
-        size.height += 6
-        return size
-    }
-
-    override var wantsUpdateLayer: Bool { true }
-
-    override func highlight(_ flag: Bool) {
-        super.highlight(flag)
-        needsDisplay = true
-    }
-
-    override func updateLayer() {
-        let orange = NSColor.systemOrange
-        layer?.backgroundColor = (isHighlighted ? orange.blended(withFraction: 0.18, of: .black) : orange)?.cgColor
-        contentTintColor = .white
-        attributedTitle = NSAttributedString(
-            string: attributedTitle.string,
-            attributes: [
-                .foregroundColor: NSColor.white,
-                .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
-            ]
-        )
-    }
-
-    override func resetCursorRects() {
-        addCursorRect(bounds, cursor: .pointingHand)
-    }
-}
-
 /// Compact pill overlaid on the waveform (status / size / elapsed).
 final class MonitorChip: NSView {
     let dotView = NSView()
@@ -671,10 +593,31 @@ final class SilenceModeChip: NSView {
     required init?(coder: NSCoder) { nil }
 
     func apply(enabled: Bool, duration: String) {
+        toggleButton.title = L10n.recordingSilenceHeader
+        durationButton.image = nil
         durationButton.title = duration
         dot.layer?.backgroundColor = (enabled ? NSColor.systemGreen : NSColor.secondaryLabelColor).cgColor
         toggleButton.contentTintColor = enabled ? .labelColor : .secondaryLabelColor
         durationButton.contentTintColor = enabled ? .labelColor : .secondaryLabelColor
+        toolTip = nil
+    }
+
+    func applyCountdown(_ title: String) {
+        toggleButton.title = title
+        durationButton.title = ""
+        let config = NSImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
+        durationButton.image = NSImage(
+            systemSymbolName: "xmark.circle.fill",
+            accessibilityDescription: L10n.recordingSilenceCancelTooltip
+        )?.withSymbolConfiguration(config)
+        dot.layer?.backgroundColor = NSColor.systemOrange.cgColor
+        toggleButton.contentTintColor = .labelColor
+        durationButton.contentTintColor = .labelColor
+        toolTip = L10n.recordingSilenceCancelTooltip
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
     }
 
     override var wantsUpdateLayer: Bool { true }
@@ -1423,8 +1366,12 @@ final class WaveformView: NSView {
     private var pool: [CALayer] = []
     private var silenceBars: [CALayer] = []
     private var silencePool: [CALayer] = []
+    private var silenceMarkers: [CALayer] = []
+    private var silenceMarkerPool: [CALayer] = []
     private var smoothedEnergy: Float?
     private var silenceVisualizationEnabled = false
+    private var silenceCounting = false
+    private var nextSilenceMarkerAt: Date?
     private var nextBarX: CGFloat = 0
     private var lastCommit: Date?
     private var pendingPeak: Float = 0
@@ -1484,9 +1431,15 @@ final class WaveformView: NSView {
             bar.removeFromSuperlayer()
             silencePool.append(bar)
         }
+        for marker in silenceMarkers {
+            marker.removeFromSuperlayer()
+            silenceMarkerPool.append(marker)
+        }
         bars.removeAll(keepingCapacity: true)
         silenceBars.removeAll(keepingCapacity: true)
+        silenceMarkers.removeAll(keepingCapacity: true)
         smoothedEnergy = nil
+        nextSilenceMarkerAt = nil
         nextBarX = 0
         lastCommit = nil
         pendingPeak = 0
@@ -1503,6 +1456,7 @@ final class WaveformView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         appendBar(pendingPeak)
+        appendSilenceMarkerIfNeeded(at: now)
         pendingPeak = 0
         lastCommit = now
         recycleOffscreenBars()
@@ -1517,6 +1471,22 @@ final class WaveformView: NSView {
         smoothedEnergy = nil
         if !enabled {
             for bar in silenceBars { bar.isHidden = true }
+        }
+    }
+
+    func setSilenceCounting(_ active: Bool) {
+        guard active != silenceCounting else { return }
+        silenceCounting = active
+        nextSilenceMarkerAt = active ? Date().addingTimeInterval(1) : nil
+        if !active {
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            for marker in silenceMarkers {
+                marker.removeFromSuperlayer()
+                silenceMarkerPool.append(marker)
+            }
+            silenceMarkers.removeAll(keepingCapacity: true)
+            CATransaction.commit()
         }
     }
 
@@ -1536,6 +1506,9 @@ final class WaveformView: NSView {
             let green = NSColor.systemGreen.withAlphaComponent(0.3).cgColor
             for bar in silenceBars { bar.backgroundColor = green }
             for bar in silencePool { bar.backgroundColor = green }
+            let markerColor = NSColor.systemOrange.withAlphaComponent(0.55).cgColor
+            for marker in silenceMarkers { marker.backgroundColor = markerColor }
+            for marker in silenceMarkerPool { marker.backgroundColor = markerColor }
         }
         fade.colors = [NSColor.clear.cgColor, NSColor.black.cgColor]
         fade.startPoint = CGPoint(x: 0, y: 0.5)
@@ -1628,6 +1601,11 @@ final class WaveformView: NSView {
             silenceBar.removeFromSuperlayer()
             silencePool.append(silenceBar)
         }
+        while let first = silenceMarkers.first, first.frame.maxX < cutoff {
+            first.removeFromSuperlayer()
+            silenceMarkerPool.append(first)
+            silenceMarkers.removeFirst()
+        }
     }
 
     private func compactIfNeeded() {
@@ -1644,6 +1622,30 @@ final class WaveformView: NSView {
             frame.origin.x -= origin
             bar.frame = frame
         }
+        for marker in silenceMarkers {
+            var frame = marker.frame
+            frame.origin.x -= origin
+            marker.frame = frame
+        }
         nextBarX -= origin
+    }
+
+    private func appendSilenceMarkerIfNeeded(at now: Date) {
+        guard silenceCounting, let next = nextSilenceMarkerAt, now >= next else { return }
+        let marker = silenceMarkerPool.popLast() ?? CALayer()
+        marker.actions = Self.noAnim
+        marker.backgroundColor = NSColor.systemOrange.withAlphaComponent(0.55).cgColor
+        marker.zPosition = 2
+        let diameter = pixel * 7
+        marker.cornerRadius = diameter / 2
+        marker.frame = CGRect(
+            x: nextBarX - step - diameter / 2,
+            y: bounds.midY - diameter / 2,
+            width: diameter,
+            height: diameter
+        )
+        strip.addSublayer(marker)
+        silenceMarkers.append(marker)
+        nextSilenceMarkerAt = next.addingTimeInterval(1)
     }
 }

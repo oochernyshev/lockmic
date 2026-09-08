@@ -34,8 +34,8 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var onToggleMute: (() -> Void)?
     private var onShowRecordings: (() -> Void)?
     private var onCancelSilence: (() -> Void)?
-    private var silenceBadge: SilenceStopBadge?
     private var silenceModeChip: SilenceModeChip?
+    private var silenceCountdown: TimeInterval?
     private var rows: [String: RowView] = [:]
     private var waveSessionStart: Date?
     private var lastElapsedSeconds = -1
@@ -96,21 +96,18 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         timer?.invalidate()
         timer = nil
         warnLatch.removeAll()
-        silenceBadge?.resetShownSecond()
-        silenceBadge?.isHidden = true
+        silenceCountdown = nil
         window?.orderOut(nil)
     }
 
-    /// `nil` hides the silence countdown. Remaining seconds until auto-stop.
+    /// `nil` restores the configured duration. Otherwise the same pill shows countdown.
     func setSilenceCountdown(_ remaining: TimeInterval?) {
-        guard let silenceBadge else { return }
-        if let remaining, remaining > 0 {
-            silenceBadge.apply(remaining: remaining)
-            silenceBadge.isHidden = false
-        } else if !silenceBadge.isHidden {
-            silenceBadge.resetShownSecond()
-            silenceBadge.isHidden = true
-        }
+        silenceCountdown = remaining.flatMap { $0 > 0 ? $0 : nil }
+        syncSilenceModeChip()
+    }
+
+    func setSilenceCounting(_ active: Bool) {
+        waveform?.setSilenceCounting(active)
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -217,17 +214,11 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         silenceMode.onAdvance = { [weak self] in self?.advanceSilenceSelection() }
         silenceModeChip = silenceMode
         syncSilenceModeChip()
-        let silence = SilenceStopBadge(target: self, action: #selector(cancelSilenceClicked))
-        silence.isHidden = true
-        silence.wantsLayer = true
-        silence.layer?.zPosition = 2
-        silenceBadge = silence
         waveBox.addSubview(wave)
         waveBox.addSubview(statusChip)
         waveBox.addSubview(silenceMode)
         waveBox.addSubview(sizeChip)
         waveBox.addSubview(elapsedChip)
-        waveBox.addSubview(silence)
         NSLayoutConstraint.activate([
             wave.leadingAnchor.constraint(equalTo: waveBox.leadingAnchor),
             wave.trailingAnchor.constraint(equalTo: waveBox.trailingAnchor),
@@ -242,10 +233,6 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             elapsedChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
             sizeChip.trailingAnchor.constraint(equalTo: elapsedChip.leadingAnchor, constant: -6),
             sizeChip.topAnchor.constraint(equalTo: waveBox.topAnchor, constant: 8),
-            silence.centerXAnchor.constraint(equalTo: waveBox.centerXAnchor),
-            silence.bottomAnchor.constraint(equalTo: waveBox.bottomAnchor, constant: -8),
-            silence.leadingAnchor.constraint(greaterThanOrEqualTo: waveBox.leadingAnchor, constant: 8),
-            silence.trailingAnchor.constraint(lessThanOrEqualTo: waveBox.trailingAnchor, constant: -8),
         ])
         waveCard.addRow(waveBox)
         waveform = wave
@@ -388,11 +375,23 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
     private func syncSilenceModeChip() {
         guard let chip = silenceModeChip, let option = preferences?.recordingSilenceTimeout else { return }
-        chip.apply(enabled: option != .off, duration: silenceDurationTitle(option))
+        if let remaining = silenceCountdown, option != .off {
+            let seconds = max(0, Int(ceil(remaining)))
+            let clock = String(format: "%d:%02d", seconds / 60, seconds % 60)
+            chip.applyCountdown(L10n.recordingSilenceStoppingIn(clock))
+        } else {
+            chip.apply(enabled: option != .off, duration: silenceDurationTitle(option))
+        }
     }
 
     private func advanceSilenceSelection() {
         guard let preferences else { return }
+        if silenceCountdown != nil {
+            silenceCountdown = nil
+            onCancelSilence?()
+            syncSilenceModeChip()
+            return
+        }
         switch preferences.recordingSilenceTimeout {
         case .off: preferences.recordingSilenceTimeout = .seconds30
         case .seconds30: preferences.recordingSilenceTimeout = .minutes1
@@ -715,10 +714,6 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
     @objc private func showRecordingsClicked() {
         onShowRecordings?()
-    }
-
-    @objc private func cancelSilenceClicked() {
-        onCancelSilence?()
     }
 
     @objc private func followDefaultClicked() {

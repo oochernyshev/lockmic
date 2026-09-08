@@ -272,6 +272,7 @@ final class RecordingCoordinator {
         watchedSilenceTimeout = nil
         skipUntilSpeech = false
         setSilenceCountdown(nil)
+        monitor.setSilenceCounting(false)
     }
 
     private func cancelSilenceAutoStop() {
@@ -279,6 +280,7 @@ final class RecordingCoordinator {
         silenceBegan = nil
         speechTicks = 0
         setSilenceCountdown(nil)
+        monitor.setSilenceCounting(false)
     }
 
     private func checkSilence() {
@@ -292,6 +294,7 @@ final class RecordingCoordinator {
             speechTicks = 0
             skipUntilSpeech = false
             setSilenceCountdown(nil)
+            monitor.setSilenceCounting(false)
             return
         }
 
@@ -301,6 +304,7 @@ final class RecordingCoordinator {
             speechTicks = 0
             smoothedEnergy = nil
             setSilenceCountdown(nil)
+            monitor.setSilenceCounting(true)
             return
         }
 
@@ -319,13 +323,18 @@ final class RecordingCoordinator {
             skipUntilSpeech = false
             silenceBegan = nil
             setSilenceCountdown(nil)
+            monitor.setSilenceCounting(false)
             return
         }
 
-        guard !skipUntilSpeech else { return }
+        guard !skipUntilSpeech else {
+            monitor.setSilenceCounting(false)
+            return
+        }
 
         let started = silenceBegan ?? Date()
         silenceBegan = started
+        monitor.setSilenceCounting(true)
         let silentFor = Date().timeIntervalSince(started)
         if silentFor >= timeout {
             setSilenceCountdown(nil)
