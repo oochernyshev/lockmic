@@ -1347,6 +1347,9 @@ final class WaveformView: NSView {
 
     private var bars: [CALayer] = []
     private var pool: [CALayer] = []
+    private var silenceBars: [CALayer] = []
+    private var silencePool: [CALayer] = []
+    private var smoothedEnergy: Float?
     private var nextBarX: CGFloat = 0
     private var lastCommit: Date?
     private var pendingPeak: Float = 0
@@ -1402,7 +1405,13 @@ final class WaveformView: NSView {
             bar.removeFromSuperlayer()
             pool.append(bar)
         }
+        for bar in silenceBars {
+            bar.removeFromSuperlayer()
+            silencePool.append(bar)
+        }
         bars.removeAll(keepingCapacity: true)
+        silenceBars.removeAll(keepingCapacity: true)
+        smoothedEnergy = nil
         nextBarX = 0
         lastCommit = nil
         pendingPeak = 0
@@ -1440,6 +1449,9 @@ final class WaveformView: NSView {
             let red = NSColor.systemRed.cgColor
             for bar in bars { bar.backgroundColor = red }
             for bar in pool { bar.backgroundColor = red }
+            let green = NSColor.systemGreen.withAlphaComponent(0.3).cgColor
+            for bar in silenceBars { bar.backgroundColor = green }
+            for bar in silencePool { bar.backgroundColor = green }
         }
         fade.colors = [NSColor.clear.cgColor, NSColor.black.cgColor]
         fade.startPoint = CGPoint(x: 0, y: 0.5)
@@ -1490,8 +1502,29 @@ final class WaveformView: NSView {
             width: pixel,
             height: height * 2
         )
+        bar.zPosition = 1
         strip.addSublayer(bar)
         bars.append(bar)
+
+        smoothedEnergy = SilenceEnergyDetector.smoothed(
+            previous: smoothedEnergy,
+            current: amplitude,
+            interval: secondsPerBar
+        )
+        let silence = SilenceEnergyDetector.silenceProbability(smoothedEnergy ?? amplitude)
+        let silenceBar = silencePool.popLast() ?? CALayer()
+        silenceBar.actions = Self.noAnim
+        silenceBar.zPosition = 0
+        silenceBar.backgroundColor = NSColor.systemGreen.withAlphaComponent(0.3).cgColor
+        let silenceHeight = max(pixel, CGFloat(silence) * maxBar)
+        silenceBar.frame = CGRect(
+            x: nextBarX,
+            y: bounds.midY - silenceHeight,
+            width: pixel,
+            height: silenceHeight * 2
+        )
+        strip.addSublayer(silenceBar)
+        silenceBars.append(silenceBar)
         nextBarX += step
     }
 
@@ -1501,6 +1534,9 @@ final class WaveformView: NSView {
             first.removeFromSuperlayer()
             pool.append(first)
             bars.removeFirst()
+            let silenceBar = silenceBars.removeFirst()
+            silenceBar.removeFromSuperlayer()
+            silencePool.append(silenceBar)
         }
     }
 
@@ -1509,6 +1545,11 @@ final class WaveformView: NSView {
         let origin = first.frame.minX
         guard origin > 0 else { return }
         for bar in bars {
+            var frame = bar.frame
+            frame.origin.x -= origin
+            bar.frame = frame
+        }
+        for bar in silenceBars {
             var frame = bar.frame
             frame.origin.x -= origin
             bar.frame = frame

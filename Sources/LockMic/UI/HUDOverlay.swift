@@ -24,6 +24,7 @@ final class HUDOverlay: NSObject {
     private var lastMuted = false
     private var lastHold: HUDHoldKind = .none
     private var lastRecording = false
+    private var stopWarning = false
     private var screenObserver: NSObjectProtocol?
     /// Mouse-move monitors: toggle `ignoresMouseEvents` so only the rounded pill is interactive.
     /// Event-driven (not a timer) — runs only when the cursor actually moves.
@@ -162,6 +163,7 @@ final class HUDOverlay: NSObject {
         for entry in panels.values {
             if let content = entry.panel.contentView as? HUDContentView {
                 content.isInteractive = false
+                content.setStopWarningBlinking(false)
             }
             entry.panel.ignoresMouseEvents = true
             entry.panel.acceptsMouseMovedEvents = false
@@ -306,6 +308,7 @@ final class HUDOverlay: NSObject {
             updateAvailable: UpdateChecker.shared.availableUpdate != nil,
             recording: recording
         )
+        content.setStopWarningBlinking(stopWarning && recording)
         content.onToggle = { [weak self] in
             self?.onToggle?()
             self?.updateClickThroughState()
@@ -324,6 +327,13 @@ final class HUDOverlay: NSObject {
         let available = UpdateChecker.shared.availableUpdate != nil
         for entry in panels.values {
             (entry.panel.contentView as? HUDContentView)?.setUpdateAvailable(available)
+        }
+    }
+
+    func setSilenceStopWarning(_ active: Bool) {
+        stopWarning = active
+        for entry in panels.values {
+            (entry.panel.contentView as? HUDContentView)?.setStopWarningBlinking(active)
         }
     }
 

@@ -18,6 +18,28 @@ enum RecordingLevelDisplay {
     }
 }
 
+/// One shared definition for the silence watcher and its monitor trace.
+enum SilenceEnergyDetector {
+    static let activityFloor: Float = 0.16
+    private static let responseTime: TimeInterval = 0.45
+
+    static func smoothed(previous: Float?, current: Float, interval: TimeInterval) -> Float {
+        guard let previous else { return current }
+        let alpha = Float(1 - exp(-max(0, interval) / responseTime))
+        return previous + (current - previous) * alpha
+    }
+
+    static func isActive(_ level: Float) -> Bool {
+        silenceProbability(level) <= 0.3
+    }
+
+    /// A display confidence around the activity boundary: 0 = audio, 1 = silence.
+    static func silenceProbability(_ level: Float) -> Float {
+        let transition: Float = 0.08
+        return min(1, max(0, (activityFloor + transition - level) / (transition * 2)))
+    }
+}
+
 /// Hot-path DSP for capture IO. Avoid per-sample Swift loops and extra allocations.
 enum RecordingDSP {
     static func peak(in buffer: AVAudioPCMBuffer) -> Float {

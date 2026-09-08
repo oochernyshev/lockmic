@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
@@ -14,6 +15,7 @@ final class StatusItemController {
     private var statusItem: NSStatusItem?
     private var preferencesWindow: NSWindow?
     private var cancellables: [NSObjectProtocol] = []
+    private var micCancellables = Set<AnyCancellable>()
     private var visibilityTimer: Timer?
     private var reportedMenuBarIconVisible: Bool?
     private var visibilityMismatchCount = 0
@@ -52,6 +54,9 @@ final class StatusItemController {
         recording.onPresentError = { [weak self] error in
             self?.presentRecordingError(error)
         }
+        recording.onSilenceStopWarningChanged = { [weak self] active in
+            self?.hud.overlay.setSilenceStopWarning(active)
+        }
         hud.overlay.onToggle = { [weak self] in
             self?.toggleFromUser(source: .hud)
         }
@@ -82,6 +87,12 @@ final class StatusItemController {
 
         applyFeatureAvailability(force: true)
         observeMic()
+        mic.$state
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                DispatchQueue.main.async { self?.updateIcon() }
+            }
+            .store(in: &micCancellables)
         observePreferenceHotkeys()
         observeUpdateAvailability()
         startMenuBarVisibilityMonitoring()

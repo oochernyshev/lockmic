@@ -44,6 +44,125 @@ struct InputDeviceRow: Identifiable, Equatable, Sendable {
     }
 }
 
+/// Runs blocking Core Audio discovery and mute operations away from the main thread.
+private actor MicHardwareWorker {
+    struct Snapshot: Sendable {
+        let defaultID: AudioDeviceID?
+        let deviceName: String
+        let defaultMuted: Bool?
+        let defaultSupportsMute: Bool
+        let devices: [InputDeviceRow]
+        let error: String?
+    }
+
+    struct MuteResult: Sendable {
+        let snapshot: Snapshot
+        let batch: AudioDeviceService.MuteBatchResult?
+        let error: String?
+    }
+
+    private let audio: AudioDeviceService
+
+    init(audio: AudioDeviceService) {
+        self.audio = audio
+    }
+
+    func snapshot(muteAllInputs: Bool) -> Snapshot {
+        makeSnapshot(muteAllInputs: muteAllInputs)
+    }
+
+    func setMuted(
+        _ muted: Bool,
+        muteAllInputs: Bool,
+        lastEnforcedDefaultID: AudioDeviceID
+    ) -> MuteResult {
+        let defaultID = try? audio.defaultInputDeviceID()
+        if muted, let defaultID, lastEnforcedDefaultID != 0,
+           defaultID != lastEnforcedDefaultID
+        {
+            // USB drivers often need an unmute→mute transition after a device switch.
+            try? audio.setMuted(false, deviceID: defaultID)
+        }
+
+        let batch: AudioDeviceService.MuteBatchResult?
+        let error: String?
+        if muteAllInputs {
+            batch = audio.setAllInputsMuted(muted)
+            error = nil
+        } else {
+            batch = nil
+            do {
+                guard let defaultID else { throw AudioDeviceServiceError.noDefaultInput }
+                try audio.setMuted(muted, deviceID: defaultID)
+                error = nil
+            } catch let caught {
+                error = caught.localizedDescription
+            }
+        }
+
+        return MuteResult(
+            snapshot: makeSnapshot(muteAllInputs: muteAllInputs),
+            batch: batch,
+            error: error
+        )
+    }
+
+    private func makeSnapshot(muteAllInputs: Bool) -> Snapshot {
+        do {
+            let defaultID = try audio.defaultInputDeviceID()
+            let name = audio.deviceName(defaultID)
+            let supportsMute = audio.supportsMute(defaultID)
+            let muted: Bool?
+            let error: String?
+            if supportsMute {
+                do {
+                    muted = try audio.isMuted(defaultID)
+                    error = nil
+                } catch let caught {
+                    muted = nil
+                    error = caught.localizedDescription
+                }
+            } else {
+                muted = nil
+                error = nil
+            }
+            return Snapshot(
+                defaultID: defaultID,
+                deviceName: name,
+                defaultMuted: muted,
+                defaultSupportsMute: supportsMute,
+                devices: deviceRows(defaultID: defaultID, muteAllInputs: muteAllInputs),
+                error: error
+            )
+        } catch {
+            return Snapshot(
+                defaultID: nil,
+                deviceName: "—",
+                defaultMuted: nil,
+                defaultSupportsMute: false,
+                devices: deviceRows(defaultID: nil, muteAllInputs: muteAllInputs),
+                error: error.localizedDescription
+            )
+        }
+    }
+
+    private func deviceRows(defaultID: AudioDeviceID?, muteAllInputs: Bool) -> [InputDeviceRow] {
+        audio.listInputDevices().map { device in
+            let isDefault = device.id == defaultID
+            return InputDeviceRow(
+                id: device.id,
+                uid: device.uid,
+                name: device.name,
+                isDefault: isDefault,
+                supportsMute: device.supportsMute,
+                isMuted: device.supportsMute ? try? audio.isMuted(device.id) : nil,
+                isVirtual: device.isVirtual,
+                isInScope: !device.isVirtual && (muteAllInputs || isDefault)
+            )
+        }
+    }
+}
+
 @MainActor
 final class MicController: ObservableObject {
     @Published private(set) var state: MicState = .unknown
@@ -58,9 +177,12 @@ final class MicController: ObservableObject {
     var suppressDeviceResync = false
 
     private let audio: AudioDeviceService
+    private let hardware: MicHardwareWorker
     private let preferences: PreferencesStore
     private var devicesToken: UUID?
     private var deviceChangeWorkItem: DispatchWorkItem?
+    private var stateRequest = 0
+    private var devicesRequest = 0
 
     /// While user intent is muted, rewrite HAL mute every 2s (device switch, Meet, drivers).
     private var muteEnforceTimer: Timer?
@@ -70,6 +192,7 @@ final class MicController: ObservableObject {
 
     init(audio: AudioDeviceService = AudioDeviceService(), preferences: PreferencesStore) {
         self.audio = audio
+        self.hardware = MicHardwareWorker(audio: audio)
         self.preferences = preferences
         devicesToken = audio.onDevicesChanged { [weak self] in
             Task { @MainActor in
@@ -106,6 +229,9 @@ final class MicController: ObservableObject {
 
     func setMuted(_ muted: Bool) {
         desiredMuted = muted
+        // Keep hotkeys, HUD, and recording gates responsive while HAL works in the background.
+        state = muted ? .muted : .unmuted
+        syncMuteEnforcementTimer()
         applyMute(muted)
     }
 
@@ -125,87 +251,62 @@ final class MicController: ObservableObject {
             applyMute(desiredMuted)
             return
         }
-        do {
-            let id = try audio.defaultInputDeviceID()
-            deviceName = audio.deviceName(id)
-            if audio.supportsMute(id) {
-                let muted = try audio.isMuted(id)
-                state = muted ? .muted : .unmuted
-                desiredMuted = muted
-                lastError = nil
-            } else {
-                state = .unsupported(deviceName: deviceName)
+        let stateRequest = nextStateRequest()
+        let devicesRequest = nextDevicesRequest()
+        let muteAllInputs = preferences.muteAllInputs
+        Task { [weak self, hardware] in
+            let snapshot = await hardware.snapshot(muteAllInputs: muteAllInputs)
+            guard let self else { return }
+            if stateRequest == self.stateRequest {
+                self.applyHardwareState(snapshot, seedDesiredMuted: true)
             }
-        } catch {
-            lastError = error.localizedDescription
-            state = .unknown
+            if devicesRequest == self.devicesRequest {
+                self.inputDevices = snapshot.devices
+            }
         }
-        refreshDeviceList()
-        syncMuteEnforcementTimer()
     }
 
     /// Rebuild the Preferences device table from Core Audio.
     func refreshDeviceList() {
-        let defaultID = try? audio.defaultInputDeviceID()
-        inputDevices = audio.listInputDevices().map { device in
-            let isDefault = device.id == defaultID
-            // Virtual-transport devices are listed but never controlled.
-            let inScope = !device.isVirtual && (preferences.muteAllInputs || isDefault)
-            let muted: Bool? = device.supportsMute ? (try? audio.isMuted(device.id)) : nil
-            return InputDeviceRow(
-                id: device.id,
-                uid: device.uid,
-                name: device.name,
-                isDefault: isDefault,
-                supportsMute: device.supportsMute,
-                isMuted: muted,
-                isVirtual: device.isVirtual,
-                isInScope: inScope
-            )
+        let request = nextDevicesRequest()
+        let muteAllInputs = preferences.muteAllInputs
+        Task { [weak self, hardware] in
+            let snapshot = await hardware.snapshot(muteAllInputs: muteAllInputs)
+            guard let self, request == self.devicesRequest else { return }
+            self.inputDevices = snapshot.devices
         }
     }
 
     // MARK: - Private
 
     private func applyMute(_ muted: Bool) {
-        let defaultID = try? audio.defaultInputDeviceID()
-        if let defaultID {
-            deviceName = audio.deviceName(defaultID)
-            // USB drivers often ignore mute=1 unless they see unmute→mute (device switch).
-            if muted, lastEnforcedDefaultID != 0, defaultID != lastEnforcedDefaultID {
-                try? audio.setMuted(false, deviceID: defaultID)
+        let stateRequest = nextStateRequest()
+        let devicesRequest = nextDevicesRequest()
+        let muteAllInputs = preferences.muteAllInputs
+        let lastDefaultID = lastEnforcedDefaultID
+        Task { [weak self, hardware] in
+            let result = await hardware.setMuted(
+                muted,
+                muteAllInputs: muteAllInputs,
+                lastEnforcedDefaultID: lastDefaultID
+            )
+            guard let self else { return }
+            if stateRequest == self.stateRequest {
+                self.applyMuteResult(result, desiredMuted: muted, muteAllInputs: muteAllInputs)
+            }
+            if devicesRequest == self.devicesRequest {
+                self.inputDevices = result.snapshot.devices
             }
         }
-
-        if preferences.muteAllInputs {
-            let result = audio.setAllInputsMuted(muted)
-            applyMuteAllResult(result, desiredMuted: muted)
-        } else {
-            do {
-                guard let defaultID else { throw AudioDeviceServiceError.noDefaultInput }
-                try audio.setMuted(muted, deviceID: defaultID)
-                state = muted ? .muted : .unmuted
-                lastError = nil
-            } catch {
-                lastError = error.localizedDescription
-                if muted {
-                    state = .unsupported(deviceName: deviceName)
-                } else {
-                    state = .unknown
-                }
-            }
-        }
-        if muted, let defaultID {
-            lastEnforcedDefaultID = defaultID
-        }
-        log.debug("\(muted ? "Muted" : "Unmuted", privacy: .public)")
-        refreshDeviceList()
-        syncMuteEnforcementTimer()
     }
 
     /// Mute and unmute share the same batch outcome. Unmute must not claim success
     /// when every in-scope device failed — otherwise the icon/HUD lie and toggle mutes again.
-    private func applyMuteAllResult(_ result: AudioDeviceService.MuteBatchResult, desiredMuted: Bool) {
+    private func applyMuteAllResult(
+        _ result: AudioDeviceService.MuteBatchResult,
+        desiredMuted: Bool,
+        hardwareMuted: Bool?
+    ) {
         let failedDetail = result.failed.map { "\($0.name): \($0.message)" }.joined(separator: "; ")
         let failedNames = result.failed.map(\.name).joined(separator: ", ")
 
@@ -216,14 +317,14 @@ final class MicController: ObservableObject {
             } else {
                 // Unmute did not take: keep HAL-truthful state and sticky mute intent.
                 self.desiredMuted = true
-                if let hardwareMuted = defaultInputMute() {
+                if let hardwareMuted {
                     state = hardwareMuted ? .muted : .unmuted
                 }
             }
             return
         }
 
-        if let hardwareMuted = defaultInputMute() {
+        if let hardwareMuted {
             state = hardwareMuted ? .muted : .unmuted
         } else {
             state = desiredMuted ? .muted : .unmuted
@@ -233,9 +334,59 @@ final class MicController: ObservableObject {
             : (desiredMuted ? "No system mute on: \(failedNames)" : "Could not unmute: \(failedNames)")
     }
 
-    private func defaultInputMute() -> Bool? {
-        guard let id = try? audio.defaultInputDeviceID(), audio.supportsMute(id) else { return nil }
-        return try? audio.isMuted(id)
+    private func applyMuteResult(
+        _ result: MicHardwareWorker.MuteResult,
+        desiredMuted: Bool,
+        muteAllInputs: Bool
+    ) {
+        deviceName = result.snapshot.deviceName
+        if desiredMuted, let defaultID = result.snapshot.defaultID {
+            lastEnforcedDefaultID = defaultID
+        }
+        if muteAllInputs, let batch = result.batch {
+            applyMuteAllResult(
+                batch,
+                desiredMuted: desiredMuted,
+                hardwareMuted: result.snapshot.defaultMuted
+            )
+        } else if let error = result.error {
+            lastError = error
+            state = desiredMuted ? .unsupported(deviceName: deviceName) : .unknown
+        } else {
+            state = desiredMuted ? .muted : .unmuted
+            lastError = nil
+        }
+        log.debug("\(desiredMuted ? "Muted" : "Unmuted", privacy: .public)")
+        syncMuteEnforcementTimer()
+    }
+
+    private func applyHardwareState(
+        _ snapshot: MicHardwareWorker.Snapshot,
+        seedDesiredMuted: Bool
+    ) {
+        deviceName = snapshot.deviceName
+        lastError = snapshot.error
+        if let muted = snapshot.defaultMuted {
+            state = muted ? .muted : .unmuted
+            if seedDesiredMuted { desiredMuted = muted }
+        } else if snapshot.defaultSupportsMute {
+            state = .unknown
+        } else if snapshot.error == nil {
+            state = .unsupported(deviceName: deviceName)
+        } else {
+            state = .unknown
+        }
+        syncMuteEnforcementTimer()
+    }
+
+    private func nextStateRequest() -> Int {
+        stateRequest += 1
+        return stateRequest
+    }
+
+    private func nextDevicesRequest() -> Int {
+        devicesRequest += 1
+        return devicesRequest
     }
 
     /// Start/stop the 2s re-apply timer from `desiredMuted`.

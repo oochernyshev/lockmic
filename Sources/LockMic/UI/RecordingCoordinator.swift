@@ -9,14 +9,15 @@ final class RecordingCoordinator {
     private let monitor = RecordingMonitorController()
     private var silenceWatch: Timer?
     private var silenceBegan: Date?
-    /// Consecutive ticks of real audio — a single click never resets silence.
     private var speechTicks = 0
+    private var smoothedEnergy: Float?
     /// After the user dismisses the countdown, wait for real audio before starting a new silence period.
     private var skipUntilSpeech = false
 
     var onSessionChanged: (() -> Void)?
     var onToggleMute: (() -> Void)?
     var onPresentError: ((Error) -> Void)?
+    var onSilenceStopWarningChanged: ((Bool) -> Void)?
 
     var isMonitorVisible: Bool { monitor.isVisible }
 
@@ -160,7 +161,7 @@ final class RecordingCoordinator {
                 self?.cancelSilenceAutoStop()
             }
         )
-        monitor.setSilenceCountdown(silenceBadgeRemaining())
+        setSilenceCountdown(silenceBadgeRemaining())
     }
 
     func showRecordingsFolder(source: UsageReporter.ActivationSource = .menu) {
@@ -241,10 +242,7 @@ final class RecordingCoordinator {
         ])
     }
 
-    /// Display-scale floor (~−33 dB). Room hiss and fan sit below this.
-    private static let speechFloor: Float = 0.16
-    /// 0.25 s ticks × 2 = 0.5 s of sustained audio to count as speech (ignores clicks).
-    private static let speechHoldTicks = 2
+    private static let speechHoldTicks = 3
     private static let watchInterval: TimeInterval = 0.25
     /// Show the cancellable countdown after this much confirmed silence…
     private static let badgeDelay: TimeInterval = 10
@@ -268,15 +266,16 @@ final class RecordingCoordinator {
         silenceWatch = nil
         silenceBegan = nil
         speechTicks = 0
+        smoothedEnergy = nil
         skipUntilSpeech = false
-        monitor.setSilenceCountdown(nil)
+        setSilenceCountdown(nil)
     }
 
     private func cancelSilenceAutoStop() {
         skipUntilSpeech = true
         silenceBegan = nil
         speechTicks = 0
-        monitor.setSilenceCountdown(nil)
+        setSilenceCountdown(nil)
     }
 
     private func checkSilence() {
@@ -288,11 +287,16 @@ final class RecordingCoordinator {
             silenceBegan = nil
             speechTicks = 0
             skipUntilSpeech = false
-            monitor.setSilenceCountdown(nil)
+            setSilenceCountdown(nil)
             return
         }
 
-        if recorder.liveWaveformLevel() >= Self.speechFloor {
+        smoothedEnergy = SilenceEnergyDetector.smoothed(
+            previous: smoothedEnergy,
+            current: recorder.liveWaveformLevel(),
+            interval: Self.watchInterval
+        )
+        if SilenceEnergyDetector.isActive(smoothedEnergy ?? 0) {
             speechTicks += 1
         } else {
             speechTicks = 0
@@ -301,7 +305,7 @@ final class RecordingCoordinator {
         if speechTicks >= Self.speechHoldTicks {
             skipUntilSpeech = false
             silenceBegan = nil
-            monitor.setSilenceCountdown(nil)
+            setSilenceCountdown(nil)
             return
         }
 
@@ -311,11 +315,16 @@ final class RecordingCoordinator {
         silenceBegan = started
         let silentFor = Date().timeIntervalSince(started)
         if silentFor >= timeout {
-            monitor.setSilenceCountdown(nil)
+            setSilenceCountdown(nil)
             stop(source: .silence)
             return
         }
-        monitor.setSilenceCountdown(silenceBadgeRemaining(silentFor: silentFor, timeout: timeout))
+        setSilenceCountdown(silenceBadgeRemaining(silentFor: silentFor, timeout: timeout))
+    }
+
+    private func setSilenceCountdown(_ remaining: TimeInterval?) {
+        monitor.setSilenceCountdown(remaining)
+        onSilenceStopWarningChanged?(remaining.map { $0 <= 10 } ?? false)
     }
 
     private func silenceBadgeRemaining(

@@ -198,6 +198,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         let waveBox = NSView()
         waveBox.translatesAutoresizingMaskIntoConstraints = false
         let wave = WaveformView()
+        wave.toolTip = "Green bars: silence confidence (above 30% counts as silence)"
         wave.translatesAutoresizingMaskIntoConstraints = false
         let statusChip = MonitorChip(title: L10n.recordingStatusRecording, showsDot: true)
         statusChip.dotView.layer?.backgroundColor = NSColor.systemRed.cgColor

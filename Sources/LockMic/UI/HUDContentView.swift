@@ -155,6 +155,24 @@ final class HUDContentView: NSView {
         updateBadge.isHidden = !available
     }
 
+    func setStopWarningBlinking(_ active: Bool) {
+        guard let layer = backdrop.layer else { return }
+        if active {
+            guard layer.animation(forKey: "stopWarningBlink") == nil else { return }
+            let resting = NSColor.systemRed.withAlphaComponent(0.15).cgColor
+            let flash = NSColor.systemOrange.cgColor
+            let blink = CAKeyframeAnimation(keyPath: "borderColor")
+            blink.values = [resting, flash, resting, flash, resting, resting]
+            blink.keyTimes = [0, 0.08, 0.16, 0.24, 0.32, 1]
+            blink.duration = 1.6
+            blink.calculationMode = .discrete
+            blink.repeatCount = .infinity
+            layer.add(blink, forKey: "stopWarningBlink")
+        } else {
+            layer.removeAnimation(forKey: "stopWarningBlink")
+        }
+    }
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     /// Global screen point on the visible rounded pill?

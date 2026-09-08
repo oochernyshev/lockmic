@@ -622,6 +622,14 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         guard sessionLive else { return }
         if followDefaultInput, let uid = currentDefaultInputUID() {
             selectMic(uid)
+        } else if !followDefaultInput, inputDevice(uid: selectedInputUID) == nil,
+                  let fallback = fallbackInputDevice()
+        {
+            log.info(
+                "Selected input disconnected; switching to \(fallback.name, privacy: .public)"
+            )
+            selectMic(fallback.uid)
+            rememberInputSelection()
         }
         rememberDeviceOrder()
         syncInputCapturesInBackground()
@@ -638,6 +646,16 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             playbackDeviceUID = uid
             if followDefaultOutput {
                 selectedOutputUIDs = [uid]
+            }
+        }
+        if !followDefaultOutput, !recordsAllPlayback {
+            let live = liveOutputUIDs()
+            if selectedOutputUIDs.isDisjoint(with: live), let fallback = fallbackOutputDevice() {
+                log.info(
+                    "Selected output disconnected; switching to \(fallback.name, privacy: .public)"
+                )
+                selectedOutputUIDs = [fallback.uid]
+                rememberOutputSelection()
             }
         }
         applyPlaybackMixGate()
@@ -1090,9 +1108,22 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         return audio.deviceUID(id)
     }
 
+    private func fallbackOutputDevice() -> AudioOutputDevice? {
+        if let uid = currentDefaultOutputUID(),
+           let device = audio.listOutputDevices().first(where: { $0.uid == uid && !$0.isVirtual })
+        {
+            return device
+        }
+        return audio.listOutputDevices().first { !$0.isVirtual }
+    }
+
     private func defaultInputDevice() -> AudioInputDevice? {
         guard let id = try? audio.defaultInputDeviceID(), !audio.isLockMicRecorder(id) else { return nil }
         return audio.listInputDevices().first { $0.id == id && !$0.isVirtual }
+    }
+
+    private func fallbackInputDevice() -> AudioInputDevice? {
+        defaultInputDevice() ?? audio.listInputDevices().first { !$0.isVirtual }
     }
 
     private func inputDevice(uid: String) -> AudioInputDevice? {
