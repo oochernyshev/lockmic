@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Autorisez l’audio système dans Réglages Système, puis réessayez.";
 "recording.permission.playback.button" = "Autoriser la lecture";
 "menu.show_recording_monitor" = "Afficher la fenêtre d’enregistrement";
+"recording.monitor.silence_tooltip" = "Les barres vertes indiquent le silence détecté";
+"recording.error.file" = "Impossible de créer le fichier d’enregistrement. Essayez une autre qualité ou un autre périphérique d’entrée.";
+"status.accessibility.disabled" = "LockMic désactivé — consentement requis";
+"status.tooltip.disabled" = "LockMic : désactivé\\nAutorisez les statistiques anonymes pour l’activer\\nClic pour le menu · Consentement dans les réglages";
+"status.tooltip.holding_talk" = "Mode parler maintenu";
+"status.tooltip.holding_mute" = "Mode muet maintenu";
+"status.tooltip.holding_flip" = "Mode inversion maintenu";
+"status.tooltip.muted" = "LockMic : silencieux — %@\\nClic pour réactiver · Clic droit pour le menu";
+"status.tooltip.unmuted" = "LockMic : actif — %@\\nClic pour couper · Clic droit pour le menu";
+"status.tooltip.unknown" = "LockMic : état du microphone inconnu";
+"status.tooltip.cant_mute" = "LockMic : impossible de couper %@";
+"recording.device.sample_rate" = "%@ kHz";

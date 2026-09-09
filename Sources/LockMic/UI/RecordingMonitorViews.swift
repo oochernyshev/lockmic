@@ -832,6 +832,8 @@ final class RowView: NSView {
     private var isMuted = false
     private var showNoSignal = false
     private var showCallQuality = false
+    private var isDefaultDevice = false
+    private var sourceSampleRate: Double = 0
 
     init(device: RecordingDeviceRow, muted: Bool, onToggle: @escaping (String, Bool) -> Void) {
         self.onToggle = onToggle
@@ -934,14 +936,12 @@ final class RowView: NSView {
         deviceID = device.id
         kind = device.kind
         canCapture = device.canCapture
+        isDefaultDevice = device.isDefault
         mark.style = device.kind == .input ? .radio : .checkbox
         mark.isOn = device.isEnabled
         nameField.stringValue = device.name
         applyEnabledLook()
-        let showBadge = device.isDefault
-        badge.stringValue = showBadge ? L10n.devicesBadgeDefault : ""
-        badge.isHidden = !showBadge
-        badgeWidth?.isActive = !showBadge
+        updateSourceBadge()
         detailField.stringValue = device.detail ?? ""
         let hasDetail = !(device.detail ?? "").isEmpty
         detailField.isHidden = !hasDetail
@@ -1076,15 +1076,39 @@ final class RowView: NSView {
         }
     }
 
-    func applyLevel(_ device: RecordingDeviceRow, level: Float, noSignal: Bool = false) {
+    func applyLevel(
+        _ device: RecordingDeviceRow,
+        level: Float,
+        sampleRate: Double,
+        noSignal: Bool = false
+    ) {
         let wasOn = mark.isOn
         mark.isOn = device.isEnabled
         if wasOn != mark.isOn {
             applyEnabledLook()
         }
         meter.level = isMuted ? 0 : level
+        if sourceSampleRate != sampleRate {
+            sourceSampleRate = sampleRate
+            updateSourceBadge()
+        }
         setNoSignal(noSignal)
         syncMeter()
+    }
+
+    private func updateSourceBadge() {
+        var parts: [String] = []
+        if isDefaultDevice { parts.append(L10n.devicesBadgeDefault) }
+        if sourceSampleRate > 0 {
+            let khz = sourceSampleRate / 1_000
+            let value = khz.rounded() == khz
+                ? String(Int(khz))
+                : String(format: "%.1f", locale: .current, khz)
+            parts.append(L10n.recordingDeviceSampleRate(value))
+        }
+        badge.stringValue = parts.joined(separator: " · ")
+        badge.isHidden = parts.isEmpty
+        badgeWidth?.isActive = parts.isEmpty
     }
 
     private func syncMeter() {

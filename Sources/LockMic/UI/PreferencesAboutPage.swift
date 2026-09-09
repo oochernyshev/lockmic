@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 struct PreferencesAboutPage: View {
+    @ObservedObject var mic: MicController
+
     private enum Links {
         static let site = URL(string: "https://lockmic.com/")!
         static let github = URL(string: "https://github.com/oochernyshev/lockmic")!
@@ -34,13 +36,7 @@ struct PreferencesAboutPage: View {
         VStack(alignment: .leading, spacing: PreferencesChrome.pageSpacing) {
             PreferencesChrome.sectionCard {
                 HStack(spacing: 14) {
-                    Image("AppLogo")
-                        .resizable()
-                        .interpolation(.high)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 96, height: 96)
-                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+                    PreferencesAppIcon(size: 96, muted: mic.effectiveMuted)
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("LockMic")

@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Sistem Ayarları’nda sistem sesine izin verin, sonra yeniden deneyin.";
 "recording.permission.playback.button" = "Oynatmaya izin ver";
 "menu.show_recording_monitor" = "Kayıt penceresini göster";
+"recording.monitor.silence_tooltip" = "Yeşil çubuklar algılanan sessizliği gösterir";
+"recording.error.file" = "Kayıt dosyası oluşturulamadı. Başka bir kalite veya giriş aygıtı deneyin.";
+"status.accessibility.disabled" = "LockMic devre dışı — onay gerekli";
+"status.tooltip.disabled" = "LockMic: devre dışı\\nEtkinleştirmek için anonim istatistiklere izin verin\\nMenü için tıklayın · Onay Tercihler’de";
+"status.tooltip.holding_talk" = "Bas-konuş tutuluyor";
+"status.tooltip.holding_mute" = "Bas-sustur tutuluyor";
+"status.tooltip.holding_flip" = "Bas-değiştir tutuluyor";
+"status.tooltip.muted" = "LockMic: sessiz — %@\\nAçmak için tıklayın · Menü için sağ tıklayın";
+"status.tooltip.unmuted" = "LockMic: etkin — %@\\nSusturmak için tıklayın · Menü için sağ tıklayın";
+"status.tooltip.unknown" = "LockMic: mikrofon durumu bilinmiyor";
+"status.tooltip.cant_mute" = "LockMic: %@ susturulamıyor";
+"recording.device.sample_rate" = "%@ kHz";

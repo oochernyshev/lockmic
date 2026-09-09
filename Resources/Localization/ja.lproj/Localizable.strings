@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "システム設定でシステムオーディオを許可してから、もう一度お試しください。";
 "recording.permission.playback.button" = "再生を許可";
 "menu.show_recording_monitor" = "録音ウィンドウを表示";
+"recording.monitor.silence_tooltip" = "緑のバーは検出された無音を示します";
+"recording.error.file" = "録音ファイルを作成できませんでした。別の品質または入力デバイスをお試しください。";
+"status.accessibility.disabled" = "LockMicは無効です — 同意が必要です";
+"status.tooltip.disabled" = "LockMic：無効\\n有効にするには匿名の使用統計に同意してください\\nクリック：メニュー · 同意は環境設定から";
+"status.tooltip.holding_talk" = "プッシュ・トゥ・トークを押下中";
+"status.tooltip.holding_mute" = "プッシュ・トゥ・ミュートを押下中";
+"status.tooltip.holding_flip" = "プッシュ・トゥ・フリップを押下中";
+"status.tooltip.muted" = "LockMic：ミュート — %@\\nクリックで解除 · 右クリックでメニュー";
+"status.tooltip.unmuted" = "LockMic：オン — %@\\nクリックでミュート · 右クリックでメニュー";
+"status.tooltip.unknown" = "LockMic：マイクの状態が不明です";
+"status.tooltip.cant_mute" = "LockMic：%@をミュートできません";
+"recording.device.sample_rate" = "%@ kHz";

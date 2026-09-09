@@ -108,11 +108,6 @@ final class StatusItemController {
         }
     }
 
-    /// Re-apply HUD Dock art after activation-policy changes (macOS resets to bundle icon).
-    func refreshDockIcon() {
-        updateDockIcon()
-    }
-
     // MARK: - Menu bar icon visibility
 
     private func startMenuBarVisibilityMonitoring() {
@@ -645,7 +640,7 @@ final class StatusItemController {
             hosting.view.wantsLayer = true
             hosting.view.layer?.backgroundColor = NSColor.clear.cgColor
             let window = EscapeToCloseWindow(contentViewController: hosting)
-            window.title = "LockMic Preferences"
+            window.title = "LockMic — \(L10n.preferencesTitle)"
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
             window.minSize = NSSize(
                 width: PreferencesChrome.windowMinSize.width,
@@ -682,23 +677,19 @@ final class StatusItemController {
         statusItem?.button?.toolTip = tooltip(for: mic.state)
         statusItem?.isVisible = true
         refreshUpdateBadge()
-        updateDockIcon()
-    }
-
-    private func updateDockIcon() {
-        let style = DockIconRenderer.style(
-            featuresEnabled: featuresEnabled,
-            state: mic.state,
-            effectiveMuted: mic.effectiveMuted
-        )
-        let updateAvailable = UpdateChecker.shared.availableUpdate != nil
-        NSApp.applicationIconImage = DockIconRenderer.image(style: style, updateAvailable: updateAvailable)
     }
 
     /// Small red dot on the menu bar status button when a newer release exists.
     private func refreshUpdateBadge() {
         guard let button = statusItem?.button else { return }
         let show = UpdateChecker.shared.availableUpdate != nil
+        let muted: Bool = switch mic.state {
+        case .muted: true
+        case .unknown: mic.effectiveMuted
+        case .unmuted, .unsupported: false
+        }
+        NSApp.dockTile.contentView = nil
+        NSApp.dockTile.badgeLabel = featuresEnabled && muted ? "×" : (show ? "•" : nil)
 
         if !show {
             updateBadgeView?.removeFromSuperview()
@@ -746,7 +737,7 @@ final class StatusItemController {
     private func disabledStatusImage() -> NSImage {
         menuBarSymbolImage(
             systemName: "hand.raised.fill",
-            accessibilityDescription: "LockMic disabled — agreement required",
+            accessibilityDescription: L10n.statusAccessibilityDisabled,
             weight: .semibold
         )
     }
@@ -790,28 +781,28 @@ final class StatusItemController {
 
     private func tooltip(for state: MicState) -> String {
         if !featuresEnabled {
-            return "LockMic: Disabled\nAgree to anonymous usage statistics to enable\nClick for menu · Preferences to agree"
+            return L10n.statusTooltipDisabled
         }
 
         let holdLine: String? = {
             switch hotkeys.hudHold {
             case .none: return nil
-            case .talk: return "Holding push-to-talk"
-            case .mute: return "Holding push-to-mute"
-            case .flip: return "Holding push-to-flip"
+            case .talk: return L10n.statusTooltipHoldingTalk
+            case .mute: return L10n.statusTooltipHoldingMute
+            case .flip: return L10n.statusTooltipHoldingFlip
             }
         }()
 
         let base: String
         switch state {
         case .muted:
-            base = "LockMic: Muted — \(mic.deviceName)\nClick to unmute · Right-click for menu"
+            base = L10n.statusTooltipMuted(mic.deviceName)
         case .unmuted:
-            base = "LockMic: Unmuted — \(mic.deviceName)\nClick to mute · Right-click for menu"
+            base = L10n.statusTooltipUnmuted(mic.deviceName)
         case .unknown:
-            base = "LockMic: Microphone state unknown"
+            base = L10n.statusTooltipUnknown
         case .unsupported(let name):
-            base = "LockMic: Cannot mute \(name)"
+            base = L10n.statusTooltipCantMute(name)
         }
 
         var lines = [base]

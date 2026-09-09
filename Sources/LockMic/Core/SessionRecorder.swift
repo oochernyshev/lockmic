@@ -1376,6 +1376,23 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         return capture?.linearPeak ?? 0
     }
 
+    /// Actual rate delivered by the currently open source stream.
+    func sourceSampleRate(for row: RecordingDeviceRow) -> Double {
+        levelLock.lock()
+        let snap = levelSnapshot
+        levelLock.unlock()
+        switch row.kind {
+        case .input:
+            return snap.inputs[row.id]?.sourceSampleRate ?? 0
+        case .output:
+            let uid = String(row.id.dropFirst(4))
+            if uid == snap.playbackDeviceUID || uid == snap.defaultOutputUID {
+                return snap.system?.sourceSampleRate ?? snap.taps[uid]?.sourceSampleRate ?? 0
+            }
+            return snap.taps[uid]?.sourceSampleRate ?? 0
+        }
+    }
+
     /// Real file size plus a bitrate guess for PCM not yet on disk (current RAM chunk).
     /// Elapsed audio in the current mix file (resets if the file is recreated).
     func recordedElapsedSeconds() -> Int {

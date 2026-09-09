@@ -30,7 +30,7 @@ enum SilenceEnergyDetector {
     }
 
     static func isActive(_ level: Float) -> Bool {
-        silenceProbability(level) <= 0.3
+        silenceProbability(level) <= 0.4
     }
 
     /// A display confidence around the activity boundary: 0 = audio, 1 = silence.

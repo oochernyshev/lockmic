@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Povolte systémový zvuk v Nastavení systému a zkuste to znovu.";
 "recording.permission.playback.button" = "Povolit přehrávání";
 "menu.show_recording_monitor" = "Zobrazit okno nahrávání";
+"recording.monitor.silence_tooltip" = "Zelené sloupce zobrazují rozpoznané ticho";
+"recording.error.file" = "Soubor nahrávky se nepodařilo vytvořit. Zkuste jinou kvalitu nebo vstupní zařízení.";
+"status.accessibility.disabled" = "LockMic je vypnutý — vyžadován souhlas";
+"status.tooltip.disabled" = "LockMic: vypnuto\\nPovolte anonymní statistiky pro zapnutí\\nKliknutí: nabídka · Souhlas v Předvolbách";
+"status.tooltip.holding_talk" = "Přidrženo mluvení";
+"status.tooltip.holding_mute" = "Přidrženo ztlumení";
+"status.tooltip.holding_flip" = "Přidrženo přepnutí";
+"status.tooltip.muted" = "LockMic: ztlumeno — %@\\nKliknutím zapnout · Pravým kliknutím nabídka";
+"status.tooltip.unmuted" = "LockMic: aktivní — %@\\nKliknutím ztlumit · Pravým kliknutím nabídka";
+"status.tooltip.unknown" = "LockMic: stav mikrofonu není znám";
+"status.tooltip.cant_mute" = "LockMic: nelze ztlumit %@";
+"recording.device.sample_rate" = "%@ kHz";

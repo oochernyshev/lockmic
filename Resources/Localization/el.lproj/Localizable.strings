@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Επιτρέψτε τον ήχο συστήματος στις Ρυθμίσεις συστήματος και δοκιμάστε ξανά.";
 "recording.permission.playback.button" = "Να επιτρέπεται η αναπαραγωγή";
 "menu.show_recording_monitor" = "Εμφάνιση παραθύρου εγγραφής";
+"recording.monitor.silence_tooltip" = "Οι πράσινες μπάρες δείχνουν τη σιωπή που εντοπίστηκε";
+"recording.error.file" = "Δεν ήταν δυνατή η δημιουργία του αρχείου εγγραφής. Δοκιμάστε άλλη ποιότητα ή συσκευή εισόδου.";
+"status.accessibility.disabled" = "Το LockMic είναι ανενεργό — απαιτείται συναίνεση";
+"status.tooltip.disabled" = "LockMic: ανενεργό\\nΕπιτρέψτε ανώνυμα στατιστικά για ενεργοποίηση\\nΚλικ για μενού · Συναίνεση στις Προτιμήσεις";
+"status.tooltip.holding_talk" = "Κράτημα για ομιλία";
+"status.tooltip.holding_mute" = "Κράτημα για σίγαση";
+"status.tooltip.holding_flip" = "Κράτημα για εναλλαγή";
+"status.tooltip.muted" = "LockMic: σε σίγαση — %@\\nΚλικ για ενεργοποίηση · Δεξί κλικ για μενού";
+"status.tooltip.unmuted" = "LockMic: ενεργό — %@\\nΚλικ για σίγαση · Δεξί κλικ για μενού";
+"status.tooltip.unknown" = "LockMic: άγνωστη κατάσταση μικροφώνου";
+"status.tooltip.cant_mute" = "LockMic: δεν είναι δυνατή η σίγαση του %@";
+"recording.device.sample_rate" = "%@ kHz";

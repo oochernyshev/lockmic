@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Salli järjestelmän ääni Järjestelmäasetuksissa ja yritä uudelleen.";
 "recording.permission.playback.button" = "Salli toisto";
 "menu.show_recording_monitor" = "Näytä tallennusikkuna";
+"recording.monitor.silence_tooltip" = "Vihreät palkit näyttävät havaitun hiljaisuuden";
+"recording.error.file" = "Tallennustiedostoa ei voitu luoda. Kokeile toista laatua tai syöttölaitetta.";
+"status.accessibility.disabled" = "LockMic poistettu käytöstä — suostumus vaaditaan";
+"status.tooltip.disabled" = "LockMic: pois käytöstä\\nSalli anonyymit tilastot ottaaksesi käyttöön\\nNapsauta valikkoa · Suostumus Asetuksissa";
+"status.tooltip.holding_talk" = "Puhu-painike pidettynä";
+"status.tooltip.holding_mute" = "Mykistä-painike pidettynä";
+"status.tooltip.holding_flip" = "Vaihda-painike pidettynä";
+"status.tooltip.muted" = "LockMic: mykistetty — %@\\nNapsauta avataksesi · Oikea napsautus: valikko";
+"status.tooltip.unmuted" = "LockMic: aktiivinen — %@\\nNapsauta mykistääksesi · Oikea napsautus: valikko";
+"status.tooltip.unknown" = "LockMic: mikrofonin tila tuntematon";
+"status.tooltip.cant_mute" = "LockMic: kohdetta %@ ei voi mykistää";
+"recording.device.sample_rate" = "%@ kHz";

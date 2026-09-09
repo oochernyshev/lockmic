@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Разрешите системный звук в Системных настройках и попробуйте снова.";
 "recording.permission.playback.button" = "Разрешить воспроизведение";
 "menu.show_recording_monitor" = "Показать окно записи";
+"recording.monitor.silence_tooltip" = "Зелёные столбцы показывают тишину";
+"recording.error.file" = "Не удалось создать файл записи. Попробуйте другое качество или устройство ввода.";
+"status.accessibility.disabled" = "LockMic отключён — требуется согласие";
+"status.tooltip.disabled" = "LockMic: отключён\\nРазрешите анонимную статистику использования\\nНажмите для меню · Согласие — в настройках";
+"status.tooltip.holding_talk" = "Удерживается режим «говорить»";
+"status.tooltip.holding_mute" = "Удерживается режим «выключить микрофон»";
+"status.tooltip.holding_flip" = "Удерживается переключение";
+"status.tooltip.muted" = "LockMic: микрофон выключен — %@\\nНажмите, чтобы включить · Правый клик — меню";
+"status.tooltip.unmuted" = "LockMic: микрофон включён — %@\\nНажмите, чтобы выключить · Правый клик — меню";
+"status.tooltip.unknown" = "LockMic: состояние микрофона неизвестно";
+"status.tooltip.cant_mute" = "LockMic: невозможно выключить %@";
+"recording.device.sample_rate" = "%@ kHz";

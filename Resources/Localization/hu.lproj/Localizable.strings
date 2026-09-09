@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Engedélyezze a rendszerhangot a Rendszerbeállításokban, majd próbálja újra.";
 "recording.permission.playback.button" = "Lejátszás engedélyezése";
 "menu.show_recording_monitor" = "Felvételi ablak megjelenítése";
+"recording.monitor.silence_tooltip" = "A zöld oszlopok az észlelt csendet mutatják";
+"recording.error.file" = "Nem sikerült létrehozni a felvételi fájlt. Próbálj más minőséget vagy bemeneti eszközt.";
+"status.accessibility.disabled" = "A LockMic ki van kapcsolva — hozzájárulás szükséges";
+"status.tooltip.disabled" = "LockMic: kikapcsolva\\nAz aktiváláshoz engedélyezd a névtelen statisztikát\\nKattintás: menü · Hozzájárulás a Beállításokban";
+"status.tooltip.holding_talk" = "Nyomva tartott beszéd";
+"status.tooltip.holding_mute" = "Nyomva tartott némítás";
+"status.tooltip.holding_flip" = "Nyomva tartott váltás";
+"status.tooltip.muted" = "LockMic: némítva — %@\\nKattintás a bekapcsoláshoz · Jobb kattintás: menü";
+"status.tooltip.unmuted" = "LockMic: aktív — %@\\nKattintás a némításhoz · Jobb kattintás: menü";
+"status.tooltip.unknown" = "LockMic: a mikrofon állapota ismeretlen";
+"status.tooltip.cant_mute" = "LockMic: %@ nem némítható";
+"recording.device.sample_rate" = "%@ kHz";

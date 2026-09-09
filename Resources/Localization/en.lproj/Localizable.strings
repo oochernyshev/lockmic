@@ -211,3 +211,14 @@
 "about.feedback.feature" = "Request a feature";
 "about.github" = "GitHub";
 "about.feedback.rate_web" = "Rate on lockmic.com";
+"recording.monitor.silence_tooltip" = "Green bars show detected silence";
+"status.accessibility.disabled" = "LockMic disabled — agreement required";
+"status.tooltip.disabled" = "LockMic: Disabled\\nAgree to anonymous usage statistics to enable\\nClick for menu · Preferences to agree";
+"status.tooltip.holding_talk" = "Holding push-to-talk";
+"status.tooltip.holding_mute" = "Holding push-to-mute";
+"status.tooltip.holding_flip" = "Holding push-to-flip";
+"status.tooltip.muted" = "LockMic: Muted — %@\\nClick to unmute · Right-click for menu";
+"status.tooltip.unmuted" = "LockMic: Unmuted — %@\\nClick to mute · Right-click for menu";
+"status.tooltip.unknown" = "LockMic: Microphone state unknown";
+"status.tooltip.cant_mute" = "LockMic: Cannot mute %@";
+"recording.device.sample_rate" = "%@ kHz";

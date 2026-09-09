@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Permite sunetul de sistem în Setări sistem, apoi încearcă din nou.";
 "recording.permission.playback.button" = "Permite redarea";
 "menu.show_recording_monitor" = "Arată fereastra de înregistrare";
+"recording.monitor.silence_tooltip" = "Barele verzi arată liniștea detectată";
+"recording.error.file" = "Fișierul de înregistrare nu a putut fi creat. Încearcă altă calitate sau alt dispozitiv de intrare.";
+"status.accessibility.disabled" = "LockMic dezactivat — este necesar acordul";
+"status.tooltip.disabled" = "LockMic: dezactivat\\nPermite statistici anonime pentru activare\\nClic pentru meniu · Acord în Preferințe";
+"status.tooltip.holding_talk" = "Apasă-pentru-vorbire menținut";
+"status.tooltip.holding_mute" = "Apasă-pentru-dezactivare menținut";
+"status.tooltip.holding_flip" = "Apasă-pentru-inversare menținut";
+"status.tooltip.muted" = "LockMic: dezactivat — %@\\nClic pentru activare · Clic dreapta pentru meniu";
+"status.tooltip.unmuted" = "LockMic: activ — %@\\nClic pentru dezactivare · Clic dreapta pentru meniu";
+"status.tooltip.unknown" = "LockMic: starea microfonului este necunoscută";
+"status.tooltip.cant_mute" = "LockMic: %@ nu poate fi dezactivat";
+"recording.device.sample_rate" = "%@ kHz";

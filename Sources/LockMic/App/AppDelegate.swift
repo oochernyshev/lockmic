@@ -123,14 +123,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if changed {
             NSApp.setActivationPolicy(policy)
         }
-        // `.regular` resets applicationIconImage to the bundle icon.
-        if showDock {
-            statusItemController?.refreshDockIcon()
-            if changed {
-                DispatchQueue.main.async { [weak self] in
-                    self?.statusItemController?.refreshDockIcon()
-                }
-            }
-        }
     }
 }

@@ -243,7 +243,7 @@ final class RecordingCoordinator {
         ])
     }
 
-    private static let speechHoldTicks = 3
+    private static let speechHoldTicks = 2
     private static let watchInterval: TimeInterval = 0.25
     /// Show the cancellable countdown after this much confirmed silence…
     private static let badgeDelay: TimeInterval = 10

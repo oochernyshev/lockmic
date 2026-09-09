@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Dozvolite sistemski zvuk u Podešavanjima sistema, pa pokušajte ponovo.";
 "recording.permission.playback.button" = "Dozvoli reprodukciju";
 "menu.show_recording_monitor" = "Prikaži prozor za snimanje";
+"recording.monitor.silence_tooltip" = "Zeleni stubići prikazuju tišinu";
+"recording.error.file" = "Nije moguće napraviti datoteku snimka. Probajte drugi kvalitet ili ulazni uređaj.";
+"status.accessibility.disabled" = "LockMic je isključen — potrebna je saglasnost";
+"status.tooltip.disabled" = "LockMic: isključen\\nDozvolite anonimnu statistiku korišćenja\\nKlik za meni · Saglasnost u podešavanjima";
+"status.tooltip.holding_talk" = "Drži se pritisni-za-govor";
+"status.tooltip.holding_mute" = "Drži se pritisni-za-utišavanje";
+"status.tooltip.holding_flip" = "Drži se pritisni-za-prebacivanje";
+"status.tooltip.muted" = "LockMic: utišan — %@\\nKlik za uključivanje · Desni klik za meni";
+"status.tooltip.unmuted" = "LockMic: uključen — %@\\nKlik za utišavanje · Desni klik za meni";
+"status.tooltip.unknown" = "LockMic: stanje mikrofona nije poznato";
+"status.tooltip.cant_mute" = "LockMic: nije moguće utišati %@";
+"recording.device.sample_rate" = "%@ kHz";

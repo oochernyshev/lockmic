@@ -126,6 +126,10 @@ enum L10n {
     static var recordingMonitorUnselected: String { tr("recording.monitor.unselected") }
     static var recordingMonitorUnselectedCaption: String { tr("recording.monitor.unselected.caption") }
     static var recordingMonitorHint: String { tr("recording.monitor.hint") }
+    static var recordingMonitorSilenceTooltip: String { tr("recording.monitor.silence_tooltip") }
+    static func recordingDeviceSampleRate(_ value: String) -> String {
+        format("recording.device.sample_rate", value)
+    }
     static var recordingPermissionMicTitle: String { tr("recording.permission.mic.title") }
     static var recordingPermissionMicCaption: String { tr("recording.permission.mic.caption") }
     static var recordingPermissionMicButton: String { tr("recording.permission.mic.button") }
@@ -270,6 +274,24 @@ enum L10n {
     }
     static var menuCheckForUpdates: String { tr("menu.update.check") }
     static var menuSkipUpdate: String { tr("menu.update.skip") }
+
+    // MARK: - Status item
+
+    static var statusAccessibilityDisabled: String { tr("status.accessibility.disabled") }
+    static var statusTooltipDisabled: String { tr("status.tooltip.disabled") }
+    static var statusTooltipHoldingTalk: String { tr("status.tooltip.holding_talk") }
+    static var statusTooltipHoldingMute: String { tr("status.tooltip.holding_mute") }
+    static var statusTooltipHoldingFlip: String { tr("status.tooltip.holding_flip") }
+    static func statusTooltipMuted(_ device: String) -> String {
+        format("status.tooltip.muted", device)
+    }
+    static func statusTooltipUnmuted(_ device: String) -> String {
+        format("status.tooltip.unmuted", device)
+    }
+    static var statusTooltipUnknown: String { tr("status.tooltip.unknown") }
+    static func statusTooltipCantMute(_ device: String) -> String {
+        format("status.tooltip.cant_mute", device)
+    }
 
     // MARK: - HUD
 

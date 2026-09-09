@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Zezwól na dźwięk systemowy w Ustawieniach systemowych i spróbuj ponownie.";
 "recording.permission.playback.button" = "Zezwól na odtwarzanie";
 "menu.show_recording_monitor" = "Pokaż okno nagrywania";
+"recording.monitor.silence_tooltip" = "Zielone słupki pokazują wykrytą ciszę";
+"recording.error.file" = "Nie można utworzyć pliku nagrania. Spróbuj innej jakości lub urządzenia wejściowego.";
+"status.accessibility.disabled" = "LockMic wyłączony — wymagana zgoda";
+"status.tooltip.disabled" = "LockMic: wyłączony\\nZezwól na anonimowe statystyki, aby włączyć\\nKliknij, aby otworzyć menu · Zgoda w Ustawieniach";
+"status.tooltip.holding_talk" = "Przytrzymano „mów”";
+"status.tooltip.holding_mute" = "Przytrzymano „wycisz”";
+"status.tooltip.holding_flip" = "Przytrzymano „przełącz”";
+"status.tooltip.muted" = "LockMic: wyciszony — %@\\nKliknij, aby włączyć · Prawy klik: menu";
+"status.tooltip.unmuted" = "LockMic: aktywny — %@\\nKliknij, aby wyciszyć · Prawy klik: menu";
+"status.tooltip.unknown" = "LockMic: stan mikrofonu nieznany";
+"status.tooltip.cant_mute" = "LockMic: nie można wyciszyć %@";
+"recording.device.sample_rate" = "%@ kHz";

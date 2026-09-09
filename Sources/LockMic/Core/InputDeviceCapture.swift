@@ -19,6 +19,7 @@ final class InputDeviceCapture: @unchecked Sendable {
     private var ioGapStartedAt: CFTimeInterval = 0
     private let lock = NSLock()
     private var _level: Float = 0
+    private var _sourceSampleRate: Double = 0
     private var _enabled = true
     private let haltQueue = DispatchQueue(label: "com.lockmic.input-capture.halt")
     private static let ioQueueKey = DispatchSpecificKey<UInt8>()
@@ -40,6 +41,11 @@ final class InputDeviceCapture: @unchecked Sendable {
     var linearPeak: Float {
         lock.lock(); defer { lock.unlock() }
         return _level
+    }
+
+    var sourceSampleRate: Double {
+        lock.lock(); defer { lock.unlock() }
+        return _sourceSampleRate
     }
 
     init(
@@ -159,6 +165,9 @@ final class InputDeviceCapture: @unchecked Sendable {
             throw SessionRecorderError.invalidTapFormat
         }
         self.format = format
+        lock.lock()
+        _sourceSampleRate = format.sampleRate
+        lock.unlock()
 
         var proc: AudioDeviceIOProcID?
         let ioStatus = AudioDeviceCreateIOProcIDWithBlock(&proc, deviceID, queue) { [weak self] _, inInput, _, _, _ in

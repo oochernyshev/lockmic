@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Дозвольте системний звук у Системних параметрах і спробуйте знову.";
 "recording.permission.playback.button" = "Дозволити відтворення";
 "menu.show_recording_monitor" = "Показати вікно запису";
+"recording.monitor.silence_tooltip" = "Зелені стовпчики показують тишу";
+"recording.error.file" = "Не вдалося створити файл запису. Спробуйте іншу якість або пристрій введення.";
+"status.accessibility.disabled" = "LockMic вимкнено — потрібна згода";
+"status.tooltip.disabled" = "LockMic: вимкнено\\nДозвольте анонімну статистику використання\\nНатисніть для меню · Згода — у параметрах";
+"status.tooltip.holding_talk" = "Утримується режим розмови";
+"status.tooltip.holding_mute" = "Утримується вимкнення мікрофона";
+"status.tooltip.holding_flip" = "Утримується перемикання";
+"status.tooltip.muted" = "LockMic: мікрофон вимкнено — %@\\nНатисніть, щоб увімкнути · Правий клік — меню";
+"status.tooltip.unmuted" = "LockMic: мікрофон увімкнено — %@\\nНатисніть, щоб вимкнути · Правий клік — меню";
+"status.tooltip.unknown" = "LockMic: стан мікрофона невідомий";
+"status.tooltip.cant_mute" = "LockMic: неможливо вимкнути %@";
+"recording.device.sample_rate" = "%@ kHz";

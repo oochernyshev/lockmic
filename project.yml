@@ -35,8 +35,8 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
-    MARKETING_VERSION: "1.4.31"
-    CURRENT_PROJECT_VERSION: "171"
+    MARKETING_VERSION: "1.4.32"
+    CURRENT_PROJECT_VERSION: "172"
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
     ENABLE_HARDENED_RUNTIME: YES
@@ -50,6 +50,8 @@ targets:
       - path: Sources/LockMic
       - path: Resources/Assets.xcassets
         buildPhase: resources
+      - path: Resources/LockMic.icon
+        buildPhase: resources
       # Per-language: Resources/Localization/<lang>.lproj/Localizable.strings
       - path: Resources/Localization
         buildPhase: resources
@@ -61,11 +63,11 @@ targets:
         INFOPLIST_FILE: Resources/Info.plist
         CODE_SIGN_ENTITLEMENTS: Resources/LockMic.entitlements
         GENERATE_INFOPLIST_FILE: false
-        MARKETING_VERSION: "1.4.31"
-        CURRENT_PROJECT_VERSION: "171"
+        MARKETING_VERSION: "1.4.32"
+        CURRENT_PROJECT_VERSION: "172"
         LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
         COMBINE_HIDPI_IMAGES: YES
-        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_APPICON_NAME: LockMic
         # Prefer classic .strings files (not String Catalog)
         SWIFT_EMIT_LOC_STRINGS: NO
         LOCALIZATION_PREFERS_STRING_CATALOGS: NO

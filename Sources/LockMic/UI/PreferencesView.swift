@@ -1,5 +1,34 @@
 import SwiftUI
 
+struct PreferencesAppIcon: View {
+    let size: CGFloat
+    let muted: Bool
+
+    var body: some View {
+        Image("AppLogo")
+            .resizable()
+            .interpolation(.high)
+            .aspectRatio(contentMode: .fit)
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.23, style: .continuous))
+            .shadow(color: .black.opacity(0.12), radius: size * 0.06, y: size * 0.02)
+            .overlay(alignment: .topTrailing) {
+                if muted {
+                    Image(systemName: "mic.slash.fill")
+                        .font(.system(size: size * 0.15, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: size * 0.34, height: size * 0.34)
+                        .background(Color.red, in: Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.92), lineWidth: max(1, size * 0.015)))
+                        .shadow(color: .black.opacity(0.25), radius: size * 0.025, y: size * 0.015)
+                        .offset(x: size * 0.04, y: -size * 0.04)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .animation(.easeOut(duration: 0.16), value: muted)
+    }
+}
+
 /// System Settings–style preferences: sidebar + detail, resizable frosted window.
 struct PreferencesView: View {
     @ObservedObject var preferences: PreferencesStore
@@ -73,13 +102,7 @@ struct PreferencesView: View {
 
     private var sidebarBrand: some View {
         HStack(spacing: 10) {
-            Image("AppLogo")
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 28, height: 28)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                .shadow(color: .black.opacity(0.12), radius: 2, y: 1)
+            PreferencesAppIcon(size: 28, muted: mic.effectiveMuted)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("LockMic")
@@ -142,7 +165,7 @@ struct PreferencesView: View {
                         .disabled(!preferences.featuresEnabled)
                         .opacity(preferences.featuresEnabled ? 1 : 0.45)
                 case .about:
-                    PreferencesAboutPage()
+                    PreferencesAboutPage(mic: mic)
                 }
             }
             .padding(16)

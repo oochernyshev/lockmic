@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Tillåt systemljud i Systeminställningar och försök igen.";
 "recording.permission.playback.button" = "Tillåt uppspelning";
 "menu.show_recording_monitor" = "Visa inspelningsfönster";
+"recording.monitor.silence_tooltip" = "Gröna staplar visar upptäckt tystnad";
+"recording.error.file" = "Det gick inte att skapa inspelningsfilen. Prova en annan kvalitet eller inmatningsenhet.";
+"status.accessibility.disabled" = "LockMic inaktiverat — samtycke krävs";
+"status.tooltip.disabled" = "LockMic: inaktiverat\\nTillåt anonym statistik för att aktivera\\nKlicka för meny · Samtycke i Inställningar";
+"status.tooltip.holding_talk" = "Håller ned tryck-för-tal";
+"status.tooltip.holding_mute" = "Håller ned tryck-för-tyst";
+"status.tooltip.holding_flip" = "Håller ned tryck-för-växling";
+"status.tooltip.muted" = "LockMic: avstängd — %@\\nKlicka för att slå på · Högerklicka för meny";
+"status.tooltip.unmuted" = "LockMic: aktiv — %@\\nKlicka för att stänga av · Högerklicka för meny";
+"status.tooltip.unknown" = "LockMic: mikrofonstatus okänd";
+"status.tooltip.cant_mute" = "LockMic: kan inte stänga av %@";
+"recording.device.sample_rate" = "%@ kHz";

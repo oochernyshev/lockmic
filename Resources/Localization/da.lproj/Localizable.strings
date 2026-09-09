@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Tillad systemlyd i Systemindstillinger, og prøv igen.";
 "recording.permission.playback.button" = "Tillad afspilning";
 "menu.show_recording_monitor" = "Vis optagelsesvindue";
+"recording.monitor.silence_tooltip" = "Grønne søjler viser registreret stilhed";
+"recording.error.file" = "Optagelsesfilen kunne ikke oprettes. Prøv en anden kvalitet eller inputenhed.";
+"status.accessibility.disabled" = "LockMic deaktiveret — samtykke kræves";
+"status.tooltip.disabled" = "LockMic: deaktiveret\\nTillad anonym statistik for at aktivere\\nKlik for menu · Samtykke i Indstillinger";
+"status.tooltip.holding_talk" = "Holder tryk-for-tale";
+"status.tooltip.holding_mute" = "Holder tryk-for-lydløs";
+"status.tooltip.holding_flip" = "Holder tryk-for-skift";
+"status.tooltip.muted" = "LockMic: lydløs — %@\\nKlik for at slå til · Højreklik for menu";
+"status.tooltip.unmuted" = "LockMic: aktiv — %@\\nKlik for at slå lyd fra · Højreklik for menu";
+"status.tooltip.unknown" = "LockMic: mikrofonstatus ukendt";
+"status.tooltip.cant_mute" = "LockMic: kan ikke slå lyd fra på %@";
+"recording.device.sample_rate" = "%@ kHz";

@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "Sta systeemaudio toe in Systeeminstellingen en probeer het opnieuw.";
 "recording.permission.playback.button" = "Weergave toestaan";
 "menu.show_recording_monitor" = "Opnamevenster tonen";
+"recording.monitor.silence_tooltip" = "Groene balken tonen gedetecteerde stilte";
+"recording.error.file" = "Kan het opnamebestand niet aanmaken. Probeer een andere kwaliteit of een ander invoerapparaat.";
+"status.accessibility.disabled" = "LockMic uitgeschakeld — toestemming vereist";
+"status.tooltip.disabled" = "LockMic: uitgeschakeld\\nSta anonieme gebruiksstatistieken toe om in te schakelen\\nKlik voor menu · Toestemming in Voorkeuren";
+"status.tooltip.holding_talk" = "Push-to-talk wordt ingedrukt";
+"status.tooltip.holding_mute" = "Push-to-mute wordt ingedrukt";
+"status.tooltip.holding_flip" = "Push-to-flip wordt ingedrukt";
+"status.tooltip.muted" = "LockMic: gedempt — %@\\nKlik om in te schakelen · Rechtsklik voor menu";
+"status.tooltip.unmuted" = "LockMic: actief — %@\\nKlik om te dempen · Rechtsklik voor menu";
+"status.tooltip.unknown" = "LockMic: microfoonstatus onbekend";
+"status.tooltip.cant_mute" = "LockMic: kan %@ niet dempen";
+"recording.device.sample_rate" = "%@ kHz";

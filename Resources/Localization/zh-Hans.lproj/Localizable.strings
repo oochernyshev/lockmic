@@ -210,3 +210,15 @@
 "recording.permission.playback.caption" = "请在系统设置中允许系统音频，然后重试。";
 "recording.permission.playback.button" = "允许播放";
 "menu.show_recording_monitor" = "显示录音窗口";
+"recording.monitor.silence_tooltip" = "绿色条表示检测到的静音";
+"recording.error.file" = "无法创建录音文件。请尝试其他质量设置或输入设备。";
+"status.accessibility.disabled" = "LockMic 已停用 — 需要同意";
+"status.tooltip.disabled" = "LockMic：已停用\\n同意匿名使用统计后即可启用\\n点按打开菜单 · 在“设置”中同意";
+"status.tooltip.holding_talk" = "正在按住说话";
+"status.tooltip.holding_mute" = "正在按住静音";
+"status.tooltip.holding_flip" = "正在按住切换";
+"status.tooltip.muted" = "LockMic：已静音 — %@\\n点按取消静音 · 右键点按打开菜单";
+"status.tooltip.unmuted" = "LockMic：已开启 — %@\\n点按静音 · 右键点按打开菜单";
+"status.tooltip.unknown" = "LockMic：麦克风状态未知";
+"status.tooltip.cant_mute" = "LockMic：无法将 %@ 静音";
+"recording.device.sample_rate" = "%@ kHz";
