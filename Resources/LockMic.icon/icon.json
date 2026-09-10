@@ -1,6 +1,6 @@
 {
   "fill" : {
-    "automatic-gradient" : "extended-srgb:0.00000,0.53333,1.00000,1.00000"
+    "automatic-gradient" : "extended-srgb:0.96078,0.96078,0.96863,1.00000"
   },
   "groups" : [
     {
@@ -10,16 +10,26 @@
           "name" : "04-control"
         },
         {
+          "fill-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "extended-srgb:0.78039,0.80392,0.84314,1.00000"
+              }
+            },
+            {
+              "appearance" : "tinted",
+              "value" : {
+                "solid" : "extended-srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            }
+          ],
           "image-name" : "03-microphone-frame.svg",
           "name" : "03-microphone-frame"
         },
         {
           "image-name" : "02-red-capsule.svg",
           "name" : "02-red-capsule"
-        },
-        {
-          "image-name" : "01-background.svg",
-          "name" : "01-background"
         }
       ],
       "shadow" : {

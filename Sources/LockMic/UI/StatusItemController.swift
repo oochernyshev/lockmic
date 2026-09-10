@@ -90,7 +90,16 @@ final class StatusItemController {
         mic.$state
             .removeDuplicates()
             .sink { [weak self] _ in
-                DispatchQueue.main.async { self?.updateIcon() }
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    self.updateIcon()
+                    self.hud.syncPersistentState(
+                        muted: self.mic.effectiveMuted,
+                        hold: self.hotkeys.hudHold,
+                        recording: self.recorder.isRecording,
+                        featuresEnabled: self.featuresEnabled
+                    )
+                }
             }
             .store(in: &micCancellables)
         observePreferenceHotkeys()
@@ -115,9 +124,11 @@ final class StatusItemController {
             self?.refreshMenuBarIconVisibility(force: true)
         }
 
-        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                self?.refreshMenuBarIconVisibility(force: false)
+                guard let self else { return }
+                self.refreshMenuBarIconVisibility(force: false)
+                self.refreshDockBadge(force: true)
             }
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -148,7 +159,7 @@ final class StatusItemController {
             visibilityMismatchCount = 0
             return
         }
-        // Two consecutive samples (~2s) before flipping Dock policy — avoids flicker.
+        // Two consecutive samples (~4s) before flipping Dock policy — avoids flicker.
         visibilityMismatchCount += 1
         if visibilityMismatchCount >= 2 {
             visibilityMismatchCount = 0
@@ -681,15 +692,10 @@ final class StatusItemController {
 
     /// Small red dot on the menu bar status button when a newer release exists.
     private func refreshUpdateBadge() {
+        refreshDockBadge()
+
         guard let button = statusItem?.button else { return }
         let show = UpdateChecker.shared.availableUpdate != nil
-        let muted: Bool = switch mic.state {
-        case .muted: true
-        case .unknown: mic.effectiveMuted
-        case .unmuted, .unsupported: false
-        }
-        NSApp.dockTile.contentView = nil
-        NSApp.dockTile.badgeLabel = featuresEnabled && muted ? "×" : (show ? "•" : nil)
 
         if !show {
             updateBadgeView?.removeFromSuperview()
@@ -719,6 +725,22 @@ final class StatusItemController {
         let y: CGFloat = isFlipped ? inset : max(0, size.height - diameter - inset)
         badge.frame = NSRect(x: x, y: y, width: diameter, height: diameter)
         badge.layer?.backgroundColor = NSColor.systemRed.cgColor
+    }
+
+    /// Synchronize the native Dock badge with the current application state.
+    func refreshDockBadge(force: Bool = false) {
+        let showUpdate = UpdateChecker.shared.availableUpdate != nil
+        let badge = featuresEnabled && mic.effectiveMuted ? "×" : (showUpdate ? "•" : nil)
+        let tile = NSApp.dockTile
+        tile.contentView = nil
+        if force, badge != nil, tile.badgeLabel == badge {
+            // Dock can preserve the label property while recreating an unbadged tile.
+            // Clearing first forces the same transition as a real mute-state change.
+            tile.badgeLabel = nil
+            tile.display()
+        }
+        tile.badgeLabel = badge
+        tile.display()
     }
 
     private func symbolName(for state: MicState) -> String {

@@ -467,6 +467,34 @@ final class CardView: NSView {
     }
 }
 
+private enum MonitorChipMetrics {
+    static let fontSize = NSFont.preferredFont(forTextStyle: .caption1).pointSize
+    static let semiboldFont = NSFont.systemFont(ofSize: fontSize, weight: .semibold)
+    static let monospacedFont = NSFont.monospacedDigitSystemFont(ofSize: fontSize, weight: .medium)
+    static let height = max(22, ceil(semiboldFont.ascender - semiboldFont.descender + semiboldFont.leading) + 8)
+    static let cornerRadius = height / 2
+
+    static func applyAppearance(to layer: CALayer?) {
+        layer?.cornerRadius = cornerRadius
+        layer?.masksToBounds = false
+        layer?.shadowColor = NSColor.black.cgColor
+        layer?.shadowRadius = 2
+        layer?.shadowOffset = CGSize(width: 0, height: -1)
+    }
+
+    static func updateSeparation(of layer: CALayer?, darkMode: Bool) {
+        layer?.shadowOpacity = darkMode ? 0.4 : 0.16
+        layer?.borderWidth = darkMode ? 0.5 : 0
+        layer?.borderColor = darkMode
+            ? NSColor.white.withAlphaComponent(0.16).cgColor
+            : nil
+    }
+
+    static func isDark(_ appearance: NSAppearance) -> Bool {
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
+}
+
 /// Compact pill overlaid on the waveform (status / size / elapsed).
 final class MonitorChip: NSView {
     let dotView = NSView()
@@ -477,9 +505,9 @@ final class MonitorChip: NSView {
         self.showsDot = showsDot
         super.init(frame: .zero)
         wantsLayer = true
-        layer?.cornerRadius = 11
-        layer?.masksToBounds = true
+        MonitorChipMetrics.applyAppearance(to: layer)
         translatesAutoresizingMaskIntoConstraints = false
+        heightAnchor.constraint(equalToConstant: MonitorChipMetrics.height).isActive = true
 
         dotView.wantsLayer = true
         dotView.layer?.cornerRadius = 3.5
@@ -488,8 +516,8 @@ final class MonitorChip: NSView {
 
         label.stringValue = title
         label.font = monospaced
-            ? .monospacedDigitSystemFont(ofSize: 11, weight: .medium)
-            : .systemFont(ofSize: 11, weight: .semibold)
+            ? MonitorChipMetrics.monospacedFont
+            : MonitorChipMetrics.semiboldFont
         label.textColor = .labelColor
         label.drawsBackground = false
         label.isBezeled = false
@@ -528,8 +556,10 @@ final class MonitorChip: NSView {
 
     override func updateLayer() {
         layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.82).cgColor
-        layer?.borderWidth = 1
-        layer?.borderColor = NSColor.labelColor.withAlphaComponent(0.12).cgColor
+        MonitorChipMetrics.updateSeparation(
+            of: layer,
+            darkMode: MonitorChipMetrics.isDark(effectiveAppearance)
+        )
         if showsDot, dotView.layer?.backgroundColor == nil {
             dotView.layer?.backgroundColor = NSColor.systemRed.cgColor
         }
@@ -548,16 +578,16 @@ final class SilenceModeChip: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        layer?.cornerRadius = 11
-        layer?.masksToBounds = true
+        MonitorChipMetrics.applyAppearance(to: layer)
         translatesAutoresizingMaskIntoConstraints = false
+        heightAnchor.constraint(equalToConstant: MonitorChipMetrics.height).isActive = true
 
         dot.wantsLayer = true
         dot.layer?.cornerRadius = 3.5
         dot.translatesAutoresizingMaskIntoConstraints = false
         for button in [toggleButton, durationButton] {
             button.isBordered = false
-            button.font = .systemFont(ofSize: 11, weight: .semibold)
+            button.font = MonitorChipMetrics.semiboldFont
             button.translatesAutoresizingMaskIntoConstraints = false
             addSubview(button)
         }
@@ -624,8 +654,10 @@ final class SilenceModeChip: NSView {
 
     override func updateLayer() {
         layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.82).cgColor
-        layer?.borderWidth = 1
-        layer?.borderColor = NSColor.labelColor.withAlphaComponent(0.12).cgColor
+        MonitorChipMetrics.updateSeparation(
+            of: layer,
+            darkMode: MonitorChipMetrics.isDark(effectiveAppearance)
+        )
     }
 
     @objc private func advanceClicked() { onAdvance?() }

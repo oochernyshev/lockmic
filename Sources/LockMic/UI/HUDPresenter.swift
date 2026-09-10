@@ -82,6 +82,24 @@ final class HUDPresenter {
         )
     }
 
+    /// Update HUDs that stay on screen without presenting or hiding a transient toast.
+    func syncPersistentState(
+        muted: Bool,
+        hold: HUDHoldKind,
+        recording: Bool,
+        featuresEnabled: Bool
+    ) {
+        guard featuresEnabled else {
+            overlay.hide()
+            return
+        }
+        if preferences.hudFloating, overlay.hasAnyVisibleDisplay() {
+            overlay.showFloating(muted: muted, hold: hold, recording: recording)
+        } else if recording {
+            overlay.showToast(muted: muted, hold: hold, recording: true, persistent: true)
+        }
+    }
+
     func hide() {
         overlay.hide()
         lastHudFloating = false
