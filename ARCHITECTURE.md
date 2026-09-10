@@ -2,7 +2,7 @@
 
 LockMic is a native macOS menu-bar utility that mutes system microphone input at the Core Audio level so mute works in every app (Zoom, Teams, Meet, FaceTime, browsers, etc.).
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.4.33
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** MIT · **Current version:** 1.4.34
 
 **Distribution priority:** Homebrew (Developer ID / notarized `.app`) first; Mac App Store later with the same codebase and a sandboxed flavor.
 
@@ -67,7 +67,7 @@ One instance is shared by `MicController` and `SessionRecorder`.
 - Get/set **mute** (`kAudioDevicePropertyMute`, input scope)
 - Enumerate inputs; detect mute support and **virtual devices**
   - Only `kAudioDevicePropertyTransportType == Virtual` (no name/UID heuristics)
-- Listen for **device list / default device** changes via property listeners
+- Listen for **device list / default device** and **mute** property changes via property listeners
 - Mute alone does not record → no microphone TCC until Recording starts
 
 ### 2. `MicController` (state machine)
@@ -78,7 +78,7 @@ Single source of truth for mute:
 enum MicState: muted | unmuted | unknown | unsupported(deviceName)
 ```
 
-- Holds **desired** mute state (sticky user intent, re-applied on device change)
+- Holds **desired** mute state (sticky user intent; re-applied on mute notifications, device change, and a 2s safety poll)
 - Reads **actual** hardware state after changes into `state`
 - **`effectiveMuted`** (alias `isMuted`): one notion for UI / hotkeys / HUD  
   - `.muted` → true, `.unmuted` → false  
@@ -337,6 +337,7 @@ Local:
 | **1.4.31** | Unified silence countdown control and per-second silence markers | Done |
 | **1.4.32** | Glass app icon, mute-state badges, device sample rates, silence tuning, and complete localization | Done |
 | **1.4.33** | Adaptive app icon, reliable Dock/HUD state sync, and polished recording badges | Done |
+| **1.4.34** | Stable Dock mute badge; remute immediately on Teams/Zoom HAL unmute | Done |
 | **HB-1.x** | Push-to-talk / push-to-mute, shortcut conflict warnings | Done |
 | **HB-2** | Richer status, polish, notarized releases | Planned |
 | **Pro** (optional) | Paid add-ons in separate closed modules (open core remains MIT) | Future |

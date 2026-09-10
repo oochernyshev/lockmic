@@ -61,6 +61,11 @@ private actor MicHardwareWorker {
         let error: String?
     }
 
+    struct EnforceCheck: Sendable {
+        let needsWrite: Bool
+        let snapshot: Snapshot
+    }
+
     private let audio: AudioDeviceService
 
     init(audio: AudioDeviceService) {
@@ -105,6 +110,40 @@ private actor MicHardwareWorker {
             batch: batch,
             error: error
         )
+    }
+
+    /// Read-only: skip the 2s write when HAL is already holding mute on the same default.
+    /// Device switch, unknown mute, or any in-scope unmute still needs a write.
+    func muteEnforceCheck(
+        muteAllInputs: Bool,
+        lastEnforcedDefaultID: AudioDeviceID
+    ) -> EnforceCheck {
+        let snapshot = makeSnapshot(muteAllInputs: muteAllInputs)
+        return EnforceCheck(
+            needsWrite: Self.needsMuteWrite(
+                snapshot: snapshot,
+                muteAllInputs: muteAllInputs,
+                lastEnforcedDefaultID: lastEnforcedDefaultID
+            ),
+            snapshot: snapshot
+        )
+    }
+
+    private static func needsMuteWrite(
+        snapshot: Snapshot,
+        muteAllInputs: Bool,
+        lastEnforcedDefaultID: AudioDeviceID
+    ) -> Bool {
+        guard let defaultID = snapshot.defaultID else { return true }
+        if lastEnforcedDefaultID == 0 || defaultID != lastEnforcedDefaultID {
+            return true
+        }
+        if muteAllInputs {
+            return snapshot.devices.contains { device in
+                device.isInScope && device.supportsMute && device.isMuted != true
+            }
+        }
+        return snapshot.defaultMuted != true
     }
 
     private func makeSnapshot(muteAllInputs: Bool) -> Snapshot {
@@ -170,23 +209,28 @@ final class MicController: ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var inputDevices: [InputDeviceRow] = []
 
-    /// Sticky user intent, re-applied every 2s while muted.
+    /// Sticky user intent: HAL mute is re-applied on unmute notifications, device
+    /// changes, and a 2s safety poll while this is true.
     private(set) var desiredMuted: Bool = false
 
-    /// When true (push-to-talk held), skip the 2s mute re-apply.
+    /// When true (push-to-talk held), skip mute re-apply from poll and HAL.
     var suppressDeviceResync = false
 
     private let audio: AudioDeviceService
     private let hardware: MicHardwareWorker
     private let preferences: PreferencesStore
     private var devicesToken: UUID?
+    private var muteToken: UUID?
     private var deviceChangeWorkItem: DispatchWorkItem?
     private var stateRequest = 0
     private var devicesRequest = 0
 
-    /// While user intent is muted, rewrite HAL mute every 2s (device switch, Meet, drivers).
+    /// Safety net while muted: Teams/Zoom sometimes unmute without a HAL notification.
     private var muteEnforceTimer: Timer?
     private static let muteEnforceInterval: TimeInterval = 2.0
+    /// Ignore HAL mute callbacks from our own writes so a stubborn driver cannot loop.
+    private var lastMuteWriteAt: TimeInterval = 0
+    private static let ignoreMuteNotificationsAfterWrite: TimeInterval = 0.2
     /// Default input last written by mute/enforce — used to detect a switch on the 2s tick.
     private var lastEnforcedDefaultID: AudioDeviceID = 0
 
@@ -199,6 +243,11 @@ final class MicController: ObservableObject {
                 self?.scheduleHandleDevicesChanged()
             }
         }
+        muteToken = audio.onMuteChanged { [weak self] in
+            Task { @MainActor in
+                self?.handleMutePropertyChanged()
+            }
+        }
         refreshFromHardware(applyDesired: false)
         // refreshFromHardware already rebuilds the list and starts mute enforcement if needed.
     }
@@ -207,6 +256,9 @@ final class MicController: ObservableObject {
         muteEnforceTimer?.invalidate()
         if let devicesToken {
             audio.removeDevicesChangedHandler(devicesToken)
+        }
+        if let muteToken {
+            audio.removeMuteChangedHandler(muteToken)
         }
     }
 
@@ -280,6 +332,7 @@ final class MicController: ObservableObject {
     // MARK: - Private
 
     private func applyMute(_ muted: Bool) {
+        lastMuteWriteAt = ProcessInfo.processInfo.systemUptime
         let stateRequest = nextStateRequest()
         let devicesRequest = nextDevicesRequest()
         let muteAllInputs = preferences.muteAllInputs
@@ -389,7 +442,7 @@ final class MicController: ObservableObject {
         return devicesRequest
     }
 
-    /// Start/stop the 2s re-apply timer from `desiredMuted`.
+    /// Start/stop the 2s safety poll from `desiredMuted`.
     private func syncMuteEnforcementTimer() {
         if desiredMuted {
             guard muteEnforceTimer == nil else { return }
@@ -407,16 +460,54 @@ final class MicController: ObservableObject {
         }
     }
 
-    /// 2s timer and recording start: write mute again on the current default.
-    func reassertMuteIfNeeded() {
+    /// HAL mute property changed. Our own writes are ignored; Teams/Zoom unmute is not.
+    private func handleMutePropertyChanged() {
         guard desiredMuted, !suppressDeviceResync else { return }
-        applyMute(true)
+        let elapsed = ProcessInfo.processInfo.systemUptime - lastMuteWriteAt
+        if elapsed < Self.ignoreMuteNotificationsAfterWrite { return }
+        reassertMuteIfNeeded()
+    }
+
+    /// Re-apply mute while user intent is muted.
+    /// - Parameter forceWrite: recording start and device switches always write
+    ///   (USB often needs an unmute→mute transition; Jabra unmutes while IO runs).
+    ///   The 2s poll and HAL mute notifications skip the write when the same
+    ///   default is already muted — Teams/Zoom are still caught by the listener
+    ///   plus this poll if they unmute without notifying.
+    func reassertMuteIfNeeded(forceWrite: Bool = false) {
+        guard desiredMuted, !suppressDeviceResync else { return }
+        if forceWrite {
+            applyMute(true)
+            return
+        }
+        let devicesRequest = nextDevicesRequest()
+        let muteAllInputs = preferences.muteAllInputs
+        let lastDefaultID = lastEnforcedDefaultID
+        Task { [weak self, hardware] in
+            let check = await hardware.muteEnforceCheck(
+                muteAllInputs: muteAllInputs,
+                lastEnforcedDefaultID: lastDefaultID
+            )
+            guard let self else { return }
+            if devicesRequest == self.devicesRequest {
+                self.inputDevices = check.snapshot.devices
+            }
+            guard self.desiredMuted, !self.suppressDeviceResync else { return }
+            if check.needsWrite {
+                self.applyMute(true)
+            }
+        }
     }
 
     private func scheduleHandleDevicesChanged() {
         deviceChangeWorkItem?.cancel()
         let work = DispatchWorkItem { [weak self] in
-            self?.refreshDeviceList()
+            guard let self else { return }
+            if self.desiredMuted {
+                self.reassertMuteIfNeeded(forceWrite: true)
+            } else {
+                self.refreshDeviceList()
+            }
         }
         deviceChangeWorkItem = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: work)

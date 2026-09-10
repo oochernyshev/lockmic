@@ -435,7 +435,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
 
     private func reassertSystemMute() {
         Task { @MainActor [weak mic] in
-            mic?.reassertMuteIfNeeded()
+            mic?.reassertMuteIfNeeded(forceWrite: true)
         }
     }
 

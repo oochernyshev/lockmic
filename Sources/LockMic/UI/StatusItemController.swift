@@ -126,9 +126,7 @@ final class StatusItemController {
 
         let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                guard let self else { return }
-                self.refreshMenuBarIconVisibility(force: false)
-                self.refreshDockBadge(force: true)
+                self?.refreshMenuBarIconVisibility(force: false)
             }
         }
         RunLoop.main.add(timer, forMode: .common)
@@ -328,9 +326,6 @@ final class StatusItemController {
     /// Shared menu for the status item and Dock tile.
     private func makeContextMenu(includeQuit: Bool) -> NSMenu {
         let menu = NSMenu()
-        // Display HUD checkboxes share one action; `.automatic` can treat that as
-        // select-one (radio), so one monitor stays checked and "deselect all" fails.
-        menu.selectionMode = .selectAny
 
         if !featuresEnabled {
             let disabled = NSMenuItem(
@@ -374,32 +369,6 @@ final class StatusItemController {
             }
             return menu
         }
-
-        let statusTitle: String = {
-            switch mic.state {
-            case .muted: return L10n.menuStatusMuted
-            case .unmuted: return L10n.menuStatusUnmuted
-            case .unknown: return L10n.menuStatusUnknown
-            case .unsupported(let name): return L10n.menuStatusCantMute(name)
-            }
-        }()
-        let statusLine = NSMenuItem(title: statusTitle, action: nil, keyEquivalent: "")
-        statusLine.isEnabled = false
-        menu.addItem(statusLine)
-
-        let deviceItem = NSMenuItem(title: L10n.menuDevice(mic.deviceName), action: nil, keyEquivalent: "")
-        deviceItem.isEnabled = false
-        menu.addItem(deviceItem)
-
-        let scopeItem = NSMenuItem(
-            title: preferences.muteAllInputs ? L10n.menuScopeAll : L10n.menuScopeDefault,
-            action: nil,
-            keyEquivalent: ""
-        )
-        scopeItem.isEnabled = false
-        menu.addItem(scopeItem)
-
-        menu.addItem(.separator())
 
         let toggle = NSMenuItem(
             title: mic.effectiveMuted ? L10n.menuUnmuteMic : L10n.menuMuteMic,
@@ -450,9 +419,16 @@ final class StatusItemController {
 
         if preferences.hudFloating {
             menu.addItem(.separator())
-            let floatingHeader = NSMenuItem(title: L10n.menuFloatingHUD, action: nil, keyEquivalent: "")
-            floatingHeader.isEnabled = false
-            menu.addItem(floatingHeader)
+            let floatingHUDItem = NSMenuItem(
+                title: L10n.menuFloatingHUD,
+                action: nil,
+                keyEquivalent: ""
+            )
+            let floatingHUDMenu = NSMenu(title: L10n.menuFloatingHUD)
+            // Each display is an independent checkbox, including the last one.
+            floatingHUDMenu.selectionMode = .selectAny
+            floatingHUDItem.submenu = floatingHUDMenu
+            menu.addItem(floatingHUDItem)
 
             for screen in hud.overlay.screenVisibilities() {
                 let item = NSMenuItem(
@@ -467,9 +443,10 @@ final class StatusItemController {
                     item.tag = Int(numeric)
                 }
                 item.state = screen.isVisible ? .on : .off
-                menu.addItem(item)
+                floatingHUDMenu.addItem(item)
             }
 
+            floatingHUDMenu.addItem(.separator())
             if hud.overlay.hasAnyVisibleDisplay() {
                 let hideAll = NSMenuItem(
                     title: L10n.menuHideAllDisplays,
@@ -477,7 +454,7 @@ final class StatusItemController {
                     keyEquivalent: ""
                 )
                 hideAll.target = self
-                menu.addItem(hideAll)
+                floatingHUDMenu.addItem(hideAll)
             }
             if hud.overlay.hasAnyHiddenDisplay() {
                 let showAll = NSMenuItem(
@@ -486,7 +463,7 @@ final class StatusItemController {
                     keyEquivalent: ""
                 )
                 showAll.target = self
-                menu.addItem(showAll)
+                floatingHUDMenu.addItem(showAll)
             }
         }
 

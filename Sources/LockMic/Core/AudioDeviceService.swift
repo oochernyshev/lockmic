@@ -39,11 +39,21 @@ final class AudioDeviceService: @unchecked Sendable {
     private var defaultDeviceListenerBlock: AudioObjectPropertyListenerBlock?
     private var defaultOutputListenerBlock: AudioObjectPropertyListenerBlock?
     private var deviceListListenerBlock: AudioObjectPropertyListenerBlock?
+    private var muteListenerBlock: AudioObjectPropertyListenerBlock?
+    private var muteListenKeys: Set<MuteListenKey> = []
+    private var muteNotifyQueued = false
     private let lock = NSLock()
     private var onDevicesChangedHandlers: [UUID: () -> Void] = [:]
+    private var onMuteChangedHandlers: [UUID: () -> Void] = [:]
     /// HAL may `dispatch_sync` onto this queue from inside Start/Stop/Destroy.
     /// Registering on main deadlocks those calls when they run on the main thread.
     private let listenerQueue = DispatchQueue(label: "com.lockmic.hal-listeners")
+
+    private struct MuteListenKey: Hashable {
+        let deviceID: AudioDeviceID
+        let scope: AudioObjectPropertyScope
+        let element: AudioObjectPropertyElement
+    }
 
     init() {
         installListeners()
@@ -339,6 +349,22 @@ final class AudioDeviceService: @unchecked Sendable {
         lock.unlock()
     }
 
+    /// Teams / Zoom / Meet typically write `kAudioDevicePropertyMute` when they unmute.
+    @discardableResult
+    func onMuteChanged(_ handler: @escaping () -> Void) -> UUID {
+        let token = UUID()
+        lock.lock()
+        onMuteChangedHandlers[token] = handler
+        lock.unlock()
+        return token
+    }
+
+    func removeMuteChangedHandler(_ token: UUID) {
+        lock.lock()
+        onMuteChangedHandlers.removeValue(forKey: token)
+        lock.unlock()
+    }
+
     // MARK: - Virtual device detection
 
     /// Hide our process-tap aggregate so it does not show up as a system device.
@@ -457,9 +483,28 @@ final class AudioDeviceService: @unchecked Sendable {
         DispatchQueue.main.async { handlers.forEach { $0() } }
     }
 
+    private func notifyMuteChanged() {
+        lock.lock()
+        guard !muteNotifyQueued else {
+            lock.unlock()
+            return
+        }
+        muteNotifyQueued = true
+        lock.unlock()
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.lock.lock()
+            self.muteNotifyQueued = false
+            let handlers = Array(self.onMuteChangedHandlers.values)
+            self.lock.unlock()
+            handlers.forEach { $0() }
+        }
+    }
+
     private func installListeners() {
         let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
             self?.notifyDevicesChanged()
+            self?.scheduleSyncMuteListeners()
         }
         defaultDeviceListenerBlock = block
         defaultOutputListenerBlock = block
@@ -500,9 +545,56 @@ final class AudioDeviceService: @unchecked Sendable {
             listenerQueue,
             block
         )
+        scheduleSyncMuteListeners()
+    }
+
+    private func scheduleSyncMuteListeners() {
+        listenerQueue.async { [weak self] in
+            self?.syncMuteListeners()
+        }
+    }
+
+    /// Follow mute on every controllable input so Teams/Zoom unmute is caught immediately.
+    private func syncMuteListeners() {
+        if muteListenerBlock == nil {
+            muteListenerBlock = { [weak self] _, _ in
+                self?.notifyMuteChanged()
+            }
+        }
+        guard let block = muteListenerBlock else { return }
+
+        var desired = Set<MuteListenKey>()
+        for device in listInputDevices() where device.supportsMute && !device.isVirtual {
+            for target in muteTargets(device.id) {
+                desired.insert(
+                    MuteListenKey(deviceID: device.id, scope: target.scope, element: target.element)
+                )
+            }
+        }
+
+        for key in muteListenKeys.subtracting(desired) {
+            var address = propertyAddress(kAudioDevicePropertyMute, key.scope, key.element)
+            AudioObjectRemovePropertyListenerBlock(key.deviceID, &address, listenerQueue, block)
+        }
+        for key in desired.subtracting(muteListenKeys) {
+            var address = propertyAddress(kAudioDevicePropertyMute, key.scope, key.element)
+            AudioObjectAddPropertyListenerBlock(key.deviceID, &address, listenerQueue, block)
+        }
+        muteListenKeys = desired
+    }
+
+    private func removeMuteListeners() {
+        guard let block = muteListenerBlock else { return }
+        for key in muteListenKeys {
+            var address = propertyAddress(kAudioDevicePropertyMute, key.scope, key.element)
+            AudioObjectRemovePropertyListenerBlock(key.deviceID, &address, listenerQueue, block)
+        }
+        muteListenKeys.removeAll()
+        muteListenerBlock = nil
     }
 
     private func removeListeners() {
+        removeMuteListeners()
         guard let block = defaultDeviceListenerBlock else { return }
         var defaultAddress = propertyAddress(
             kAudioHardwarePropertyDefaultInputDevice,

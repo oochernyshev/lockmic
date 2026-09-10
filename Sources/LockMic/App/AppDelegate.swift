@@ -119,9 +119,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applyActivationPolicy() {
         let showDock = preferences.showInDock || !menuBarIconVisible
         let policy: NSApplication.ActivationPolicy = showDock ? .regular : .accessory
-        let changed = NSApp.activationPolicy() != policy
-        if changed {
+        let appearedAsMenuBarFallback =
+            NSApp.activationPolicy() != .regular && policy == .regular && !menuBarIconVisible
+        if NSApp.activationPolicy() != policy {
             NSApp.setActivationPolicy(policy)
+        }
+        if appearedAsMenuBarFallback {
+            // Dock recreates the tile unbadged while leaving `badgeLabel` set.
+            // Re-apply once after the new tile exists — not on a repeating timer.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+                Task { @MainActor in
+                    self?.statusItemController?.refreshDockBadge(force: true)
+                }
+            }
         }
     }
 }
