@@ -338,6 +338,7 @@ Local:
 | **1.4.32** | Glass app icon, mute-state badges, device sample rates, silence tuning, and complete localization | Done |
 | **1.4.33** | Adaptive app icon, reliable Dock/HUD state sync, and polished recording badges | Done |
 | **1.4.34** | Stable Dock mute badge; remute immediately on Teams/Zoom HAL unmute | Done |
+| **1.4.35** | SessionRecorder collaborators and recording-monitor UI split | Done |
 | **HB-1.x** | Push-to-talk / push-to-mute, shortcut conflict warnings | Done |
 | **HB-2** | Richer status, polish, notarized releases | Planned |
 | **Pro** (optional) | Paid add-ons in separate closed modules (open core remains MIT) | Future |

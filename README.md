@@ -61,6 +61,8 @@ See [`website/README.md`](./website/README.md) for Firebase setup and CI deploy.
 
 ## Build & run
 
+Full local-build and **publish-a-release** guide: [BUILD_AND_DEPLOY.md](./BUILD_AND_DEPLOY.md). Ship with `./Scripts/release.sh X.Y.Z -m "summary"` ([RELEASE.md](./RELEASE.md)).
+
 Start or restart (kills any running instance; builds if the app is missing):
 
 ```bash
@@ -169,6 +171,8 @@ Scripts/             start, build, package
 homebrew/Casks/      Cask formula template
 LICENSE              MIT
 ARCHITECTURE.md      System design
+BUILD_AND_DEPLOY.md  Local build and GitHub / Homebrew / website release
+RELEASE.md           Short ship checklist
 logo.png             Source artwork (generates icon sizes)
 ```
 
