@@ -222,7 +222,7 @@ final class RecordingCoordinator {
     }
 
     private func retryMicrophoneAccess() async {
-        if await SessionRecorder.requestMicrophoneAccess() {
+        if await SessionPermissions.requestMicrophoneAccess() {
             await beginCapture(scope: currentPlaybackScope(), source: .monitor)
             return
         }
