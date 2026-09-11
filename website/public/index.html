@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LockMic — System-wide microphone mute for macOS</title>
-  <meta name="description" content="LockMic is a free macOS menu bar app for system-wide microphone mute. Optional local recording of your mic and what you hear — files stay on your Mac. Works in Zoom, Teams, Meet, and every app." />
-  <meta name="keywords" content="LockMic, macOS mic mute, system-wide microphone mute, menu bar mute, local recording, Zoom mute, Teams mute, Meet mute, Core Audio, push to talk, Homebrew, WIXEE.AI" />
+  <meta name="description"
+    content="LockMic is a free macOS menu bar app for system-wide microphone mute. Optional local recording of your mic and what you hear — files stay on your Mac. Works in Zoom, Teams, Meet, and every app." />
+  <meta name="keywords"
+    content="LockMic, macOS mic mute, system-wide microphone mute, menu bar mute, local recording, Zoom mute, Teams mute, Meet mute, Core Audio, push to talk, Homebrew, WIXEE.AI" />
   <meta name="author" content="WIXEE.AI" />
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
   <meta name="theme-color" content="#0b0d12" />
@@ -18,7 +21,8 @@
   <meta property="og:site_name" content="LockMic" />
   <meta property="og:url" content="https://lockmic.com/" />
   <meta property="og:title" content="LockMic — System-wide mic mute for macOS" />
-  <meta property="og:description" content="Mute your mic at the system level from the menu bar. Optional local recording stays on your Mac. Hotkeys, HUD, mute all inputs. Free & open source by WIXEE.AI." />
+  <meta property="og:description"
+    content="Mute your mic at the system level from the menu bar. Optional local recording stays on your Mac. Hotkeys, HUD, mute all inputs. Free & open source by WIXEE.AI." />
   <meta property="og:image" content="https://lockmic.com/assets/og-v2.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -27,7 +31,8 @@
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="LockMic — System-wide mic mute for macOS" />
-  <meta name="twitter:description" content="Menu bar mute that works everywhere. Optional local recording stays on your Mac. MIT open source by WIXEE.AI." />
+  <meta name="twitter:description"
+    content="Menu bar mute that works everywhere. Optional local recording stays on your Mac. MIT open source by WIXEE.AI." />
   <meta name="twitter:image" content="https://lockmic.com/assets/og-v2.png" />
   <meta name="twitter:image:alt" content="LockMic — system-wide microphone mute for macOS" />
 
@@ -38,7 +43,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1.4.34" />
+  <link rel="stylesheet" href="styles.css?v=1.4.35" />
   <link rel="preload" href="assets/hero-mic.mp4" as="video" type="video/mp4" />
   <link rel="preload" href="assets/hero-mic-poster.jpg" as="image" />
 
@@ -46,7 +51,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZRQC93T49"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag() { dataLayer.push(arguments); }
     gtag("js", new Date());
     gtag("set", { platform: "web", product: "lockmic_website" });
     gtag("config", "G-0ZRQC93T49", {
@@ -69,11 +74,11 @@
     "applicationCategory": "UtilitiesApplication",
     "applicationSubCategory": "Audio",
     "operatingSystem": "macOS 14.0 or later",
-    "softwareVersion": "1.4.34",
-    "downloadUrl": "https://github.com/oochernyshev/lockmic/releases/download/v1.4.34/LockMic-1.4.34.dmg",
+    "softwareVersion": "1.4.35",
+    "downloadUrl": "https://github.com/oochernyshev/lockmic/releases/download/v1.4.35/LockMic-1.4.35.dmg",
     "installUrl": "https://lockmic.com/#download",
     "softwareHelp": "https://github.com/oochernyshev/lockmic",
-    "releaseNotes": "https://github.com/oochernyshev/lockmic/releases/tag/v1.4.34",
+    "releaseNotes": "https://github.com/oochernyshev/lockmic/releases/tag/v1.4.35",
     "license": "https://github.com/oochernyshev/lockmic/blob/main/LICENSE",
     "codeRepository": "https://github.com/oochernyshev/lockmic",
     "isAccessibleForFree": true,
@@ -248,6 +253,7 @@
   }
   </script>
 </head>
+
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
@@ -268,10 +274,12 @@
         <a href="#faq">FAQ</a>
       </nav>
       <div class="nav-actions">
-        <a class="btn btn-ghost" href="https://github.com/oochernyshev/lockmic" rel="noopener noreferrer" target="_blank">GitHub</a>
+        <a class="btn btn-ghost" href="https://github.com/oochernyshev/lockmic" rel="noopener noreferrer"
+          target="_blank">GitHub</a>
         <a class="btn btn-primary" href="#download">Get LockMic</a>
       </div>
-      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navDrawer" aria-label="Open menu">
+      <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navDrawer"
+        aria-label="Open menu">
         <span></span><span></span>
       </button>
     </div>
@@ -301,7 +309,8 @@
         </h1>
         <p class="hero-lead reveal">
           <strong>LockMic</strong> is a free macOS menu bar app for <strong>system-wide microphone mute</strong>.
-          It uses Core Audio—not in-app mute buttons—so Zoom, Teams, Meet, FaceTime, browsers, and every other app see a muted mic.
+          It uses Core Audio—not in-app mute buttons—so Zoom, Teams, Meet, FaceTime, browsers, and every other app see a
+          muted mic.
           Global hotkeys, on-screen HUD, and optional floating indicator included.
           New in 1.4: optionally record the mic and what you hear — files stay on your Mac.
         </p>
@@ -326,14 +335,7 @@
       <div class="scroll-film-track" id="scrollFilmTrack">
         <div class="scroll-film-sticky">
           <div class="hero-ambient" aria-hidden="true">
-            <video
-              class="hero-ambient-video"
-              id="heroAmbientVideo"
-              muted
-              playsinline
-              preload="auto"
-              tabindex="-1"
-            >
+            <video class="hero-ambient-video" id="heroAmbientVideo" muted playsinline preload="auto" tabindex="-1">
               <source src="assets/hero-mic.mp4" type="video/mp4" />
             </video>
           </div>
@@ -342,19 +344,9 @@
             <div class="hero-stage">
               <div class="stage-glow" aria-hidden="true"></div>
               <div class="hero-media" id="heroMedia">
-                <video
-                  class="hero-video"
-                  id="heroVideo"
-                  poster="assets/hero-mic-poster.jpg"
-                  width="1280"
-                  height="720"
-                  muted
-                  playsinline
-                  preload="auto"
-                  disablepictureinpicture
-                  disableremoteplayback
-                  aria-label="Scroll-driven product film: microphone goes from live to muted as you scroll"
-                >
+                <video class="hero-video" id="heroVideo" poster="assets/hero-mic-poster.jpg" width="1280" height="720"
+                  muted playsinline preload="auto" disablepictureinpicture disableremoteplayback
+                  aria-label="Scroll-driven product film: microphone goes from live to muted as you scroll">
                   <source src="assets/hero-mic.mp4" type="video/mp4" />
                 </video>
 
@@ -375,20 +367,19 @@
 
                 <!-- Compact interactive demo -->
                 <div class="hero-demo">
-                  <button type="button" class="mb-mic hero-demo-menubar" id="hudDemoMenubar" title="LockMic — click to toggle mute" aria-label="Menu bar mute toggle demo: unmuted">
+                  <button type="button" class="mb-mic hero-demo-menubar" id="hudDemoMenubar"
+                    title="LockMic — click to toggle mute" aria-label="Menu bar mute toggle demo: unmuted">
                     <svg class="mb-mic-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="1.8"/>
-                      <path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                      <path class="mb-mic-slash" d="M5 5l14 14" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
+                      <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke="currentColor"
+                        stroke-width="1.8" />
+                      <path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" />
+                      <path class="mb-mic-slash" d="M5 5l14 14" stroke="#f97316" stroke-width="2"
+                        stroke-linecap="round" />
                     </svg>
                   </button>
-                  <button
-                    type="button"
-                    class="hud-card hero-demo-hud"
-                    id="hudDemo"
-                    aria-pressed="false"
-                    aria-label="Floating HUD demo: unmuted. Click to mute."
-                  >
+                  <button type="button" class="hud-card hero-demo-hud" id="hudDemo" aria-pressed="false"
+                    aria-label="Floating HUD demo: unmuted. Click to mute.">
                     <span class="hud-icon" id="hudDemoIcon" aria-hidden="true"></span>
                     <span class="hud-label" id="hudDemoLabel">Unmuted</span>
                     <span class="hud-hint">Click to toggle</span>
@@ -430,86 +421,105 @@
       <div class="section-head reveal">
         <p class="eyebrow">Features</p>
         <h2>Built for calls you can’t miss.</h2>
-        <p class="section-lead">Everything you need to control the mic without hunting for the right mute button in the right app.</p>
+        <p class="section-lead">Everything you need to control the mic without hunting for the right mute button in the
+          right app.</p>
       </div>
       <div class="feature-grid">
         <!-- Icons: 24×24 monoline set, stroke 2, round caps — SF Symbols weight -->
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
             <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-              <circle cx="12" cy="12" r="3.2" fill="currentColor"/>
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+              <circle cx="12" cy="12" r="3.2" fill="currentColor" />
             </svg>
           </div>
           <h3>Record locally <span class="feature-new">New in 1.4</span></h3>
-          <p>Optionally capture your default mic and what you hear. LockMic writes a dated mix on your Mac — nothing is uploaded, and mute still works while you record.</p>
+          <p>Optionally capture your default mic and what you hear. LockMic writes a dated mix on your Mac — nothing is
+            uploaded, and mute still works while you record.</p>
         </article>
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
             <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M19 11a7 7 0 0 1-14 0M12 18v3M9 21h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path class="feature-icon-accent" d="m4 4 16 16" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M19 11a7 7 0 0 1-14 0M12 18v3M9 21h6" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+              <path class="feature-icon-accent" d="m4 4 16 16" stroke-width="2" stroke-linecap="round" />
             </svg>
           </div>
           <h3>Mute all inputs</h3>
-          <p>By default LockMic mutes every controllable input device — ideal when Zoom and Meet disagree about which mic is “the” mic.</p>
+          <p>By default LockMic mutes every controllable input device — ideal when Zoom and Meet disagree about which
+            mic is “the” mic.</p>
         </article>
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
             <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none">
-              <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </div>
           <h3>Global hotkeys</h3>
-          <p>Toggle with ⌘⇧M (and optional ⌘F5). Add mute-only, unmute-only, push-to-talk, push-to-mute, and push-to-flip. Conflict warnings included.</p>
+          <p>Toggle with ⌘⇧M (and optional ⌘F5). Add mute-only, unmute-only, push-to-talk, push-to-mute, and
+            push-to-flip. Conflict warnings included.</p>
         </article>
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
             <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none">
-              <rect x="4" y="3" width="16" height="18" rx="4" stroke="currentColor" stroke-width="2"/>
-              <path d="M12 7a2 2 0 0 0-2 2v3a2 2 0 0 0 4 0V9a2 2 0 0 0-2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M9 13a3 3 0 0 0 6 0M12 16v1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="4" y="3" width="16" height="18" rx="4" stroke="currentColor" stroke-width="2" />
+              <path d="M12 7a2 2 0 0 0-2 2v3a2 2 0 0 0 4 0V9a2 2 0 0 0-2-2Z" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M9 13a3 3 0 0 0 6 0M12 16v1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
             </svg>
           </div>
           <h3>On-screen HUD</h3>
-          <p>Brief toast on mute/unmute. Optional floating indicator on each display — drag to move, click to toggle, right-click to hide.</p>
+          <p>Brief toast on mute/unmute. Optional floating indicator on each display — drag to move, click to toggle,
+            right-click to hide.</p>
         </article>
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
             <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="4" width="18" height="6" rx="2" stroke="currentColor" stroke-width="2"/>
-              <circle cx="7" cy="7" r="1" fill="currentColor"/>
-              <circle cx="10.5" cy="7" r="1" fill="currentColor" opacity="0.5"/>
-              <path d="M16 5.6a1.2 1.2 0 0 1 1.2 1.2v0.8a1.2 1.2 0 0 1-2.4 0v-0.8A1.2 1.2 0 0 1 16 5.6Z" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-              <path d="M14.6 8.2a2.2 2.2 0 0 0 2.8 0" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
-              <path d="M6 14h12M6 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+              <rect x="3" y="4" width="18" height="6" rx="2" stroke="currentColor" stroke-width="2" />
+              <circle cx="7" cy="7" r="1" fill="currentColor" />
+              <circle cx="10.5" cy="7" r="1" fill="currentColor" opacity="0.5" />
+              <path d="M16 5.6a1.2 1.2 0 0 1 1.2 1.2v0.8a1.2 1.2 0 0 1-2.4 0v-0.8A1.2 1.2 0 0 1 16 5.6Z"
+                stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+              <path d="M14.6 8.2a2.2 2.2 0 0 0 2.8 0" stroke="currentColor" stroke-width="1.75"
+                stroke-linecap="round" />
+              <path d="M6 14h12M6 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4" />
             </svg>
           </div>
           <h3>Menu bar control</h3>
-          <p>Click the icon to toggle. Right-click for status, mute scope, floating HUD per display, and Preferences.</p>
+          <p>Click the icon to toggle. Right-click for status, mute scope, floating HUD per display, and Preferences.
+          </p>
         </article>
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
             <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none">
-              <path d="M3 14v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M16 14v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M3 14a9 9 0 0 1 18 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M3 14v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M16 14v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M3 14a9 9 0 0 1 18 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
             </svg>
           </div>
           <h3>Stays muted</h3>
-          <p>New mics and headsets you plug in later are muted too. If an app tries to unmute the input, LockMic re-applies mute so you stay covered system-wide.</p>
+          <p>New mics and headsets you plug in later are muted too. If an app tries to unmute the input, LockMic
+            re-applies mute so you stay covered system-wide.</p>
         </article>
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
             <svg class="feature-icon-svg" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
-              <path d="M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              <path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+              <path d="M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
             </svg>
           </div>
           <h3>23 languages</h3>
-          <p>Follows your macOS language automatically — English, German, French, Spanish, Japanese, Chinese, Korean, and many more.</p>
+          <p>Follows your macOS language automatically — English, German, French, Spanish, Japanese, Chinese, Korean,
+            and many more.</p>
         </article>
       </div>
     </section>
@@ -532,7 +542,8 @@
           <span class="step-num">02</span>
           <div>
             <h3>Agree once</h3>
-            <p>Optional anonymous usage stats (version + actions only — no mic audio, no personal data). Required to enable mute control.</p>
+            <p>Optional anonymous usage stats (version + actions only — no mic audio, no personal data). Required to
+              enable mute control.</p>
           </div>
         </li>
         <li class="step reveal">
@@ -551,14 +562,18 @@
         <div class="section-head left reveal">
           <p class="eyebrow">Keyboard</p>
           <h2>Shortcuts that stay out of the way.</h2>
-          <p class="section-lead">Defaults you can change in Preferences → Keyboard. Momentary shortcuts restore state when you release.</p>
+          <p class="section-lead">Defaults you can change in Preferences → Keyboard. Momentary shortcuts restore state
+            when you release.</p>
         </div>
         <div class="keys-panel reveal">
           <div class="key-row"><span>Toggle mute</span><kbd>⌘</kbd><kbd>⇧</kbd><kbd>M</kbd></div>
           <div class="key-row"><span>Also toggle</span><kbd>⌘</kbd><kbd>F5</kbd></div>
-          <div class="key-row muted-row"><span>Push to talk</span><kbd>⇧</kbd><kbd>Space</kbd><em>off by default</em></div>
-          <div class="key-row muted-row"><span>Push to mute</span><kbd>⇧</kbd><kbd>⌥</kbd><kbd>Space</kbd><em>off by default</em></div>
-          <div class="key-row muted-row"><span>Push to flip</span><kbd>⌥</kbd><kbd>Space</kbd><em>off by default</em></div>
+          <div class="key-row muted-row"><span>Push to talk</span><kbd>⇧</kbd><kbd>Space</kbd><em>off by default</em>
+          </div>
+          <div class="key-row muted-row"><span>Push to mute</span><kbd>⇧</kbd><kbd>⌥</kbd><kbd>Space</kbd><em>off by
+              default</em></div>
+          <div class="key-row muted-row"><span>Push to flip</span><kbd>⌥</kbd><kbd>Space</kbd><em>off by default</em>
+          </div>
         </div>
       </div>
     </section>
@@ -567,25 +582,25 @@
     <section class="section section-download" id="download">
       <div class="download-card reveal">
         <img src="assets/icon-512-v2.png" width="88" height="88" alt="LockMic app icon" class="download-icon" />
-        <h2>Get LockMic 1.4.34</h2>
+        <h2>Get LockMic 1.4.35</h2>
         <p>Free for macOS 14 Sonoma and later.</p>
         <div class="download-actions">
-          <a
-            class="btn btn-primary btn-lg"
-            id="downloadDmg"
-            href="https://github.com/oochernyshev/lockmic/releases/download/v1.4.34/LockMic-1.4.34.dmg"
-            download="LockMic-1.4.34.dmg"
-          >
+          <a class="btn btn-primary btn-lg" id="downloadDmg"
+            href="https://github.com/oochernyshev/lockmic/releases/download/v1.4.35/LockMic-1.4.35.dmg"
+            download="LockMic-1.4.35.dmg">
             Download DMG
           </a>
-          <a class="btn btn-secondary btn-lg" href="https://github.com/oochernyshev/lockmic" rel="noopener noreferrer" target="_blank">
+          <a class="btn btn-secondary btn-lg" href="https://github.com/oochernyshev/lockmic" rel="noopener noreferrer"
+            target="_blank">
             View on GitHub
           </a>
         </div>
         <div class="code-block" role="region" aria-label="Homebrew">
           <div class="code-header">
             <span>Homebrew</span>
-            <button type="button" class="copy-btn" data-copy="brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew trust --cask oochernyshev/lockmic/lockmic && brew update && { brew reinstall --cask --yes lockmic || brew install --cask lockmic; } && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app" aria-label="Copy Homebrew command">Copy</button>
+            <button type="button" class="copy-btn"
+              data-copy="brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew trust --cask oochernyshev/lockmic/lockmic && brew update && { brew reinstall --cask --yes lockmic || brew install --cask lockmic; } && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app"
+              aria-label="Copy Homebrew command">Copy</button>
           </div>
           <pre><code>brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew trust --cask oochernyshev/lockmic/lockmic
@@ -593,13 +608,15 @@ brew update
 brew reinstall --cask --yes lockmic || brew install --cask lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app</code></pre>
-          <p class="code-note">Same commands to install, update, or restore a deleted app. Uninstall: <code>brew uninstall --cask lockmic</code>.</p>
+          <p class="code-note">Same commands to install, update, or restore a deleted app. Uninstall:
+            <code>brew uninstall --cask lockmic</code>.</p>
         </div>
         <div class="update-dmg">
           <p class="update-dmg-title">DMG — update</p>
           <ol class="update-dmg-steps">
             <li>Download the latest DMG above.</li>
-            <li>Open it and drag <strong>LockMic</strong> to Applications (choose <strong>Replace</strong> if asked).</li>
+            <li>Open it and drag <strong>LockMic</strong> to Applications (choose <strong>Replace</strong> if asked).
+            </li>
             <li>Open LockMic from Applications.</li>
             <li>If macOS blocks it, run:<br /><code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code></li>
           </ol>
@@ -617,31 +634,44 @@ open /Applications/LockMic.app</code></pre>
       <div class="faq-list">
         <details class="faq-item reveal">
           <summary>What is LockMic?</summary>
-          <p>LockMic is a free, open-source macOS menu bar app that mutes your microphone at the system level using Core Audio. It works in Zoom, Microsoft Teams, Google Meet, FaceTime, browsers, and every other app—not just inside one app’s mute button.</p>
+          <p>LockMic is a free, open-source macOS menu bar app that mutes your microphone at the system level using Core
+            Audio. It works in Zoom, Microsoft Teams, Google Meet, FaceTime, browsers, and every other app—not just
+            inside one app’s mute button.</p>
         </details>
         <details class="faq-item reveal">
           <summary>How is this different from Zoom’s mute button?</summary>
-          <p>App mute only silences that app. LockMic mutes the input device in Core Audio, so every app sees a muted mic — including ones without a good mute control.</p>
+          <p>App mute only silences that app. LockMic mutes the input device in Core Audio, so every app sees a muted
+            mic — including ones without a good mute control.</p>
         </details>
         <details class="faq-item reveal">
           <summary>Does it work with virtual mics?</summary>
-          <p>Virtual microphones show up in the list but LockMic doesn’t mute them, so virtual mixers and cables keep working as expected.</p>
+          <p>Virtual microphones show up in the list but LockMic doesn’t mute them, so virtual mixers and cables keep
+            working as expected.</p>
         </details>
         <details class="faq-item reveal">
           <summary>What data is sent?</summary>
-          <p>In the <strong>app</strong>, if you agree: version and anonymous action events (toggle, mute/unmute, holds, recording start/stop). No microphone audio, no recording files, and no personal data. Mute control stays off until you agree. This <strong>website</strong> uses the same Google Analytics property for anonymous page views (and optional download clicks) so we can improve the product and site.</p>
+          <p>In the <strong>app</strong>, if you agree: version and anonymous action events (toggle, mute/unmute, holds,
+            recording start/stop). No microphone audio, no recording files, and no personal data. Mute control stays off
+            until you agree. This <strong>website</strong> uses the same Google Analytics property for anonymous page
+            views (and optional download clicks) so we can improve the product and site.</p>
         </details>
         <details class="faq-item reveal">
           <summary>Can LockMic record audio?</summary>
-          <p>Yes — optionally, from 1.4. <strong>Start Recording</strong> in the menu bar captures your default microphone and system playback, then writes a dated mix on your Mac (<code>Movies/LockMic</code> by default). Recordings stay on your disk. LockMic does not upload them. macOS asks for microphone and system audio access first.</p>
+          <p>Yes — optionally, from 1.4. <strong>Start Recording</strong> in the menu bar captures your default
+            microphone and system playback, then writes a dated mix on your Mac (<code>Movies/LockMic</code> by
+            default). Recordings stay on your disk. LockMic does not upload them. macOS asks for microphone and system
+            audio access first.</p>
         </details>
         <details class="faq-item reveal">
           <summary>Is it free?</summary>
-          <p>Yes. LockMic is MIT-licensed open source from WIXEE.AI. Optional paid Pro modules may appear later; the core stays open.</p>
+          <p>Yes. LockMic is MIT-licensed open source from WIXEE.AI. Optional paid Pro modules may appear later; the
+            core stays open.</p>
         </details>
         <details class="faq-item reveal">
           <summary>How do I install LockMic?</summary>
-          <p>Download the DMG and drag LockMic to Applications, or use the Homebrew commands in <a href="#download">Download</a>. Requires macOS 14+. If macOS blocks the app, run <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code>.</p>
+          <p>Download the DMG and drag LockMic to Applications, or use the Homebrew commands in <a
+              href="#download">Download</a>. Requires macOS 14+. If macOS blocks the app, run
+            <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code>.</p>
         </details>
         <details class="faq-item reveal">
           <summary>How do I update to the latest version?</summary>
@@ -680,12 +710,7 @@ open /Applications/LockMic.app</code></pre>
           <button type="button" class="rate-btn rate-like" id="voteLike" aria-pressed="false">
             <span class="rate-emoji" aria-hidden="true">👍</span>
             <span class="rate-label">Like</span>
-            <span
-              class="rate-count flip-counter is-loading"
-              id="likeCount"
-              aria-busy="true"
-              aria-label="Loading likes"
-            >
+            <span class="rate-count flip-counter is-loading" id="likeCount" aria-busy="true" aria-label="Loading likes">
               <span class="rate-count-skeleton" aria-hidden="true">
                 <span class="rate-skel-digit"></span>
                 <span class="rate-skel-digit"></span>
@@ -697,12 +722,8 @@ open /Applications/LockMic.app</code></pre>
           <button type="button" class="rate-btn rate-dislike" id="voteDislike" aria-pressed="false">
             <span class="rate-emoji" aria-hidden="true">👎</span>
             <span class="rate-label">Dislike</span>
-            <span
-              class="rate-count flip-counter is-loading"
-              id="dislikeCount"
-              aria-busy="true"
-              aria-label="Loading dislikes"
-            >
+            <span class="rate-count flip-counter is-loading" id="dislikeCount" aria-busy="true"
+              aria-label="Loading dislikes">
               <span class="rate-count-skeleton" aria-hidden="true">
                 <span class="rate-skel-digit"></span>
                 <span class="rate-skel-digit"></span>
@@ -714,7 +735,8 @@ open /Applications/LockMic.app</code></pre>
         <p class="rate-status" id="voteStatus" role="status" aria-live="polite"></p>
         <p class="rate-note">
           Want to say more?
-          <a href="https://github.com/oochernyshev/lockmic/issues/new?template=feedback.yml" rel="noopener noreferrer" target="_blank">Send feedback on GitHub</a>
+          <a href="https://github.com/oochernyshev/lockmic/issues/new?template=feedback.yml" rel="noopener noreferrer"
+            target="_blank">Send feedback on GitHub</a>
         </p>
       </div>
     </section>
@@ -744,13 +766,17 @@ open /Applications/LockMic.app</code></pre>
       </div>
       <div class="footer-links">
         <a href="https://lockmic.com/">Home</a>
-        <a href="https://github.com/oochernyshev/lockmic/issues/new?template=feedback.yml" rel="noopener noreferrer" target="_blank">Feedback</a>
-        <a href="https://github.com/oochernyshev/lockmic/issues/new?template=bug.yml" rel="noopener noreferrer" target="_blank">Report a bug</a>
-        <a href="https://github.com/oochernyshev/lockmic/issues/new?template=feature.yml" rel="noopener noreferrer" target="_blank">Request a feature</a>
+        <a href="https://github.com/oochernyshev/lockmic/issues/new?template=feedback.yml" rel="noopener noreferrer"
+          target="_blank">Feedback</a>
+        <a href="https://github.com/oochernyshev/lockmic/issues/new?template=bug.yml" rel="noopener noreferrer"
+          target="_blank">Report a bug</a>
+        <a href="https://github.com/oochernyshev/lockmic/issues/new?template=feature.yml" rel="noopener noreferrer"
+          target="_blank">Request a feature</a>
         <a href="mailto:info@wixee.ai?subject=LockMic%20partnership">Partnerships</a>
         <a href="https://github.com/oochernyshev/lockmic" rel="noopener noreferrer" target="_blank">GitHub</a>
         <a href="https://wixee.ai" rel="noopener noreferrer" target="_blank">WIXEE.AI</a>
-        <a href="https://github.com/oochernyshev/lockmic/blob/main/LICENSE" rel="noopener noreferrer" target="_blank">MIT License</a>
+        <a href="https://github.com/oochernyshev/lockmic/blob/main/LICENSE" rel="noopener noreferrer"
+          target="_blank">MIT License</a>
       </div>
       <p class="footer-copy">
         © 2026 WIXEE.AI · LockMic is open source under the MIT License. ·
@@ -761,6 +787,7 @@ open /Applications/LockMic.app</code></pre>
     </div>
   </footer>
 
-  <script src="main.js?v=1.4.34" defer></script>
+  <script src="main.js?v=1.4.35" defer></script>
 </body>
+
 </html>
