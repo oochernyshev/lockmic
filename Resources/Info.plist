@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-	<dict>
-		<key>CFBundleDevelopmentRegion</key>
-		<string>en</string>
-		<key>CFBundleExecutable</key>
-		<string>$(EXECUTABLE_NAME)</string>
-		<key>CFBundleIdentifier</key>
-		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-		<key>CFBundleInfoDictionaryVersion</key>
-		<string>6.0</string>
-		<key>CFBundleName</key>
-		<string>$(PRODUCT_NAME)</string>
-		<key>CFBundleIconName</key>
-		<string>LockMic</string>
-		<key>CFBundlePackageType</key>
-		<string>APPL</string>
-		<key>CFBundleShortVersionString</key>
-		<string>1.4.35</string>
-		<key>CFBundleVersion</key>
-		<string>175</string>
-		<key>LSMinimumSystemVersion</key>
-		<string>14.0</string>
-		<key>LSUIElement</key>
-		<true/>
-		<key>NSHighResolutionCapable</key>
-		<true/>
-		<key>NSPrincipalClass</key>
-		<string>NSApplication</string>
-		<key>NSHumanReadableCopyright</key>
-		<string>Copyright © 2026 WIXEE.AI</string>
-		<key>NSMicrophoneUsageDescription</key>
-		<string>LockMic records your default microphone along with system playback.</string>
-		<key>NSAudioCaptureUsageDescription</key>
-		<string>LockMic records system playback (what you hear) together with your microphone.</string>
-	</dict>
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconName</key>
+	<string>LockMic</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.4.36</string>
+	<key>CFBundleVersion</key>
+	<string>176</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>LockMic records system playback (what you hear) together with your microphone.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 WIXEE.AI</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>LockMic records your default microphone along with system playback.</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+</dict>
 </plist>

@@ -248,7 +248,7 @@ do
     stale=1
   fi
 done
-if ! grep -q "Current version:** ${NEW}" ARCHITECTURE.md; then
+if ! grep -q -F "Current version:** ${NEW}" ARCHITECTURE.md; then
   echo "error: ARCHITECTURE.md header was not bumped" >&2
   stale=1
 fi
