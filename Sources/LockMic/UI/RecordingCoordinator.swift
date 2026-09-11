@@ -310,7 +310,7 @@ final class RecordingCoordinator {
 
         smoothedEnergy = SilenceEnergyDetector.smoothed(
             previous: smoothedEnergy,
-            current: recorder.liveWaveformLevel(),
+            current: recorder.levelMetering.liveWaveformLevel(),
             interval: Self.watchInterval
         )
         if SilenceEnergyDetector.isActive(smoothedEnergy ?? 0) {

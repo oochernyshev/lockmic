@@ -361,16 +361,16 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             syncChrome()
             return
         }
-        let seconds = recorder.recordedElapsedSeconds()
+        let seconds = recorder.levelMetering.recordedElapsedSeconds()
         if seconds != lastElapsedSeconds {
             lastElapsedSeconds = seconds
             elapsedField?.stringValue = Self.elapsedText(seconds)
-            sizeField?.stringValue = recorder.mixSizeChipText()
+            sizeField?.stringValue = recorder.levelMetering.mixSizeChipText()
         }
         syncRowLevels()
         syncSilenceModeChip()
         waveform?.setSilenceVisualizationEnabled(preferences?.recordingSilenceTimeout.duration != nil)
-        waveform?.push(recorder.liveWaveformLevel())
+        waveform?.push(recorder.levelMetering.liveWaveformLevel())
     }
 
     private func syncSilenceModeChip() {
@@ -447,15 +447,15 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         let now = Date()
         let selectedInputPeak = recorder.devices
             .filter { $0.kind == .input && $0.isEnabled }
-            .map { recorder.meterLinearPeak(for: $0) }
+            .map { recorder.levelMetering.meterLinearPeak(for: $0) }
             .max() ?? 0
         for device in recorder.devices {
-            let level = recorder.meterLevel(for: device)
+            let level = recorder.levelMetering.meterLevel(for: device)
             var missed = recorder.isRecording
                 && !device.isEnabled
                 && !isInputMuted(device)
             if missed, device.kind == .input {
-                let peak = recorder.meterLinearPeak(for: device)
+                let peak = recorder.levelMetering.meterLinearPeak(for: device)
                 missed = peak >= Self.inputBleedFloor
                     && peak >= selectedInputPeak * Self.inputBleedRatio
             } else if missed {
@@ -464,7 +464,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             rows[device.id]?.applyLevel(
                 device,
                 level: level,
-                sampleRate: recorder.sourceSampleRate(for: device),
+                sampleRate: recorder.levelMetering.sourceSampleRate(for: device),
                 noSignal: latchedWarning(id: device.id, want: missed, selected: device.isEnabled, now: now)
             )
         }

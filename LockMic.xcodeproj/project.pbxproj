@@ -21,6 +21,7 @@
 		1FF5980AA9BA25AB2AA66B3C /* SessionRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06ADA52982EF60A0DC607152 /* SessionRecorder.swift */; };
 		22799EC9FE4846702741D29C /* StatusItemVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B2EEF27306A31B09E7F00C /* StatusItemVisibility.swift */; };
 		22D629D37CABB69D24449A23 /* HUDContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24381AAC5C63C2B4DEB0E190 /* HUDContentView.swift */; };
+		2A17CFE4171FD22D8CF68EFB /* LevelSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B970385D16347A74500516D7 /* LevelSnapshot.swift */; };
 		2BA758F4F6801B9775F202FD /* CompressedStemWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38D0E203797E6588D537F34 /* CompressedStemWriter.swift */; };
 		3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9531C60032267EFA1757D1BC /* AppDelegate.swift */; };
 		34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47A7A118040E6EF54FF7752 /* MicController.swift */; };
@@ -59,6 +60,7 @@
 		D2858916A735CF2E761476C5 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */; };
 		DD37177C68DB7C1169F1C46D /* PreferencesGeneralPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C96E6DE500850364A23E1BF /* PreferencesGeneralPage.swift */; };
 		DF99A9504527B6B0E6F48478 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D93F1024B71207F8831FB2E /* PreferencesView.swift */; };
+		E060F4C731FA366D9DD718CC /* LevelMetering.swift in Sources */ = {isa = PBXBuildFile; fileRef = C84E04D474632BF17022832F /* LevelMetering.swift */; };
 		E20244D2F3506734EB9D15D9 /* HotkeyRecorderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40771CE30E43CEE7B2690B08 /* HotkeyRecorderButton.swift */; };
 		E21C796C5F395CFDEC878645 /* ThinTransparentScroller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCBF140C7338A9FBDC5EA31 /* ThinTransparentScroller.swift */; };
 		E7476AF3C6061511AF856AB6 /* PlaybackTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BF46D371BFBCB0BC6F1628 /* PlaybackTap.swift */; };
@@ -124,9 +126,11 @@
 		B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceService.swift; sourceTree = "<group>"; };
 		B6FE4315D6334387497A5F82 /* MuteGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuteGate.swift; sourceTree = "<group>"; };
 		B806C87B787DA85D4DC8F2A0 /* CaptureRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureRig.swift; sourceTree = "<group>"; };
+		B970385D16347A74500516D7 /* LevelSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelSnapshot.swift; sourceTree = "<group>"; };
 		C32C09184D932FCEB0E14261 /* AppInstanceGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInstanceGuard.swift; sourceTree = "<group>"; };
 		C47A7A118040E6EF54FF7752 /* MicController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicController.swift; sourceTree = "<group>"; };
 		C6A31B76216FE78E401DB033 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C84E04D474632BF17022832F /* LevelMetering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelMetering.swift; sourceTree = "<group>"; };
 		C98EF85571E738D1FB5D06D9 /* SystemAudioAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioAccess.swift; sourceTree = "<group>"; };
 		CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedback.swift; sourceTree = "<group>"; };
 		D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDOverlay.swift; sourceTree = "<group>"; };
@@ -207,6 +211,8 @@
 				23C3675125FEA46D7196900C /* HotkeyManager.swift */,
 				B35F1D3335235FFC0A1CFD00 /* HotkeyTypes.swift */,
 				56C0C058BA882C7D377D7002 /* InputDeviceCapture.swift */,
+				C84E04D474632BF17022832F /* LevelMetering.swift */,
+				B970385D16347A74500516D7 /* LevelSnapshot.swift */,
 				12E7B26E0035AAB6D481CEFE /* LiveMixer.swift */,
 				C47A7A118040E6EF54FF7752 /* MicController.swift */,
 				B6FE4315D6334387497A5F82 /* MuteGate.swift */,
@@ -412,6 +418,8 @@
 				15DD7D576F72455A28455301 /* HotkeyTypes.swift in Sources */,
 				A135303EFDE1E0DDF1395128 /* InputDeviceCapture.swift in Sources */,
 				8E88E5B6828241F03284F2FF /* L10n.swift in Sources */,
+				E060F4C731FA366D9DD718CC /* LevelMetering.swift in Sources */,
+				2A17CFE4171FD22D8CF68EFB /* LevelSnapshot.swift in Sources */,
 				AA473EA7E801B173E98DE292 /* LiveMixer.swift in Sources */,
 				D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */,
 				34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */,

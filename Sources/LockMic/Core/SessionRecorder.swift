@@ -68,8 +68,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     private var flagPhase: Phase = .idle
     /// Bumped to cancel an in-flight start when the user hits stop.
     private var startGeneration = 0
-    private let levelLock = NSLock()
-    private var levelSnapshot = LevelSnapshot()
+    let levelMetering = LevelMetering()
     private var sessionLive = false
 
     init(audio: AudioDeviceService = AudioDeviceService(), mic: MicController) {
@@ -144,8 +143,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     }
 
     func publishLevels() {
-        levelLock.lock()
-        levelSnapshot = LevelSnapshot(
+        levelMetering.publishLevels(
             inputs: captureRig.inputCaptures,
             taps: captureRig.playbackTaps,
             system: captureRig.systemPlaybackTap,
@@ -159,22 +157,6 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             sessionBitRate: captureRig.sessionBitRate,
             startedAt: recordingStartedAt
         )
-        levelLock.unlock()
-    }
-
-    struct LevelSnapshot {
-        var inputs: [String: InputDeviceCapture] = [:]
-        var taps: [String: PlaybackCapturing] = [:]
-        var system: PlaybackCapturing?
-        var playbackDeviceUID = ""
-        var defaultOutputUID = ""
-        var selectedInputUID = ""
-        var selectedOutputUIDs: Set<String> = []
-        var mixMuted = false
-        var mixer: LiveMixer?
-        var sessionFile: URL?
-        var sessionBitRate = 0
-        var startedAt: Date?
     }
 
     /// Fill the device list so the monitor can appear before TCC prompts.
@@ -1033,16 +1015,12 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
 
     /// Apply mix gate without waiting for the recording queue (mute must not stall).
     private func gateMixMute(effectiveMuted: Bool, devices: [InputDeviceRow]) {
-        levelLock.lock()
-        let selected = levelSnapshot.selectedInputUID
-        let captures = levelSnapshot.inputs
-        levelLock.unlock()
+        let selected = levelMetering.selectedInputUID
+        let captures = levelMetering.inputs
         let muted = MuteGate.mixMuted(effectiveMuted: effectiveMuted, selectedUID: selected, devices: devices)
         muteGate.applyCaptureEnabled(selected: selected, mixMuted: muted, captures: captures)
-        levelLock.lock()
-        let already = levelSnapshot.mixMuted
-        levelSnapshot.mixMuted = muted
-        levelLock.unlock()
+        let already = levelMetering.mixMuted
+        levelMetering.setMixMuted(muted)
         guard muted != already else { return }
         for capture in captures.values {
             capture.setIORunning(!muted)
@@ -1078,97 +1056,4 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         }
     }
 
-    // MARK: - Level metering (reads the lock-guarded `levelSnapshot`)
-
-    /// Live meter for the monitor. Does not publish `devices` (that rebuilt SwiftUI).
-    func meterLevel(for row: RecordingDeviceRow) -> Float {
-        levelLock.lock()
-        let snap = levelSnapshot
-        levelLock.unlock()
-        switch row.kind {
-        case .input:
-            return snap.inputs[row.id]?.level ?? 0
-        case .output:
-            let uid = String(row.id.dropFirst(4))
-            let device = snap.taps[uid]?.level ?? 0
-            if uid == snap.playbackDeviceUID || uid == snap.defaultOutputUID {
-                return max(device, snap.system?.level ?? 0)
-            }
-            return device
-        }
-    }
-
-    func meterLinearPeak(for row: RecordingDeviceRow) -> Float {
-        guard row.kind == .input else { return 0 }
-        levelLock.lock()
-        let capture = levelSnapshot.inputs[row.id]
-        levelLock.unlock()
-        return capture?.linearPeak ?? 0
-    }
-
-    /// Actual rate delivered by the currently open source stream.
-    func sourceSampleRate(for row: RecordingDeviceRow) -> Double {
-        levelLock.lock()
-        let snap = levelSnapshot
-        levelLock.unlock()
-        switch row.kind {
-        case .input:
-            return snap.inputs[row.id]?.sourceSampleRate ?? 0
-        case .output:
-            let uid = String(row.id.dropFirst(4))
-            if uid == snap.playbackDeviceUID || uid == snap.defaultOutputUID {
-                return snap.system?.sourceSampleRate ?? snap.taps[uid]?.sourceSampleRate ?? 0
-            }
-            return snap.taps[uid]?.sourceSampleRate ?? 0
-        }
-    }
-
-    /// Real file size plus a bitrate guess for PCM not yet on disk (current RAM chunk).
-    /// Elapsed audio in the current mix file (resets if the file is recreated).
-    func recordedElapsedSeconds() -> Int {
-        levelLock.lock()
-        let mixer = levelSnapshot.mixer
-        let started = levelSnapshot.startedAt
-        levelLock.unlock()
-        if let mixer {
-            return max(0, Int(mixer.recordedDuration()))
-        }
-        guard let start = started else { return 0 }
-        return max(0, Int(Date().timeIntervalSince(start)))
-    }
-
-    func mixSizeChipText() -> String {
-        levelLock.lock()
-        let url = levelSnapshot.sessionFile
-        let extra = levelSnapshot.mixer?.unflushedDuration() ?? 0
-        let rate = levelSnapshot.sessionBitRate
-        levelLock.unlock()
-        let bytes: Int64
-        if let url,
-           FileManager.default.fileExists(atPath: url.path),
-           let size = try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber
-        {
-            bytes = size.int64Value
-        } else {
-            bytes = 0
-        }
-        return RecordingBitRate.resolved(rate / 1_000).sizeChipText(onDisk: bytes, extra: extra)
-    }
-
-    /// Peak of mic + playback — for the monitor waveform.
-    func liveWaveformLevel() -> Float {
-        levelLock.lock()
-        let snap = levelSnapshot
-        levelLock.unlock()
-        let mic = snap.mixMuted ? 0 : (snap.inputs[snap.selectedInputUID]?.level ?? 0)
-        let defaultUID = snap.defaultOutputUID
-        var play: Float = 0
-        if !defaultUID.isEmpty, snap.selectedOutputUIDs.contains(defaultUID) {
-            play = max(play, snap.system?.level ?? 0)
-        }
-        for uid in snap.selectedOutputUIDs where uid != defaultUID {
-            play = max(play, snap.taps[uid]?.level ?? 0)
-        }
-        return min(1, max(mic, play))
-    }
 }
