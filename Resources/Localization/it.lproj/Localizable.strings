@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Registra tutti i dispositivi di riproduzione";
 "recording.playback.caption.all" = "Cattura la riproduzione di tutte le app, su qualsiasi uscita.";
 "recording.playback.caption.default" = "Cattura l’audio diretto al dispositivo di uscita predefinito.";
+"recording.playback.caption.selection" = "Cattura le uscite che selezioni.";
 "recording.quality.header" = "Qualità";
 "recording.quality.caption" = "Si applica a microfono, riproduzione e mix. Un valore più basso usa meno spazio.";
 "recording.silence.header" = "Interrompi in silenzio";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Registrazione";
 "recording.monitor.follow_default" = "Segui il microfono predefinito";
 "recording.monitor.follow_default_output" = "Segui l’uscita predefinita";
+"recording.monitor.record_all" = "Registra tutto";
+"recording.monitor.scope.default" = "Predef.";
+"recording.monitor.scope.all" = "Tutti";
+"recording.monitor.scope.selection" = "Selezione";
 "recording.follow.mic.caption" = "Se il microfono predefinito cambia, continua a registrarlo.";
 "recording.follow.output.caption" = "Se l’uscita predefinita cambia, continua a registrarla.";
 "recording.monitor.unselected" = "Monitora i dispositivi non selezionati";

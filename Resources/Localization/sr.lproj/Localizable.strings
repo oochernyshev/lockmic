@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Snimaj sve uređaje za reprodukciju";
 "recording.playback.caption.all" = "Snima reprodukciju svih aplikacija, na bilo kom izlazu.";
 "recording.playback.caption.default" = "Snima zvuk koji ide na podrazumevani izlazni uređaj.";
+"recording.playback.caption.selection" = "Snima izlaze koje odabereš.";
 "recording.quality.header" = "Kvalitet";
 "recording.quality.caption" = "Važi za mikrofon, reprodukciju i miks. Niže koristi manje prostora.";
 "recording.silence.header" = "Zaustavi na tišini";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Snimanje";
 "recording.monitor.follow_default" = "Prati podrazumevani mikrofon";
 "recording.monitor.follow_default_output" = "Prati podrazumevani izlaz";
+"recording.monitor.record_all" = "Snimaj sve";
+"recording.monitor.scope.default" = "Podrazum.";
+"recording.monitor.scope.all" = "Sve";
+"recording.monitor.scope.selection" = "Izbor";
 "recording.follow.mic.caption" = "Kada se promeni podrazumevani mikrofon, nastavi da ga snimaš.";
 "recording.follow.output.caption" = "Kada se promeni podrazumevani izlaz, nastavi da ga snimaš.";
 "recording.monitor.unselected" = "Prati neizabrane uređaje";

@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Tallenna kaikki toistolaitteet";
 "recording.playback.caption.all" = "Kaappaa kaikkien sovellusten toiston miltä tahansa lähdöltä.";
 "recording.playback.caption.default" = "Kaappaa oletustoistolaitteeseen menevän äänen.";
+"recording.playback.caption.selection" = "Kaappaa valitsemasi lähdöt.";
 "recording.quality.header" = "Laatu";
 "recording.quality.caption" = "Koskee mikrofonia, toistoa ja kokousmiksausta. Pienempi arvo vie vähemmän tilaa.";
 "recording.silence.header" = "Pysäytä hiljaisuudessa";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Tallennus";
 "recording.monitor.follow_default" = "Seuraa oletusmikrofonia";
 "recording.monitor.follow_default_output" = "Seuraa oletuslähtöä";
+"recording.monitor.record_all" = "Tallenna kaikki";
+"recording.monitor.scope.default" = "Oletus";
+"recording.monitor.scope.all" = "Kaikki";
+"recording.monitor.scope.selection" = "Valinta";
 "recording.follow.mic.caption" = "Kun järjestelmän oletusmikrofoni vaihtuu, jatka sen tallennusta.";
 "recording.follow.output.caption" = "Kun järjestelmän oletuslähtö vaihtuu, jatka sen tallennusta.";
 "recording.monitor.unselected" = "Tarkkaile valitsemattomia laitteita";

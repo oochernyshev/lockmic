@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Minden lejátszóeszköz felvétele";
 "recording.playback.caption.all" = "Minden app lejátszását rögzíti, bármely kimeneten.";
 "recording.playback.caption.default" = "Az alapértelmezett kimenetre menő hangot rögzíti.";
+"recording.playback.caption.selection" = "A kijelölt kimeneteket rögzíti.";
 "recording.quality.header" = "Minőség";
 "recording.quality.caption" = "A mikrofonra, a lejátszásra és a keverékre vonatkozik. Az alacsonyabb kevesebb helyet foglal.";
 "recording.silence.header" = "Leállítás csendben";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Felvétel";
 "recording.monitor.follow_default" = "Alapértelmezett mikrofon követése";
 "recording.monitor.follow_default_output" = "Alapértelmezett kimenet követése";
+"recording.monitor.record_all" = "Mindet felvenni";
+"recording.monitor.scope.default" = "Alapért.";
+"recording.monitor.scope.all" = "Mind";
+"recording.monitor.scope.selection" = "Kijelölés";
 "recording.follow.mic.caption" = "Ha változik az alapértelmezett mikrofon, továbbra is azt vegye fel.";
 "recording.follow.output.caption" = "Ha változik az alapértelmezett kimenet, továbbra is azt vegye fel.";
 "recording.monitor.unselected" = "Nem kijelölt eszközök figyelése";

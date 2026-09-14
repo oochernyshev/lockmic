@@ -121,6 +121,11 @@ enum L10n {
     static var recordingMonitorTitle: String { tr("recording.monitor.title") }
     static var recordingFollowDefaultMic: String { tr("recording.monitor.follow_default") }
     static var recordingFollowDefaultOutput: String { tr("recording.monitor.follow_default_output") }
+    static var recordingMonitorRecordAll: String { tr("recording.monitor.record_all") }
+    static var recordingMonitorScopeDefault: String { tr("recording.monitor.scope.default") }
+    static var recordingMonitorScopeAll: String { tr("recording.monitor.scope.all") }
+    static var recordingMonitorScopeSelection: String { tr("recording.monitor.scope.selection") }
+    static var recordingPlaybackCaptionSelection: String { tr("recording.playback.caption.selection") }
     static var recordingFollowDefaultMicCaption: String { tr("recording.follow.mic.caption") }
     static var recordingFollowDefaultOutputCaption: String { tr("recording.follow.output.caption") }
     static var recordingMonitorUnselected: String { tr("recording.monitor.unselected") }

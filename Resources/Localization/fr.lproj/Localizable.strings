@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Enregistrer tous les appareils de lecture";
 "recording.playback.caption.all" = "Capture la lecture de toutes les apps, sur n’importe quelle sortie.";
 "recording.playback.caption.default" = "Capture l’audio envoyé à l’appareil de sortie par défaut.";
+"recording.playback.caption.selection" = "Capture les sorties que vous choisissez.";
 "recording.quality.header" = "Qualité";
 "recording.quality.caption" = "S’applique au micro, à la lecture et au mix. Plus bas, moins d’espace disque.";
 "recording.silence.header" = "Arrêter sur silence";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Enregistrement";
 "recording.monitor.follow_default" = "Suivre le micro par défaut";
 "recording.monitor.follow_default_output" = "Suivre la sortie par défaut";
+"recording.monitor.record_all" = "Tout enregistrer";
+"recording.monitor.scope.default" = "Défaut";
+"recording.monitor.scope.all" = "Tous";
+"recording.monitor.scope.selection" = "Sélection";
 "recording.follow.mic.caption" = "Si le micro par défaut change, continuer à l’enregistrer.";
 "recording.follow.output.caption" = "Si la sortie par défaut change, continuer à l’enregistrer.";
 "recording.monitor.unselected" = "Surveiller les appareils non sélectionnés";

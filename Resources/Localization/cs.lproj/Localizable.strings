@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Nahrávat všechna přehrávací zařízení";
 "recording.playback.caption.all" = "Zachytí přehrávání všech aplikací na jakémkoli výstupu.";
 "recording.playback.caption.default" = "Zachytí zvuk jdoucí na výchozí výstupní zařízení.";
+"recording.playback.caption.selection" = "Zachytí výstupy, které vyberete.";
 "recording.quality.header" = "Kvalita";
 "recording.quality.caption" = "Platí pro mikrofon, přehrávání i výsledný mix. Nižší hodnota šetří místo na disku.";
 "recording.silence.header" = "Zastavit při tichu";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Nahrávání";
 "recording.monitor.follow_default" = "Sledovat výchozí mikrofon";
 "recording.monitor.follow_default_output" = "Sledovat výchozí výstup";
+"recording.monitor.record_all" = "Nahrávat vše";
+"recording.monitor.scope.default" = "Výchozí";
+"recording.monitor.scope.all" = "Vše";
+"recording.monitor.scope.selection" = "Výběr";
 "recording.follow.mic.caption" = "Když se změní výchozí mikrofon, dál ho nahrávej.";
 "recording.follow.output.caption" = "Když se změní výchozí výstup, dál ho nahrávej.";
 "recording.monitor.unselected" = "Sledovat nevybraná zařízení";

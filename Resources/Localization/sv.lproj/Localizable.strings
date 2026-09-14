@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Spela in alla uppspelningsenheter";
 "recording.playback.caption.all" = "Fångar alla appars uppspelning, på valfri utgång.";
 "recording.playback.caption.default" = "Fångar ljud som går till standardutgången.";
+"recording.playback.caption.selection" = "Fångar de utgångar du väljer.";
 "recording.quality.header" = "Kvalitet";
 "recording.quality.caption" = "Gäller mikrofon, uppspelning och mötesmixen. Lägre använder mindre diskutrymme.";
 "recording.silence.header" = "Stoppa vid tystnad";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Inspelning";
 "recording.monitor.follow_default" = "Följ standardmikrofonen";
 "recording.monitor.follow_default_output" = "Följ standardutgången";
+"recording.monitor.record_all" = "Spela in alla";
+"recording.monitor.scope.default" = "Standard";
+"recording.monitor.scope.all" = "Alla";
+"recording.monitor.scope.selection" = "Urval";
 "recording.follow.mic.caption" = "När systemets standardmikrofon byts, fortsätt spela in den.";
 "recording.follow.output.caption" = "När systemets standardutgång byts, fortsätt spela in den.";
 "recording.monitor.unselected" = "Övervaka ovalda enheter";

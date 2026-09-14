@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "录制所有播放设备";
 "recording.playback.caption.all" = "捕获所有应用在任意输出上的播放。";
 "recording.playback.caption.default" = "捕获发送到默认输出设备的音频。";
+"recording.playback.caption.selection" = "捕获你勾选的输出。";
 "recording.quality.header" = "质量";
 "recording.quality.caption" = "用于麦克风、播放和会议混音。更低占用更少空间。";
 "recording.silence.header" = "静音时停止";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "录音";
 "recording.monitor.follow_default" = "跟随默认麦克风";
 "recording.monitor.follow_default_output" = "跟随默认输出";
+"recording.monitor.record_all" = "录制全部";
+"recording.monitor.scope.default" = "默认";
+"recording.monitor.scope.all" = "全部";
+"recording.monitor.scope.selection" = "选择";
 "recording.follow.mic.caption" = "系统默认麦克风更改时，继续录制该麦克风。";
 "recording.follow.output.caption" = "系统默认输出更改时，继续录制该输出。";
 "recording.monitor.unselected" = "监视未选中的设备";

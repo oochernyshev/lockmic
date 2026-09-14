@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Alle afspeelapparaten opnemen";
 "recording.playback.caption.all" = "Neemt de weergave van alle apps op, op elke uitvoer.";
 "recording.playback.caption.default" = "Neemt audio op die naar het standaarduitvoerapparaat gaat.";
+"recording.playback.caption.selection" = "Neemt de uitvoer op die je selecteert.";
 "recording.quality.header" = "Kwaliteit";
 "recording.quality.caption" = "Geldt voor microfoon, weergave en de mix. Lager gebruikt minder schijfruimte.";
 "recording.silence.header" = "Stoppen bij stilte";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Opname";
 "recording.monitor.follow_default" = "Standaardmicrofoon volgen";
 "recording.monitor.follow_default_output" = "Standaarduitvoer volgen";
+"recording.monitor.record_all" = "Alles opnemen";
+"recording.monitor.scope.default" = "Standaard";
+"recording.monitor.scope.all" = "Alles";
+"recording.monitor.scope.selection" = "Selectie";
 "recording.follow.mic.caption" = "Als de standaardmicrofoon wijzigt, blijf die opnemen.";
 "recording.follow.output.caption" = "Als de standaarduitvoer wijzigt, blijf die opnemen.";
 "recording.monitor.unselected" = "Niet-geselecteerde apparaten bewaken";

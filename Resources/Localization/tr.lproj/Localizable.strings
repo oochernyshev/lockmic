@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Tüm oynatma aygıtlarını kaydet";
 "recording.playback.caption.all" = "Tüm uygulamaların oynatmasını, herhangi bir çıkışta yakalar.";
 "recording.playback.caption.default" = "Varsayılan çıkış aygıtına giden sesi yakalar.";
+"recording.playback.caption.selection" = "Seçtiğin çıkışları yakalar.";
 "recording.quality.header" = "Kalite";
 "recording.quality.caption" = "Mikrofon, oynatma ve toplantı karışımına uygulanır. Daha düşük daha az yer kaplar.";
 "recording.silence.header" = "Sessizlikte durdur";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Kayıt";
 "recording.monitor.follow_default" = "Varsayılan mikrofonu izle";
 "recording.monitor.follow_default_output" = "Varsayılan çıkışı izle";
+"recording.monitor.record_all" = "Tümünü kaydet";
+"recording.monitor.scope.default" = "Varsayılan";
+"recording.monitor.scope.all" = "Tümü";
+"recording.monitor.scope.selection" = "Seçim";
 "recording.follow.mic.caption" = "Sistem varsayılan mikrofonu değişirse onu kaydetmeye devam et.";
 "recording.follow.output.caption" = "Sistem varsayılan çıkışı değişirse onu kaydetmeye devam et.";
 "recording.monitor.unselected" = "Seçilmeyen aygıtları izle";

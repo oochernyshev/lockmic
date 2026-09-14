@@ -83,31 +83,9 @@ struct PreferencesRecordingPage: View {
             }
 
             PreferencesChrome.sectionCard {
-                PreferencesChrome.sectionHeader(L10n.recordingPlaybackHeader)
-                prefsCheckRow(L10n.recordingFollowDefaultOutput, isOn: preferences.followDefaultOutput) {
-                    preferences.followDefaultOutput.toggle()
-                    if preferences.followDefaultOutput {
-                        preferences.recordAllPlayback = false
-                    }
-                    if recorder.isRecording {
-                        recorder.setFollowDefaultOutput(preferences.followDefaultOutput)
-                    }
-                }
-                PreferencesChrome.caption(L10n.recordingFollowDefaultOutputCaption)
-                prefsCheckRow(L10n.recordingPlaybackToggle, isOn: preferences.recordAllPlayback) {
-                    preferences.recordAllPlayback.toggle()
-                    if preferences.recordAllPlayback {
-                        preferences.followDefaultOutput = false
-                    }
-                    if recorder.isRecording {
-                        recorder.setRecordAllPlayback(preferences.recordAllPlayback)
-                    }
-                }
-                PreferencesChrome.caption(
-                    preferences.recordAllPlayback
-                        ? L10n.recordingPlaybackCaptionAll
-                        : L10n.recordingPlaybackCaptionDefault
-                )
+                PreferencesChrome.sectionHeader(L10n.recordingOutputsHeader)
+                playbackPicker
+                PreferencesChrome.caption(playbackCaption)
             }
 
             PreferencesChrome.sectionCard {
@@ -150,6 +128,78 @@ struct PreferencesRecordingPage: View {
         }
         .background(Color.primary.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+    }
+
+    private enum PlaybackMode: CaseIterable, Hashable {
+        case followDefault, recordAll, selection
+    }
+
+    private var playbackMode: PlaybackMode {
+        if preferences.recordAllPlayback { return .recordAll }
+        if preferences.followDefaultOutput { return .followDefault }
+        return .selection
+    }
+
+    private var playbackPicker: some View {
+        HStack(spacing: 0) {
+            ForEach(PlaybackMode.allCases, id: \.self) { mode in
+                let selected = playbackMode == mode
+                Text(playbackTitle(mode))
+                    .font(.callout.weight(selected ? .semibold : .regular))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 5)
+                    .background(selected ? Color.accentColor.opacity(0.22) : Color.clear)
+                    .contentShape(Rectangle())
+                    .onTapGesture { setPlaybackMode(mode) }
+            }
+        }
+        .background(Color.primary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+    }
+
+    private func playbackTitle(_ mode: PlaybackMode) -> String {
+        switch mode {
+        case .followDefault: return L10n.recordingMonitorScopeDefault
+        case .recordAll: return L10n.recordingMonitorScopeAll
+        case .selection: return L10n.recordingMonitorScopeSelection
+        }
+    }
+
+    private var playbackCaption: String {
+        switch playbackMode {
+        case .followDefault: return L10n.recordingPlaybackCaptionDefault
+        case .recordAll: return L10n.recordingPlaybackCaptionAll
+        case .selection: return L10n.recordingPlaybackCaptionSelection
+        }
+    }
+
+    private func setPlaybackMode(_ mode: PlaybackMode) {
+        switch mode {
+        case .followDefault:
+            preferences.followDefaultOutput = true
+            preferences.recordAllPlayback = false
+            if recorder.isRecording {
+                recorder.setFollowDefaultOutput(true)
+            }
+        case .recordAll:
+            preferences.recordAllPlayback = true
+            preferences.followDefaultOutput = false
+            if recorder.isRecording {
+                recorder.setRecordAllPlayback(true)
+            }
+        case .selection:
+            preferences.followDefaultOutput = false
+            preferences.recordAllPlayback = false
+            if recorder.isRecording {
+                if recorder.recordsAllPlayback {
+                    recorder.setRecordAllPlayback(false)
+                } else if recorder.followDefaultOutput {
+                    recorder.setFollowDefaultOutput(false)
+                }
+            }
+        }
     }
 
     private var silencePicker: some View {

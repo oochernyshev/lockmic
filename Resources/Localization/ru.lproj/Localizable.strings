@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Записывать все устройства воспроизведения";
 "recording.playback.caption.all" = "Записывает воспроизведение всех приложений на любом выходе.";
 "recording.playback.caption.default" = "Записывает звук, идущий на устройство вывода по умолчанию.";
+"recording.playback.caption.selection" = "Записывает выбранные выходы.";
 "recording.quality.header" = "Качество";
 "recording.quality.caption" = "Для микрофона, воспроизведения и микса. Меньше — меньше места на диске.";
 "recording.silence.header" = "Останавливать при тишине";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Запись";
 "recording.monitor.follow_default" = "Следовать микрофону по умолчанию";
 "recording.monitor.follow_default_output" = "Следовать выходу по умолчанию";
+"recording.monitor.record_all" = "Записывать все";
+"recording.monitor.scope.default" = "По умолч.";
+"recording.monitor.scope.all" = "Все";
+"recording.monitor.scope.selection" = "Выбор";
 "recording.follow.mic.caption" = "Если системный микрофон по умолчанию сменится, продолжать записывать его.";
 "recording.follow.output.caption" = "Если системный выход по умолчанию сменится, продолжать записывать его.";
 "recording.monitor.unselected" = "Следить за невыбранными устройствами";

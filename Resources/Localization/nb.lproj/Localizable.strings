@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Ta opp alle avspillingsenheter";
 "recording.playback.caption.all" = "Tar opp avspilling fra alle apper, på alle utganger.";
 "recording.playback.caption.default" = "Tar opp lyd som går til standard utdataenhet.";
+"recording.playback.caption.selection" = "Tar opp utgangene du velger.";
 "recording.quality.header" = "Kvalitet";
 "recording.quality.caption" = "Gjelder mikrofon, avspilling og møtemiks. Lavere bruker mindre diskplass.";
 "recording.silence.header" = "Stopp ved stillhet";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Opptak";
 "recording.monitor.follow_default" = "Følg standardmikrofon";
 "recording.monitor.follow_default_output" = "Følg standardutgang";
+"recording.monitor.record_all" = "Ta opp alle";
+"recording.monitor.scope.default" = "Standard";
+"recording.monitor.scope.all" = "Alle";
+"recording.monitor.scope.selection" = "Utvalg";
 "recording.follow.mic.caption" = "Når standardmikrofonen endres, fortsett å ta den opp.";
 "recording.follow.output.caption" = "Når standardutgangen endres, fortsett å ta den opp.";
 "recording.monitor.unselected" = "Overvåk fravalgt utstyr";

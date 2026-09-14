@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Înregistrează toate dispozitivele de redare";
 "recording.playback.caption.all" = "Capturează redarea tuturor aplicațiilor, pe orice ieșire.";
 "recording.playback.caption.default" = "Capturează sunetul trimis către dispozitivul de ieșire implicit.";
+"recording.playback.caption.selection" = "Capturează ieșirile pe care le selectezi.";
 "recording.quality.header" = "Calitate";
 "recording.quality.caption" = "Se aplică microfonului, redării și mixului. Mai mic ocupă mai puțin spațiu.";
 "recording.silence.header" = "Oprește la tăcere";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Înregistrare";
 "recording.monitor.follow_default" = "Urmărește microfonul implicit";
 "recording.monitor.follow_default_output" = "Urmărește ieșirea implicită";
+"recording.monitor.record_all" = "Înregistrează tot";
+"recording.monitor.scope.default" = "Implicit";
+"recording.monitor.scope.all" = "Tot";
+"recording.monitor.scope.selection" = "Selecție";
 "recording.follow.mic.caption" = "Când se schimbă microfonul implicit, continuă înregistrarea lui.";
 "recording.follow.output.caption" = "Când se schimbă ieșirea implicită, continuă înregistrarea ei.";
 "recording.monitor.unselected" = "Monitorizează dispozitivele neselectate";

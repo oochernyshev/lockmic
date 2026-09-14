@@ -196,3 +196,139 @@ final class SilenceModeChip: NSView {
 
     @objc private func advanceClicked() { onAdvance?() }
 }
+
+/// Compact cycling badge: Default → All → Selection.
+final class PlaybackScopeChip: NSView {
+    enum Mode: Equatable {
+        case followDefault
+        case recordAll
+        case custom
+
+        var next: Mode {
+            switch self {
+            case .followDefault: return .recordAll
+            case .recordAll: return .custom
+            case .custom: return .followDefault
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .followDefault: return L10n.recordingMonitorScopeDefault
+            case .recordAll: return L10n.recordingMonitorScopeAll
+            case .custom: return L10n.recordingMonitorScopeSelection
+            }
+        }
+
+        var tooltip: String {
+            switch self {
+            case .followDefault: return L10n.recordingPlaybackCaptionDefault
+            case .recordAll: return L10n.recordingPlaybackCaptionAll
+            case .custom: return L10n.recordingPlaybackCaptionSelection
+            }
+        }
+    }
+
+    var onSelect: ((Mode) -> Void)?
+
+    private let label = ChipLabel()
+    private var mode: Mode = .followDefault
+    private var isChipEnabled = true
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        MonitorChipMetrics.applyAppearance(to: layer)
+        translatesAutoresizingMaskIntoConstraints = false
+        heightAnchor.constraint(equalToConstant: MonitorChipMetrics.height).isActive = true
+
+        label.font = MonitorChipMetrics.semiboldFont
+        label.textColor = .labelColor
+        label.alignment = .center
+        label.lineBreakMode = .byClipping
+        label.usesSingleLineMode = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(label)
+
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+            label.widthAnchor.constraint(equalToConstant: Self.fittingLabelWidth()),
+            leadingAnchor.constraint(equalTo: label.leadingAnchor, constant: -8),
+            trailingAnchor.constraint(equalTo: label.trailingAnchor, constant: 8),
+        ])
+        apply(.followDefault)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    func apply(_ mode: Mode) {
+        guard mode != self.mode || label.stringValue != mode.title else { return }
+        self.mode = mode
+        label.stringValue = mode.title
+        toolTip = mode.tooltip
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        guard isChipEnabled != enabled else { return }
+        isChipEnabled = enabled
+        alphaValue = enabled ? 1 : 0.45
+        window?.invalidateCursorRects(for: self)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isChipEnabled else { return }
+        onSelect?(mode.next)
+    }
+
+    override func resetCursorRects() {
+        if isChipEnabled {
+            addCursorRect(bounds, cursor: .pointingHand)
+        }
+    }
+
+    override var wantsUpdateLayer: Bool { true }
+
+    override func updateLayer() {
+        layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.82).cgColor
+        MonitorChipMetrics.updateSeparation(
+            of: layer,
+            darkMode: MonitorChipMetrics.isDark(effectiveAppearance)
+        )
+    }
+
+    private static func fittingLabelWidth() -> CGFloat {
+        let probe = ChipLabel()
+        probe.font = MonitorChipMetrics.semiboldFont
+        probe.alignment = .center
+        probe.usesSingleLineMode = true
+        return [Mode.followDefault, .recordAll, .custom]
+            .map { title in
+                probe.stringValue = title.title
+                probe.invalidateIntrinsicContentSize()
+                return ceil(probe.intrinsicContentSize.width)
+            }
+            .max() ?? 44
+    }
+}
+
+/// Label without the default NSTextField cell inset, so centered titles sit in the pill.
+private final class ChipLabel: NSTextField {
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        isEditable = false
+        isSelectable = false
+        isBezeled = false
+        isBordered = false
+        drawsBackground = false
+        refusesFirstResponder = true
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override var alignmentRectInsets: NSEdgeInsets {
+        NSEdgeInsets()
+    }
+}

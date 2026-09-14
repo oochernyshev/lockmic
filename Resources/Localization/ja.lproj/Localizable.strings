@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "すべての再生デバイスを録音";
 "recording.playback.caption.all" = "すべてのアプリの再生を、出力先を問わず取り込みます。";
 "recording.playback.caption.default" = "デフォルトの出力デバイスに送られる音声を取り込みます。";
+"recording.playback.caption.selection" = "選択した出力を取り込みます。";
 "recording.quality.header" = "品質";
 "recording.quality.caption" = "マイク、再生、会議ミックスに適用します。低いほど容量を節約します。";
 "recording.silence.header" = "無音で停止";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "録音";
 "recording.monitor.follow_default" = "デフォルトのマイクに従う";
 "recording.monitor.follow_default_output" = "デフォルトの出力に従う";
+"recording.monitor.record_all" = "すべて録音";
+"recording.monitor.scope.default" = "デフォルト";
+"recording.monitor.scope.all" = "すべて";
+"recording.monitor.scope.selection" = "選択";
 "recording.follow.mic.caption" = "システムのデフォルトマイクが変わっても、そのマイクを録音し続けます。";
 "recording.follow.output.caption" = "システムのデフォルト出力が変わっても、その出力を録音し続けます。";
 "recording.monitor.unselected" = "未選択のデバイスを監視";

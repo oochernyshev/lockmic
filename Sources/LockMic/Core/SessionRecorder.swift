@@ -41,6 +41,8 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     @Published internal(set) var followDefaultInput = true
     /// When true, playback selection tracks the system default output.
     @Published internal(set) var followDefaultOutput = true
+    /// When true, every live output is in the mix.
+    @Published internal(set) var recordsAllPlayback = false
 
     /// Follow-default plus the current input UID. Set by `RecordingCoordinator` to persist prefs.
     var persistInputSelection: ((Bool, String) -> Void)?
@@ -185,6 +187,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             lastError = nil
             followDefaultInput = followInput
             followDefaultOutput = followOutput && scope != .all
+            recordsAllPlayback = scope == .all
             refreshCaptureAccess()
             let defaultOut = currentDefaultOutputUID() ?? ""
             devices = DeviceRowBuilder.previewRows(
@@ -422,6 +425,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
                 $0.devices = []
                 $0.followDefaultInput = true
                 $0.followDefaultOutput = true
+                $0.recordsAllPlayback = false
             }
             self.refreshCaptureAccess()
             self.deviceSelection.reset()
@@ -503,6 +507,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
                     $0.devices = []
                     $0.followDefaultInput = true
                     $0.followDefaultOutput = true
+                    $0.recordsAllPlayback = false
                 }
                 self.publishLevels()
                 sessionRecorderLog.info("Recording stopped: \(finalFile.lastPathComponent, privacy: .public)")
@@ -618,17 +623,21 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         guard sessionLive else { return }
         if id.hasPrefix("out.") {
             deviceSelection.followDefaultOutput = false
-            deviceSelection.recordsAllPlayback = false
             let uid = String(id.dropFirst(4))
             if enabled {
                 deviceSelection.selectedOutputUIDs.insert(uid)
             } else {
                 deviceSelection.selectedOutputUIDs.remove(uid)
             }
+            deviceSelection.recordsAllPlayback = deviceSelection.selectedOutputUIDs == liveOutputUIDs()
+            let recordAll = deviceSelection.recordsAllPlayback
             applyOutputSelection()
             rememberOutputSelection()
             refreshDeviceRows()
-            publishUI { $0.followDefaultOutput = false }
+            publishUI {
+                $0.followDefaultOutput = false
+                $0.recordsAllPlayback = recordAll
+            }
             return
         }
         if enabled {
@@ -666,6 +675,10 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     }
 
     func setFollowDefaultOutput(_ follow: Bool) {
+        publishUI {
+            $0.followDefaultOutput = follow
+            if follow { $0.recordsAllPlayback = false }
+        }
         perform { self.setFollowDefaultOutputOnQueue(follow) }
     }
 
@@ -681,10 +694,17 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         applyOutputSelection()
         rememberOutputSelection()
         refreshDeviceRows()
-        publishUI { $0.followDefaultOutput = follow }
+        publishUI {
+            $0.followDefaultOutput = follow
+            if follow { $0.recordsAllPlayback = false }
+        }
     }
 
     func setRecordAllPlayback(_ on: Bool) {
+        publishUI {
+            $0.recordsAllPlayback = on
+            if on { $0.followDefaultOutput = false }
+        }
         perform { self.setRecordAllPlaybackOnQueue(on) }
     }
 
@@ -698,8 +718,9 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         applyOutputSelection()
         rememberOutputSelection()
         refreshDeviceRows()
-        if on {
-            publishUI { $0.followDefaultOutput = false }
+        publishUI {
+            $0.recordsAllPlayback = on
+            if on { $0.followDefaultOutput = false }
         }
     }
 
@@ -727,6 +748,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         publishUI {
             $0.followDefaultInput = followInput
             $0.followDefaultOutput = followOutput && scope != .all
+            $0.recordsAllPlayback = scope == .all
         }
     }
 

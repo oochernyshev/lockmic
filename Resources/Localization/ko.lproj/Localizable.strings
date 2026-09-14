@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "모든 재생 기기 녹음";
 "recording.playback.caption.all" = "모든 앱의 재생을 출력 장치에 관계없이 캡처합니다.";
 "recording.playback.caption.default" = "기본 출력 장치로 가는 오디오를 캡처합니다.";
+"recording.playback.caption.selection" = "선택한 출력을 캡처합니다.";
 "recording.quality.header" = "품질";
 "recording.quality.caption" = "마이크, 재생, 회의 믹스에 적용됩니다. 낮을수록 용량을 덜 씁니다.";
 "recording.silence.header" = "무음 시 중지";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "녹음";
 "recording.monitor.follow_default" = "기본 마이크 따르기";
 "recording.monitor.follow_default_output" = "기본 출력 따르기";
+"recording.monitor.record_all" = "모두 녹음";
+"recording.monitor.scope.default" = "기본";
+"recording.monitor.scope.all" = "모두";
+"recording.monitor.scope.selection" = "선택";
 "recording.follow.mic.caption" = "시스템 기본 마이크가 바뀌면 그 마이크를 계속 녹음합니다.";
 "recording.follow.output.caption" = "시스템 기본 출력이 바뀌면 그 출력을 계속 녹음합니다.";
 "recording.monitor.unselected" = "선택하지 않은 장치 모니터링";

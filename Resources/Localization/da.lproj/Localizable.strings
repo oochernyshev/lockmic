@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Optag alle afspilningsenheder";
 "recording.playback.caption.all" = "Optager alle apps’ afspilning på enhver udgang.";
 "recording.playback.caption.default" = "Optager lyd, der går til standardudgangen.";
+"recording.playback.caption.selection" = "Optager de udgange, du vælger.";
 "recording.quality.header" = "Kvalitet";
 "recording.quality.caption" = "Gælder mikrofon, afspilning og mødemiks. Lavere bruger mindre diskplads.";
 "recording.silence.header" = "Stop ved stilhed";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Optagelse";
 "recording.monitor.follow_default" = "Følg standardmikrofon";
 "recording.monitor.follow_default_output" = "Følg standardudgang";
+"recording.monitor.record_all" = "Optag alle";
+"recording.monitor.scope.default" = "Standard";
+"recording.monitor.scope.all" = "Alle";
+"recording.monitor.scope.selection" = "Valg";
 "recording.follow.mic.caption" = "Når systemets standardmikrofon skifter, så bliv ved med at optage den.";
 "recording.follow.output.caption" = "Når systemets standardudgang skifter, så bliv ved med at optage den.";
 "recording.monitor.unselected" = "Overvåg fravalgte enheder";

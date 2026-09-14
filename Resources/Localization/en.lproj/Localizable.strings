@@ -129,6 +129,7 @@
 "recording.playback.toggle" = "Record all playback devices";
 "recording.playback.caption.all" = "Captures every app’s playback, on any output.";
 "recording.playback.caption.default" = "Captures audio going to the default output device.";
+"recording.playback.caption.selection" = "Captures the outputs you select.";
 "recording.quality.header" = "Quality";
 "recording.quality.caption" = "Applies to the microphone, playback, and mix. Lower uses less disk space.";
 "recording.silence.header" = "Stop on silence";
@@ -158,6 +159,10 @@
 "recording.monitor.title" = "Recording";
 "recording.monitor.follow_default" = "Follow default mic";
 "recording.monitor.follow_default_output" = "Follow default output";
+"recording.monitor.record_all" = "Record all";
+"recording.monitor.scope.default" = "Default";
+"recording.monitor.scope.all" = "All";
+"recording.monitor.scope.selection" = "Selection";
 "recording.follow.mic.caption" = "When the system default microphone changes, keep recording it.";
 "recording.follow.output.caption" = "When the system default output changes, keep recording it.";
 "recording.monitor.unselected" = "Monitor unselected devices";

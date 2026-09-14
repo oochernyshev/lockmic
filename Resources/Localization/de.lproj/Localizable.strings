@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Alle Wiedergabegeräte aufnehmen";
 "recording.playback.caption.all" = "Nimmt die Wiedergabe aller Apps auf jedem Ausgang auf.";
 "recording.playback.caption.default" = "Nimmt Audio auf, das an das Standardausgabegerät geht.";
+"recording.playback.caption.selection" = "Nimmt die von dir gewählten Ausgänge auf.";
 "recording.quality.header" = "Qualität";
 "recording.quality.caption" = "Gilt für Mikrofon, Wiedergabe und Mix. Niedriger spart Speicherplatz.";
 "recording.silence.header" = "Bei Stille stoppen";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Aufnahme";
 "recording.monitor.follow_default" = "Standardmikrofon folgen";
 "recording.monitor.follow_default_output" = "Standardausgabe folgen";
+"recording.monitor.record_all" = "Alle aufnehmen";
+"recording.monitor.scope.default" = "Standard";
+"recording.monitor.scope.all" = "Alle";
+"recording.monitor.scope.selection" = "Auswahl";
 "recording.follow.mic.caption" = "Wenn sich das Standardmikrofon ändert, weiter dieses aufnehmen.";
 "recording.follow.output.caption" = "Wenn sich die Standardausgabe ändert, weiter diese aufnehmen.";
 "recording.monitor.unselected" = "Nicht ausgewählte Geräte überwachen";

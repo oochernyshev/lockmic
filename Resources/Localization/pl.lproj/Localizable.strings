@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Nagrywaj wszystkie urządzenia odtwarzające";
 "recording.playback.caption.all" = "Przechwytuje odtwarzanie wszystkich aplikacji na dowolnym wyjściu.";
 "recording.playback.caption.default" = "Przechwytuje dźwięk kierowany do domyślnego urządzenia wyjściowego.";
+"recording.playback.caption.selection" = "Przechwytuje wybrane wyjścia.";
 "recording.quality.header" = "Jakość";
 "recording.quality.caption" = "Dotyczy mikrofonu, odtwarzania i miksu. Niższa wartość zajmuje mniej miejsca.";
 "recording.silence.header" = "Zatrzymaj przy ciszy";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Nagrywanie";
 "recording.monitor.follow_default" = "Śledź domyślny mikrofon";
 "recording.monitor.follow_default_output" = "Śledź domyślne wyjście";
+"recording.monitor.record_all" = "Nagrywaj wszystkie";
+"recording.monitor.scope.default" = "Domyślne";
+"recording.monitor.scope.all" = "Wszystkie";
+"recording.monitor.scope.selection" = "Wybór";
 "recording.follow.mic.caption" = "Gdy zmieni się domyślny mikrofon, nadal go nagrywaj.";
 "recording.follow.output.caption" = "Gdy zmieni się domyślne wyjście, nadal je nagrywaj.";
 "recording.monitor.unselected" = "Monitoruj niezaznaczone urządzenia";

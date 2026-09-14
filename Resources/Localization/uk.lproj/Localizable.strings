@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Записувати всі пристрої відтворення";
 "recording.playback.caption.all" = "Записує відтворення всіх програм на будь-якому виході.";
 "recording.playback.caption.default" = "Записує звук, що йде на типовий пристрій виведення.";
+"recording.playback.caption.selection" = "Записує вибрані виходи.";
 "recording.quality.header" = "Якість";
 "recording.quality.caption" = "Для мікрофона, відтворення і міксу. Нижче — менше місця на диску.";
 "recording.silence.header" = "Зупиняти за тиші";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Запис";
 "recording.monitor.follow_default" = "Стежити за типовим мікрофоном";
 "recording.monitor.follow_default_output" = "Стежити за типовим виходом";
+"recording.monitor.record_all" = "Записувати всі";
+"recording.monitor.scope.default" = "Типовий";
+"recording.monitor.scope.all" = "Усі";
+"recording.monitor.scope.selection" = "Вибір";
 "recording.follow.mic.caption" = "Якщо типовий мікрофон зміниться, продовжувати його записувати.";
 "recording.follow.output.caption" = "Якщо типовий вихід зміниться, продовжувати його записувати.";
 "recording.monitor.unselected" = "Стежити за невибраними пристроями";

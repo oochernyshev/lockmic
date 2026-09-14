@@ -21,7 +21,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
     private var inputsCard: CardView?
     private var outputsCard: CardView?
     private var followToggle: AccessoryToggle?
-    private var followOutputToggle: AccessoryToggle?
+    private var playbackScopeChip: PlaybackScopeChip?
     private var muteButton: MuteToggleButton?
     private var stopButton: StopRecordingButton?
     private var preferences: PreferencesStore?
@@ -183,11 +183,12 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         follow.action = #selector(followDefaultClicked)
         inputs.setAccessory(follow)
         followToggle = follow
-        let followOut = AccessoryToggle(title: L10n.recordingFollowDefaultOutput)
-        followOut.target = self
-        followOut.action = #selector(followDefaultOutputClicked)
-        outputs.setAccessory(followOut)
-        followOutputToggle = followOut
+        let scope = PlaybackScopeChip()
+        scope.onSelect = { [weak self] mode in
+            self?.selectPlaybackScope(mode)
+        }
+        outputs.setAccessory(scope)
+        playbackScopeChip = scope
         inputsCard = inputs
         outputsCard = outputs
 
@@ -617,7 +618,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         inputsCard?.setDimmed(!inputsOn)
         outputsCard?.setDimmed(!outputsOn)
         followToggle?.setEnabled(inputsOn)
-        followOutputToggle?.setEnabled(outputsOn)
+        playbackScopeChip?.setEnabled(outputsOn)
         stopButton?.isEnabled = true
         if recorder?.isRecording != true {
             setSilenceCountdown(nil)
@@ -725,29 +726,63 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
         syncRows()
     }
 
-    @objc private func followDefaultOutputClicked() {
-        guard let recorder, let followOutputToggle else { return }
-        recorder.setFollowDefaultOutput(followOutputToggle.isOn)
-        followOutputToggle.isOn = recorder.followDefaultOutput
-        preferences?.followDefaultOutput = recorder.followDefaultOutput
-        if recorder.followDefaultOutput {
+    private func selectPlaybackScope(_ mode: PlaybackScopeChip.Mode) {
+        switch mode {
+        case .followDefault:
+            preferences?.followDefaultOutput = true
             preferences?.recordAllPlayback = false
+            if recorder?.isRecording == true {
+                recorder?.setFollowDefaultOutput(true)
+            }
+        case .recordAll:
+            preferences?.recordAllPlayback = true
+            preferences?.followDefaultOutput = false
+            if recorder?.isRecording == true {
+                recorder?.setRecordAllPlayback(true)
+            }
+        case .custom:
+            preferences?.followDefaultOutput = false
+            preferences?.recordAllPlayback = false
+            if recorder?.isRecording == true {
+                recorder?.setRecordAllPlayback(false)
+            }
         }
+        playbackScopeChip?.apply(mode)
         syncRows()
     }
 
     private func syncFollowToggles() {
         guard let recorder else { return }
         followToggle?.isOn = recorder.followDefaultInput
-        followOutputToggle?.isOn = recorder.followDefaultOutput
-        if let preferences {
-            if preferences.followDefaultMic != recorder.followDefaultInput {
-                preferences.followDefaultMic = recorder.followDefaultInput
+        let followOutput: Bool
+        let recordAll: Bool
+        if recorder.isRecording {
+            followOutput = recorder.followDefaultOutput
+            recordAll = recorder.recordsAllPlayback
+            if let preferences {
+                if preferences.followDefaultMic != recorder.followDefaultInput {
+                    preferences.followDefaultMic = recorder.followDefaultInput
+                }
+                if preferences.followDefaultOutput != followOutput {
+                    preferences.followDefaultOutput = followOutput
+                }
+                if preferences.recordAllPlayback != recordAll {
+                    preferences.recordAllPlayback = recordAll
+                }
             }
-            if preferences.followDefaultOutput != recorder.followDefaultOutput {
-                preferences.followDefaultOutput = recorder.followDefaultOutput
-            }
+        } else {
+            followOutput = preferences?.followDefaultOutput ?? recorder.followDefaultOutput
+            recordAll = preferences?.recordAllPlayback ?? recorder.recordsAllPlayback
         }
+        let scope: PlaybackScopeChip.Mode
+        if recordAll {
+            scope = .recordAll
+        } else if followOutput {
+            scope = .followDefault
+        } else {
+            scope = .custom
+        }
+        playbackScopeChip?.apply(scope)
     }
 
     private func makeLabel(_ text: String, font: NSFont) -> NSTextField {

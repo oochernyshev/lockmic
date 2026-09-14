@@ -153,6 +153,7 @@
 "recording.playback.toggle" = "Εγγραφή όλων των συσκευών αναπαραγωγής";
 "recording.playback.caption.all" = "Καταγράφει την αναπαραγωγή κάθε εφαρμογής, σε οποιαδήποτε έξοδο.";
 "recording.playback.caption.default" = "Καταγράφει ήχο που πηγαίνει στην προεπιλεγμένη συσκευή εξόδου.";
+"recording.playback.caption.selection" = "Καταγράφει τις εξόδους που επιλέγεις.";
 "recording.quality.header" = "Ποιότητα";
 "recording.quality.caption" = "Ισχύει για μικρόφωνο, αναπαραγωγή και μείξη συνάντησης. Χαμηλότερη τιμή εξοικονομεί χώρο.";
 "recording.silence.header" = "Διακοπή σε σιωπή";
@@ -198,6 +199,10 @@
 "recording.monitor.title" = "Εγγραφή";
 "recording.monitor.follow_default" = "Ακολούθησε το προεπιλεγμένο μικρόφωνο";
 "recording.monitor.follow_default_output" = "Ακολούθησε την προεπιλεγμένη έξοδο";
+"recording.monitor.record_all" = "Εγγραφή όλων";
+"recording.monitor.scope.default" = "Προεπιλ.";
+"recording.monitor.scope.all" = "Όλα";
+"recording.monitor.scope.selection" = "Επιλογή";
 "recording.follow.mic.caption" = "Όταν αλλάζει το προεπιλεγμένο μικρόφωνο, συνέχισε την εγγραφή του.";
 "recording.follow.output.caption" = "Όταν αλλάζει η προεπιλεγμένη έξοδος, συνέχισε την εγγραφή της.";
 "recording.monitor.unselected" = "Παρακολούθηση μη επιλεγμένων συσκευών";
