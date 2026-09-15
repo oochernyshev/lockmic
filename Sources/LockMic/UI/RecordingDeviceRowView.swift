@@ -377,6 +377,16 @@ final class AccessoryToggle: NSView {
             _ = target?.perform(action)
         }
     }
+
+    override func mouseDown(with event: NSEvent) {
+        mark.performClick(nil)
+    }
+
+    override func resetCursorRects() {
+        if mark.isEnabled {
+            addCursorRect(bounds, cursor: .pointingHand)
+        }
+    }
 }
 
 /// Circle for mics (one at a time), square for playback.

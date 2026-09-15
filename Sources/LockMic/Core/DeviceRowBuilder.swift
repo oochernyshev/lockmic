@@ -145,6 +145,7 @@ enum DeviceRowBuilder {
             flaggedIn.insert(inUID)
             let inName = inputs[inUID]?.name
             for (outUID, outDev) in outputs where outDev.isBluetooth {
+                guard deviceSelection.selectedOutputUIDs.contains(outUID) else { continue }
                 if AudioDeviceService.sameBluetoothHeadset(inputUID: inUID, outputUID: outUID)
                     || outDev.name == inName
                 {

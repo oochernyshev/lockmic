@@ -719,8 +719,8 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             selectMic(uid)
         }
         rememberInputSelection()
-        refreshDeviceRows()
         publishUI { $0.followDefaultInput = follow }
+        refreshDeviceRows()
     }
 
     func setMonitorUnselectedDevices(_ on: Bool) {

@@ -720,9 +720,9 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
 
     @objc private func followDefaultClicked() {
         guard let recorder, let followToggle else { return }
-        recorder.setFollowDefaultInput(followToggle.isOn)
-        followToggle.isOn = recorder.followDefaultInput
-        preferences?.followDefaultMic = recorder.followDefaultInput
+        let follow = followToggle.isOn
+        recorder.setFollowDefaultInput(follow)
+        preferences?.followDefaultMic = follow
         syncRows()
     }
 
