@@ -105,7 +105,13 @@ enum RecordingDSP {
         dest: UnsafeMutablePointer<Float>
     ) {
         guard frames > 0, stride > 0 else { return }
-        cblas_scopy(Int32(frames), source, Int32(stride), dest, 1)
+        if stride == 1 {
+            dest.update(from: source, count: frames)
+        } else {
+            for i in 0..<frames {
+                dest[i] = source[i * stride]
+            }
+        }
     }
 
     static func deinterleaveStereo(

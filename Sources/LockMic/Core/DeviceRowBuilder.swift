@@ -10,7 +10,8 @@ enum DeviceRowBuilder {
         audio: AudioDeviceService,
         selectedInputUID: String,
         selectedOutputUIDs: Set<String>,
-        playbackDeviceUID: String
+        playbackDeviceUID: String,
+        usesSystemMix: Bool
     ) -> [RecordingDeviceRow] {
         let defaultIn = (try? audio.defaultInputDeviceID()).flatMap { id -> String? in
             guard !audio.isLockMicRecorder(id) else { return nil }
@@ -37,22 +38,21 @@ enum DeviceRowBuilder {
                 )
             )
         }
+        let defaultOutName = audio.listOutputDevices().first(where: { $0.uid == defaultOut })?.name ?? ""
+        rows.append(systemMixRow(enabled: usesSystemMix, callQuality: false, defaultName: defaultOutName))
         for device in audio.listOutputDevices() where !device.isVirtual {
-            let selected = selectedOutputUIDs.contains(device.uid)
-            let isDefault = device.uid == defaultOut
+            let selected = !usesSystemMix && selectedOutputUIDs.contains(device.uid)
             rows.append(
                 RecordingDeviceRow(
                     id: "out.\(device.uid)",
                     name: device.name,
                     kind: .output,
-                    isDefault: isDefault,
+                    isDefault: false,
                     isVirtual: false,
                     canCapture: true,
                     isEnabled: selected,
                     level: 0,
-                    detail: isDefault ? L10n.recordingSourceSystemPlayback : (
-                        selected ? L10n.recordingSourceIncluded : L10n.recordingSourceOutside
-                    ),
+                    detail: selected ? L10n.recordingSourceIncluded : L10n.recordingSourceOutside,
                     isCallQuality: false
                 )
             )
@@ -99,24 +99,30 @@ enum DeviceRowBuilder {
             )
         }
 
+        let usesSystemMix = deviceSelection.usesSystemMix
+        let defaultOutName = defaultOutUID.flatMap { outputsByUID[$0]?.name } ?? ""
+        rows.append(
+            systemMixRow(
+                enabled: usesSystemMix,
+                callQuality: usesSystemMix && (captureRig.systemPlaybackTap?.isMixNarrowband == true),
+                defaultName: defaultOutName
+            )
+        )
         for uid in deviceSelection.outputOrder {
             guard let device = outputsByUID[uid] else { continue }
             let id = "out.\(uid)"
-            let isDefault = uid == defaultOutUID
-            let selected = deviceSelection.selectedOutputUIDs.contains(uid)
+            let selected = !usesSystemMix && deviceSelection.selectedOutputUIDs.contains(uid)
             rows.append(
                 RecordingDeviceRow(
                     id: id,
                     name: device.name,
                     kind: .output,
-                    isDefault: isDefault,
+                    isDefault: false,
                     isVirtual: false,
                     canCapture: true,
                     isEnabled: selected,
                     level: 0,
-                    detail: isDefault ? L10n.recordingSourceSystemPlayback : (
-                        selected ? L10n.recordingSourceIncluded : L10n.recordingSourceOutside
-                    ),
+                    detail: selected ? L10n.recordingSourceIncluded : L10n.recordingSourceOutside,
                     isCallQuality: callQuality.outputs.contains(uid)
                 )
             )
@@ -146,19 +152,28 @@ enum DeviceRowBuilder {
                 }
             }
         }
-        // Badge the output we actually mix, using IO rate — not an unused
-        // device tap whose kAudioTapPropertyFormat can sit at 16 kHz while
-        // speakers and the mix stay at 48 kHz.
-        let defaultUID = deviceSelection.currentDefaultOutputUID(audio: audio) ?? deviceSelection.playbackDeviceUID
-        if !defaultUID.isEmpty, deviceSelection.selectedOutputUIDs.contains(defaultUID) {
-            let deviceTap = captureRig.playbackTaps[defaultUID]
-            let mixingDevice = captureRig.systemPlaybackTap?.isNarrowband == true
-                && (deviceTap.map { !$0.isNarrowband } ?? false)
-            let mixTap: PlaybackCapturing? = mixingDevice ? deviceTap : captureRig.systemPlaybackTap
-            if mixTap?.isMixNarrowband == true {
-                flaggedOut.insert(defaultUID)
+        if !deviceSelection.usesSystemMix {
+            for uid in deviceSelection.selectedOutputUIDs {
+                if captureRig.playbackTaps[uid]?.isMixNarrowband == true {
+                    flaggedOut.insert(uid)
+                }
             }
         }
         return (flaggedIn, flaggedOut)
+    }
+
+    private static func systemMixRow(enabled: Bool, callQuality: Bool, defaultName: String) -> RecordingDeviceRow {
+        RecordingDeviceRow(
+            id: PlaybackMix.rowID,
+            name: L10n.recordingSystemMixName(device: defaultName),
+            kind: .output,
+            isDefault: false,
+            isVirtual: false,
+            canCapture: true,
+            isEnabled: enabled,
+            level: 0,
+            detail: enabled ? L10n.recordingSystemMixDetail : L10n.recordingSourceOutside,
+            isCallQuality: callQuality
+        )
     }
 }

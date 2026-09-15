@@ -18,8 +18,7 @@ class LevelMetering {
         inputs: [String: InputDeviceCapture],
         taps: [String: PlaybackCapturing],
         system: PlaybackCapturing?,
-        playbackDeviceUID: String,
-        defaultOutputUID: String,
+        usesSystemMix: Bool,
         selectedInputUID: String,
         selectedOutputUIDs: Set<String>,
         mixMuted: Bool,
@@ -35,8 +34,7 @@ class LevelMetering {
         snap.inputs = inputs
         snap.taps = taps
         snap.system = system
-        snap.playbackDeviceUID = playbackDeviceUID
-        snap.defaultOutputUID = defaultOutputUID
+        snap.usesSystemMix = usesSystemMix
         snap.selectedInputUID = selectedInputUID
         snap.selectedOutputUIDs = selectedOutputUIDs
         snap.mixMuted = mixMuted
@@ -60,11 +58,10 @@ class LevelMetering {
             return snap.inputs[row.id]?.level ?? 0
         case .output:
             let uid = String(row.id.dropFirst(4))
-            let device = snap.taps[uid]?.level ?? 0
-            if uid == snap.playbackDeviceUID || uid == snap.defaultOutputUID {
-                return max(device, snap.system?.level ?? 0)
+            if uid == PlaybackMix.systemSourceID {
+                return snap.system?.level ?? 0
             }
-            return device
+            return snap.taps[uid]?.level ?? 0
         }
     }
     
@@ -87,8 +84,8 @@ class LevelMetering {
             return snap.inputs[row.id]?.sourceSampleRate ?? 0
         case .output:
             let uid = String(row.id.dropFirst(4))
-            if uid == snap.playbackDeviceUID || uid == snap.defaultOutputUID {
-                return snap.system?.sourceSampleRate ?? snap.taps[uid]?.sourceSampleRate ?? 0
+            if uid == PlaybackMix.systemSourceID {
+                return snap.system?.sourceSampleRate ?? 0
             }
             return snap.taps[uid]?.sourceSampleRate ?? 0
         }
@@ -135,13 +132,13 @@ class LevelMetering {
         levelLock.unlock()
         
         let mic = snap.mixMuted ? 0 : (snap.inputs[snap.selectedInputUID]?.level ?? 0)
-        let defaultUID = snap.defaultOutputUID
         var play: Float = 0
-        if !defaultUID.isEmpty, snap.selectedOutputUIDs.contains(defaultUID) {
-            play = max(play, snap.system?.level ?? 0)
-        }
-        for uid in snap.selectedOutputUIDs where uid != defaultUID {
-            play = max(play, snap.taps[uid]?.level ?? 0)
+        if snap.usesSystemMix {
+            play = snap.system?.level ?? 0
+        } else {
+            for uid in snap.selectedOutputUIDs {
+                play = max(play, snap.taps[uid]?.level ?? 0)
+            }
         }
         return min(1, max(mic, play))
     }

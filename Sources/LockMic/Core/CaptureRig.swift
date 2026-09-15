@@ -2,13 +2,12 @@ import Foundation
 import QuartzCore
 
 /// Owns the live HAL capture/tap/mixer state for a session: the per-device input
-/// captures, the playback taps, the system playback tap, the live mixer, and the
+/// captures, per-device playback taps, the system mix tap, the live mixer, and the
 /// file/bit-rate/start-time of the current mix. Not thread-safe on its own —
 /// `SessionRecorder` touches this exclusively from its own queue-confined methods.
 final class CaptureRig {
     var inputCaptures: [String: InputDeviceCapture] = [:]
     var playbackTaps: [String: PlaybackCapturing] = [:]
-    /// System process mix — not bound to a hardware output, so device switches stay continuous.
     var systemPlaybackTap: PlaybackCapturing?
     var liveMixer: LiveMixer?
     var sessionFile: URL?
@@ -17,6 +16,8 @@ final class CaptureRig {
     /// Bumped on every playback-tap resync request; a completed resync checks it's
     /// still current before applying its results.
     var playbackTapSync = 0
+    /// UIDs we already recreated while hardware was wideband and the tap stayed 16 kHz.
+    var widebandRetargetAttempted: Set<String> = []
 
     struct HardwareSnapshot {
         var inputs: [InputDeviceCapture]
@@ -37,15 +38,39 @@ final class CaptureRig {
     func detachRetargetedNarrowbandTaps(audio: AudioDeviceService) -> [PlaybackCapturing] {
         var toStop: [PlaybackCapturing] = []
         for uid in Array(playbackTaps.keys) {
-            guard let tap = playbackTaps[uid], tap.isNarrowband else { continue }
+            guard let tap = playbackTaps[uid] else { continue }
+            if !tap.isNarrowband {
+                widebandRetargetAttempted.remove(uid)
+                continue
+            }
             guard let device = audio.listOutputDevices().first(where: { $0.uid == uid }) else { continue }
+            let hardwareWide = PlaybackTap.hardwareOutputIsWideband(device.id)
+            if !hardwareWide {
+                widebandRetargetAttempted.remove(uid)
+                continue
+            }
             let preferred = PlaybackTap.preferredOutputStreamIndex(device.id)
-            guard preferred != tap.streamIndex else { continue }
+            let indexMoved = preferred != tap.streamIndex
+            if !indexMoved, widebandRetargetAttempted.contains(uid) { continue }
+            widebandRetargetAttempted.insert(uid)
             sessionRecorderLog.info(
-                "Retarget playback tap \(uid, privacy: .public) stream \(tap.streamIndex, privacy: .public) → \(preferred, privacy: .public)"
+                "Retarget playback tap \(uid, privacy: .public) stream \(tap.streamIndex, privacy: .public) → \(preferred, privacy: .public) (hardware wide, tap 16 kHz)"
             )
             playbackTaps.removeValue(forKey: uid)
             liveMixer?.removePlaybackSource(uid)
+            toStop.append(tap)
+        }
+        return toStop
+    }
+
+    /// Drop 16 kHz output taps so they can be recreated after a headset mic is released.
+    func detachNarrowbandTaps() -> [PlaybackCapturing] {
+        var toStop: [PlaybackCapturing] = []
+        for uid in Array(playbackTaps.keys) {
+            guard let tap = playbackTaps[uid], tap.isNarrowband || tap.isMixNarrowband else { continue }
+            playbackTaps.removeValue(forKey: uid)
+            liveMixer?.removePlaybackSource(uid)
+            widebandRetargetAttempted.remove(uid)
             toStop.append(tap)
         }
         return toStop

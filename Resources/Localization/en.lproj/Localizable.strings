@@ -127,9 +127,9 @@
 "recording.folder.caption" = "Each session is saved as a dated mix (mic + playback) for transcription.";
 "recording.playback.header" = "Playback";
 "recording.playback.toggle" = "Record all playback devices";
-"recording.playback.caption.all" = "Captures every app’s playback, on any output.";
-"recording.playback.caption.default" = "Captures audio going to the default output device.";
-"recording.playback.caption.selection" = "Captures the outputs you select.";
+"recording.playback.caption.all" = "Records each output device separately. A headset may record at call quality (16 kHz) even when playback sounds fine.";
+"recording.playback.caption.default" = "Records the system mix of the current default output — what you hear, at mix quality.";
+"recording.playback.caption.selection" = "Records each selected output device. A headset may record at 16 kHz even when playback sounds fine.";
 "recording.quality.header" = "Quality";
 "recording.quality.caption" = "Applies to the microphone, playback, and mix. Lower uses less disk space.";
 "recording.silence.header" = "Stop on silence";
@@ -149,7 +149,10 @@
 "recording.source.virtual" = "Virtual device — not captured";
 "recording.source.unavailable" = "Could not open this input";
 "recording.source.system_playback" = "System playback (what you hear)";
-"recording.source.included" = "Included in system playback mix";
+"recording.system_mix.name" = "System mix";
+"recording.system_mix.name_with_device" = "System mix (%@)";
+"recording.system_mix.detail" = "What you hear on the default output";
+"recording.source.included" = "In this recording";
 "recording.source.outside" = "Not in this recording";
 "recording.badge.call_quality" = "Low quality";
 "recording.badge.call_quality.tooltip" = "Bluetooth sound is reduced because this headset’s microphone is in use.";
@@ -160,7 +163,7 @@
 "recording.monitor.follow_default" = "Follow default mic";
 "recording.monitor.follow_default_output" = "Follow default output";
 "recording.monitor.record_all" = "Record all";
-"recording.monitor.scope.default" = "Default";
+"recording.monitor.scope.default" = "System mix";
 "recording.monitor.scope.all" = "All";
 "recording.monitor.scope.selection" = "Selection";
 "recording.follow.mic.caption" = "When the system default microphone changes, keep recording it.";

@@ -7,9 +7,10 @@ import QuartzCore
 
 let sessionRecorderLog = Logger(subsystem: "com.lockmic.app", category: "SessionRecorder")
 
-/// Records selected mic + system playback, mixed live to a dated `LockMic yyyy-MM-dd HH.mm.aac`.
+/// Records selected mic plus playback, mixed live to a dated `LockMic yyyy-MM-dd HH.mm.aac`.
 ///
-/// Playback is a Core Audio process tap (macOS 14.2+). Mic is a HAL IO capture
+/// Playback is either the system mix of the default output, or per-device Core Audio
+/// process taps (macOS 14.2+). Mic is a HAL IO capture
 /// that can move mid-session. Mixed PCM is held in RAM for up to 10 seconds,
 /// then checkpointed through one continuous AAC encoder (a crash only loses
 /// the current slice).
@@ -31,18 +32,18 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         defer { flagLock.unlock() }
         return flagPhase != .idle
     }
-    @Published internal(set) var lastError: String?
-    @Published internal(set) var devices: [RecordingDeviceRow] = []
+    @Published var lastError: String?
+    @Published var devices: [RecordingDeviceRow] = []
     @Published private(set) var recordingStartedAt: Date?
-    @Published internal(set) var microphoneAccess: CaptureAccess = .unknown
-    @Published internal(set) var playbackAccess: CaptureAccess = .unknown
+    @Published var microphoneAccess: CaptureAccess = .unknown
+    @Published var playbackAccess: CaptureAccess = .unknown
 
     /// When true, the selected input tracks the system default microphone.
-    @Published internal(set) var followDefaultInput = true
-    /// When true, playback selection tracks the system default output.
-    @Published internal(set) var followDefaultOutput = true
+    @Published var followDefaultInput = true
+    /// When true, playback is the system mix of the current default output.
+    @Published var followDefaultOutput = true
     /// When true, every live output is in the mix.
-    @Published internal(set) var recordsAllPlayback = false
+    @Published var recordsAllPlayback = false
 
     /// Follow-default plus the current input UID. Set by `RecordingCoordinator` to persist prefs.
     var persistInputSelection: ((Bool, String) -> Void)?
@@ -149,8 +150,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             inputs: captureRig.inputCaptures,
             taps: captureRig.playbackTaps,
             system: captureRig.systemPlaybackTap,
-            playbackDeviceUID: deviceSelection.playbackDeviceUID,
-            defaultOutputUID: currentDefaultOutputUID() ?? deviceSelection.playbackDeviceUID,
+            usesSystemMix: deviceSelection.usesSystemMix,
             selectedInputUID: deviceSelection.selectedInputUID,
             selectedOutputUIDs: deviceSelection.selectedOutputUIDs,
             mixMuted: muteGate.mixInputMuted,
@@ -200,7 +200,8 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
                     fallbackUID: defaultOut,
                     audio: audio
                 ),
-                playbackDeviceUID: defaultOut
+                playbackDeviceUID: defaultOut,
+                usesSystemMix: followOutput && scope != .all
             )
         }
         perform(apply)
@@ -319,13 +320,54 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             throw SessionRecorderError.notRecording
         }
 
-        let systemTap = try await PlaybackTap(audio: audio, deviceUID: nil)
-        systemTap.mixer = mixer
-        guard await stillStarting(generation) else {
-            systemTap.stop()
+        let useSystemMix = await mutate { self.deviceSelection.usesSystemMix }
+        var systemTap: PlaybackTap?
+        if useSystemMix {
+            do {
+                let tap = try await makePlaybackTap(deviceUID: nil)
+                guard await stillStarting(generation) else {
+                    tap.stop()
+                    capture.stop()
+                    mixer.stop()
+                    throw SessionRecorderError.notRecording
+                }
+                systemTap = tap
+            } catch {
+                capture.stop()
+                mixer.stop()
+                throw error
+            }
+        }
+
+        let selectedOutputs = useSystemMix ? [] : await mutate { Array(self.deviceSelection.selectedOutputUIDs) }
+        var startedTaps: [(uid: String, tap: PlaybackTap)] = []
+        for uid in selectedOutputs {
+            do {
+                let tap = try await makePlaybackTap(deviceUID: uid)
+                guard await stillStarting(generation) else {
+                    tap.stop()
+                    for item in startedTaps { item.tap.stop() }
+                    systemTap?.stop()
+                    capture.stop()
+                    mixer.stop()
+                    throw SessionRecorderError.notRecording
+                }
+                startedTaps.append((uid, tap))
+            } catch {
+                sessionRecorderLog.error(
+                    "Playback tap failed for \(uid, privacy: .public): \(error.localizedDescription, privacy: .public)"
+                )
+            }
+        }
+        if systemTap == nil, startedTaps.isEmpty, !selectedOutputs.isEmpty {
             capture.stop()
             mixer.stop()
-            throw SessionRecorderError.notRecording
+            throw SessionRecorderError.playbackDenied
+        }
+        if useSystemMix, systemTap == nil {
+            capture.stop()
+            mixer.stop()
+            throw SessionRecorderError.playbackDenied
         }
 
         let wentLive = await mutate { () -> Bool in
@@ -336,9 +378,16 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             }
             self.captureRig.liveMixer = mixer
             self.captureRig.inputCaptures[micDevice.uid] = capture
-            self.attachPlaybackTap(systemTap)
-            self.captureRig.systemPlaybackTap = systemTap
-            sessionRecorderLog.info("Playback mix tap (system)")
+            if let systemTap {
+                self.attachPlaybackTap(systemTap)
+                self.captureRig.systemPlaybackTap = systemTap
+                sessionRecorderLog.info("Playback mix tap (system)")
+            }
+            for item in startedTaps {
+                self.attachPlaybackTap(item.tap)
+                self.captureRig.playbackTaps[item.uid] = item.tap
+                sessionRecorderLog.info("Playback tap on \(item.uid, privacy: .public)")
+            }
             self.captureRig.sessionFile = mixURL
             self.recordingStartedAt = Date()
             self.setPhase(.recording)
@@ -349,7 +398,8 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             return true
         }
         guard wentLive else {
-            systemTap.stop()
+            for item in startedTaps { item.tap.stop() }
+            systemTap?.stop()
             capture.stop()
             mixer.stop()
             throw SessionRecorderError.notRecording
@@ -586,7 +636,8 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         }
         if !deviceSelection.followDefaultOutput, !deviceSelection.recordsAllPlayback {
             let live = liveOutputUIDs()
-            if deviceSelection.selectedOutputUIDs.isDisjoint(with: live), let fallback = fallbackOutputDevice() {
+            let selected = deviceSelection.selectedOutputUIDs
+            if !selected.isEmpty, selected.isDisjoint(with: live), let fallback = fallbackOutputDevice() {
                 sessionRecorderLog.info(
                     "Selected output disconnected; switching to \(fallback.name, privacy: .public)"
                 )
@@ -603,8 +654,8 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             }
         } else if deviceSelection.recordsAllPlayback {
             let live = liveOutputUIDs()
-            if !live.isSubset(of: deviceSelection.selectedOutputUIDs) {
-                deviceSelection.selectedOutputUIDs.formUnion(live)
+            if deviceSelection.selectedOutputUIDs != live {
+                deviceSelection.selectedOutputUIDs = live
                 applyOutputSelection()
             } else {
                 scheduleSyncPlaybackTaps()
@@ -612,7 +663,11 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         } else {
             scheduleSyncPlaybackTaps()
         }
-        refreshDeviceRows()
+        if #available(macOS 14.2, *) {
+            handlePlaybackTapFormatChange()
+        } else {
+            refreshDeviceRows()
+        }
     }
 
     func setDeviceEnabled(_ id: String, enabled: Bool) {
@@ -621,6 +676,10 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
 
     private func setDeviceEnabledOnQueue(_ id: String, enabled: Bool) {
         guard sessionLive else { return }
+        if id == PlaybackMix.rowID {
+            setFollowDefaultOutputOnQueue(enabled)
+            return
+        }
         if id.hasPrefix("out.") {
             deviceSelection.followDefaultOutput = false
             let uid = String(id.dropFirst(4))
@@ -690,6 +749,10 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             if !deviceSelection.playbackDeviceUID.isEmpty {
                 deviceSelection.selectedOutputUIDs = [deviceSelection.playbackDeviceUID]
             }
+        } else {
+            // Mix mode kept the default UID selected internally; do not surface it
+            // as a hardware output when System mix is turned off.
+            deviceSelection.selectedOutputUIDs.removeAll()
         }
         applyOutputSelection()
         rememberOutputSelection()
@@ -727,7 +790,63 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     private func applyOutputSelection() {
         deviceSelection.refreshOutputScope()
         applyPlaybackMixGate()
+        scheduleEnsureSystemMixTap()
         scheduleSyncPlaybackTaps()
+        syncInputCapturesInBackground()
+    }
+
+    private func scheduleEnsureSystemMixTap() {
+        guard sessionLive else { return }
+        Task { [weak self] in
+            guard let self else { return }
+            if #available(macOS 14.2, *) {
+                await self.ensureSystemMixTap()
+            }
+        }
+    }
+
+    /// Create or drop the global mix tap when switching Default vs All/Selection.
+    @available(macOS 14.2, *)
+    private func ensureSystemMixTap() async {
+        let want = await mutate { self.sessionLive && self.deviceSelection.usesSystemMix }
+        let have = await mutate { self.captureRig.systemPlaybackTap != nil }
+        if want, !have {
+            do {
+                let tap = try await makePlaybackTap(deviceUID: nil)
+                let kept = await mutate { () -> Bool in
+                    guard self.sessionLive, self.deviceSelection.usesSystemMix,
+                          self.captureRig.systemPlaybackTap == nil
+                    else { return false }
+                    self.attachPlaybackTap(tap)
+                    self.captureRig.systemPlaybackTap = tap
+                    self.applyPlaybackMixGate()
+                    self.publishLevels()
+                    self.refreshDeviceRows()
+                    sessionRecorderLog.info("Playback mix tap (system)")
+                    return true
+                }
+                if !kept { tap.stop() }
+            } catch {
+                sessionRecorderLog.error(
+                    "System mix tap failed: \(error.localizedDescription, privacy: .public)"
+                )
+            }
+        } else if !want, have {
+            let stale = await mutate { () -> PlaybackCapturing? in
+                let tap = self.captureRig.systemPlaybackTap
+                self.captureRig.systemPlaybackTap = nil
+                self.captureRig.liveMixer?.removePlaybackSource(PlaybackMix.systemSourceID)
+                self.applyPlaybackMixGate()
+                return tap
+            }
+            stale?.stop()
+            await mutate {
+                self.publishLevels()
+                self.refreshDeviceRows()
+            }
+        } else {
+            await mutate { self.applyPlaybackMixGate() }
+        }
     }
 
     private func applySessionSelection(
@@ -799,9 +918,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
 
     private func selectMic(_ uid: String) {
         guard deviceSelection.selectMic(uid, audio: audio) else { return }
-        if captureRig.inputCaptures[uid] == nil {
-            syncInputCapturesInBackground()
-        }
+        syncInputCapturesInBackground()
         syncInputMuteToCapture()
     }
 
@@ -845,8 +962,6 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         }
     }
 
-    /// System mix of the current default output. Other selected outputs use
-    /// device taps so they can be summed without doubling the default.
     @available(macOS 14.2, *)
     private func makePlaybackTap(deviceUID: String?) async throws -> PlaybackTap {
         let tap = try await PlaybackTap(audio: audio, deviceUID: deviceUID)
@@ -861,6 +976,8 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     }
 
     /// Peak-meter selected input, plus others when `monitorUnselectedDevices`.
+    /// Headset mics whose output is tapped are not opened unless they are the
+    /// selected recording mic — that IO proc forces 16 kHz playback.
     private func syncInputCaptures() async {
         struct Wanted {
             var devices: [AudioInputDevice]
@@ -869,10 +986,12 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             var mixer: LiveMixer?
             var start: CFTimeInterval
             var rate: Int
-            var muted: Bool
+            var stale: [InputDeviceCapture]
+            var releasedOutputUIDs: Set<String>
         }
         let wanted = await mutate { () -> Wanted in
             let devices = self.audio.listInputDevices().filter { !$0.isVirtual }
+            let outputs = self.audio.listOutputDevices().filter { !$0.isVirtual }
             var uids: Set<String>
             if self.deviceSelection.monitorUnselectedDevices {
                 uids = Set(devices.map(\.uid))
@@ -881,38 +1000,49 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             }
             let outputUIDs = (
                 self.deviceSelection.monitorUnselectedDevices
-                    ? self.liveOutputUIDs()
+                    ? Set(outputs.map(\.uid))
                     : self.deviceSelection.selectedOutputUIDs
             ).union(self.captureRig.playbackTaps.keys)
-            let blockedFamilies = Set(outputUIDs.compactMap { AudioDeviceService.usbAudioFamily(uid: $0) })
-            if !blockedFamilies.isEmpty {
-                for device in devices where device.uid != self.deviceSelection.selectedInputUID {
-                    guard let family = AudioDeviceService.usbAudioFamily(uid: device.uid),
-                          blockedFamilies.contains(family)
-                    else { continue }
-                    if uids.remove(device.uid) != nil {
-                        sessionRecorderLog.info(
-                            "Skip input meter on \(device.name, privacy: .public) while tapping its USB output"
-                        )
-                    }
+            let tappedOutputs = outputs.filter { outputUIDs.contains($0.uid) }
+            let selected = self.deviceSelection.selectedInputUID
+            for device in devices where device.uid != selected {
+                let shares = tappedOutputs.contains { AudioDeviceService.sharesHeadset(input: device, output: $0) }
+                guard shares else { continue }
+                if uids.remove(device.uid) != nil {
+                    sessionRecorderLog.info(
+                        "Skip input meter on \(device.name, privacy: .public) while tapping its headset output"
+                    )
                 }
             }
             var stale: [InputDeviceCapture] = []
+            var releasedOutputUIDs: Set<String> = []
             for uid in self.captureRig.inputCaptures.keys where !uids.contains(uid) {
-                if let capture = self.captureRig.inputCaptures.removeValue(forKey: uid) {
-                    stale.append(capture)
+                guard let capture = self.captureRig.inputCaptures.removeValue(forKey: uid) else { continue }
+                stale.append(capture)
+                if let device = devices.first(where: { $0.uid == uid }) {
+                    for output in tappedOutputs where AudioDeviceService.sharesHeadset(input: device, output: output) {
+                        releasedOutputUIDs.insert(output.uid)
+                    }
                 }
             }
-            for capture in stale { capture.stop() }
             return Wanted(
                 devices: devices,
                 uids: uids,
-                selected: self.deviceSelection.selectedInputUID,
+                selected: selected,
                 mixer: self.captureRig.liveMixer,
                 start: self.captureRig.sessionStart,
                 rate: self.captureRig.sessionBitRate,
-                muted: self.muteGate.mixInputMuted
+                stale: stale,
+                releasedOutputUIDs: releasedOutputUIDs
             )
+        }
+
+        for capture in wanted.stale { capture.stop() }
+        await withTaskGroup(of: Void.self) { group in
+            for capture in wanted.stale {
+                group.addTask { await capture.waitUntilStopped() }
+            }
+            await group.waitForAll()
         }
 
         for device in wanted.devices where wanted.uids.contains(device.uid) {
@@ -924,7 +1054,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
                     fileURL: nil,
                     sessionStart: wanted.start,
                     bitRate: wanted.rate,
-                    startIO: !wanted.muted
+                    startIO: true
                 )
                 capture.mixer = wanted.mixer
                 let kept = await mutate { () -> Bool in
@@ -946,12 +1076,57 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
 
         await mutate {
             self.syncInputMuteToCapture()
-            for capture in self.captureRig.inputCaptures.values {
-                capture.setIORunning(!self.muteGate.mixInputMuted)
-            }
             self.publishLevels()
         }
         reassertSystemMute()
+
+        if !wanted.releasedOutputUIDs.isEmpty {
+            if #available(macOS 14.2, *) {
+                await waitForHardwareWideband(uids: wanted.releasedOutputUIDs)
+            }
+            await rebuildNarrowbandPlaybackTaps()
+        }
+    }
+
+    /// HFP/USB voice mode drops after mic IO stops; wait so the new tap sees 48 kHz streams.
+    @available(macOS 14.2, *)
+    private func waitForHardwareWideband(uids: Set<String>) async {
+        let deadline = Date().addingTimeInterval(1.5)
+        while Date() < deadline {
+            let outputs = audio.listOutputDevices()
+            let wide = uids.allSatisfy { uid in
+                guard let device = outputs.first(where: { $0.uid == uid }) else { return true }
+                return PlaybackTap.hardwareOutputIsWideband(device.id)
+            }
+            if wide { return }
+            try? await Task.sleep(nanoseconds: 150_000_000)
+        }
+    }
+
+    /// Recreate 16 kHz headset output taps after their mic IO has stopped so
+    /// Core Audio can attach to the wideband stream again.
+    private func rebuildNarrowbandPlaybackTaps() async {
+        let toStop = await mutate { () -> [PlaybackCapturing] in
+            guard self.sessionLive else { return [] }
+            return self.captureRig.detachNarrowbandTaps()
+        }
+        guard !toStop.isEmpty else { return }
+        for tap in toStop { tap.stop() }
+        await withTaskGroup(of: Void.self) { group in
+            for tap in toStop {
+                group.addTask { await tap.waitUntilStopped() }
+            }
+            await group.waitForAll()
+        }
+        let token = await mutate { () -> Int in
+            guard self.sessionLive else { return 0 }
+            self.captureRig.playbackTapSync += 1
+            return self.captureRig.playbackTapSync
+        }
+        guard token > 0 else { return }
+        if #available(macOS 14.2, *) {
+            await syncPlaybackTaps(token: token)
+        }
     }
 
     /// Peak-meter selected outputs, plus others when `monitorUnselectedDevices`.
@@ -962,7 +1137,19 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
             guard self.sessionLive else { return nil }
             let listed = self.audio.listOutputDevices().filter { !$0.isVirtual }.map(\.uid)
             let listedSet = Set(listed)
-            let keep = self.deviceSelection.monitorUnselectedDevices ? listedSet : self.deviceSelection.selectedOutputUIDs
+            if self.deviceSelection.recordsAllPlayback {
+                self.deviceSelection.selectedOutputUIDs = listedSet
+            }
+            let selectedLive = self.deviceSelection.selectedOutputUIDs.intersection(listedSet)
+            var keep = self.deviceSelection.monitorUnselectedDevices ? listedSet : selectedLive
+            // System mix already captures the default output. A device tap on that
+            // headset would show a fake 16 kHz meter that is not in the mix.
+            if self.deviceSelection.usesSystemMix,
+               let defaultUID = self.currentDefaultOutputUID(),
+               listedSet.contains(defaultUID)
+            {
+                keep.remove(defaultUID)
+            }
             var staleTaps: [PlaybackCapturing] = []
             for uid in self.captureRig.playbackTaps.keys where !keep.contains(uid) {
                 if let tap = self.captureRig.playbackTaps.removeValue(forKey: uid) {
@@ -981,9 +1168,12 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
 
         for uid in plan.missing {
             let stillNeeded = await mutate {
-                self.sessionLive
-                    && (self.deviceSelection.monitorUnselectedDevices || self.deviceSelection.selectedOutputUIDs.contains(uid))
-                    && self.captureRig.playbackTaps[uid] == nil
+                guard self.sessionLive, self.captureRig.playbackTaps[uid] == nil else { return false }
+                if self.deviceSelection.usesSystemMix, uid == self.currentDefaultOutputUID() {
+                    return false
+                }
+                return self.deviceSelection.monitorUnselectedDevices
+                    || self.deviceSelection.selectedOutputUIDs.contains(uid)
             }
             guard stillNeeded else { continue }
             do {
@@ -1028,7 +1218,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     // MARK: - Mute gating (delegates to `MuteGate`)
 
     private func applyPlaybackMixGate() {
-        muteGate.applyPlaybackMixGate(captureRig: captureRig, deviceSelection: deviceSelection, audio: audio)
+        muteGate.applyPlaybackMixGate(captureRig: captureRig, deviceSelection: deviceSelection)
     }
 
     private func syncInputMuteToCapture() {
@@ -1036,6 +1226,7 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
     }
 
     /// Apply mix gate without waiting for the recording queue (mute must not stall).
+    /// HAL mute plus `captureEnabled` only — do not Start/Stop mic IO (USB output glitches).
     private func gateMixMute(effectiveMuted: Bool, devices: [InputDeviceRow]) {
         let selected = levelMetering.selectedInputUID
         let captures = levelMetering.inputs
@@ -1044,15 +1235,9 @@ final class SessionRecorder: ObservableObject, @unchecked Sendable {
         let already = levelMetering.mixMuted
         levelMetering.setMixMuted(muted)
         guard muted != already else { return }
-        for capture in captures.values {
-            capture.setIORunning(!muted)
-        }
         perform {
             self.muteGate.mixInputMuted = muted
             self.syncInputMuteToCapture()
-            for capture in self.captureRig.inputCaptures.values {
-                capture.setIORunning(!self.muteGate.mixInputMuted)
-            }
             self.publishLevels()
         }
     }

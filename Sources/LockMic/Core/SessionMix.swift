@@ -111,13 +111,7 @@ enum SessionMix {
         if !copyright.isEmpty {
             info[kAFInfoDictionary_Copyright] = copyright
         }
-        var dict = info as CFDictionary
-        _ = AudioFileSetProperty(
-            file,
-            kAudioFilePropertyInfoDictionary,
-            UInt32(MemoryLayout<CFDictionary>.size),
-            &dict
-        )
+        setAudioFileCFProperty(file, kAudioFilePropertyInfoDictionary, info as NSDictionary)
         guard let art = albumArtPNG else { return }
         var writable: UInt32 = 0
         if AudioFileGetPropertyInfo(file, kAudioFilePropertyAlbumArtwork, nil, &writable) == noErr,
@@ -125,13 +119,23 @@ enum SessionMix {
         {
             return
         }
-        var data = art as CFData
-        _ = AudioFileSetProperty(
-            file,
-            kAudioFilePropertyAlbumArtwork,
-            UInt32(MemoryLayout<CFData>.size),
-            &data
-        )
+        setAudioFileCFProperty(file, kAudioFilePropertyAlbumArtwork, art as NSData)
+    }
+
+    private static func setAudioFileCFProperty(
+        _ file: AudioFileID,
+        _ property: AudioFilePropertyID,
+        _ object: AnyObject
+    ) {
+        var unmanaged = Unmanaged.passUnretained(object)
+        _ = withUnsafePointer(to: &unmanaged) { pointer in
+            AudioFileSetProperty(
+                file,
+                property,
+                UInt32(MemoryLayout<Unmanaged<AnyObject>>.size),
+                pointer
+            )
+        }
     }
 
     private static let albumArtPNG: Data? = {

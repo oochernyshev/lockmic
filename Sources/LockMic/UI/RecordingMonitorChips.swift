@@ -197,7 +197,7 @@ final class SilenceModeChip: NSView {
     @objc private func advanceClicked() { onAdvance?() }
 }
 
-/// Compact cycling badge: Default → All → Selection.
+/// Compact cycling badge: System mix → All → Selection.
 final class PlaybackScopeChip: NSView {
     enum Mode: Equatable {
         case followDefault
@@ -214,7 +214,7 @@ final class PlaybackScopeChip: NSView {
 
         var title: String {
             switch self {
-            case .followDefault: return L10n.recordingMonitorScopeDefault
+            case .followDefault: return L10n.recordingSystemMixName
             case .recordAll: return L10n.recordingMonitorScopeAll
             case .custom: return L10n.recordingMonitorScopeSelection
             }

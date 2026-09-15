@@ -106,7 +106,7 @@ final class HotkeyManager {
         let action = binding.action
         let handlesRelease = action.isMomentary
 
-        var eventHotKeyID = EventHotKeyID(signature: HotkeyManager.signature, id: id)
+        let eventHotKeyID = EventHotKeyID(signature: HotkeyManager.signature, id: id)
         var ref: EventHotKeyRef?
         let status = RegisterEventHotKey(
             binding.chord.keyCode,

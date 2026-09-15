@@ -6,8 +6,7 @@ struct LevelSnapshot {
     var inputs: [String: InputDeviceCapture] = [:]
     var taps: [String: PlaybackCapturing] = [:]
     var system: PlaybackCapturing?
-    var playbackDeviceUID = ""
-    var defaultOutputUID = ""
+    var usesSystemMix = false
     var selectedInputUID = ""
     var selectedOutputUIDs: Set<String> = []
     var mixMuted = false

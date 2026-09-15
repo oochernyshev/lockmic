@@ -465,7 +465,7 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             rows[device.id]?.applyLevel(
                 device,
                 level: level,
-                sampleRate: recorder.levelMetering.sourceSampleRate(for: device),
+                sampleRate: device.isEnabled ? recorder.levelMetering.sourceSampleRate(for: device) : 0,
                 noSignal: latchedWarning(id: device.id, want: missed, selected: device.isEnabled, now: now)
             )
         }

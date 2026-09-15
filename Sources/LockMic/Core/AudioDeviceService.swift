@@ -407,6 +407,24 @@ final class AudioDeviceService: @unchecked Sendable {
         return bluetoothFamily(uid: inputUID) == bluetoothFamily(uid: outputUID)
     }
 
+    /// Same USB composite or Bluetooth headset. Opening that mic while the
+    /// output is tapped pulls playback to 16 kHz (HFP / USB voice).
+    static func sharesHeadset(input: AudioInputDevice, output: AudioOutputDevice) -> Bool {
+        if input.uid == output.uid { return true }
+        if let inFamily = usbAudioFamily(uid: input.uid),
+           let outFamily = usbAudioFamily(uid: output.uid),
+           inFamily == outFamily
+        {
+            return true
+        }
+        if input.isBluetooth, output.isBluetooth,
+           sameBluetoothHeadset(inputUID: input.uid, outputUID: output.uid)
+        {
+            return true
+        }
+        return !input.name.isEmpty && input.name == output.name
+    }
+
     /// AirPods / Redmi-style buds switch the whole device to HFP when any process opens the mic.
     func isBluetooth(_ deviceID: AudioDeviceID) -> Bool {
         switch transportType(deviceID) {

@@ -161,18 +161,19 @@ final class HUDOverlay: NSObject {
         stopClickThroughTracking()
 
         for entry in panels.values {
-            if let content = entry.panel.contentView as? HUDContentView {
+            let panel = entry.panel
+            if let content = panel.contentView as? HUDContentView {
                 content.isInteractive = false
                 content.setStopWarningBlinking(false)
             }
-            entry.panel.ignoresMouseEvents = true
-            entry.panel.acceptsMouseMovedEvents = false
+            panel.ignoresMouseEvents = true
+            panel.acceptsMouseMovedEvents = false
             NSAnimationContext.runAnimationGroup({ ctx in
                 ctx.duration = 0.25
                 ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
-                entry.panel.animator().alphaValue = 0
-            }, completionHandler: {
-                entry.panel.orderOut(nil)
+                panel.animator().alphaValue = 0
+            }, completionHandler: { [weak panel] in
+                panel?.orderOut(nil)
             })
         }
     }

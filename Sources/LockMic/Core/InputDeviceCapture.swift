@@ -77,25 +77,6 @@ final class InputDeviceCapture: @unchecked Sendable {
         }
     }
 
-    /// Stop HAL IO so system mute can stick (Jabra unmutes while an IO proc is running).
-    func setIORunning(_ on: Bool) {
-        haltQueue.async { [weak self] in
-            guard let self else { return }
-            self.lock.lock()
-            let dead = self.haltScheduled
-            self.lock.unlock()
-            guard !dead else { return }
-            if on {
-                if self.ioProcID == nil { try? self.attachIOOnHalt() }
-            } else {
-                self.detachIOOnHalt()
-                self.lock.lock()
-                self._level = 0
-                self.lock.unlock()
-            }
-        }
-    }
-
     func retarget(deviceID newID: AudioDeviceID) throws {
         guard newID != deviceID else { return }
         let previous = deviceID
@@ -237,7 +218,11 @@ final class InputDeviceCapture: @unchecked Sendable {
 
         let peak = RecordingDSP.peak(in: abl)
         lock.lock()
-        _level = max(peak, _level * 0.65)
+        if enabled {
+            _level = max(peak, _level * 0.65)
+        } else {
+            _level *= 0.65
+        }
         lock.unlock()
         guard enabled else { return }
         guard let dest = scratchBuffer(frames: frames, format: format) else { return }

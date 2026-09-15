@@ -102,11 +102,12 @@ final class RecordingCoordinator {
             onSessionChanged?()
             return
         }
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             let file: URL
             do {
-                file = try await recorder.stopCaptures { [weak self] in
-                    self?.onSessionChanged?()
+                file = try await recorder.stopCaptures {
+                    self.onSessionChanged?()
                 }
             } catch SessionRecorderError.notRecording {
                 recorder.cancelPreview()

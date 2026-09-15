@@ -16,6 +16,9 @@ final class DeviceSelectionState {
     var playbackDeviceUID = ""
     var monitorUnselectedDevices = true
 
+    /// Follow-default records the system mix (what you hear). All/selection use per-device taps.
+    var usesSystemMix: Bool { followDefaultOutput && !recordsAllPlayback }
+
     /// Reset to the "no session" state used both after a stop and when a preview is dropped.
     func reset() {
         selectedInputUID = ""
@@ -143,6 +146,12 @@ final class DeviceSelectionState {
 
     /// Recompute `playbackScope` from the current output selection vs. the default output.
     func refreshOutputScope() {
-        playbackScope = selectedOutputUIDs.contains(where: { $0 != playbackDeviceUID }) ? .all : .default
+        if recordsAllPlayback {
+            playbackScope = .all
+        } else if followDefaultOutput {
+            playbackScope = .default
+        } else {
+            playbackScope = selectedOutputUIDs.contains(where: { $0 != playbackDeviceUID }) ? .all : .default
+        }
     }
 }

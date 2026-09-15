@@ -9,34 +9,15 @@ import Foundation
 final class MuteGate {
     var mixInputMuted = false
 
-    /// Mix every selected output. The current default uses the system tap (stable
-    /// across device switches). If that tap is pulled to 16 kHz (voice-processing)
-    /// while the hardware output is still wideband, mix the device tap instead.
-    func applyPlaybackMixGate(captureRig: CaptureRig, deviceSelection: DeviceSelectionState, audio: AudioDeviceService) {
-        let defaultUID = deviceSelection.currentDefaultOutputUID(audio: audio) ?? deviceSelection.playbackDeviceUID
-        let recordDefault = !defaultUID.isEmpty && deviceSelection.selectedOutputUIDs.contains(defaultUID)
-        let systemNarrow = captureRig.systemPlaybackTap?.isNarrowband == true
-        let defaultDeviceTap = defaultUID.isEmpty ? nil : captureRig.playbackTaps[defaultUID]
-        let deviceWide = defaultDeviceTap.map { !$0.isNarrowband } ?? false
-        let useDeviceForDefault = recordDefault && systemNarrow && deviceWide
-        if useDeviceForDefault {
-            let deviceRate = Int(defaultDeviceTap?.sourceSampleRate ?? 0)
-            let systemRate = Int(captureRig.systemPlaybackTap?.sourceSampleRate ?? 0)
-            sessionRecorderLog.info(
-                "Mix default output from device tap \(deviceRate, privacy: .public) Hz; system tap \(systemRate, privacy: .public) Hz"
-            )
-        }
-        captureRig.systemPlaybackTap?.setMixEnabled(recordDefault && !useDeviceForDefault)
-        if !recordDefault || useDeviceForDefault {
+    /// Default/follow-output: mix the system tap. All/selection: mix each device tap.
+    func applyPlaybackMixGate(captureRig: CaptureRig, deviceSelection: DeviceSelectionState) {
+        let systemMix = deviceSelection.usesSystemMix
+        captureRig.systemPlaybackTap?.setMixEnabled(systemMix)
+        if !systemMix {
             captureRig.liveMixer?.removePlaybackSource(PlaybackMix.systemSourceID)
         }
         for (uid, tap) in captureRig.playbackTaps {
-            let on: Bool
-            if uid == defaultUID {
-                on = useDeviceForDefault
-            } else {
-                on = deviceSelection.selectedOutputUIDs.contains(uid)
-            }
+            let on = !systemMix && deviceSelection.selectedOutputUIDs.contains(uid)
             tap.setMixEnabled(on)
             if !on {
                 captureRig.liveMixer?.removePlaybackSource(uid)

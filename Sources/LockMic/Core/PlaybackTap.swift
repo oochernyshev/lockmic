@@ -224,37 +224,33 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
 
         let description: CATapDescription
         if tapDeviceUID.isEmpty {
-            // System mix, not a hardware device. Switching default output
-            // (speakers → Jabra) does not stop this tap; a device-bound tap
-            // goes silent while USB/DECT reconfigures.
             description = CATapDescription(stereoGlobalTapButExcludeProcesses: exclude)
+            description.name = "LockMic Playback"
+            description.uuid = UUID()
+            description.isPrivate = true
+            description.muteBehavior = .unmuted
             tapStreamIndex = 0
+            var createdTap = AudioObjectID(kAudioObjectUnknown)
+            let tapStatus = AudioHardwareCreateProcessTap(description, &createdTap)
+            guard tapStatus == noErr, createdTap != kAudioObjectUnknown else {
+                throw SessionRecorderError.tapFailed(tapStatus)
+            }
+            tapID = createdTap
         } else {
             guard let device = audio.listOutputDevices().first(where: { $0.uid == tapDeviceUID }),
                   !audio.isLockMicRecorder(device.id)
             else {
                 throw AudioDeviceServiceError.propertyFailed("output UID")
             }
-            // Device-bound tap must not also list that device as a sub-device —
-            // that pair hangs a mixdown on the speakers.
-            tapStreamIndex = Self.preferredOutputStreamIndex(device.id)
-            description = CATapDescription(
-                excludingProcesses: exclude,
+            let created = try Self.createDeviceProcessTap(
                 deviceUID: device.uid,
-                stream: tapStreamIndex
+                deviceID: device.id,
+                exclude: exclude
             )
+            tapID = created.tapID
+            tapStreamIndex = created.streamIndex
+            description = created.description
         }
-        description.name = "LockMic Playback"
-        description.uuid = UUID()
-        description.isPrivate = true
-        description.muteBehavior = .unmuted
-
-        var createdTap = AudioObjectID(kAudioObjectUnknown)
-        let tapStatus = AudioHardwareCreateProcessTap(description, &createdTap)
-        guard tapStatus == noErr, createdTap != kAudioObjectUnknown else {
-            throw SessionRecorderError.tapFailed(tapStatus)
-        }
-        tapID = createdTap
 
         // HAL wants CFNumber for these flags — a Swift `Bool` becomes CFBoolean
         // and the aggregate is published as a public “LockMic Recorder” device.
@@ -268,7 +264,6 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
             kAudioAggregateDeviceTapListKey: [
                 [
                     kAudioSubTapUIDKey: description.uuid.uuidString,
-                    // Device taps (Jabra USB) drift vs the mix aggregate.
                     kAudioSubTapDriftCompensationKey: tapDeviceUID.isEmpty ? 0 : 1,
                 ],
             ],
@@ -284,7 +279,6 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
         // Private aggregate only — never change the user's speaker buffer or rate.
         Self.setPreferredBufferFrameSize(createdAggregate, 2048)
         if tapDeviceUID.isEmpty {
-            // Mix tap only. Pinning 48 kHz on a Jabra device tap stalls its meter.
             Self.setNominalSampleRate(createdAggregate, RecordingCodec.sampleRate)
         }
 
@@ -456,9 +450,114 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
         return left != nil
     }
 
+    private struct CreatedDeviceTap {
+        var tapID: AudioObjectID
+        var streamIndex: UInt
+        var description: CATapDescription
+    }
+
+    /// Try each output stream until `kAudioTapPropertyFormat` is wideband.
+    /// HAL documents that the tap format matches the selected hardware stream;
+    /// Jabra/VPIO puts 16 kHz on stream 0 and media on another index.
+    private static func createDeviceProcessTap(
+        deviceUID: String,
+        deviceID: AudioDeviceID,
+        exclude: [AudioObjectID]
+    ) throws -> CreatedDeviceTap {
+        let order = outputStreamIndicesByPreference(deviceID)
+        var lastStatus: OSStatus = -1
+        var fallback: CreatedDeviceTap?
+        for index in order {
+            let description = deviceTapDescription(exclude: exclude, deviceUID: deviceUID, stream: index)
+            var created = AudioObjectID(kAudioObjectUnknown)
+            let status = AudioHardwareCreateProcessTap(description, &created)
+            guard status == noErr, created != kAudioObjectUnknown else {
+                lastStatus = status
+                continue
+            }
+            var rate = (try? tapStreamFormat(created))?.mSampleRate ?? 0
+            if rate < 44_100 {
+                _ = setTapFormat(created, sampleRate: RecordingCodec.sampleRate)
+                rate = (try? tapStreamFormat(created))?.mSampleRate ?? rate
+            }
+            if rate >= 44_100 {
+                if let extra = fallback {
+                    AudioHardwareDestroyProcessTap(extra.tapID)
+                    fallback = nil
+                }
+                log.info(
+                    "Playback device tap stream \(index, privacy: .public) \(Int(rate), privacy: .public) Hz device=\(deviceUID, privacy: .public)"
+                )
+                return CreatedDeviceTap(tapID: created, streamIndex: index, description: description)
+            }
+            log.info(
+                "Playback device tap stream \(index, privacy: .public) still \(Int(rate), privacy: .public) Hz device=\(deviceUID, privacy: .public)"
+            )
+            if fallback == nil {
+                fallback = CreatedDeviceTap(tapID: created, streamIndex: index, description: description)
+            } else {
+                AudioHardwareDestroyProcessTap(created)
+            }
+        }
+        if let fallback {
+            log.error(
+                "Playback device tap stayed narrowband stream \(fallback.streamIndex, privacy: .public) device=\(deviceUID, privacy: .public)"
+            )
+            return fallback
+        }
+        throw SessionRecorderError.tapFailed(lastStatus)
+    }
+
+    private static func deviceTapDescription(
+        exclude: [AudioObjectID],
+        deviceUID: String,
+        stream: UInt
+    ) -> CATapDescription {
+        let description = CATapDescription(
+            excludingProcesses: exclude,
+            deviceUID: deviceUID,
+            stream: stream
+        )
+        description.name = "LockMic Playback"
+        description.uuid = UUID()
+        description.isPrivate = true
+        description.muteBehavior = .unmuted
+        // Mixdown folds the call stream into the tap; tap this stream as-is.
+        description.isMixdown = false
+        description.isMono = false
+        return description
+    }
+
+    @discardableResult
+    private static func setTapFormat(_ tapID: AudioObjectID, sampleRate: Double) -> Bool {
+        var asbd = AudioStreamBasicDescription(
+            mSampleRate: sampleRate,
+            mFormatID: kAudioFormatLinearPCM,
+            mFormatFlags: kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked | kAudioFormatFlagIsNonInterleaved,
+            mBytesPerPacket: 4,
+            mFramesPerPacket: 1,
+            mBytesPerFrame: 4,
+            mChannelsPerFrame: 2,
+            mBitsPerChannel: 32,
+            mReserved: 0
+        )
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioTapPropertyFormat,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        let size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
+        return AudioObjectSetPropertyData(tapID, &address, 0, nil, size, &asbd) == noErr
+    }
+
     /// Highest-rate output stream (stereo preferred). Call/VPIO often adds a 16 kHz
     /// stream at index 0 while media stays on another stream at 48 kHz.
     static func preferredOutputStreamIndex(_ deviceID: AudioDeviceID) -> UInt {
+        outputStreamIndicesByPreference(deviceID).first ?? 0
+    }
+
+    /// All output stream indexes, wideband first. Uses the higher of virtual and physical rate.
+    static func outputStreamIndicesByPreference(_ deviceID: AudioDeviceID) -> [UInt] {
         var address = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyStreams,
             mScope: kAudioDevicePropertyScopeOutput,
@@ -466,26 +565,81 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
         )
         var size: UInt32 = 0
         guard AudioObjectGetPropertyDataSize(deviceID, &address, 0, nil, &size) == noErr, size > 0 else {
-            return 0
+            return [0]
         }
         let count = Int(size) / MemoryLayout<AudioStreamID>.size
         var streams = [AudioStreamID](repeating: 0, count: count)
         guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &streams) == noErr else {
+            return [0]
+        }
+        var ranked: [(index: UInt, score: Double)] = []
+        for (index, stream) in streams.enumerated() {
+            let virtual = streamVirtualFormat(stream)
+            let physical = streamPhysicalFormat(stream)
+            let channels = max(virtual?.mChannelsPerFrame ?? 0, physical?.mChannelsPerFrame ?? 0)
+            let rate = max(virtual?.mSampleRate ?? 0, physical?.mSampleRate ?? 0)
+            let wide: Double = rate >= 44_100 ? 1_000_000 : 0
+            let stereo: Double = channels >= 2 ? 1_000 : 0
+            ranked.append((UInt(index), wide + stereo + rate))
+            log.debug(
+                "Output stream \(index, privacy: .public) virtual \(Int(virtual?.mSampleRate ?? 0), privacy: .public) Hz physical \(Int(physical?.mSampleRate ?? 0), privacy: .public) Hz ch \(channels, privacy: .public)"
+            )
+        }
+        ranked.sort { $0.score > $1.score }
+        let indices = ranked.map(\.index)
+        return indices.isEmpty ? [0] : indices
+    }
+
+    /// Speakers, not the tap: nominal rate or any output stream at media rate.
+    static func hardwareOutputIsWideband(_ deviceID: AudioDeviceID) -> Bool {
+        if deviceNominalSampleRate(deviceID) >= 44_100 { return true }
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyStreams,
+            mScope: kAudioDevicePropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var size: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(deviceID, &address, 0, nil, &size) == noErr, size > 0 else {
+            return false
+        }
+        let count = Int(size) / MemoryLayout<AudioStreamID>.size
+        var streams = [AudioStreamID](repeating: 0, count: count)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &streams) == noErr else {
+            return false
+        }
+        for stream in streams {
+            let rate = max(streamVirtualFormat(stream)?.mSampleRate ?? 0, streamPhysicalFormat(stream)?.mSampleRate ?? 0)
+            if rate >= 44_100 { return true }
+        }
+        return false
+    }
+
+    static func deviceNominalSampleRate(_ deviceID: AudioDeviceID) -> Double {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyNominalSampleRate,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var value = 0.0
+        var size = UInt32(MemoryLayout<Double>.size)
+        guard AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &value) == noErr else {
             return 0
         }
-        var bestIndex: UInt = 0
-        var bestScore: Double = -1
-        for (index, stream) in streams.enumerated() {
-            guard let asbd = streamVirtualFormat(stream), asbd.mChannelsPerFrame > 0 else { continue }
-            let wide: Double = asbd.mSampleRate >= 44_100 ? 1_000_000 : 0
-            let stereo: Double = asbd.mChannelsPerFrame >= 2 ? 1_000 : 0
-            let score = wide + stereo + asbd.mSampleRate
-            if score > bestScore {
-                bestScore = score
-                bestIndex = UInt(index)
-            }
+        return value
+    }
+
+    private static func streamPhysicalFormat(_ stream: AudioStreamID) -> AudioStreamBasicDescription? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioStreamPropertyPhysicalFormat,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var asbd = AudioStreamBasicDescription()
+        var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
+        guard AudioObjectGetPropertyData(stream, &address, 0, nil, &size, &asbd) == noErr else {
+            return nil
         }
-        return bestIndex
+        return asbd
     }
 
     private static func streamVirtualFormat(_ stream: AudioStreamID) -> AudioStreamBasicDescription? {

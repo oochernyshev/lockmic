@@ -218,7 +218,7 @@ final class RowView: NSView {
     private func applyIcon() {
         let symbol: String
         if kind == .output {
-            symbol = "speaker.wave.2.fill"
+            symbol = deviceID == PlaybackMix.rowID ? "waveform" : "speaker.wave.2.fill"
         } else if isMuted {
             symbol = "mic.slash.fill"
         } else {
@@ -304,7 +304,7 @@ final class RowView: NSView {
 
     private func updateSourceBadge() {
         var parts: [String] = []
-        if isDefaultDevice { parts.append(L10n.devicesBadgeDefault) }
+        if isDefaultDevice, kind == .input { parts.append(L10n.devicesBadgeDefault) }
         if sourceSampleRate > 0 {
             let khz = sourceSampleRate / 1_000
             let value = khz.rounded() == khz

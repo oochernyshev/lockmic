@@ -110,7 +110,13 @@ enum L10n {
     static var recordingSourcesCaption: String { tr("recording.sources.caption") }
     static var recordingSourceVirtual: String { tr("recording.source.virtual") }
     static var recordingSourceUnavailable: String { tr("recording.source.unavailable") }
-    static var recordingSourceSystemPlayback: String { tr("recording.source.system_playback") }
+    static var recordingSystemMixName: String { tr("recording.system_mix.name") }
+    static var recordingSystemMixDetail: String { tr("recording.system_mix.detail") }
+    static func recordingSystemMixName(device: String) -> String {
+        let trimmed = device.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return recordingSystemMixName }
+        return format("recording.system_mix.name_with_device", trimmed)
+    }
     static var recordingSourceIncluded: String { tr("recording.source.included") }
     static var recordingSourceOutside: String { tr("recording.source.outside") }
     static var recordingBadgeCallQuality: String { tr("recording.badge.call_quality") }
@@ -122,7 +128,6 @@ enum L10n {
     static var recordingFollowDefaultMic: String { tr("recording.monitor.follow_default") }
     static var recordingFollowDefaultOutput: String { tr("recording.monitor.follow_default_output") }
     static var recordingMonitorRecordAll: String { tr("recording.monitor.record_all") }
-    static var recordingMonitorScopeDefault: String { tr("recording.monitor.scope.default") }
     static var recordingMonitorScopeAll: String { tr("recording.monitor.scope.all") }
     static var recordingMonitorScopeSelection: String { tr("recording.monitor.scope.selection") }
     static var recordingPlaybackCaptionSelection: String { tr("recording.playback.caption.selection") }

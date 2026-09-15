@@ -161,7 +161,7 @@ struct PreferencesRecordingPage: View {
 
     private func playbackTitle(_ mode: PlaybackMode) -> String {
         switch mode {
-        case .followDefault: return L10n.recordingMonitorScopeDefault
+        case .followDefault: return L10n.recordingSystemMixName
         case .recordAll: return L10n.recordingMonitorScopeAll
         case .selection: return L10n.recordingMonitorScopeSelection
         }
