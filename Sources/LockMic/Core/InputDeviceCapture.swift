@@ -33,8 +33,11 @@ final class InputDeviceCapture: @unchecked Sendable {
     }
 
     var level: Float {
-        lock.lock(); defer { lock.unlock() }
-        return RecordingLevelDisplay.fromLinearPeak(_level)
+        lock.lock()
+        let peak = _level
+        lock.unlock()
+        let duck = mixer?.currentDuckGain ?? 1
+        return RecordingLevelDisplay.fromLinearPeak(peak * duck)
     }
 
     /// Raw 0…1 peak before the meter dB mapping — for bleed comparison.

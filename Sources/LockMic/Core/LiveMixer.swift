@@ -62,6 +62,16 @@ final class LiveMixer: @unchecked Sendable {
 
     private var duckGain: Float = MixDuck.openMicGain
     private var wantDuck = false
+    private var holdFramesRemaining: Int = 0
+
+    /// Current mic duck gain (0...1), safe to read from any thread — lets the
+    /// input meter reflect the same attenuation applied to the recorded mix.
+    private let duckGainLock = NSLock()
+    private var _publishedDuckGain: Float = MixDuck.openMicGain
+    var currentDuckGain: Float {
+        duckGainLock.lock(); defer { duckGainLock.unlock() }
+        return _publishedDuckGain
+    }
 
     init(url: URL, bitRate: Int, sessionStart: CFTimeInterval) {
         self.url = url
@@ -445,13 +455,29 @@ final class LiveMixer: @unchecked Sendable {
         let playRMS = RecordingDSP.rms(left: &playLScratch, right: &playRScratch, frames: frames)
         if playRMS > MixDuck.playbackRMSThreshold {
             wantDuck = true
+            holdFramesRemaining = MixDuck.releaseHoldFrames(chunkFrames: Self.chunkFrames, sampleRate: Self.sampleRate)
         } else if playRMS < MixDuck.playbackRMSOff {
-            wantDuck = false
+            if holdFramesRemaining > 0 {
+                holdFramesRemaining -= frames
+            } else {
+                wantDuck = false
+            }
         }
-        let target = wantDuck ? MixDuck.duckedMicGain : MixDuck.openMicGain
+        // Double-talk: if the mic itself is carrying real speech (well above
+        // what playback leakage alone would produce), ease off the duck so
+        // the user's own voice isn't ducked out while they're talking over
+        // the other speaker.
+        let micRMS = RecordingDSP.rms(left: &micScratch, right: &micScratch, frames: frames)
+        let target: Float
+        if wantDuck {
+            target = micRMS > MixDuck.micSpeechThreshold ? MixDuck.doubleTalkMicGain : MixDuck.duckedMicGain
+        } else {
+            target = MixDuck.openMicGain
+        }
         let dt = Float(Self.chunkFrames) / Float(Self.sampleRate)
         let coeff = target < duckGain ? MixDuck.attack(dt) : MixDuck.release(dt)
         duckGain += (target - duckGain) * coeff
+        duckGainLock.lock(); _publishedDuckGain = duckGain; duckGainLock.unlock()
 
         RecordingDSP.mixMonoOntoStereo(
             mono: &micScratch,
@@ -909,10 +935,17 @@ final class LiveMixer: @unchecked Sendable {
     private enum MixDuck {
         static let playbackRMSThreshold: Float = 0.01
         static let playbackRMSOff: Float = 0.004
-        static let duckedMicGain: Float = 0.18
+        static let duckedMicGain: Float = 0.10
+        static let doubleTalkMicGain: Float = 1.0
+        static let micSpeechThreshold: Float = 0.02
         static let openMicGain: Float = 1
         static let attackSeconds: Float = 0.008
-        static let releaseSeconds: Float = 0.18
+        static let releaseSeconds: Float = 0.08
+        static let releaseHoldSeconds: Float = 0.15
+
+        static func releaseHoldFrames(chunkFrames: AVAudioFrameCount, sampleRate: Double) -> Int {
+            Int(releaseHoldSeconds * Float(sampleRate))
+        }
 
         static func attack(_ dt: Float) -> Float { 1 - exp(-dt / attackSeconds) }
         static func release(_ dt: Float) -> Float { 1 - exp(-dt / releaseSeconds) }
