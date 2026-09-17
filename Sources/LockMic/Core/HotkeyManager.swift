@@ -288,6 +288,30 @@ final class HotkeyManager {
         return parts.joined()
     }
 
+    /// The `NSMenuItem.keyEquivalent` character for a chord, for menu items that mirror a
+    /// global shortcut. `nil` for keys with no sensible menu representation (e.g. Esc/Backspace).
+    static func menuKeyEquivalent(keyCode: UInt32) -> String? {
+        let letters: [UInt32: String] = [
+            0: "a", 1: "s", 2: "d", 3: "f", 4: "h", 5: "g", 6: "z", 7: "x",
+            8: "c", 9: "v", 11: "b", 12: "q", 13: "w", 14: "e", 15: "r",
+            16: "y", 17: "t", 31: "o", 32: "u", 34: "i", 35: "p", 37: "l",
+            38: "j", 40: "k", 45: "n", 46: "m",
+        ]
+        if let letter = letters[keyCode] { return letter }
+        let functionKeys: [UInt32: Int] = [
+            49: 0x20, // Space
+            96: NSF5FunctionKey, 97: NSF6FunctionKey, 98: NSF7FunctionKey, 99: NSF3FunctionKey,
+            100: NSF8FunctionKey, 101: NSF9FunctionKey, 103: NSF11FunctionKey, 109: NSF10FunctionKey,
+            111: NSF12FunctionKey, 118: NSF4FunctionKey, 120: NSF2FunctionKey, 122: NSF1FunctionKey,
+            123: NSLeftArrowFunctionKey, 124: NSRightArrowFunctionKey,
+            125: NSDownArrowFunctionKey, 126: NSUpArrowFunctionKey,
+        ]
+        guard let scalarValue = functionKeys[keyCode], let scalar = Unicode.Scalar(scalarValue) else {
+            return nil
+        }
+        return String(Character(scalar))
+    }
+
     private static func keyCodeToString(_ keyCode: UInt32) -> String {
         let map: [UInt32: String] = [
             0: "A", 1: "S", 2: "D", 3: "F", 4: "H", 5: "G", 6: "Z", 7: "X",

@@ -39,8 +39,6 @@ struct PreferencesView: View {
     @State private var selection: PreferencesTab
     @State private var updateAvailable = UpdateChecker.shared.availableUpdate != nil
 
-    private let sidebarWidth: CGFloat = 168
-
     init(
         preferences: PreferencesStore,
         mic: MicController,
@@ -54,15 +52,11 @@ struct PreferencesView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
+        NavigationSplitView {
             sidebar
-                .frame(width: sidebarWidth)
-                .frame(maxHeight: .infinity, alignment: .top)
-
-            Divider()
-
+                .navigationSplitViewColumnWidth(min: 160, ideal: 168, max: 220)
+        } detail: {
             detailPane
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
         .frame(
             minWidth: PreferencesChrome.windowMinSize.width,
@@ -70,7 +64,7 @@ struct PreferencesView: View {
             minHeight: PreferencesChrome.windowMinSize.height,
             idealHeight: PreferencesChrome.windowIdealSize.height
         )
-        .background(.regularMaterial)
+        .background(.ultraThinMaterial)
         .onReceive(NotificationCenter.default.publisher(for: .lockMicOpenPreferencesTab)) { note in
             if let raw = note.object as? String, let tab = PreferencesTab(rawValue: raw) {
                 selection = tab
@@ -85,19 +79,26 @@ struct PreferencesView: View {
     }
 
     private var sidebar: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            sidebarBrand
-                .padding(.horizontal, 6)
-                .padding(.bottom, 10)
-
-            ForEach(PreferencesTab.allCases) { tab in
-                sidebarRow(tab)
+        List(selection: $selection) {
+            Section {
+                sidebarBrand
+                    .listRowSeparator(.hidden)
             }
-            Spacer(minLength: 0)
+            ForEach(PreferencesTab.allCases) { tab in
+                HStack {
+                    Label(tab.title, systemImage: tab.systemImage)
+                        .symbolRenderingMode(.hierarchical)
+                    if tab == .about && updateAvailable {
+                        Spacer(minLength: 4)
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 8, height: 8)
+                    }
+                }
+                .tag(tab)
+            }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 12)
-        .background(.thinMaterial)
+        .listStyle(.sidebar)
     }
 
     private var sidebarBrand: some View {
@@ -114,35 +115,7 @@ struct PreferencesView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 6)
         .padding(.vertical, 4)
-    }
-
-    private func sidebarRow(_ tab: PreferencesTab) -> some View {
-        let selected = selection == tab
-        let showUpdateDot = tab == .about && updateAvailable
-        return HStack(spacing: 10) {
-            Image(systemName: tab.systemImage)
-                .font(.body.weight(.medium))
-                .frame(width: 20, alignment: .center)
-                .symbolRenderingMode(.hierarchical)
-            Text(tab.title)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            if showUpdateDot {
-                Circle()
-                    .fill(Color.red)
-                    .frame(width: 8, height: 8)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .contentShape(Rectangle())
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(selected ? Color.accentColor.opacity(0.18) : Color.clear)
-        )
-        .foregroundStyle(selected ? Color.primary : Color.primary.opacity(0.85))
-        .onTapGesture { selection = tab }
     }
 
     @ViewBuilder

@@ -377,6 +377,7 @@ final class StatusItemController {
         )
         toggle.target = self
         toggle.image = NSImage.menuItemSymbol(mic.effectiveMuted ? "mic.slash.fill" : "mic.fill")
+        applyShortcut(preferences.toggleShortcut, to: toggle)
         menu.addItem(toggle)
 
         let muteAll = NSMenuItem(
@@ -397,6 +398,10 @@ final class StatusItemController {
         )
         record.target = self
         record.image = NSImage.menuItemSymbol(recorder.isRecording ? "stop.circle" : "record.circle")
+        applyShortcut(
+            recorder.isRecording ? preferences.stopRecordingShortcut : preferences.startRecordingShortcut,
+            to: record
+        )
         menu.addItem(record)
 
         let showRecordings = NSMenuItem(
@@ -595,6 +600,17 @@ final class StatusItemController {
         return nil
     }
 
+    /// Mirrors a global hotkey on a menu item's trailing shortcut glyph, purely for display —
+    /// the actual key handling still goes through `HotkeyManager`/Carbon.
+    private func applyShortcut(_ pref: HotkeyPref, to item: NSMenuItem) {
+        guard pref.enabled, !pref.chord.isEmpty,
+              let key = HotkeyManager.menuKeyEquivalent(keyCode: pref.chord.keyCode) else {
+            return
+        }
+        item.keyEquivalent = key
+        item.keyEquivalentModifierMask = HotkeyManager.nsEventModifiers(fromCarbon: pref.chord.modifiers)
+    }
+
     @objc private func openPreferences() {
         presentPreferences(source: .menu)
     }
@@ -625,8 +641,6 @@ final class StatusItemController {
                     self?.preferencesWindow?.performClose(nil)
                 }
             let hosting = NSHostingController(rootView: view)
-            hosting.view.wantsLayer = true
-            hosting.view.layer?.backgroundColor = NSColor.clear.cgColor
             let window = EscapeToCloseWindow(contentViewController: hosting)
             window.title = "LockMic — \(L10n.preferencesTitle)"
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable]

@@ -17,23 +17,17 @@ enum PreferencesChrome {
             .foregroundStyle(.secondary)
     }
 
-    /// System Settings–style inset card.
+    /// System Settings–style inset card, built from the native grouped-box material.
     static func sectionCard<Content: View>(
         @ViewBuilder content: () -> Content
     ) -> some View {
-        VStack(alignment: .leading, spacing: contentSpacing) {
-            content()
+        GroupBox {
+            VStack(alignment: .leading, spacing: contentSpacing) {
+                content()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-                .fill(Color.primary.opacity(0.045))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        )
+        .groupBoxStyle(.automatic)
     }
 
     /// Soft caption under a control.
