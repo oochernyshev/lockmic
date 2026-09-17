@@ -14,6 +14,7 @@ final class RowView: NSView {
     private let qualityBadge = CallQualityBadgeView()
     private let warnBadge = NoSignalBadgeView()
     private let detailField = NSTextField(labelWithString: "")
+    private let volumeSlider = VolumeSlider()
     private let meter = LevelBar()
     private var nameBottom: NSLayoutConstraint?
     private var detailBottom: NSLayoutConstraint?
@@ -31,6 +32,7 @@ final class RowView: NSView {
     private var qualityToWarn: NSLayoutConstraint?
     private var qualityToMeter: NSLayoutConstraint?
     private let onToggle: (String, Bool) -> Void
+    private let onVolumeChange: (String, Float) -> Void
     private var deviceID = ""
     private var kind: RecordingDeviceKind = .input
     private var canCapture = true
@@ -41,8 +43,14 @@ final class RowView: NSView {
     private var isDefaultDevice = false
     private var sourceSampleRate: Double = 0
 
-    init(device: RecordingDeviceRow, muted: Bool, onToggle: @escaping (String, Bool) -> Void) {
+    init(
+        device: RecordingDeviceRow,
+        muted: Bool,
+        onToggle: @escaping (String, Bool) -> Void,
+        onVolumeChange: @escaping (String, Float) -> Void = { _, _ in }
+    ) {
         self.onToggle = onToggle
+        self.onVolumeChange = onVolumeChange
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         mark.target = self
@@ -77,7 +85,11 @@ final class RowView: NSView {
         detailField.lineBreakMode = .byTruncatingTail
         detailField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        [mark, iconView, nameField, badge, qualityBadge, muteBadge, warnBadge, detailField, meter].forEach {
+        volumeSlider.target = self
+        volumeSlider.action = #selector(volumeChanged)
+        volumeSlider.isHidden = true
+
+        [mark, iconView, nameField, badge, qualityBadge, muteBadge, warnBadge, detailField, volumeSlider, meter].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             addSubview($0)
         }
@@ -126,6 +138,11 @@ final class RowView: NSView {
             detailField.leadingAnchor.constraint(equalTo: nameField.leadingAnchor),
             detailField.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10),
             detailField.topAnchor.constraint(equalTo: nameField.bottomAnchor, constant: 1),
+
+            volumeSlider.leadingAnchor.constraint(equalTo: nameField.leadingAnchor),
+            volumeSlider.trailingAnchor.constraint(equalTo: meter.leadingAnchor, constant: -10),
+            volumeSlider.centerYAnchor.constraint(equalTo: detailField.centerYAnchor),
+            volumeSlider.heightAnchor.constraint(equalToConstant: 14),
         ])
         apply(device, muted: muted)
     }
@@ -134,7 +151,7 @@ final class RowView: NSView {
     required init?(coder: NSCoder) { nil }
 
     override var intrinsicContentSize: NSSize {
-        let height: CGFloat = detailField.isHidden ? 34 : 48
+        let height: CGFloat = (detailField.isHidden && volumeSlider.isHidden) ? 34 : 48
         return NSSize(width: NSView.noIntrinsicMetric, height: height)
     }
 
@@ -151,8 +168,14 @@ final class RowView: NSView {
         detailField.stringValue = device.detail ?? ""
         let hasDetail = !(device.detail ?? "").isEmpty
         detailField.isHidden = !hasDetail
-        nameBottom?.isActive = !hasDetail
-        detailBottom?.isActive = hasDetail
+        let hasVolume = device.kind == .input && device.volume != nil
+        volumeSlider.isHidden = !hasVolume
+        if hasVolume, let volume = device.volume {
+            volumeSlider.value = volume
+        }
+        let showsSecondLine = hasDetail || hasVolume
+        nameBottom?.isActive = !showsSecondLine
+        detailBottom?.isActive = showsSecondLine
         invalidateIntrinsicContentSize()
         showCallQuality = device.isCallQuality
         applyMute(muted)
@@ -265,11 +288,19 @@ final class RowView: NSView {
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
-    /// Own every click in the row so labels/icon/meter don’t swallow it.
+    /// Own every click in the row so labels/icon/meter don’t swallow it — except the
+    /// volume slider, which needs real drag tracking of its own.
     /// `super` does the superview→local conversion; testing `bounds` directly
     /// only hit the first row, then a selected radio ignored the rest.
     override func hitTest(_ point: NSPoint) -> NSView? {
-        super.hitTest(point) == nil ? nil : self
+        guard super.hitTest(point) != nil else { return nil }
+        if !volumeSlider.isHidden, volumeSlider.isEnabled {
+            let local = convert(point, from: superview)
+            if volumeSlider.frame.insetBy(dx: -4, dy: -4).contains(local) {
+                return volumeSlider
+            }
+        }
+        return self
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -324,6 +355,97 @@ final class RowView: NSView {
 
     @objc private func changed() {
         onToggle(deviceID, mark.isOn)
+    }
+
+    @objc private func volumeChanged() {
+        onVolumeChange(deviceID, volumeSlider.value)
+    }
+}
+
+/// Custom-drawn 0...1 slider. Stock `NSSlider` renders as inactive/disabled whenever
+/// its window isn't key, which this app's non-activating monitor panel never becomes.
+final class VolumeSlider: NSControl {
+    private static let trackHeight: CGFloat = 4
+    private static let thumbDiameter: CGFloat = 12
+
+    var value: Float = 1 {
+        didSet {
+            value = min(1, max(0, value))
+            if value != oldValue { needsDisplay = true }
+        }
+    }
+
+    override var isEnabled: Bool {
+        didSet { needsDisplay = true }
+    }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        isEnabled = true
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
+
+    override var intrinsicContentSize: NSSize { NSSize(width: NSView.noIntrinsicMetric, height: 14) }
+
+    override func draw(_ dirtyRect: NSRect) {
+        let thumbX = Self.thumbDiameter / 2 + CGFloat(value) * (bounds.width - Self.thumbDiameter)
+        let trackY = (bounds.height - Self.trackHeight) / 2
+        let track = NSRect(x: 0, y: trackY, width: bounds.width, height: Self.trackHeight)
+        let trackPath = NSBezierPath(roundedRect: track, xRadius: Self.trackHeight / 2, yRadius: Self.trackHeight / 2)
+        (isEnabled ? NSColor.secondaryLabelColor : NSColor.tertiaryLabelColor)
+            .withAlphaComponent(0.28)
+            .setFill()
+        trackPath.fill()
+
+        let filled = NSRect(x: 0, y: trackY, width: thumbX, height: Self.trackHeight)
+        let filledPath = NSBezierPath(roundedRect: filled, xRadius: Self.trackHeight / 2, yRadius: Self.trackHeight / 2)
+        (isEnabled ? NSColor.controlAccentColor : NSColor.secondaryLabelColor)
+            .withAlphaComponent(isEnabled ? 1 : 0.45)
+            .setFill()
+        filledPath.fill()
+
+        let thumb = NSRect(
+            x: thumbX - Self.thumbDiameter / 2,
+            y: (bounds.height - Self.thumbDiameter) / 2,
+            width: Self.thumbDiameter,
+            height: Self.thumbDiameter
+        )
+        NSColor.white.withAlphaComponent(isEnabled ? 1 : 0.6).setFill()
+        NSBezierPath(ovalIn: thumb).fill()
+        (isEnabled ? NSColor.controlAccentColor : NSColor.secondaryLabelColor)
+            .withAlphaComponent(0.5)
+            .setStroke()
+        let ring = NSBezierPath(ovalIn: thumb.insetBy(dx: 0.5, dy: 0.5))
+        ring.lineWidth = 1
+        ring.stroke()
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        updateValue(with: event)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard isEnabled else { return }
+        updateValue(with: event)
+    }
+
+    private func updateValue(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        let usable = max(1, bounds.width - Self.thumbDiameter)
+        let fraction = (point.x - Self.thumbDiameter / 2) / usable
+        value = Float(min(1, max(0, fraction)))
+        sendAction(action, to: target)
+    }
+
+    override func resetCursorRects() {
+        if isEnabled {
+            addCursorRect(bounds, cursor: .pointingHand)
+        }
     }
 }
 

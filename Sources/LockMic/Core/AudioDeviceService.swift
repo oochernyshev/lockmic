@@ -137,6 +137,10 @@ final class AudioDeviceService: @unchecked Sendable {
         stringProperty(deviceID, selector: kAudioDevicePropertyDeviceUID)
     }
 
+    func deviceID(forInputUID uid: String) -> AudioDeviceID? {
+        listInputDevices().first(where: { $0.uid == uid })?.id
+    }
+
     func supportsMute(_ deviceID: AudioDeviceID) -> Bool {
         !muteTargets(deviceID).isEmpty
     }
@@ -224,6 +228,91 @@ final class AudioDeviceService: @unchecked Sendable {
             throw AudioDeviceServiceError.propertyFailed("get mute (\(status))")
         }
         return muted != 0
+    }
+
+    func supportsInputVolume(_ deviceID: AudioDeviceID) -> Bool {
+        !volumeTargets(deviceID).isEmpty
+    }
+
+    /// 0...1 scalar input gain. Master element when the driver exposes it,
+    /// else the average across per-channel elements.
+    func inputVolume(_ deviceID: AudioDeviceID) throws -> Float {
+        let targets = volumeTargets(deviceID)
+        guard !targets.isEmpty else { throw AudioDeviceServiceError.propertyFailed("volume unsupported") }
+        var sum: Float = 0
+        var count: Float = 0
+        for target in targets {
+            if let value = volume(deviceID, scope: target.scope, element: target.element) {
+                sum += value
+                count += 1
+            }
+        }
+        guard count > 0 else { throw AudioDeviceServiceError.propertyFailed("get volume") }
+        return sum / count
+    }
+
+    func setInputVolume(_ volume: Float, deviceID: AudioDeviceID) throws {
+        let targets = volumeTargets(deviceID)
+        guard !targets.isEmpty else { throw AudioDeviceServiceError.propertyFailed("volume unsupported") }
+        var value = min(1, max(0, volume))
+        let size = UInt32(MemoryLayout<Float32>.size)
+        var wrote = false
+        var lastStatus: OSStatus = noErr
+        for target in targets {
+            var address = propertyAddress(
+                kAudioDevicePropertyVolumeScalar,
+                target.scope,
+                target.element
+            )
+            let status = AudioObjectSetPropertyData(deviceID, &address, 0, nil, size, &value)
+            if status == noErr {
+                wrote = true
+            } else {
+                lastStatus = status
+            }
+        }
+        guard wrote else {
+            throw AudioDeviceServiceError.propertyFailed("set volume (\(lastStatus))")
+        }
+    }
+
+    private func volume(
+        _ deviceID: AudioDeviceID,
+        scope: AudioObjectPropertyScope,
+        element: AudioObjectPropertyElement
+    ) -> Float? {
+        var address = propertyAddress(kAudioDevicePropertyVolumeScalar, scope, element)
+        var value: Float32 = 0
+        var size = UInt32(MemoryLayout<Float32>.size)
+        let status = AudioObjectGetPropertyData(deviceID, &address, 0, nil, &size, &value)
+        guard status == noErr else { return nil }
+        return value
+    }
+
+    /// Prefer the master element; some drivers only expose per-channel volume.
+    private func volumeTargets(_ deviceID: AudioDeviceID) -> [(scope: AudioObjectPropertyScope, element: AudioObjectPropertyElement)] {
+        var masterAddress = propertyAddress(
+            kAudioDevicePropertyVolumeScalar,
+            kAudioDevicePropertyScopeInput,
+            kAudioObjectPropertyElementMain
+        )
+        var masterSettable: DarwinBoolean = false
+        if AudioObjectHasProperty(deviceID, &masterAddress),
+           AudioObjectIsPropertySettable(deviceID, &masterAddress, &masterSettable) == noErr,
+           masterSettable.boolValue
+        {
+            return [(kAudioDevicePropertyScopeInput, kAudioObjectPropertyElementMain)]
+        }
+        var targets: [(AudioObjectPropertyScope, AudioObjectPropertyElement)] = []
+        let channels = max(inputChannelCount(deviceID), 2)
+        for i in 1...channels {
+            let element = AudioObjectPropertyElement(i)
+            var address = propertyAddress(kAudioDevicePropertyVolumeScalar, kAudioDevicePropertyScopeInput, element)
+            if AudioObjectHasProperty(deviceID, &address) {
+                targets.append((kAudioDevicePropertyScopeInput, element))
+            }
+        }
+        return targets
     }
 
     struct MuteBatchResult: Sendable {

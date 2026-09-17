@@ -89,4 +89,6 @@ struct RecordingDeviceRow: Identifiable, Equatable, Sendable {
     var detail: String?
     /// Bluetooth headset is in HFP because its microphone IO is running.
     var isCallQuality: Bool
+    /// 0...1 HAL input gain; nil when the device doesn't expose a settable volume.
+    var volume: Float?
 }

@@ -529,6 +529,9 @@ final class RecordingMonitorController: NSObject, NSWindowDelegate {
             let row = RowView(device: device, muted: isInputMuted(device)) { [weak self] id, on in
                 self?.recorder?.setDeviceEnabled(id, enabled: on)
                 self?.syncRows()
+            } onVolumeChange: { [weak self] id, volume in
+                guard let audio = self?.recorder?.audio, let deviceID = audio.deviceID(forInputUID: id) else { return }
+                try? audio.setInputVolume(volume, deviceID: deviceID)
             }
             rows[device.id] = row
             inputsCard.addRow(row)

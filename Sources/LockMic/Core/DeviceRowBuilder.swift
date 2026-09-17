@@ -23,6 +23,7 @@ enum DeviceRowBuilder {
         } ?? playbackDeviceUID
         var rows: [RecordingDeviceRow] = []
         for device in audio.listInputDevices() where !device.isVirtual {
+            let selected = device.uid == selectedInputUID
             rows.append(
                 RecordingDeviceRow(
                     id: device.uid,
@@ -31,10 +32,11 @@ enum DeviceRowBuilder {
                     isDefault: device.uid == defaultIn,
                     isVirtual: false,
                     canCapture: true,
-                    isEnabled: device.uid == selectedInputUID,
+                    isEnabled: selected,
                     level: 0,
                     detail: nil,
-                    isCallQuality: false
+                    isCallQuality: false,
+                    volume: selected ? try? audio.inputVolume(device.id) : nil
                 )
             )
         }
@@ -53,7 +55,8 @@ enum DeviceRowBuilder {
                     isEnabled: selected,
                     level: 0,
                     detail: selected ? L10n.recordingSourceIncluded : L10n.recordingSourceOutside,
-                    isCallQuality: false
+                    isCallQuality: false,
+                    volume: nil
                 )
             )
         }
@@ -94,7 +97,8 @@ enum DeviceRowBuilder {
                     isEnabled: selected,
                     level: 0,
                     detail: nil,
-                    isCallQuality: callQuality.inputs.contains(uid)
+                    isCallQuality: callQuality.inputs.contains(uid),
+                    volume: selected ? try? audio.inputVolume(device.id) : nil
                 )
             )
         }
@@ -123,7 +127,8 @@ enum DeviceRowBuilder {
                     isEnabled: selected,
                     level: 0,
                     detail: selected ? L10n.recordingSourceIncluded : L10n.recordingSourceOutside,
-                    isCallQuality: callQuality.outputs.contains(uid)
+                    isCallQuality: callQuality.outputs.contains(uid),
+                    volume: nil
                 )
             )
         }
@@ -174,7 +179,8 @@ enum DeviceRowBuilder {
             isEnabled: enabled,
             level: 0,
             detail: enabled ? L10n.recordingSystemMixDetail : L10n.recordingSourceOutside,
-            isCallQuality: callQuality
+            isCallQuality: callQuality,
+            volume: nil
         )
     }
 }
