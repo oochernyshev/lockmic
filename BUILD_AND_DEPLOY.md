@@ -88,6 +88,29 @@ It refuses to run if `Info.plist`, `project.yml` (both `MARKETING_VERSION` / `CU
 
 Manual equivalent (only if you cannot run the script): bump the table above, `./Scripts/build_homebrew.sh && ./Scripts/package_dmg.sh`, paste the zip SHA-256 into the cask, commit, `git tag vX.Y.Z`, `git push origin main && git push origin vX.Y.Z`, then `gh release create` with dmg, zip, and both `.sha256` files.
 
+## Mac App Store archive
+
+The Mac App Store build uses `Resources/LockMicAppStore.entitlements`; the normal
+Homebrew/DMG build intentionally continues to use `Resources/LockMic.entitlements`.
+After installing a valid Apple Distribution certificate and signing in to the
+WIXEELABS team in Xcode, archive with:
+
+```bash
+xcodebuild archive \
+  -project LockMic.xcodeproj \
+  -scheme LockMic \
+  -configuration Release \
+  -destination 'generic/platform=macOS' \
+  -archivePath build/LockMic-AppStore.xcarchive \
+  DEVELOPMENT_TEAM=96K3P7AWHC \
+  CODE_SIGN_STYLE=Automatic \
+  CODE_SIGN_ENTITLEMENTS=Resources/LockMicAppStore.entitlements
+```
+
+Upload the archive from Xcode Organizer after validating it. Mac App Store
+builds require App Sandbox; this override keeps the separately distributed
+build unsandboxed.
+
 ### 4. Website
 
 Push to `main` already triggers **Cloud Build** → Firebase Hosting (`cloudbuild.yaml`). `website/public/main.js` also rewrites the DMG button from `GET /repos/oochernyshev/lockmic/releases/latest`, but JSON-LD and the visible “Get LockMic X.Y.Z” heading stay whatever you committed in `index.html`.
