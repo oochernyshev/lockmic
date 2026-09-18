@@ -14,7 +14,13 @@ final class HUDContentView: NSView {
     private static let backdropSize: CGFloat = 140
     private static let cornerRadius: CGFloat = 36
 
+    /// System Liquid Glass on macOS 26+; falls back to a tinted `NSVisualEffectView` pre-26.
     private let backdrop = NSView()
+    /// An `NSGlassEffectView` on macOS 26+, untyped here so the property doesn't force
+    /// every reference site to be `#available`-gated.
+    private var glass: NSView?
+    /// Border/recording ring, layered above the glass (glass manages its own internal layers).
+    private let ring = NSView()
     private let iconView = NSImageView()
     private let captionLabel = NSTextField(labelWithString: "")
     /// Red “update available” badge on the top-right of the pill.
@@ -33,23 +39,55 @@ final class HUDContentView: NSView {
         wantsLayer = true
         layer?.backgroundColor = NSColor.clear.cgColor
 
-        backdrop.wantsLayer = true
-        backdrop.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.55).cgColor
-        backdrop.layer?.cornerRadius = Self.cornerRadius
-        backdrop.layer?.masksToBounds = true
         backdrop.translatesAutoresizingMaskIntoConstraints = false
         addSubview(backdrop)
 
-        let material = NSVisualEffectView()
-        material.material = .hudWindow
-        material.blendingMode = .withinWindow
-        material.state = .active
-        material.wantsLayer = true
-        material.layer?.cornerRadius = Self.cornerRadius
-        material.layer?.masksToBounds = true
-        material.alphaValue = 0.35
-        material.translatesAutoresizingMaskIntoConstraints = false
-        backdrop.addSubview(material)
+        if #available(macOS 26.0, *) {
+            // No opaque view behind the glass: an opaque backing would sample only its
+            // own static color and travel with the window, killing the live desktop
+            // refraction/specular that makes glass read as glass while dragging.
+            // `tintColor` washes the glass without blocking what's actually behind it.
+            let glassView = NSGlassEffectView()
+            glassView.cornerRadius = Self.cornerRadius
+            glassView.style = .regular
+            glassView.translatesAutoresizingMaskIntoConstraints = false
+            backdrop.addSubview(glassView)
+            NSLayoutConstraint.activate([
+                glassView.leadingAnchor.constraint(equalTo: backdrop.leadingAnchor),
+                glassView.trailingAnchor.constraint(equalTo: backdrop.trailingAnchor),
+                glassView.topAnchor.constraint(equalTo: backdrop.topAnchor),
+                glassView.bottomAnchor.constraint(equalTo: backdrop.bottomAnchor),
+            ])
+            glass = glassView
+        } else {
+            backdrop.wantsLayer = true
+            backdrop.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.55).cgColor
+            backdrop.layer?.cornerRadius = Self.cornerRadius
+            backdrop.layer?.masksToBounds = true
+
+            let material = NSVisualEffectView()
+            material.material = .hudWindow
+            material.blendingMode = .withinWindow
+            material.state = .active
+            material.wantsLayer = true
+            material.layer?.cornerRadius = Self.cornerRadius
+            material.layer?.masksToBounds = true
+            material.alphaValue = 0.35
+            material.translatesAutoresizingMaskIntoConstraints = false
+            backdrop.addSubview(material)
+            NSLayoutConstraint.activate([
+                material.leadingAnchor.constraint(equalTo: backdrop.leadingAnchor),
+                material.trailingAnchor.constraint(equalTo: backdrop.trailingAnchor),
+                material.topAnchor.constraint(equalTo: backdrop.topAnchor),
+                material.bottomAnchor.constraint(equalTo: backdrop.bottomAnchor),
+            ])
+        }
+
+        ring.wantsLayer = true
+        ring.layer?.backgroundColor = NSColor.clear.cgColor
+        ring.layer?.cornerRadius = Self.cornerRadius
+        ring.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(ring)
 
         iconView.imageScaling = .scaleProportionallyUpOrDown
         iconView.contentTintColor = .white
@@ -78,10 +116,10 @@ final class HUDContentView: NSView {
             backdrop.widthAnchor.constraint(equalToConstant: Self.backdropSize),
             backdrop.heightAnchor.constraint(equalToConstant: Self.backdropSize),
 
-            material.leadingAnchor.constraint(equalTo: backdrop.leadingAnchor),
-            material.trailingAnchor.constraint(equalTo: backdrop.trailingAnchor),
-            material.topAnchor.constraint(equalTo: backdrop.topAnchor),
-            material.bottomAnchor.constraint(equalTo: backdrop.bottomAnchor),
+            ring.leadingAnchor.constraint(equalTo: backdrop.leadingAnchor),
+            ring.trailingAnchor.constraint(equalTo: backdrop.trailingAnchor),
+            ring.topAnchor.constraint(equalTo: backdrop.topAnchor),
+            ring.bottomAnchor.constraint(equalTo: backdrop.bottomAnchor),
 
             iconView.centerXAnchor.constraint(equalTo: backdrop.centerXAnchor),
             iconView.centerYAnchor.constraint(equalTo: backdrop.centerYAnchor, constant: -10),
@@ -126,18 +164,26 @@ final class HUDContentView: NSView {
         }
 
         let holding = hold != .none
-        backdrop.layer?.backgroundColor = muted
-            ? NSColor.black.withAlphaComponent(holding ? 0.72 : 0.62).cgColor
-            : NSColor.black.withAlphaComponent(holding ? 0.60 : 0.50).cgColor
-        if recording {
-            backdrop.layer?.borderWidth = 2.5
-            backdrop.layer?.borderColor = NSColor.systemRed.cgColor
-        } else if holding {
-            backdrop.layer?.borderWidth = 2
-            backdrop.layer?.borderColor = NSColor.white.withAlphaComponent(0.45).cgColor
+        if #available(macOS 26.0, *), let glass = glass as? NSGlassEffectView {
+            glass.tintColor = nil
+            glass.alphaValue = 0.8
+            if #available(macOS 27.0, *) {
+                glass.effectIsInteractive = isInteractive
+            }
         } else {
-            backdrop.layer?.borderWidth = 0
-            backdrop.layer?.borderColor = nil
+            backdrop.layer?.backgroundColor = muted
+                ? NSColor.black.withAlphaComponent(holding ? 0.72 : 0.62).cgColor
+                : NSColor.black.withAlphaComponent(holding ? 0.60 : 0.50).cgColor
+        }
+        if recording {
+            ring.layer?.borderWidth = 2.5
+            ring.layer?.borderColor = NSColor.systemRed.cgColor
+        } else if holding {
+            ring.layer?.borderWidth = 2
+            ring.layer?.borderColor = NSColor.white.withAlphaComponent(0.45).cgColor
+        } else {
+            ring.layer?.borderWidth = 0
+            ring.layer?.borderColor = nil
         }
 
         setUpdateAvailable(updateAvailable)
@@ -156,7 +202,7 @@ final class HUDContentView: NSView {
     }
 
     func setStopWarningBlinking(_ active: Bool) {
-        guard let layer = backdrop.layer else { return }
+        guard let layer = ring.layer else { return }
         if active {
             guard layer.animation(forKey: "stopWarningBlink") == nil else { return }
             let resting = NSColor.systemRed.withAlphaComponent(0.15).cgColor
