@@ -46,6 +46,7 @@ final class PreferencesStore: ObservableObject {
         static let recordingSilenceTimeout = "recordingSilenceTimeout"
         static let recordingsFolderPath = "recordingsFolderPath"
         static let shareAnonymousUsage = "shareAnonymousUsage"
+        static let hasCompletedOnboarding = "hasCompletedOnboarding"
         /// When true, show a Dock icon so Preferences stay reachable if the menu bar is full.
         static let showInDock = "showInDock"
         static let appAppearance = "appAppearance"
@@ -235,6 +236,11 @@ final class PreferencesStore: ObservableObject {
         }
     }
 
+    /// First-run guidance is separate from consent so existing opted-in users are not interrupted.
+    @Published var hasCompletedOnboarding: Bool {
+        didSet { UserDefaults.standard.set(hasCompletedOnboarding, forKey: Keys.hasCompletedOnboarding) }
+    }
+
     /// App mute/hotkey/HUD features are only active after stats agreement.
     var featuresEnabled: Bool { shareAnonymousUsage }
 
@@ -331,7 +337,15 @@ final class PreferencesStore: ObservableObject {
         if defaults.object(forKey: Keys.shareAnonymousUsage) == nil {
             defaults.set(false, forKey: Keys.shareAnonymousUsage)
         }
-        shareAnonymousUsage = defaults.bool(forKey: Keys.shareAnonymousUsage)
+        let storedShareAnonymousUsage = defaults.bool(forKey: Keys.shareAnonymousUsage)
+        shareAnonymousUsage = storedShareAnonymousUsage
+
+        // Onboarding was introduced after the analytics preference. Treat anyone who already
+        // opted in as an existing user; new users still see the complete welcome flow.
+        if defaults.object(forKey: Keys.hasCompletedOnboarding) == nil {
+            defaults.set(storedShareAnonymousUsage, forKey: Keys.hasCompletedOnboarding)
+        }
+        hasCompletedOnboarding = defaults.bool(forKey: Keys.hasCompletedOnboarding)
 
         toggleShortcut = Self.load(Self.toggleSpec, from: defaults)
         muteShortcut = Self.load(Self.muteSpec, from: defaults)

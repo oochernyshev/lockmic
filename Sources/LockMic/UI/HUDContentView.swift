@@ -165,8 +165,17 @@ final class HUDContentView: NSView {
 
         let holding = hold != .none
         if #available(macOS 26.0, *), let glass = glass as? NSGlassEffectView {
-            glass.tintColor = nil
-            glass.alphaValue = 0.8
+            // Regular glass can become nearly white over a bright window, making the white
+            // microphone disappear. A restrained dark tint preserves refraction while keeping
+            // the symbol and caption legible on both light and dark backgrounds.
+            let tintAlpha: CGFloat
+            if holding {
+                tintAlpha = muted ? 0.42 : 0.34
+            } else {
+                tintAlpha = muted ? 0.34 : 0.28
+            }
+            glass.tintColor = NSColor.black.withAlphaComponent(tintAlpha)
+            glass.alphaValue = 0.9
             if #available(macOS 27.0, *) {
                 glass.effectIsInteractive = isInteractive
             }

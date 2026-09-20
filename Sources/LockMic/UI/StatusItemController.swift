@@ -14,6 +14,7 @@ final class StatusItemController {
 
     private var statusItem: NSStatusItem?
     private var preferencesWindow: NSWindow?
+    private var onboardingWindow: NSWindow?
     private var cancellables: [NSObjectProtocol] = []
     private var micCancellables = Set<AnyCancellable>()
     private var visibilityTimer: Timer?
@@ -113,8 +114,13 @@ final class StatusItemController {
         if featuresEnabled {
             toggleFromUser(source: .dock)
         } else {
-            presentPreferences(source: .menu)
+            presentOnboarding()
         }
+    }
+
+    func presentOnboardingIfNeeded() {
+        guard !preferences.hasCompletedOnboarding else { return }
+        presentOnboarding()
     }
 
     // MARK: - Menu bar icon visibility
@@ -347,8 +353,8 @@ final class StatusItemController {
             menu.addItem(.separator())
 
             let agree = NSMenuItem(
-                title: L10n.menuAgreeEnable,
-                action: #selector(agreeAndEnable),
+                title: "Set Up LockMic…",
+                action: #selector(openOnboarding),
                 keyEquivalent: ""
             )
             agree.target = self
@@ -476,6 +482,10 @@ final class StatusItemController {
 
         appendUpdateMenuItems(to: menu)
 
+        let gettingStarted = NSMenuItem(title: "Getting Started…", action: #selector(openOnboarding), keyEquivalent: "")
+        gettingStarted.target = self
+        menu.addItem(gettingStarted)
+
         let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: "")
         prefs.target = self
         menu.addItem(prefs)
@@ -534,10 +544,7 @@ final class StatusItemController {
         return result
     }
 
-    @objc private func agreeAndEnable() {
-        preferences.shareAnonymousUsage = true
-        applyFeatureAvailability(force: true)
-    }
+    @objc private func openOnboarding() { presentOnboarding() }
 
     @objc private func menuToggle() {
         toggleFromUser(source: .menu)
@@ -613,6 +620,39 @@ final class StatusItemController {
 
     @objc private func openPreferences() {
         presentPreferences(source: .menu)
+    }
+
+    private func presentOnboarding() {
+        if onboardingWindow == nil {
+            let view = OnboardingView(
+                preferences: preferences,
+                mic: mic,
+                testMute: { [weak self] in
+                    guard let self else { return }
+                    self.applyFeatureAvailability(force: true)
+                    self.toggleFromUser(source: .menu)
+                }
+            ) { [weak self] in
+                self?.applyFeatureAvailability(force: true)
+                self?.onboardingWindow?.performClose(nil)
+            }
+            .onExitCommand { [weak self] in
+                self?.onboardingWindow?.performClose(nil)
+            }
+            let hosting = NSHostingController(rootView: view)
+            let window = EscapeToCloseWindow(contentViewController: hosting)
+            window.title = "LockMic — Getting Started"
+            window.styleMask = [.titled, .closable, .miniaturizable]
+            window.titleVisibility = .visible
+            window.titlebarAppearsTransparent = false
+            window.isOpaque = true
+            window.backgroundColor = .windowBackgroundColor
+            window.center()
+            window.isReleasedWhenClosed = false
+            onboardingWindow = window
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        onboardingWindow?.makeKeyAndOrderFront(nil)
     }
 
     @objc private func installAvailableUpdate() {

@@ -37,6 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItemController = status
         status.handleMuteChanged(showHUD: false)
         applyActivationPolicy()
+        status.presentOnboardingIfNeeded()
 
         // Periodic GitHub release check → menu-bar / Dock badge when a newer version exists.
         UpdateChecker.shared.start()

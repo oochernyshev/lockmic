@@ -17,6 +17,7 @@
 		0E89DC66FF7DCF6860A235A7 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = FE0EEB17C43E9CBE1ABED7C2 /* Localizable.strings */; };
 		11FDC04D4CD38E6311F951D4 /* SystemAudioAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98EF85571E738D1FB5D06D9 /* SystemAudioAccess.swift */; };
 		15DD7D576F72455A28455301 /* HotkeyTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B35F1D3335235FFC0A1CFD00 /* HotkeyTypes.swift */; };
+		1ECE1E4FCAAF949A31E9F19D /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE8B1FA997CB548B8954B955 /* OnboardingView.swift */; };
 		1F2EE35C311EB17B8016DD27 /* RecordingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCDAC13656AB32C933EB7FC /* RecordingCoordinator.swift */; };
 		1FF5980AA9BA25AB2AA66B3C /* SessionRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06ADA52982EF60A0DC607152 /* SessionRecorder.swift */; };
 		22799EC9FE4846702741D29C /* StatusItemVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B2EEF27306A31B09E7F00C /* StatusItemVisibility.swift */; };
@@ -133,6 +134,7 @@
 		C84E04D474632BF17022832F /* LevelMetering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelMetering.swift; sourceTree = "<group>"; };
 		C98EF85571E738D1FB5D06D9 /* SystemAudioAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioAccess.swift; sourceTree = "<group>"; };
 		CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedback.swift; sourceTree = "<group>"; };
+		CE8B1FA997CB548B8954B955 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDOverlay.swift; sourceTree = "<group>"; };
 		D388527075411120DE6777E2 /* RecordingDeviceRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDeviceRowView.swift; sourceTree = "<group>"; };
 		D38D0E203797E6588D537F34 /* CompressedStemWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompressedStemWriter.swift; sourceTree = "<group>"; };
@@ -243,6 +245,7 @@
 				500AF84D4D16D9AFA3D3F98C /* HUDHoldKind.swift */,
 				D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */,
 				FAD5EF33BC8D4A49401F7228 /* HUDPresenter.swift */,
+				CE8B1FA997CB548B8954B955 /* OnboardingView.swift */,
 				3F8F61DC24A2F34968588493 /* PreferencesAboutPage.swift */,
 				E14F0285BCCAF4D12DE4858F /* PreferencesChrome.swift */,
 				F1DC7BD1E7A26042200E3B2B /* PreferencesDevicesPage.swift */,
@@ -424,6 +427,7 @@
 				D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */,
 				34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */,
 				0A315F2E7021DAC7BF9E9FD3 /* MuteGate.swift in Sources */,
+				1ECE1E4FCAAF949A31E9F19D /* OnboardingView.swift in Sources */,
 				E7476AF3C6061511AF856AB6 /* PlaybackTap.swift in Sources */,
 				49AEAEFADFABB85941650D16 /* PreferencesAboutPage.swift in Sources */,
 				624805273EFDB53BAC0EA7E0 /* PreferencesChrome.swift in Sources */,
