@@ -96,9 +96,10 @@ final class LiveMixer: @unchecked Sendable {
     }
 
     func stop() {
-        timer?.cancel()
-        timer = nil
         queue.sync {
+            // `startTimer()` sets `timer` on this queue; cancel it here too.
+            timer?.cancel()
+            timer = nil
             ringLock.lock()
             let already = stopped
             stopped = true

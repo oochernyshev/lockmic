@@ -340,7 +340,26 @@ final class PlaybackTap: PlaybackCapturing, @unchecked Sendable {
         log.info("Playback tap IO started")
     }
 
-    deinit { stop() }
+    deinit {
+        // `self` is freed when deinit returns, so the halt block must capture
+        // plain values only. Any earlier scheduleHalt()/attach block retains
+        // self, so if we're here it already ran — nothing is pending.
+        let proc = ioProcID
+        let aggregate = aggregateID
+        let tap = tapID
+        let listener = formatListener
+        let listenerQueue = queue
+        guard proc != nil || aggregate != 0 || tap != 0 else { return }
+        AudioHAL.haltAsync(on: haltQueue) {
+            Self.halt(
+                proc: proc,
+                aggregate: aggregate,
+                tap: tap,
+                listener: listener,
+                listenerQueue: listenerQueue
+            )
+        }
+    }
 
     private func write(_ input: UnsafePointer<AudioBufferList>) {
         let abl = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))

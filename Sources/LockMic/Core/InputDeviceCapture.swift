@@ -106,8 +106,16 @@ final class InputDeviceCapture: @unchecked Sendable {
 
     func stop() {
         scheduleHalt()
-        writer?.finish()
-        writer = nil
+        // `write` touches `writer` on the IO queue; clear it there too.
+        let finishWriter = { [self] in
+            writer?.finish()
+            writer = nil
+        }
+        if DispatchQueue.getSpecific(key: Self.ioQueueKey) != nil {
+            finishWriter()
+        } else {
+            queue.sync(execute: finishWriter)
+        }
     }
 
     func waitUntilStopped() async {
@@ -115,7 +123,18 @@ final class InputDeviceCapture: @unchecked Sendable {
         _ = await AudioHAL.run(on: haltQueue, timeout: AudioHAL.haltSeconds) {}
     }
 
-    deinit { stop() }
+    deinit {
+        writer?.finish()
+        // `self` is freed when deinit returns, so the halt block must capture
+        // plain values only. Any earlier scheduleHalt()/attach block retains
+        // self, so if we're here it already ran — nothing is pending.
+        guard let proc = ioProcID else { return }
+        let device = deviceID
+        AudioHAL.haltAsync(on: haltQueue) {
+            AudioDeviceStop(device, proc)
+            AudioDeviceDestroyIOProcID(device, proc)
+        }
+    }
 
     private func scheduleHalt() {
         lock.lock()
