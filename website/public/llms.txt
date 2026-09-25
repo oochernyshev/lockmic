@@ -14,7 +14,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - **Partnerships / press:** info@wixee.ai
 - **Price:** Free
 - **Platform:** macOS 14 Sonoma or later
-- **Current version:** 1.4.46
+- **Current version:** 1.4.47
 
 ## Key facts
 
@@ -39,7 +39,7 @@ Click Get, then Install. Open LockMic from Applications. The App Store handles f
 
 ### DMG
 
-https://github.com/oochernyshev/lockmic/releases/download/v1.4.46/LockMic-1.4.46.dmg
+https://github.com/oochernyshev/lockmic/releases/download/v1.4.47/LockMic-1.4.47.dmg
 
 ### Homebrew
 
