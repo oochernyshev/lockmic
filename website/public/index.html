@@ -75,8 +75,8 @@
     "applicationSubCategory": "Audio",
     "operatingSystem": "macOS 14.0 or later",
     "softwareVersion": "1.4.45",
-    "downloadUrl": "https://github.com/oochernyshev/lockmic/releases/download/v1.4.45/LockMic-1.4.45.dmg",
-    "installUrl": "https://lockmic.com/#download",
+    "downloadUrl": "https://apps.apple.com/app/lockmic/id6813446039?mt=12",
+    "installUrl": "https://apps.apple.com/app/lockmic/id6813446039?mt=12",
     "softwareHelp": "https://github.com/oochernyshev/lockmic",
     "releaseNotes": "https://github.com/oochernyshev/lockmic/releases/tag/v1.4.45",
     "license": "https://github.com/oochernyshev/lockmic/blob/main/LICENSE",
@@ -107,7 +107,7 @@
       "On-screen and floating HUD",
       "Record microphone and system playback to a dated mix stored only on your Mac",
       "23 languages",
-      "Homebrew and DMG install"
+      "Mac App Store, Homebrew, and DMG install"
     ],
     "keywords": "macOS microphone mute, system-wide mic mute, local recording, menu bar, Zoom, Teams, Meet, Core Audio, open source"
   }
@@ -200,7 +200,7 @@
         "name": "How do I install LockMic?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Download the DMG from lockmic.com and drag LockMic to Applications, or use the Homebrew commands in the Download section (same commands to install, update, or restore a deleted app). Requires macOS 14 or later. If macOS blocks the app, run: xattr -dr com.apple.quarantine /Applications/LockMic.app"
+          "text": "Get LockMic from the Mac App Store and click Install. The App Store handles future updates automatically. Homebrew and DMG installs remain available as alternatives. Requires macOS 14 or later."
         }
       },
       {
@@ -208,7 +208,7 @@
         "name": "How do I update LockMic?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Homebrew: run the same commands as install (brew reinstall --cask --yes lockmic, or brew install --cask lockmic if it was never installed). DMG: download the latest DMG, replace the app in Applications, then open it."
+          "text": "Mac App Store: updates are handled automatically, or open the App Store and choose Updates. Homebrew: run the same commands as install. DMG: download the latest DMG, replace the app in Applications, then open it."
         }
       },
       {
@@ -216,7 +216,7 @@
         "name": "I deleted LockMic.app. How do I install it again?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Run the Homebrew commands in the Download section again. brew reinstall --cask --yes lockmic puts the app back. Homebrew 6 install --force still skips if the cask version is current. To uninstall completely: brew uninstall --cask lockmic. DMG users can download the DMG and drag LockMic back to Applications."
+          "text": "Open LockMic in the Mac App Store and click the cloud download button to reinstall it. Homebrew and DMG users can reinstall with the same method they originally used."
         }
       },
       {
@@ -582,20 +582,33 @@
     <section class="section section-download" id="download">
       <div class="download-card reveal">
         <img src="assets/icon-512-v2.png" width="88" height="88" alt="LockMic app icon" class="download-icon" />
-        <h2>Get LockMic 1.4.45</h2>
-        <p>Free for macOS 14 Sonoma and later.</p>
+        <h2>Get LockMic</h2>
+        <p>Now on the Mac App Store. Free for macOS 14 Sonoma and later.</p>
         <div class="download-actions">
+          <a class="btn btn-primary btn-lg" id="downloadAppStore"
+            href="https://apps.apple.com/app/lockmic/id6813446039?mt=12" rel="noopener noreferrer" target="_blank">
+            Download on the Mac App Store
+          </a>
           <a class="btn btn-primary btn-lg" id="downloadDmg"
             href="https://github.com/oochernyshev/lockmic/releases/download/v1.4.45/LockMic-1.4.45.dmg"
             download="LockMic-1.4.45.dmg">
-            Download DMG
+            Download DMG instead
           </a>
           <a class="btn btn-secondary btn-lg" href="https://github.com/oochernyshev/lockmic" rel="noopener noreferrer"
             target="_blank">
             View on GitHub
           </a>
         </div>
-        <div class="code-block" role="region" aria-label="Homebrew">
+        <div class="store-install" role="region" aria-label="Mac App Store installation">
+          <p class="store-install-title">Recommended — Mac App Store</p>
+          <ol class="update-dmg-steps">
+            <li>Open <a href="https://apps.apple.com/app/lockmic/id6813446039?mt=12" rel="noopener noreferrer"
+                target="_blank">LockMic on the Mac App Store</a>.</li>
+            <li>Click <strong>Get</strong>, then <strong>Install</strong>.</li>
+            <li>Open LockMic from Applications. Future updates are handled by the App Store.</li>
+          </ol>
+        </div>
+        <div class="code-block" role="region" aria-label="Homebrew alternative">
           <div class="code-header">
             <span>Homebrew</span>
             <button type="button" class="copy-btn"
@@ -612,7 +625,7 @@ open /Applications/LockMic.app</code></pre>
             <code>brew uninstall --cask lockmic</code>.</p>
         </div>
         <div class="update-dmg">
-          <p class="update-dmg-title">DMG — update</p>
+          <p class="update-dmg-title">DMG — install or update</p>
           <ol class="update-dmg-steps">
             <li>Download the latest DMG above.</li>
             <li>Open it and drag <strong>LockMic</strong> to Applications (choose <strong>Replace</strong> if asked).
@@ -669,13 +682,15 @@ open /Applications/LockMic.app</code></pre>
         </details>
         <details class="faq-item reveal">
           <summary>How do I install LockMic?</summary>
-          <p>Download the DMG and drag LockMic to Applications, or use the Homebrew commands in <a
-              href="#download">Download</a>. Requires macOS 14+. If macOS blocks the app, run
-            <code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code>.</p>
+          <p>Get LockMic from the <a href="https://apps.apple.com/app/lockmic/id6813446039?mt=12"
+              rel="noopener noreferrer" target="_blank">Mac App Store</a>, click <strong>Get</strong>, then
+            <strong>Install</strong>. Homebrew and DMG installs are also available in <a href="#download">Download</a>.
+            Requires macOS 14+.</p>
         </details>
         <details class="faq-item reveal">
           <summary>How do I update to the latest version?</summary>
           <p>
+            <strong>Mac App Store:</strong> updates are automatic, or open the App Store and choose Updates.
             <strong>Homebrew:</strong> run the same commands as install (see <a href="#download">Download</a>).
             <strong>DMG:</strong> download the latest DMG, replace the app in Applications, then open it.
           </p>
@@ -683,7 +698,8 @@ open /Applications/LockMic.app</code></pre>
         <details class="faq-item reveal">
           <summary>I deleted LockMic.app. How do I install it again?</summary>
           <p>
-            Run the Homebrew commands in <a href="#download">Download</a> again —
+            <strong>Mac App Store:</strong> open LockMic's store page and click the cloud download button.
+            <strong>Homebrew:</strong> run the commands in <a href="#download">Download</a> again —
             <code>reinstall</code> puts the app back. To uninstall completely:
             <code>brew uninstall --cask lockmic</code>.
             DMG users can download the DMG and drag LockMic back to Applications.

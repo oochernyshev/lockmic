@@ -7,6 +7,7 @@
 LockMic mutes the microphone at the **system level** using Apple Core Audio (not app-specific mute buttons). It works in Zoom, Microsoft Teams, Google Meet, FaceTime, browsers, and every other app on the Mac. Control is from the menu bar, global hotkeys, and an optional on-screen / floating HUD. From 1.4 it can also **record locally**: default microphone plus system playback mixed to a dated AAC file on the Mac. Recordings are not uploaded.
 
 - **Website:** https://lockmic.com/
+- **Mac App Store:** https://apps.apple.com/app/lockmic/id6813446039?mt=12
 - **GitHub:** https://github.com/oochernyshev/lockmic
 - **License:** MIT
 - **Publisher:** WIXEE.AI (https://wixee.ai)
@@ -24,10 +25,17 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - HUD toast and optional always-on floating HUD per display
 - Optional local recording (mic + system playback → dated mix on disk; not uploaded)
 - 23 UI languages following system language
-- Install: DMG or Homebrew cask (custom tap)
-- Not Developer ID notarized yet; users may need `xattr -dr com.apple.quarantine /Applications/LockMic.app` after download
+- Recommended install: Mac App Store (automatic updates)
+- Alternative installs: DMG or Homebrew cask (custom tap)
+- Direct-download builds are not Developer ID notarized yet; users may need `xattr -dr com.apple.quarantine /Applications/LockMic.app`
 
 ## Install
+
+### Mac App Store (recommended)
+
+https://apps.apple.com/app/lockmic/id6813446039?mt=12
+
+Click Get, then Install. Open LockMic from Applications. The App Store handles future updates automatically.
 
 ### DMG
 

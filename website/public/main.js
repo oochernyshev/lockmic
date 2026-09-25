@@ -515,6 +515,14 @@
     });
   });
 
+  // Downloads
+  const appStoreLink = document.getElementById("downloadAppStore");
+  if (appStoreLink) {
+    appStoreLink.addEventListener("click", () => {
+      track("download_click", { link_id: "download_app_store", outbound: true });
+    });
+  }
+
   // Latest DMG
   const dmgLink = document.getElementById("downloadDmg");
   if (dmgLink) {
@@ -534,9 +542,6 @@
           dmgLink.href = dmg.browser_download_url;
           dmgLink.setAttribute("download", dmg.name);
           dmgLink.removeAttribute("target");
-          const title = document.querySelector(".download-card h2");
-          const ver = (release.tag_name || "").replace(/^v/, "");
-          if (title && ver) title.textContent = `Get LockMic ${ver}`;
         }
       })
       .catch(() => {});

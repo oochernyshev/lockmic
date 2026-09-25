@@ -119,6 +119,8 @@ In Firebase Console → Hosting → **Add custom domain** (e.g. `lockmic.wixee.a
 
 ## Download links
 
+- **Mac App Store (recommended)**: `https://apps.apple.com/app/lockmic/id6813446039?mt=12`
+  Click **Get**, then **Install**. The App Store handles future updates automatically.
 - **DMG (direct file)**: `https://github.com/oochernyshev/lockmic/releases/download/vX.Y.Z/LockMic-X.Y.Z.dmg`  
   The landing page resolves the latest `.dmg` asset via the GitHub API (not the releases HTML page).
 - **Homebrew**:

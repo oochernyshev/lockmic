@@ -1553,6 +1553,30 @@ kbd {
   margin-bottom: 28px;
 }
 
+.store-install {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto 18px;
+  text-align: left;
+  border-radius: 14px;
+  border: 1px solid rgba(124, 156, 255, 0.35);
+  background: rgba(124, 156, 255, 0.08);
+  padding: 14px 18px 16px;
+}
+
+.store-install-title {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.store-install a {
+  color: #d4e0ff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .code-block {
   width: 100%;
   max-width: 640px;
