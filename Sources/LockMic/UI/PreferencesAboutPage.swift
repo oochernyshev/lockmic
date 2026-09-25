@@ -154,14 +154,34 @@ struct PreferencesAboutPage: View {
                 .font(.body.weight(.medium))
                 .fixedSize(horizontal: false, vertical: true)
 
-            PreferencesChrome.caption(detectedCaption)
+            if update.source == .appStore {
+                PreferencesChrome.caption("Installed from the Mac App Store. Updates are delivered by Apple.")
+                HStack(spacing: 10) {
+                    Button {
+                        UpdateChecker.shared.openUpdate()
+                    } label: {
+                        Label("Open Mac App Store", systemImage: "bag")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
 
-            if preferHomebrew {
+                    Button {
+                        UpdateChecker.shared.skipAvailableUpdate()
+                    } label: {
+                        Text(L10n.menuSkipUpdate)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.regular)
+                }
+                .padding(.top, 2)
+            } else if preferHomebrew {
+                PreferencesChrome.caption(detectedCaption)
                 brewBlock
                 dmgAndSkip(prominentDMG: false)
                     .padding(.top, 6)
                 PreferencesChrome.caption(L10n.aboutUpdateDmgAlternate)
             } else {
+                PreferencesChrome.caption(detectedCaption)
                 dmgAndSkip(prominentDMG: true)
                     .padding(.top, 2)
                 PreferencesChrome.sectionHeader(L10n.aboutUpdateHomebrewHeader)
@@ -178,6 +198,7 @@ struct PreferencesAboutPage: View {
 
     private var detectedCaption: String {
         switch AppInstallMethod.detect() {
+        case .appStore: return "Installed from the Mac App Store."
         case .homebrew: return L10n.aboutUpdateDetectedHomebrew
         case .direct: return L10n.aboutUpdateDetectedDirect
         case .unknown: return L10n.aboutUpdateDetectedUnknown

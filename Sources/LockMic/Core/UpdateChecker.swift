@@ -10,7 +10,13 @@ extension Notification.Name {
 }
 
 struct AppUpdateInfo: Equatable, Sendable {
+    enum Source: Equatable, Sendable {
+        case github
+        case appStore
+    }
+
     let version: String
+    let source: Source
     let releasePageURL: URL
     let dmgURL: URL?
 }
@@ -22,18 +28,28 @@ enum UpdateCheckStatus: Equatable {
     case failed
 }
 
-/// Polls GitHub Releases for a newer LockMic build (stable `latest` only).
+/// Checks the update channel that matches how this copy of LockMic was installed.
 @MainActor
 final class UpdateChecker {
     static let shared = UpdateChecker()
 
     private enum Keys {
-        static let lastCheckAt = "updateChecker.lastCheckAt"
-        static let skippedVersion = "updateChecker.skippedVersion"
+        static func lastCheckAt(for method: AppInstallMethod) -> String {
+            "updateChecker.\(channelName(for: method)).lastCheckAt"
+        }
+
+        static func skippedVersion(for method: AppInstallMethod) -> String {
+            "updateChecker.\(channelName(for: method)).skippedVersion"
+        }
+
+        private static func channelName(for method: AppInstallMethod) -> String {
+            method == .appStore ? "appStore" : "github"
+        }
     }
 
     private let log = Logger(subsystem: "com.lockmic.app", category: "UpdateChecker")
-    private let apiURL = URL(string: "https://api.github.com/repos/oochernyshev/lockmic/releases/latest")!
+    private let githubAPIURL = URL(string: "https://api.github.com/repos/oochernyshev/lockmic/releases/latest")!
+    private let appStoreAPIURL = URL(string: "https://itunes.apple.com/lookup?id=6813446039&entity=macSoftware")!
     private let checkInterval: TimeInterval = 24 * 60 * 60
     private var inFlight = false
 
@@ -61,7 +77,8 @@ final class UpdateChecker {
     }
 
     func checkIfDue() {
-        if let last = UserDefaults.standard.object(forKey: Keys.lastCheckAt) as? Date,
+        let installMethod = AppInstallMethod.detect()
+        if let last = UserDefaults.standard.object(forKey: Keys.lastCheckAt(for: installMethod)) as? Date,
            Date().timeIntervalSince(last) < checkInterval
         {
             return
@@ -83,11 +100,14 @@ final class UpdateChecker {
             defer { self.inFlight = false }
 
             do {
-                let info = try await self.fetchLatest()
-                UserDefaults.standard.set(Date(), forKey: Keys.lastCheckAt)
+                let installMethod = AppInstallMethod.detect()
+                let info = try await self.fetchLatest(for: installMethod)
+                let lastCheckKey = Keys.lastCheckAt(for: installMethod)
+                let skippedVersionKey = Keys.skippedVersion(for: installMethod)
+                UserDefaults.standard.set(Date(), forKey: lastCheckKey)
 
                 let newer = Self.isVersion(info.version, newerThan: self.currentVersion)
-                let skipped = UserDefaults.standard.string(forKey: Keys.skippedVersion)
+                let skipped = UserDefaults.standard.string(forKey: skippedVersionKey)
 
                 if newer {
                     if skipped == info.version, !userInitiated {
@@ -95,14 +115,14 @@ final class UpdateChecker {
                         return
                     }
                     if skipped == info.version, userInitiated {
-                        UserDefaults.standard.removeObject(forKey: Keys.skippedVersion)
+                        UserDefaults.standard.removeObject(forKey: skippedVersionKey)
                     }
                     self.log.info("update available \(info.version, privacy: .public)")
                     self.setAvailable(info)
                     if userInitiated { self.setStatus(.idle) }
                 } else {
                     if skipped != nil {
-                        UserDefaults.standard.removeObject(forKey: Keys.skippedVersion)
+                        UserDefaults.standard.removeObject(forKey: skippedVersionKey)
                     }
                     self.setAvailable(nil)
                     if userInitiated { self.setStatus(.upToDate) }
@@ -116,12 +136,21 @@ final class UpdateChecker {
 
     func openUpdate() {
         guard let update = availableUpdate else { return }
+        if update.source == .appStore,
+           let appStoreURL = URL(string: "macappstore://itunes.apple.com/app/id6813446039")
+        {
+            NSWorkspace.shared.open(appStoreURL)
+            return
+        }
         NSWorkspace.shared.open(update.dmgURL ?? update.releasePageURL)
     }
 
     func skipAvailableUpdate() {
         guard let version = availableUpdate?.version else { return }
-        UserDefaults.standard.set(version, forKey: Keys.skippedVersion)
+        UserDefaults.standard.set(
+            version,
+            forKey: Keys.skippedVersion(for: AppInstallMethod.detect())
+        )
         setAvailable(nil)
         setStatus(.idle)
     }
@@ -171,8 +200,15 @@ final class UpdateChecker {
         }
     }
 
-    private func fetchLatest() async throws -> AppUpdateInfo {
-        var request = URLRequest(url: apiURL)
+    private func fetchLatest(for installMethod: AppInstallMethod) async throws -> AppUpdateInfo {
+        if installMethod == .appStore {
+            return try await fetchLatestFromAppStore()
+        }
+        return try await fetchLatestFromGitHub()
+    }
+
+    private func fetchLatestFromGitHub() async throws -> AppUpdateInfo {
+        var request = URLRequest(url: githubAPIURL)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("LockMic/\(currentVersion)", forHTTPHeaderField: "User-Agent")
         request.timeoutInterval = 20
@@ -188,7 +224,45 @@ final class UpdateChecker {
         let dmg = dto.assets
             .first { $0.name == "LockMic-\(version).dmg" || $0.name.hasSuffix(".dmg") }
             .flatMap { URL(string: $0.browserDownloadURL) }
-        return AppUpdateInfo(version: version, releasePageURL: page, dmgURL: dmg)
+        return AppUpdateInfo(version: version, source: .github, releasePageURL: page, dmgURL: dmg)
+    }
+
+    private struct AppStoreLookupDTO: Decodable {
+        let results: [Result]
+
+        struct Result: Decodable {
+            let version: String
+            let trackViewURL: String
+
+            enum CodingKeys: String, CodingKey {
+                case version
+                case trackViewURL = "trackViewUrl"
+            }
+        }
+    }
+
+    private func fetchLatestFromAppStore() async throws -> AppUpdateInfo {
+        var request = URLRequest(url: appStoreAPIURL)
+        request.setValue("LockMic/\(currentVersion)", forHTTPHeaderField: "User-Agent")
+        request.timeoutInterval = 20
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw URLError(.badServerResponse)
+        }
+
+        let dto = try JSONDecoder().decode(AppStoreLookupDTO.self, from: data)
+        guard let result = dto.results.first,
+              let storeURL = URL(string: result.trackViewURL)
+        else {
+            throw URLError(.cannotParseResponse)
+        }
+        return AppUpdateInfo(
+            version: Self.normalizeVersion(result.version),
+            source: .appStore,
+            releasePageURL: storeURL,
+            dmgURL: nil
+        )
     }
 
     // MARK: - Versions
