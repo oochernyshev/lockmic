@@ -2,7 +2,8 @@
 
 Local build and the public ship process. Day-to-day run commands also live in [README.md](./README.md). Website CI detail: [website/README.md](./website/README.md).
 
-Builds are **ad-hoc signed, not Developer ID notarized**. First launch after download: right-click → Open, or `xattr -dr com.apple.quarantine /Applications/LockMic.app`.
+Local builds are ad-hoc signed. Releases made with the current release script
+are signed with Developer ID, notarized by Apple, and stapled.
 
 ## Prerequisites
 
@@ -15,6 +16,45 @@ brew install xcodegen gh
 gh auth login
 ```
 
+Public releases additionally require a **Developer ID Application** certificate
+in the login Keychain. Apple Development and Apple Distribution certificates do
+not sign software distributed outside the Mac App Store.
+
+Store notarization credentials once. A team App Store Connect API key is
+preferred; use its `.p8` file, Key ID, and team Issuer ID:
+
+```bash
+xcrun notarytool store-credentials lockmic-notary \
+  --key "/path/to/AuthKey_KEYID.p8" \
+  --key-id "KEYID" \
+  --issuer "TEAM_ISSUER_ID"
+```
+
+Alternatively, use an app-specific Apple ID password (not the account
+password):
+
+```bash
+xcrun notarytool store-credentials lockmic-notary \
+  --apple-id "you@example.com" \
+  --team-id "96K3P7AWHC" \
+  --password "xxxx-xxxx-xxxx-xxxx"
+```
+
+The release script uses the `lockmic-notary` Keychain profile automatically.
+Set `NOTARYTOOL_PROFILE` only to use a different profile.
+
+If more than one Developer ID certificate is installed, also set its exact name:
+
+```bash
+export DEVELOPER_ID_APPLICATION="Developer ID Application: WIXEELABS DOO BEOGRAD (96K3P7AWHC)"
+```
+
+Verify release credentials without building or changing files:
+
+```bash
+./Scripts/notarize_release.sh --check
+```
+
 ## Local build and run
 
 From the repo root:
@@ -25,7 +65,7 @@ From the repo root:
 ./Scripts/build_homebrew.sh   # Release .app only → build/LockMic.app
 ```
 
-`build_homebrew.sh` runs `xcodegen generate`, builds **Release**, copies to `build/LockMic.app`, and ad-hoc signs. Do not hand-edit `LockMic.xcodeproj`; regenerate it.
+`build_homebrew.sh` runs `xcodegen generate`, builds **Release**, copies to `build/LockMic.app`, and ad-hoc signs for local use. `release.sh` replaces that signature with Developer ID, notarizes and staples the app before packaging, then notarizes and staples the DMG. Do not hand-edit `LockMic.xcodeproj`; regenerate it.
 
 Clean rebuild:
 
@@ -52,11 +92,11 @@ Requires `build/LockMic.app` from the step above. Version in the filenames comes
 # → matching .sha256 files
 ```
 
-The zip is the Homebrew cask asset. The DMG is the website / GitHub download. The script prints SHA-256; copy the **zip** hash into the cask.
+The zip is the Homebrew cask asset. The DMG is the website / GitHub download. For a public release, run `release.sh`; invoking `package_dmg.sh` alone does not notarize anything. The script prints SHA-256; copy the **zip** hash into the cask.
 
 ## Publish a release
 
-Working tree must be **clean** and you must be on **main**. The script bumps every version file, Release-builds, packages, stamps the cask SHA-256, commits, tags, pushes `main` **and** the tag, then creates the GitHub release immediately so cask/website URLs do not 404.
+Working tree must be **clean** and you must be on **main**. The script validates signing credentials before modifying files, bumps every version file, Release-builds, Developer ID signs and notarizes the app, packages it, notarizes the DMG, stamps the cask SHA-256, commits, tags, pushes `main` **and** the tag, then creates the GitHub release immediately so cask/website URLs do not 404.
 
 ```bash
 # Product changes already committed.
@@ -134,7 +174,6 @@ Local preview: `cd website/public && python3 -m http.server 8080`
 ```bash
 brew update
 brew reinstall --cask --yes lockmic || brew install --cask lockmic
-xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
 
@@ -153,9 +192,10 @@ Homebrew 6 `upgrade --cask` / `install --force` can no-op if it thinks the cask 
 |---------|------------|
 | `xcodegen: command not found` | `brew install xcodegen` |
 | Script not executable | `chmod +x Scripts/*.sh` |
-| Code-sign noise in `xcodebuild` | Scripts force ad-hoc (`CODE_SIGN_IDENTITY=-`). Official notarization is not wired yet. |
+| Missing Developer ID certificate | Create/download a Developer ID Application certificate in the Apple Developer portal and install it in Keychain. |
+| Notarization authentication fails | Check the `lockmic-notary` Keychain profile and the App Store Connect API key or app-specific password used to create it. |
 | `gh` not authenticated | `gh auth login` |
-| App won’t open after download | `xattr -dr com.apple.quarantine` on the `.app` |
+| Gatekeeper rejects a release | Do not publish it. Run `codesign --verify --deep --strict`, `xcrun stapler validate`, and `spctl --assess --type execute` on the built app. |
 | Cloud Build “No buildpack groups passed detection” | Trigger must use `cloudbuild.yaml`, never Buildpacks / Autodetect |
 
 ## If you have to roll back

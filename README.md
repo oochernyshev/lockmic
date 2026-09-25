@@ -4,7 +4,7 @@ System-wide microphone mute for macOS — menu bar icon, global hotkeys, and an 
 
 **Owner:** [WIXEE.AI](https://wixee.ai) · **License:** [MIT](./LICENSE) · **Version:** 1.4.46
 
-**Homebrew-first** distribution (App Store planned later). See [ARCHITECTURE.md](./ARCHITECTURE.md) for design details.
+Available through the Mac App Store, Homebrew, and a direct DMG. See [ARCHITECTURE.md](./ARCHITECTURE.md) for design details.
 
 ## Features
 
@@ -98,7 +98,6 @@ brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew trust --cask oochernyshev/lockmic/lockmic
 brew update
 brew reinstall --cask --yes lockmic || brew install --cask lockmic
-xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
 
@@ -110,7 +109,6 @@ From a local clone (no tap):
 
 ```bash
 brew reinstall --cask --yes --force ./Casks/lockmic.rb || brew install --cask ./Casks/lockmic.rb
-xattr -dr com.apple.quarantine /Applications/LockMic.app
 ```
 
 Uninstall (dragging the app to Trash is not enough):
@@ -121,7 +119,7 @@ brew uninstall --cask lockmic
 
 Cask: [`Casks/lockmic.rb`](./Casks/lockmic.rb) (must stay under root `Casks/` for the tap to work).
 
-`xattr` clears Gatekeeper quarantine until the app is Developer ID–notarized.
+Direct releases are Developer ID signed and notarized for Gatekeeper.
 
 ### Local build without a public release
 

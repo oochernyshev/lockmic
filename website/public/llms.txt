@@ -27,7 +27,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - 23 UI languages following system language
 - Recommended install: Mac App Store (automatic updates)
 - Alternative installs: DMG or Homebrew cask (custom tap)
-- Direct-download builds are not Developer ID notarized yet; users may need `xattr -dr com.apple.quarantine /Applications/LockMic.app`
+- Direct-download builds are Developer ID signed and notarized.
 
 ## Install
 
@@ -48,7 +48,6 @@ brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew trust --cask oochernyshev/lockmic/lockmic
 brew update
 brew reinstall --cask --yes lockmic || brew install --cask lockmic
-xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app
 ```
 
@@ -61,7 +60,6 @@ Same commands to install, update, or restore a deleted app. On Homebrew 6, `brew
 1. Download the latest DMG from https://lockmic.com/#download or GitHub Releases
 2. Drag LockMic to Applications and choose Replace
 3. Open LockMic from Applications
-4. If macOS blocks it: `xattr -dr com.apple.quarantine /Applications/LockMic.app`
 
 ## Difference vs in-app mute
 

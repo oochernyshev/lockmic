@@ -29,7 +29,9 @@ GitHub release with dmg/zip and checksums.
   --no-push         Commit and tag locally; do not push or call gh
   -h, --help
 
-The working tree must be clean and you must be on main. Requires xcodegen and gh.
+The working tree must be clean and you must be on main. Requires xcodegen, gh,
+a Developer ID Application certificate, and notarytool credentials. See
+BUILD_AND_DEPLOY.md.
 EOF
 }
 
@@ -157,6 +159,10 @@ if ! command -v xcodegen >/dev/null 2>&1; then
   echo "error: xcodegen is required (brew install xcodegen)" >&2
   exit 1
 fi
+
+# Fail before bumping versions if direct-distribution signing is not configured.
+"$ROOT/Scripts/notarize_release.sh" --check
+
 if [[ "$NO_PUSH" -eq 0 ]]; then
   if ! command -v gh >/dev/null 2>&1; then
     echo "error: gh is required to publish (brew install gh)" >&2
@@ -216,6 +222,9 @@ if [[ "$GOT_VER" != "$NEW" || "$GOT_BUILD" != "$NEW_BUILD" ]]; then
   exit 1
 fi
 
+echo "==> Developer ID signing and app notarization"
+"$ROOT/Scripts/notarize_release.sh" --app "$ROOT/build/LockMic.app"
+
 echo "==> Packaging"
 "$ROOT/Scripts/package_dmg.sh"
 ZIP="$ROOT/build/dist/LockMic-${NEW}.zip"
@@ -226,6 +235,10 @@ for f in "$ZIP" "$DMG" "${ZIP}.sha256" "${DMG}.sha256"; do
     exit 1
   fi
 done
+
+echo "==> DMG notarization"
+"$ROOT/Scripts/notarize_release.sh" --dmg "$DMG"
+shasum -a 256 "$DMG" > "${DMG}.sha256"
 HASH="$(shasum -a 256 "$ZIP" | awk '{print $1}')"
 perl -pi -e "s/^  sha256 \"[0-9a-fA-F]{64}\"/  sha256 \"${HASH}\"/" Casks/lockmic.rb
 
@@ -303,4 +316,3 @@ rm -f "$NOTES_TMP"
 echo "==> Released ${NEW}"
 echo "    https://github.com/oochernyshev/lockmic/releases/tag/v${NEW}"
 echo "    brew reinstall --cask --yes lockmic"
-echo "    xattr -dr com.apple.quarantine /Applications/LockMic.app"
