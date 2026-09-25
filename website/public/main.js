@@ -516,12 +516,11 @@
   });
 
   // Downloads
-  const appStoreLink = document.getElementById("downloadAppStore");
-  if (appStoreLink) {
+  document.querySelectorAll(".app-store-link").forEach((appStoreLink) => {
     appStoreLink.addEventListener("click", () => {
       track("download_click", { link_id: "download_app_store", outbound: true });
     });
-  }
+  });
 
   // Latest DMG
   const dmgLink = document.getElementById("downloadDmg");

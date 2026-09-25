@@ -1546,41 +1546,63 @@ kbd {
 }
 
 .download-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  margin-bottom: 28px;
+  margin-bottom: 14px;
 }
 
-.store-install {
-  width: 100%;
+.download-actions .btn {
+  min-width: min(100%, 320px);
+}
+
+.download-note {
+  margin: 0 auto 8px !important;
+  font-size: 0.9rem;
+}
+
+.alternative-installs {
   max-width: 640px;
-  margin: 0 auto 18px;
+  margin: 28px auto 0;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
   text-align: left;
-  border-radius: 14px;
-  border: 1px solid rgba(124, 156, 255, 0.35);
-  background: rgba(124, 156, 255, 0.08);
-  padding: 14px 18px 16px;
 }
 
-.store-install-title {
-  margin: 0 0 8px;
+.alternative-installs summary {
+  width: fit-content;
+  margin: 0 auto;
+  color: var(--text-dim);
   font-size: 0.85rem;
-  font-weight: 700;
+  cursor: pointer;
+}
+
+.alternative-installs summary:hover {
   color: var(--text);
 }
 
-.store-install a {
-  color: #d4e0ff;
+.alternative-installs-body {
+  padding-top: 18px;
+  text-align: center;
+}
+
+.alternative-installs-body > .btn {
+  margin-right: 12px;
+}
+
+.source-link {
+  color: var(--text-muted);
+  font-size: 0.85rem;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.alternative-note {
+  margin: 0 auto !important;
+  font-size: 0.8rem;
 }
 
 .code-block {
   width: 100%;
   max-width: 640px;
-  margin: 0 auto 18px;
+  margin: 18px auto;
   text-align: left;
   border-radius: 14px;
   border: 1px solid var(--border);
@@ -1655,6 +1677,10 @@ kbd {
   margin: 0;
   font-size: 0.85rem;
   color: var(--text-dim);
+}
+
+.download-card > .download-req {
+  margin: 0 auto;
 }
 
 .update-dmg {

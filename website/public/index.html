@@ -43,7 +43,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=1.4.45" />
+  <link rel="stylesheet" href="styles.css?v=1.4.46" />
   <link rel="preload" href="assets/hero-mic.mp4" as="video" type="video/mp4" />
   <link rel="preload" href="assets/hero-mic-poster.jpg" as="image" />
 
@@ -315,7 +315,8 @@
           New in 1.4: optionally record the mic and what you hear — files stay on your Mac.
         </p>
         <div class="hero-cta reveal">
-          <a class="btn btn-primary btn-lg" href="#download">Download free</a>
+          <a class="btn btn-primary btn-lg app-store-link"
+            href="https://apps.apple.com/app/lockmic/id6813446039?mt=12" rel="noopener noreferrer" target="_blank">Get it on the Mac App Store</a>
           <a class="btn btn-secondary btn-lg" href="#features">See features</a>
         </div>
         <p class="hero-meta reveal">
@@ -582,59 +583,43 @@
     <section class="section section-download" id="download">
       <div class="download-card reveal">
         <img src="assets/icon-512-v2.png" width="88" height="88" alt="LockMic app icon" class="download-icon" />
-        <h2>Get LockMic</h2>
-        <p>Now on the Mac App Store. Free for macOS 14 Sonoma and later.</p>
+        <h2>Download LockMic</h2>
+        <p>Free on the Mac App Store.</p>
         <div class="download-actions">
-          <a class="btn btn-primary btn-lg" id="downloadAppStore"
+          <a class="btn btn-primary btn-lg app-store-link" id="downloadAppStore"
             href="https://apps.apple.com/app/lockmic/id6813446039?mt=12" rel="noopener noreferrer" target="_blank">
-            Download on the Mac App Store
-          </a>
-          <a class="btn btn-primary btn-lg" id="downloadDmg"
-            href="https://github.com/oochernyshev/lockmic/releases/download/v1.4.45/LockMic-1.4.45.dmg"
-            download="LockMic-1.4.45.dmg">
-            Download DMG instead
-          </a>
-          <a class="btn btn-secondary btn-lg" href="https://github.com/oochernyshev/lockmic" rel="noopener noreferrer"
-            target="_blank">
-            View on GitHub
+            Get it on the Mac App Store
           </a>
         </div>
-        <div class="store-install" role="region" aria-label="Mac App Store installation">
-          <p class="store-install-title">Recommended — Mac App Store</p>
-          <ol class="update-dmg-steps">
-            <li>Open <a href="https://apps.apple.com/app/lockmic/id6813446039?mt=12" rel="noopener noreferrer"
-                target="_blank">LockMic on the Mac App Store</a>.</li>
-            <li>Click <strong>Get</strong>, then <strong>Install</strong>.</li>
-            <li>Open LockMic from Applications. Future updates are handled by the App Store.</li>
-          </ol>
-        </div>
-        <div class="code-block" role="region" aria-label="Homebrew alternative">
-          <div class="code-header">
-            <span>Homebrew</span>
-            <button type="button" class="copy-btn"
-              data-copy="brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew trust --cask oochernyshev/lockmic/lockmic && brew update && { brew reinstall --cask --yes lockmic || brew install --cask lockmic; } && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app"
-              aria-label="Copy Homebrew command">Copy</button>
-          </div>
-          <pre><code>brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
+        <p class="download-note">Click once, install, and open. Updates happen automatically.</p>
+        <p class="download-req">Requires macOS 14 or later</p>
+
+        <details class="alternative-installs">
+          <summary>Other installation options</summary>
+          <div class="alternative-installs-body">
+            <a class="btn btn-secondary" id="downloadDmg"
+              href="https://github.com/oochernyshev/lockmic/releases/download/v1.4.45/LockMic-1.4.45.dmg"
+              download="LockMic-1.4.45.dmg">Download DMG</a>
+            <a class="source-link" href="https://github.com/oochernyshev/lockmic" rel="noopener noreferrer"
+              target="_blank">View source on GitHub</a>
+            <div class="code-block" role="region" aria-label="Homebrew alternative">
+              <div class="code-header">
+                <span>Homebrew</span>
+                <button type="button" class="copy-btn"
+                  data-copy="brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic && brew trust --cask oochernyshev/lockmic/lockmic && brew update && { brew reinstall --cask --yes lockmic || brew install --cask lockmic; } && xattr -dr com.apple.quarantine /Applications/LockMic.app && open /Applications/LockMic.app"
+                  aria-label="Copy Homebrew command">Copy</button>
+              </div>
+              <pre><code>brew tap oochernyshev/lockmic https://github.com/oochernyshev/lockmic
 brew trust --cask oochernyshev/lockmic/lockmic
 brew update
 brew reinstall --cask --yes lockmic || brew install --cask lockmic
 xattr -dr com.apple.quarantine /Applications/LockMic.app
 open /Applications/LockMic.app</code></pre>
-          <p class="code-note">Same commands to install, update, or restore a deleted app. Uninstall:
-            <code>brew uninstall --cask lockmic</code>.</p>
-        </div>
-        <div class="update-dmg">
-          <p class="update-dmg-title">DMG — install or update</p>
-          <ol class="update-dmg-steps">
-            <li>Download the latest DMG above.</li>
-            <li>Open it and drag <strong>LockMic</strong> to Applications (choose <strong>Replace</strong> if asked).
-            </li>
-            <li>Open LockMic from Applications.</li>
-            <li>If macOS blocks it, run:<br /><code>xattr -dr com.apple.quarantine /Applications/LockMic.app</code></li>
-          </ol>
-        </div>
-        <p class="download-req">Requires macOS 14 or later</p>
+              <p class="code-note">To uninstall: <code>brew uninstall --cask lockmic</code>.</p>
+            </div>
+            <p class="alternative-note">For a DMG install, open the download and drag LockMic to Applications.</p>
+          </div>
+        </details>
       </div>
     </section>
 
@@ -762,7 +747,8 @@ open /Applications/LockMic.app</code></pre>
       <div class="cta-inner reveal">
         <h2>Stay in control of the mic.</h2>
         <p>One menu bar icon. Every app. Free forever.</p>
-        <a class="btn btn-primary btn-lg" href="#download">Download LockMic</a>
+        <a class="btn btn-primary btn-lg app-store-link"
+          href="https://apps.apple.com/app/lockmic/id6813446039?mt=12" rel="noopener noreferrer" target="_blank">Get it on the Mac App Store</a>
         <p class="cta-partners">
           Partnerships &amp; press —
           <a href="mailto:info@wixee.ai?subject=LockMic%20partnership">info@wixee.ai</a>
@@ -804,7 +790,7 @@ open /Applications/LockMic.app</code></pre>
     </div>
   </footer>
 
-  <script src="main.js?v=1.4.45" defer></script>
+  <script src="main.js?v=1.4.46" defer></script>
 </body>
 
 </html>
