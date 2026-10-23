@@ -5,6 +5,7 @@ import AppKit
 final class HUDPresenter {
     let overlay = HUDOverlay()
     private let preferences: PreferencesStore
+    private var lastHudEnabled: Bool?
     private var lastHudFloating: Bool?
 
     init(preferences: PreferencesStore) {
@@ -30,12 +31,17 @@ final class HUDPresenter {
             return
         }
 
+        guard preferences.hudEnabled else {
+            overlay.hide()
+            return
+        }
+
         if recording {
             overlay.showToast(muted: muted, hold: hold, recording: true, persistent: true)
             return
         }
 
-        guard preferences.hudEnabled, userInitiated || hold != .none else {
+        guard userInitiated || hold != .none else {
             overlay.hide()
             return
         }
@@ -63,11 +69,13 @@ final class HUDPresenter {
             return
         }
 
+        let enabled = preferences.hudEnabled
         let floating = preferences.hudFloating
-        guard force || floating != lastHudFloating else { return }
+        guard force || enabled != lastHudEnabled || floating != lastHudFloating else { return }
 
         // Turning the preference back on is an explicit “show it” — restore every display.
         let turningFloatingOn = floating && lastHudFloating == false
+        lastHudEnabled = enabled
         lastHudFloating = floating
         if turningFloatingOn {
             overlay.restoreAllDisplays()
@@ -95,6 +103,8 @@ final class HUDPresenter {
         }
         if preferences.hudFloating, overlay.hasAnyVisibleDisplay() {
             overlay.showFloating(muted: muted, hold: hold, recording: recording)
+        } else if !preferences.hudEnabled {
+            overlay.hide()
         } else if recording {
             overlay.showToast(muted: muted, hold: hold, recording: true, persistent: true)
         }
