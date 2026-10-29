@@ -176,7 +176,9 @@ logo.png             Source artwork (generates icon sizes)
 
 ## Privacy
 
-LockMic mutes devices through Core Audio only. It does **not** record audio and does **not** require microphone permission.
+Muting, unmuting, push-to-talk and the HUD work through Core Audio only and need **no** microphone permission. LockMic does not record audio unless you turn on recording.
+
+Recording is optional and only starts when you explicitly start it (menu, hotkey, or HUD). When you do, macOS asks for microphone access (to capture the default mic) and system audio capture access (to capture playback). The result is saved as a dated AAC file in the folder you choose in Preferences → Recording, on your Mac. LockMic does not upload recordings.
 
 ## License
 
