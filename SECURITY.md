@@ -12,6 +12,10 @@ Please include:
 
 We will acknowledge your report as soon as we can, keep you updated while we investigate, and credit you in the fix if you wish.
 
+## Non-sensitive security issues
+
+For hardening suggestions or security-related bugs that do not expose users to risk, you can open an issue in this repository: https://github.com/oochernyshev/lockmic/issues. Please do not post exploit details publicly; use email for those.
+
 ## Supported versions
 
 Security fixes are released for the latest version of LockMic.
