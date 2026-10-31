@@ -2,7 +2,10 @@
 
 ## Reporting a vulnerability
 
-If you find a security vulnerability in LockMic, please report it privately by email to **info@wixee.ai** rather than opening a public issue.
+If you find a security vulnerability in LockMic, please report it privately rather than opening a public issue:
+
+- Use GitHub's private vulnerability reporting: https://github.com/oochernyshev/lockmic/security/advisories/new
+- Or email **info@wixee.ai**
 
 Please include:
 
