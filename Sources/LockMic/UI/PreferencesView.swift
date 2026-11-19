@@ -36,6 +36,7 @@ struct PreferencesView: View {
     /// Not `@ObservedObject` — live meter ticks would rebuild this whole window
     /// and crash SwiftUI buttons (`MainActor.assumeIsolated`) while recording.
     let recorder: SessionRecorder
+    @ObservedObject var meetings: MeetingAlertCoordinator
     @State private var selection: PreferencesTab
     @State private var updateAvailable = UpdateChecker.shared.availableUpdate != nil
 
@@ -43,11 +44,13 @@ struct PreferencesView: View {
         preferences: PreferencesStore,
         mic: MicController,
         recorder: SessionRecorder,
+        meetings: MeetingAlertCoordinator,
         initialTab: PreferencesTab = .general
     ) {
         self.preferences = preferences
         self.mic = mic
         self.recorder = recorder
+        self.meetings = meetings
         _selection = State(initialValue: initialTab)
     }
 
@@ -133,6 +136,10 @@ struct PreferencesView: View {
                         .opacity(preferences.featuresEnabled ? 1 : 0.45)
                 case .recording:
                     PreferencesRecordingPage(preferences: preferences, recorder: recorder)
+                        .disabled(!preferences.featuresEnabled)
+                        .opacity(preferences.featuresEnabled ? 1 : 0.45)
+                case .meetings:
+                    PreferencesMeetingsPage(preferences: preferences, meetings: meetings)
                         .disabled(!preferences.featuresEnabled)
                         .opacity(preferences.featuresEnabled ? 1 : 0.45)
                 case .keyboard:

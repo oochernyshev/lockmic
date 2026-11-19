@@ -20,6 +20,7 @@ Available through the Mac App Store, Homebrew, and a direct DMG. See [ARCHITECTU
   - **Push to mute:** hold to mute, release to restore (off by default; default ⇧⌥Space)
   - **Start recording:** ⌘⇧R
   - **Stop recording:** ⌥⌘⇧R
+  - **Dismiss meeting card:** ⌃⌥⌘D
   - **Conflict warnings** when two enabled shortcuts share the same keys
 - **On-screen HUD** on mute/unmute (optional toast)
 - **Floating HUD** (optional): always visible on each display
@@ -28,7 +29,8 @@ Available through the Mac App Store, Homebrew, and a direct DMG. See [ARCHITECTU
   - Right-click to hide/show on a display (also in menu bar)
 - Sound feedback on mute/unmute (optional)
 - Launch at login (optional)
-- Preferences: General, Devices, Recording, Keyboard, About
+- Optional **meeting countdown** from Calendar: a floating card two minutes before an event, with snooze, OK, and an escalating alert sound
+- Preferences: General, Devices, Recording, Meetings, Keyboard, About
 - Re-applies mute when apps unmute the hardware, on device switch, and every 2 seconds as a safety net
 - **Record** the default microphone with system playback into a dated AAC mix (optional); optionally stop after 30s / 1m / 2m of silence
 

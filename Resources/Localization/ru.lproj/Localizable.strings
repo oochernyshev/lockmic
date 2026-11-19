@@ -231,3 +231,26 @@
 
 "recording.split" = "Разделить";
 "recording.split.tooltip" = "Сохранить текущий фрагмент и сразу начать новую запись";
+"keyboard.meetings.header" = "Встречи";
+"keyboard.dismiss_meeting" = "Закрыть карточку встречи";
+"tab.meetings" = "Встречи";
+"meetings.header" = "Уведомления календаря";
+"meetings.enable" = "Показывать обратный отсчёт встречи";
+"meetings.enable.caption" = "За две минуты до события появляется плавающая карточка с таймером, отложить и необязательным звуком.";
+"meetings.access.header" = "Доступ к календарю";
+"meetings.access.status" = "Доступ";
+"meetings.access.granted" = "Разрешён";
+"meetings.access.denied" = "Выключен";
+"meetings.access.restricted" = "Ограничен";
+"meetings.access.notDetermined" = "Нужен";
+"meetings.access.button" = "Разрешить доступ к календарю…";
+"meetings.access.openSettings" = "Открыть настройки конфиденциальности…";
+"meetings.access.caption" = "LockMic читает названия и время событий из календарей на этом Mac. Ничего не отправляется.";
+"meeting.status.upcoming" = "ПРЕДСТОЯЩАЯ ВСТРЕЧА";
+"meeting.status.soon" = "ВСТРЕЧА СКОРО НАЧНЁТСЯ!";
+"meeting.status.now" = "ВСТРЕЧА НАЧИНАЕТСЯ!";
+"meeting.snooze" = "Отложить %dс";
+"meeting.ok" = "OK";
+"meeting.untitled" = "Встреча из календаря";
+"meeting.sound.on" = "Звук включён";
+"meeting.sound.off" = "Звук выключен";

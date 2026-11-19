@@ -10,6 +10,7 @@ final class StatusItemController {
     private let hud: HUDPresenter
     private let hotkeys: HotkeyCoordinator
     private let recording: RecordingCoordinator
+    private let meetings: MeetingAlertCoordinator
     private let sounds = SoundFeedback()
 
     private var statusItem: NSStatusItem?
@@ -29,13 +30,19 @@ final class StatusItemController {
 
     private var featuresEnabled: Bool { preferences.featuresEnabled }
 
-    init(mic: MicController, preferences: PreferencesStore, recorder: SessionRecorder) {
+    init(
+        mic: MicController,
+        preferences: PreferencesStore,
+        recorder: SessionRecorder,
+        audio: AudioDeviceService
+    ) {
         self.mic = mic
         self.preferences = preferences
         self.recorder = recorder
         self.hud = HUDPresenter(preferences: preferences)
         self.hotkeys = HotkeyCoordinator(mic: mic, preferences: preferences)
         self.recording = RecordingCoordinator(recorder: recorder, preferences: preferences, mic: mic)
+        self.meetings = MeetingAlertCoordinator(preferences: preferences, audio: audio)
 
         hotkeys.onMuteChanged = { [weak self] showHUD, playSound in
             self?.handleMuteChanged(showHUD: showHUD, playSound: playSound)
@@ -45,6 +52,9 @@ final class StatusItemController {
         }
         hotkeys.onStopRecording = { [weak self] in
             self?.recording.stop(source: .keyboard)
+        }
+        hotkeys.onDismissMeeting = { [weak self] in
+            self?.meetings.dismissCurrent()
         }
         recording.onSessionChanged = { [weak self] in
             self?.handleMuteChanged(showHUD: false)
@@ -117,6 +127,7 @@ final class StatusItemController {
         observePreferenceHotkeys()
         observeUpdateAvailability()
         startMenuBarVisibilityMonitoring()
+        meetings.start()
         refreshUpdateBadge()
     }
 
@@ -206,6 +217,7 @@ final class StatusItemController {
                     self.mic.refreshFromHardware(applyDesired: true)
                     self.updateIcon()
                     self.recording.retryCaptureIfAccessGranted()
+                    self.meetings.refreshAccess()
                 }
             }
         )
@@ -253,9 +265,11 @@ final class StatusItemController {
         if !enabled {
             hotkeys.disable()
             hud.hide()
+            meetings.stop()
         } else {
             hotkeys.registerIfNeeded(force: true, enabled: true)
             syncFloatingHUDIfNeeded(force: true)
+            meetings.syncEnabled()
         }
         updateIcon()
     }
@@ -686,6 +700,7 @@ final class StatusItemController {
                 preferences: preferences,
                 mic: mic,
                 recorder: recorder,
+                meetings: meetings,
                 initialTab: tab
             )
                 .onExitCommand { [weak self] in

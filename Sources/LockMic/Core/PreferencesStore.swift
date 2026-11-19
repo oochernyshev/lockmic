@@ -95,6 +95,12 @@ final class PreferencesStore: ObservableObject {
         static let pttogKeyCode = "hotkeyPushToToggleKeyCode"
         static let pttogModifiers = "hotkeyPushToToggleModifiers"
 
+        static let dismissMeetingEnabled = "hotkeyDismissMeetingEnabled"
+        static let dismissMeetingKeyCode = "hotkeyDismissMeetingKeyCode"
+        static let dismissMeetingModifiers = "hotkeyDismissMeetingModifiers"
+
+        static let meetingAlertsEnabled = "meetingAlertsEnabled"
+
         // Legacy single-toggle keys (migrated once)
         static let legacyKeyCode = "hotkeyKeyCode"
         static let legacyModifiers = "hotkeyModifiers"
@@ -118,6 +124,8 @@ final class PreferencesStore: ObservableObject {
     static let defaultPushToTalk = HotkeyChord(keyCode: 49, modifiers: shiftKey) // ⇧Space
     /// Hold to mute — Shift+Option+Space by default.
     static let defaultPushToMute = HotkeyChord(keyCode: 49, modifiers: shiftKey | optionKey) // ⇧⌥Space
+    /// Dismiss meeting card — Control+Option+Command+D.
+    static let defaultDismissMeeting = HotkeyChord(keyCode: 2, modifiers: controlKey | optionKey | cmdKey) // ⌃⌥⌘D
 
     @Published var hudEnabled: Bool {
         didSet { UserDefaults.standard.set(hudEnabled, forKey: Keys.hudEnabled) }
@@ -130,6 +138,11 @@ final class PreferencesStore: ObservableObject {
 
     @Published var soundEnabled: Bool {
         didSet { UserDefaults.standard.set(soundEnabled, forKey: Keys.soundEnabled) }
+    }
+
+    /// Floating countdown card two minutes before Calendar events.
+    @Published var meetingAlertsEnabled: Bool {
+        didSet { UserDefaults.standard.set(meetingAlertsEnabled, forKey: Keys.meetingAlertsEnabled) }
     }
 
     @Published var muteAllInputs: Bool {
@@ -286,6 +299,9 @@ final class PreferencesStore: ObservableObject {
     @Published var pushToToggleShortcut: HotkeyPref {
         didSet { Self.save(pushToToggleShortcut, spec: Self.pttogSpec) }
     }
+    @Published var dismissMeetingShortcut: HotkeyPref {
+        didSet { Self.save(dismissMeetingShortcut, spec: Self.dismissMeetingSpec) }
+    }
 
     /// Extra always-on toggle alias (⌘F5) — enable/disable separately.
     @Published var f5ToggleEnabled: Bool {
@@ -309,6 +325,11 @@ final class PreferencesStore: ObservableObject {
             defaults.set(true, forKey: Keys.soundEnabled)
         }
         soundEnabled = defaults.bool(forKey: Keys.soundEnabled)
+
+        if defaults.object(forKey: Keys.meetingAlertsEnabled) == nil {
+            defaults.set(false, forKey: Keys.meetingAlertsEnabled)
+        }
+        meetingAlertsEnabled = defaults.bool(forKey: Keys.meetingAlertsEnabled)
 
         if defaults.object(forKey: Keys.muteAllInputs) == nil {
             defaults.set(true, forKey: Keys.muteAllInputs)
@@ -378,6 +399,7 @@ final class PreferencesStore: ObservableObject {
         pushToToggleShortcut = Self.load(Self.pttogSpec, from: defaults)
         pushToTalkShortcut = Self.load(Self.pttSpec, from: defaults)
         pushToMuteShortcut = Self.load(Self.ptmSpec, from: defaults)
+        dismissMeetingShortcut = Self.load(Self.dismissMeetingSpec, from: defaults)
 
         NSApp.appearance = appAppearance.nsAppearance
     }
@@ -457,6 +479,13 @@ final class PreferencesStore: ObservableObject {
         defaultEnabled: false,
         legacyDefaults: [legacyControlSpace, legacyShiftSpace]
     )
+    private static let dismissMeetingSpec = HotkeySpec(
+        enabledKey: Keys.dismissMeetingEnabled,
+        keyCodeKey: Keys.dismissMeetingKeyCode,
+        modifiersKey: Keys.dismissMeetingModifiers,
+        factory: defaultDismissMeeting,
+        defaultEnabled: true
+    )
 
     private static func load(_ spec: HotkeySpec, from defaults: UserDefaults) -> HotkeyPref {
         if defaults.object(forKey: spec.enabledKey) == nil {
@@ -502,6 +531,7 @@ final class PreferencesStore: ObservableObject {
             (L10n.keyboardPushFlip, pushToToggleShortcut, .pushToToggle),
             (L10n.keyboardPushTalk, pushToTalkShortcut, .pushToTalk),
             (L10n.keyboardPushMute, pushToMuteShortcut, .pushToMute),
+            (L10n.keyboardDismissMeeting, dismissMeetingShortcut, .dismissMeeting),
         ]
     }
 
@@ -539,6 +569,7 @@ final class PreferencesStore: ObservableObject {
         pushToToggleShortcut = HotkeyPref(enabled: false, chord: Self.defaultPushToToggle)
         pushToTalkShortcut = HotkeyPref(enabled: false, chord: Self.defaultPushToTalk)
         pushToMuteShortcut = HotkeyPref(enabled: false, chord: Self.defaultPushToMute)
+        dismissMeetingShortcut = HotkeyPref(enabled: true, chord: Self.defaultDismissMeeting)
     }
 
     private func updateLoginItem() {

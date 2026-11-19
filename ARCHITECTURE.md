@@ -119,7 +119,8 @@ Only one momentary hold is active at a time; latching shortcuts are ignored whil
 | `RecordingCoordinator` | Start/stop capture, TCC retry, monitor, mix-on-quit |
 | `UpdateChecker` | Daily GitHub release check; badges + Preferences About update section (Homebrew vs DMG) |
 | `HUDOverlay` | `showToast` / `showFloating` — one pill per display |
-| `PreferencesView` | System Settings–style sidebar: General, Devices, Recording, Keyboard, About |
+| `PreferencesView` | System Settings–style sidebar: General, Devices, Recording, Meetings, Keyboard, About |
+| `MeetingAlertCoordinator` | EventKit countdown card two minutes before calendar events |
 | `SessionRecorder` | Selected mic (HAL, retargetable) + system playback tap → dated AAC mix |
 | `RecordingMonitorWindow` | AppKit monitor: input/output list, levels, mute, stop, permission retry |
 | `HotkeyRecorderButton` | Capture custom shortcut chords |
@@ -148,7 +149,7 @@ Preferences window: resizable, frosted material background (`regularMaterial` / 
 
 `UserDefaults`-backed `@Published` settings:
 
-- HUD toast, floating HUD, sound, launch at login, show in Dock, mute-all
+- HUD toast, floating HUD, sound, launch at login, show in Dock, mute-all, meeting countdown
 - Recording folder, bitrate, stop-on-silence (off / 30s / 1m / 2m), all-playback vs default output, keep stem files
 - Shortcut enable flags + chords (toggle / mute / unmute / F5 / flip / talk / mute-hold)
 - Defaults: mute-all on; toast + sound on; floating off; mute/unmute shortcuts off
@@ -181,6 +182,7 @@ Floating HUD also stores (via `HUDOverlay` / UserDefaults):
 | Global hotkey | Carbon hotkeys (no Accessibility required for current design) |
 | Launch at login | `SMAppService` registration |
 | Floating HUD | None (non-activating panels) |
+| Meeting countdown | Calendar full access (`NSCalendarsFullAccessUsageDescription`); App Store: `com.apple.security.personal-information.calendars` |
 
 **Homebrew (direct) entitlements:** Hardened Runtime; App Sandbox **off** for device compatibility. MAS build will re-enable sandbox later and re-validate mute.
 

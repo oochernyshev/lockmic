@@ -19,6 +19,7 @@ enum L10n {
     static var appearanceIndicatorsHeader: String { tr("appearance.indicators.header") }
     static var tabDevices: String { tr("tab.devices") }
     static var tabRecording: String { tr("tab.recording") }
+    static var tabMeetings: String { tr("tab.meetings") }
     static var tabKeyboard: String { tr("tab.keyboard") }
     static var tabAbout: String { tr("tab.about") }
 
@@ -200,10 +201,37 @@ enum L10n {
     static var keyboardPushFlip: String { tr("keyboard.push_flip") }
     static var keyboardPushTalk: String { tr("keyboard.push_talk") }
     static var keyboardPushMute: String { tr("keyboard.push_mute") }
+    static var keyboardMeetingsHeader: String { tr("keyboard.meetings.header") }
+    static var keyboardDismissMeeting: String { tr("keyboard.dismiss_meeting") }
     static var keyboardReset: String { tr("keyboard.reset") }
     static var keyboardTypeShortcut: String { tr("keyboard.type_shortcut") }
     static var keyboardHelpRecording: String { tr("keyboard.help.recording") }
     static var keyboardHelpClick: String { tr("keyboard.help.click") }
+
+    // MARK: - Meetings
+
+    static var meetingsHeader: String { tr("meetings.header") }
+    static var meetingsEnable: String { tr("meetings.enable") }
+    static var meetingsEnableCaption: String { tr("meetings.enable.caption") }
+    static var meetingsAccessHeader: String { tr("meetings.access.header") }
+    static var meetingsAccessStatus: String { tr("meetings.access.status") }
+    static var meetingsAccessGranted: String { tr("meetings.access.granted") }
+    static var meetingsAccessDenied: String { tr("meetings.access.denied") }
+    static var meetingsAccessRestricted: String { tr("meetings.access.restricted") }
+    static var meetingsAccessNotDetermined: String { tr("meetings.access.notDetermined") }
+    static var meetingsAccessButton: String { tr("meetings.access.button") }
+    static var meetingsAccessOpenSettings: String { tr("meetings.access.openSettings") }
+    static var meetingsAccessCaption: String { tr("meetings.access.caption") }
+    static var meetingStatusUpcoming: String { tr("meeting.status.upcoming") }
+    static var meetingStatusSoon: String { tr("meeting.status.soon") }
+    static var meetingStatusNow: String { tr("meeting.status.now") }
+    static func meetingSnooze(_ seconds: Int) -> String {
+        format("meeting.snooze", seconds)
+    }
+    static var meetingOK: String { tr("meeting.ok") }
+    static var meetingUntitled: String { tr("meeting.untitled") }
+    static var meetingSoundOn: String { tr("meeting.sound.on") }
+    static var meetingSoundOff: String { tr("meeting.sound.off") }
 
     // MARK: - About
 

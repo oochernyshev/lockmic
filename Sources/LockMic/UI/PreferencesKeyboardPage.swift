@@ -61,6 +61,14 @@ struct PreferencesKeyboardPage: View {
                 )
             }
 
+            PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader(L10n.keyboardMeetingsHeader)
+                PreferencesChrome.shortcutRow(
+                    title: L10n.keyboardDismissMeeting,
+                    pref: $preferences.dismissMeetingShortcut
+                )
+            }
+
             HStack {
                 Spacer(minLength: 0)
                 Button(L10n.keyboardReset) {
