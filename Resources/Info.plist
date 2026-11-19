@@ -17,9 +17,9 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.4.51</string>
+	<string>1.5.0</string>
 	<key>CFBundleVersion</key>
-	<string>192</string>
+	<string>193</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationCategoryType</key>
@@ -30,14 +30,14 @@
 	<true/>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>LockMic records system playback (what you hear) together with your microphone.</string>
-	<key>NSHighResolutionCapable</key>
-	<true/>
-	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2026 WIXEE.AI</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>LockMic shows a countdown before events on your calendars so you do not miss meetings. Event titles and times stay on your Mac.</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>LockMic shows a countdown before events on your calendars so you do not miss meetings. Event titles and times stay on your Mac.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2026 WIXEE.AI</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>LockMic records your default microphone along with system playback.</string>
 	<key>NSPrincipalClass</key>
