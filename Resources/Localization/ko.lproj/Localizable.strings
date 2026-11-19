@@ -234,6 +234,10 @@
 "meetings.header" = "캘린더 알림";
 "meetings.enable" = "미팅 카운트다운 표시";
 "meetings.enable.caption" = "캘린더 일정 2분 전에 카운트다운, 다시 알림, 선택적 알림음이 있는 플로팅 카드가 나타납니다.";
+"meetings.sound" = "알림음 재생";
+"meetings.sound.caption" = "카운트다운 마지막 30초와 시작 후 1분 동안 Glass 소리를 재생합니다.";
+"meetings.sound.all_outputs" = "마지막 15초는 모든 출력에서 재생";
+"meetings.sound.all_outputs.caption" = "기본 출력뿐 아니라 모든 물리 출력으로 소리를 보냅니다.";
 "meetings.access.header" = "캘린더 접근";
 "meetings.access.status" = "접근";
 "meetings.access.granted" = "허용됨";

@@ -234,6 +234,10 @@
 "meetings.header" = "Avvisi calendario";
 "meetings.enable" = "Mostra conto alla rovescia";
 "meetings.enable.caption" = "Due minuti prima degli eventi compare una scheda mobile con conto alla rovescia, posticipo e suono opzionale.";
+"meetings.sound" = "Riproduci suono di avviso";
+"meetings.sound.caption" = "Riproduce il suono Glass negli ultimi 30 secondi e per un minuto dopo l’inizio.";
+"meetings.sound.all_outputs" = "Su tutte le uscite negli ultimi 15 secondi";
+"meetings.sound.all_outputs.caption" = "Invia il suono a ogni uscita fisica, non solo a quella predefinita.";
 "meetings.access.header" = "Accesso al calendario";
 "meetings.access.status" = "Accesso";
 "meetings.access.granted" = "Consentito";

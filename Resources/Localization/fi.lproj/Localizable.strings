@@ -234,6 +234,10 @@
 "meetings.header" = "Kalenterihälytykset";
 "meetings.enable" = "Näytä kokouksen lähtölaskenta";
 "meetings.enable.caption" = "Kaksi minuuttia ennen kalenteritapahtumaa näkyy kelluva kortti, lähtölaskenta, torkku ja valinnainen ääni.";
+"meetings.sound" = "Toista hälytysääni";
+"meetings.sound.caption" = "Glass-ääni soi lähtölaskennan viimeiset 30 sekuntia ja minuutin kokouksen alettua.";
+"meetings.sound.all_outputs" = "Kaikkiin lähtöihin viimeiset 15 sekuntia";
+"meetings.sound.all_outputs.caption" = "Ääni soi jokaisessa fyysisessä lähdössä, ei vain oletuksessa.";
 "meetings.access.header" = "Kalenterin käyttöoikeus";
 "meetings.access.status" = "Käyttö";
 "meetings.access.granted" = "Sallittu";

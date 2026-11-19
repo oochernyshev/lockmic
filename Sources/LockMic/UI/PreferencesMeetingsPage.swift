@@ -11,6 +11,12 @@ struct PreferencesMeetingsPage: View {
                 Toggle(L10n.meetingsEnable, isOn: enableBinding)
                     .disabled(!preferences.featuresEnabled)
                 PreferencesChrome.caption(L10n.meetingsEnableCaption)
+                Toggle(L10n.meetingsSound, isOn: $preferences.meetingAlertSoundEnabled)
+                    .disabled(!preferences.featuresEnabled || !preferences.meetingAlertsEnabled)
+                PreferencesChrome.caption(L10n.meetingsSoundCaption)
+                Toggle(L10n.meetingsSoundAllOutputs, isOn: $preferences.meetingAlertSoundAllOutputs)
+                    .disabled(!preferences.featuresEnabled || !preferences.meetingAlertsEnabled || !preferences.meetingAlertSoundEnabled)
+                PreferencesChrome.caption(L10n.meetingsSoundAllOutputsCaption)
             }
             .opacity(preferences.featuresEnabled ? 1 : 0.45)
 

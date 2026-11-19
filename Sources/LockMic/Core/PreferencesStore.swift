@@ -100,6 +100,8 @@ final class PreferencesStore: ObservableObject {
         static let dismissMeetingModifiers = "hotkeyDismissMeetingModifiers"
 
         static let meetingAlertsEnabled = "meetingAlertsEnabled"
+        static let meetingAlertSoundEnabled = "meetingAlertSoundEnabled"
+        static let meetingAlertSoundAllOutputs = "meetingAlertSoundAllOutputs"
 
         // Legacy single-toggle keys (migrated once)
         static let legacyKeyCode = "hotkeyKeyCode"
@@ -143,6 +145,16 @@ final class PreferencesStore: ObservableObject {
     /// Floating countdown card two minutes before Calendar events.
     @Published var meetingAlertsEnabled: Bool {
         didSet { UserDefaults.standard.set(meetingAlertsEnabled, forKey: Keys.meetingAlertsEnabled) }
+    }
+
+    /// Glass beep while the meeting card is in its alert window.
+    @Published var meetingAlertSoundEnabled: Bool {
+        didSet { UserDefaults.standard.set(meetingAlertSoundEnabled, forKey: Keys.meetingAlertSoundEnabled) }
+    }
+
+    /// During the last 15 seconds, play that beep on every physical output.
+    @Published var meetingAlertSoundAllOutputs: Bool {
+        didSet { UserDefaults.standard.set(meetingAlertSoundAllOutputs, forKey: Keys.meetingAlertSoundAllOutputs) }
     }
 
     @Published var muteAllInputs: Bool {
@@ -330,6 +342,16 @@ final class PreferencesStore: ObservableObject {
             defaults.set(false, forKey: Keys.meetingAlertsEnabled)
         }
         meetingAlertsEnabled = defaults.bool(forKey: Keys.meetingAlertsEnabled)
+
+        if defaults.object(forKey: Keys.meetingAlertSoundEnabled) == nil {
+            defaults.set(true, forKey: Keys.meetingAlertSoundEnabled)
+        }
+        meetingAlertSoundEnabled = defaults.bool(forKey: Keys.meetingAlertSoundEnabled)
+
+        if defaults.object(forKey: Keys.meetingAlertSoundAllOutputs) == nil {
+            defaults.set(true, forKey: Keys.meetingAlertSoundAllOutputs)
+        }
+        meetingAlertSoundAllOutputs = defaults.bool(forKey: Keys.meetingAlertSoundAllOutputs)
 
         if defaults.object(forKey: Keys.muteAllInputs) == nil {
             defaults.set(true, forKey: Keys.muteAllInputs)

@@ -234,6 +234,10 @@
 "meetings.header" = "Obaveštenja iz kalendara";
 "meetings.enable" = "Prikaži odbrojavanje sastanka";
 "meetings.enable.caption" = "Dva minuta pre događaja pojavljuje se plutajuća kartica sa odbrojavanjem, odložiti i opcionim zvukom.";
+"meetings.sound" = "Pusti zvuk upozorenja";
+"meetings.sound.caption" = "Glass zvuk u poslednjih 30 sekundi i minut nakon početka.";
+"meetings.sound.all_outputs" = "Na sve izlaze poslednjih 15 sekundi";
+"meetings.sound.all_outputs.caption" = "Zvuk ide na svaki fizički izlaz, ne samo na podrazumevani.";
 "meetings.access.header" = "Pristup kalendaru";
 "meetings.access.status" = "Pristup";
 "meetings.access.granted" = "Dozvoljen";

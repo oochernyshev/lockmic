@@ -234,6 +234,10 @@
 "meetings.header" = "Alerte din calendar";
 "meetings.enable" = "Afișează numărătoarea întâlnirii";
 "meetings.enable.caption" = "Cu două minute înainte de evenimente apare un card plutitor cu numărătoare, amânare și sunet opțional.";
+"meetings.sound" = "Redă sunetul de alertă";
+"meetings.sound.caption" = "Redă sunetul Glass în ultimele 30 de secunde și un minut după început.";
+"meetings.sound.all_outputs" = "Pe toate ieșirile în ultimele 15 secunde";
+"meetings.sound.all_outputs.caption" = "Trimite sunetul la fiecare ieșire fizică, nu doar la cea implicită.";
 "meetings.access.header" = "Acces la calendar";
 "meetings.access.status" = "Acces";
 "meetings.access.granted" = "Permis";

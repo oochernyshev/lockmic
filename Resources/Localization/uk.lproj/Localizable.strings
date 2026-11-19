@@ -234,6 +234,10 @@
 "meetings.header" = "Сповіщення календаря";
 "meetings.enable" = "Показувати зворотний відлік зустрічі";
 "meetings.enable.caption" = "За дві хвилини до події з’являється плаваюча картка з таймером, відкласти та необов’язковим звуком.";
+"meetings.sound" = "Відтворювати звук сповіщення";
+"meetings.sound.caption" = "Звук Glass в останні 30 секунд і хвилину після початку.";
+"meetings.sound.all_outputs" = "На всі виходи в останні 15 секунд";
+"meetings.sound.all_outputs.caption" = "Звук іде на кожен фізичний вихід, не лише на типовий.";
 "meetings.access.header" = "Доступ до календаря";
 "meetings.access.status" = "Доступ";
 "meetings.access.granted" = "Дозволено";

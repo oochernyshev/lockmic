@@ -234,6 +234,10 @@
 "meetings.header" = "Naptárértesítések";
 "meetings.enable" = "Találkozó-visszaszámlálás";
 "meetings.enable.caption" = "Két perccel a naptáresemény előtt lebegő kártya jelenik meg visszaszámlálással, szundival és opcionális hanggal.";
+"meetings.sound" = "Figyelmeztető hang lejátszása";
+"meetings.sound.caption" = "A Glass hang a visszaszámlálás utolsó 30 másodpercében és a kezdés után egy percig szól.";
+"meetings.sound.all_outputs" = "Minden kimeneten az utolsó 15 másodpercben";
+"meetings.sound.all_outputs.caption" = "A hang minden fizikai kimenetre megy, nem csak az alapértelmezettre.";
 "meetings.access.header" = "Naptárhozzáférés";
 "meetings.access.status" = "Hozzáférés";
 "meetings.access.granted" = "Engedélyezve";

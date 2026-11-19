@@ -213,6 +213,10 @@ enum L10n {
     static var meetingsHeader: String { tr("meetings.header") }
     static var meetingsEnable: String { tr("meetings.enable") }
     static var meetingsEnableCaption: String { tr("meetings.enable.caption") }
+    static var meetingsSound: String { tr("meetings.sound") }
+    static var meetingsSoundCaption: String { tr("meetings.sound.caption") }
+    static var meetingsSoundAllOutputs: String { tr("meetings.sound.all_outputs") }
+    static var meetingsSoundAllOutputsCaption: String { tr("meetings.sound.all_outputs.caption") }
     static var meetingsAccessHeader: String { tr("meetings.access.header") }
     static var meetingsAccessStatus: String { tr("meetings.access.status") }
     static var meetingsAccessGranted: String { tr("meetings.access.granted") }
