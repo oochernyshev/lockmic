@@ -43,20 +43,11 @@ final class MeetingCalendarService: @unchecked Sendable {
             let granted = try await store.requestFullAccessToEvents()
             let status = Self.access(from: EKEventStore.authorizationStatus(for: .event))
             if granted || status == .granted { return .granted }
-            log.error("Calendar access not granted, status=\(statusLabel(status), privacy: .public)")
+            log.error("Calendar access not granted, status=\(String(describing: status), privacy: .public)")
             return status
         } catch {
             log.error("Calendar access request failed: \(error.localizedDescription, privacy: .public)")
             return access
-        }
-    }
-
-    private func statusLabel(_ status: MeetingCalendarAccess) -> String {
-        switch status {
-        case .granted: return "granted"
-        case .denied: return "denied"
-        case .restricted: return "restricted"
-        case .notDetermined: return "notDetermined"
         }
     }
 
