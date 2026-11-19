@@ -29,10 +29,13 @@ enum MeetingAlertLogicRegression {
         expect(MeetingAlertLogic.phase(remaining: -5) == .now, "now after start")
 
         expect(MeetingAlertLogic.countdownText(remaining: 75) == "01:15", "countdown before start")
-        expect(MeetingAlertLogic.countdownText(remaining: -17) == "+00:17", "elapsed after start")
+        expect(MeetingAlertLogic.countdownText(remaining: 0) == "00:00", "clock at start")
+        expect(MeetingAlertLogic.countdownText(remaining: -17) == "00:17", "elapsed clock without plus")
 
         expect(MeetingAlertLogic.ringFraction(remaining: 60, duration: 1800) == 0.5, "lookahead half")
         expect(MeetingAlertLogic.ringFraction(remaining: -900, duration: 1800) == 0.5, "elapsed half")
+        let justStarted = MeetingAlertLogic.ringFraction(remaining: -1, duration: 1800)
+        expect(abs(justStarted - (1.0 / 1800.0)) < 0.000001, "real elapsed fraction in the first second")
         expect(MeetingAlertLogic.beepInterval(remaining: 4) == 0.5, "fast beep")
         expect(MeetingAlertLogic.beepInterval(remaining: 8) == 1, "one-second beep")
         expect(MeetingAlertLogic.playsOnAllOutputs(remaining: 15), "all outputs at 15s")

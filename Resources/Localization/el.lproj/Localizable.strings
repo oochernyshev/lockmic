@@ -245,7 +245,7 @@
 "meetings.access.caption" = "Το LockMic διαβάζει τίτλους και ώρες από τα ημερολόγια σε αυτό το Mac. Τίποτα δεν μεταφορτώνεται.";
 "meeting.status.upcoming" = "ΕΠΕΡΧΟΜΕΝΗ ΣΥΝΑΝΤΗΣΗ";
 "meeting.status.soon" = "Η ΣΥΝΑΝΤΗΣΗ ΞΕΚΙΝΑ ΣΥΝΤΟΜΑ!";
-"meeting.status.now" = "Η ΣΥΝΑΝΤΗΣΗ ΞΕΚΙΝΑ ΤΩΡΑ!";
+"meeting.status.now" = "Η ΣΥΝΑΝΤΗΣΗ ΞΕΚΙΝΗΣΕ";
 "meeting.snooze" = "Αναβολή %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Συνάντηση ημερολογίου";

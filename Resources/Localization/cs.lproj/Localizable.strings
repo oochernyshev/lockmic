@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic čte názvy a časy událostí z kalendářů na tomto Macu. Nic se neodesílá.";
 "meeting.status.upcoming" = "NADCHÁZEJÍCÍ SCHŮZKA";
 "meeting.status.soon" = "SCHŮZKA ZAČÍNÁ BRZY!";
-"meeting.status.now" = "SCHŮZKA ZAČÍNÁ!";
+"meeting.status.now" = "SCHŮZKA ZAČALA";
 "meeting.snooze" = "Odložit %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Schůzka v kalendáři";

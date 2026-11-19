@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic 从此 Mac 上的日历读取标题和开始时间。不会上传任何内容。";
 "meeting.status.upcoming" = "即将开始的会议";
 "meeting.status.soon" = "会议即将开始！";
-"meeting.status.now" = "会议现在开始！";
+"meeting.status.now" = "会议已开始";
 "meeting.snooze" = "延后 %d 秒";
 "meeting.ok" = "好";
 "meeting.untitled" = "日历会议";

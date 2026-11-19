@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic читає назви й час подій із календарів на цьому Mac. Нічого не надсилається.";
 "meeting.status.upcoming" = "НАБЛИЖАЄТЬСЯ ЗУСТРІЧ";
 "meeting.status.soon" = "ЗУСТРІЧ СКОРО ПОЧНЕТЬСЯ!";
-"meeting.status.now" = "ЗУСТРІЧ ПОЧИНАЄТЬСЯ!";
+"meeting.status.now" = "ЗУСТРІЧ ПОЧАЛАСЯ";
 "meeting.snooze" = "Відкласти %dс";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Зустріч із календаря";

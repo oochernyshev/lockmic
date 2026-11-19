@@ -8,6 +8,7 @@ final class MeetingAlertSound {
     private var players: [(sound: NSSound, started: TimeInterval)] = []
     private var deviceCacheAt: TimeInterval = -1000
     private var extraUIDs: [String] = []
+    private var glassTemplate: NSSound?
     private static let glassPath = "/System/Library/Sounds/Glass.aiff"
     private static let glassSeconds: TimeInterval = 1.7
 
@@ -38,7 +39,7 @@ final class MeetingAlertSound {
             let oldest = players.removeFirst()
             oldest.sound.stop()
         }
-        guard let sound = NSSound(contentsOfFile: Self.glassPath, byReference: true) else {
+        guard let sound = makeGlass() else {
             if deviceUID == nil { NSSound.beep() }
             return
         }
@@ -48,6 +49,13 @@ final class MeetingAlertSound {
         sound.volume = 1
         guard sound.play() else { return }
         players.append((sound, now))
+    }
+
+    private func makeGlass() -> NSSound? {
+        if glassTemplate == nil {
+            glassTemplate = NSSound(contentsOfFile: Self.glassPath, byReference: true)
+        }
+        return glassTemplate?.copy() as? NSSound
     }
 
     private func prune(now: TimeInterval) {

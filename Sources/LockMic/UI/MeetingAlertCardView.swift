@@ -29,14 +29,11 @@ final class MeetingAlertCardView: NSView {
 
     private var scale: CGFloat = 1
     private var snapshot: MeetingAlertSnapshot?
-    private var mouseDownScreenPoint: NSPoint?
-    private var windowOriginAtDown: NSPoint?
-    private var dragging = false
-    private var resizing = false
-    private var resizeStartScale: CGFloat = 1
-    private var resizeStartSize = NSSize.zero
-    private var resizeStartMouse = NSPoint.zero
     private let dragThreshold: CGFloat = 4
+
+    /// Latest pointer sample from the drag thread. The main thread only applies it.
+    private let dragSample = DragSample()
+    private var dragMoved = false
 
     override var isFlipped: Bool { true }
     override var isOpaque: Bool { false }
@@ -46,7 +43,8 @@ final class MeetingAlertCardView: NSView {
         super.init(frame: frameRect)
         wantsLayer = true
         layer?.cornerRadius = Self.corner
-        layer?.masksToBounds = true
+        // Leave shadows of the buttons unclipped. Glass and tint round themselves.
+        layer?.masksToBounds = false
         layer?.borderWidth = 1
         appearance = NSAppearance(named: .darkAqua)
 
@@ -55,7 +53,7 @@ final class MeetingAlertCardView: NSView {
         installGlass()
 
         tint.wantsLayer = true
-        tint.layer?.backgroundColor = NSColor(srgbRed: 0.09, green: 0.13, blue: 0.21, alpha: 0.46).cgColor
+        tint.layer?.backgroundColor = NSColor(srgbRed: 0.09, green: 0.13, blue: 0.21, alpha: 0.18).cgColor
         addSubview(tint)
 
         headline.font = NSFont(name: "Helvetica Neue", size: 28) ?? .systemFont(ofSize: 28, weight: .regular)
@@ -82,6 +80,38 @@ final class MeetingAlertCardView: NSView {
         addSubview(okButton)
 
         addSubview(resizeMark)
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas { removeTrackingArea(area) }
+        addTrackingArea(NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        ))
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        updateButtonHover(event)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        updateButtonHover(event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        for button in [soundButton, snoozeButton, okButton] {
+            button.setHovered(false)
+        }
+    }
+
+    private func updateButtonHover(_ event: NSEvent) {
+        let local = convert(event.locationInWindow, from: nil)
+        soundButton.setHovered(soundButton.frame.contains(local))
+        snoozeButton.setHovered(snoozeButton.frame.contains(local))
+        okButton.setHovered(okButton.frame.contains(local))
     }
 
     @available(*, unavailable)
@@ -159,8 +189,14 @@ final class MeetingAlertCardView: NSView {
         let height = bounds.height
         glassHost.frame = bounds
         tint.frame = bounds
+        tint.layer?.cornerRadius = Self.corner * s
         for sub in glassHost.subviews {
             sub.frame = glassHost.bounds
+            if #available(macOS 26.0, *), let glass = sub as? NSGlassEffectView {
+                glass.cornerRadius = Self.corner * s
+            } else {
+                sub.layer?.cornerRadius = Self.corner * s
+            }
         }
 
         let ringCX = width - pad - ringR
@@ -198,80 +234,129 @@ final class MeetingAlertCardView: NSView {
         let grip = 28 * s
         resizeMark.lineWidth = max(1.5, 2 * s)
         resizeMark.frame = NSRect(x: width - grip, y: height - grip, width: grip, height: grip)
+        window?.invalidateCursorRects(for: self)
+    }
+
+    override func resetCursorRects() {
+        addCursorRect(resizeMark.frame, cursor: Self.resizeCursor)
+    }
+
+    /// Bottom-right corner of this flipped card. macOS 14 has no public diagonal resize cursor.
+    private static let resizeCursor: NSCursor = {
+        if #available(macOS 15.0, *) {
+            return NSCursor.frameResize(position: .bottomRight, directions: [.inward, .outward])
+        }
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { _ in
+            let path = NSBezierPath()
+            path.lineWidth = 1.6
+            path.lineCapStyle = .round
+            path.lineJoinStyle = .round
+            path.move(to: NSPoint(x: 3.5, y: 3.5))
+            path.line(to: NSPoint(x: 14.5, y: 14.5))
+            path.move(to: NSPoint(x: 9, y: 14.5))
+            path.line(to: NSPoint(x: 14.5, y: 14.5))
+            path.line(to: NSPoint(x: 14.5, y: 9))
+            path.move(to: NSPoint(x: 3.5, y: 9))
+            path.line(to: NSPoint(x: 3.5, y: 3.5))
+            path.line(to: NSPoint(x: 9, y: 3.5))
+            NSColor.black.setStroke()
+            path.lineWidth = 3.2
+            path.stroke()
+            NSColor.white.setStroke()
+            path.lineWidth = 1.6
+            path.stroke()
+            return true
+        }
+        return NSCursor(image: image, hotSpot: NSPoint(x: 9, y: 9))
+    }()
+
+    /// Title, ring, and glass sit above this view. Own those hits so a drag
+    /// starts there. `point` is in the superview's coordinates, not this view's.
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let local = convert(point, from: superview)
+        guard bounds.contains(local) else { return nil }
+        for button in [soundButton, snoozeButton, okButton] where button.frame.contains(local) {
+            return button.hitTest(convert(local, to: button.superview)) ?? button
+        }
+        return self
     }
 
     override func mouseDown(with event: NSEvent) {
         let local = convert(event.locationInWindow, from: nil)
-        if resizeMark.frame.contains(local) {
-            resizing = true
-            dragging = false
-            resizeStartScale = scale
-            resizeStartSize = window?.frame.size ?? bounds.size
-            resizeStartMouse = NSEvent.mouseLocation
+        if let button = [soundButton, snoozeButton, okButton].first(where: { $0.frame.contains(local) }) {
+            button.mouseDown(with: event)
             return
         }
-        if soundButton.frame.contains(local)
-            || snoozeButton.frame.contains(local)
-            || okButton.frame.contains(local)
-        {
-            super.mouseDown(with: event)
-            return
+        guard let window else { return }
+        let resize = resizeMark.frame.contains(local)
+        let startMouse = NSEvent.mouseLocation
+        let startOrigin = window.frame.origin
+        let startScale = scale
+        let startSize = window.frame.size
+        // Follow the pointer off the main thread. Beeps and card redraw keep the
+        // main run loop, so a Glass tick does not freeze the drag.
+        dragMoved = false
+        DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+            while (NSEvent.pressedMouseButtons & 1) != 0 {
+                let now = NSEvent.mouseLocation
+                guard let self, self.dragSample.send(now) else {
+                    Thread.sleep(forTimeInterval: 1.0 / 120.0)
+                    continue
+                }
+                DispatchQueue.main.async { [weak self] in
+                    self?.applyDragSample(
+                        resize: resize,
+                        startMouse: startMouse,
+                        startOrigin: startOrigin,
+                        startScale: startScale,
+                        startSize: startSize
+                    )
+                }
+                Thread.sleep(forTimeInterval: 1.0 / 120.0)
+            }
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                if self.dragMoved { self.onDragEnded?() }
+                self.dragMoved = false
+            }
         }
-        resizing = false
-        dragging = false
-        mouseDownScreenPoint = NSEvent.mouseLocation
-        windowOriginAtDown = window?.frame.origin
     }
 
-    override func mouseDragged(with event: NSEvent) {
-        if resizing {
-            let mouse = NSEvent.mouseLocation
-            let dw = mouse.x - resizeStartMouse.x
-            let dh = -(mouse.y - resizeStartMouse.y)
-            let next: CGFloat
+    /// Applies the newest pointer sample. Returns whether the card moved.
+    private func applyDragSample(
+        resize: Bool,
+        startMouse: NSPoint,
+        startOrigin: NSPoint,
+        startScale: CGFloat,
+        startSize: NSSize
+    ) -> Bool {
+        guard let window, let now = dragSample.take() else { return false }
+        if resize {
+            let dw = now.x - startMouse.x
+            let dh = -(now.y - startMouse.y)
+            let nextScale: CGFloat
             if abs(dw) >= abs(dh) {
-                next = (resizeStartSize.width + dw) / MeetingAlertLogic.cardWidth
+                nextScale = (startSize.width + dw) / MeetingAlertLogic.cardWidth
             } else {
-                let height = max(1, resizeStartSize.height)
-                next = resizeStartScale * (height + dh) / height
+                let height = max(1, startSize.height)
+                nextScale = startScale * (height + dh) / height
             }
-            let clamped = min(MeetingAlertLogic.scaleMax, max(MeetingAlertLogic.scaleMin, next))
-            if abs(clamped - scale) >= 0.005 {
-                onScaleChanged?(clamped)
-            }
-            return
+            let clamped = min(MeetingAlertLogic.scaleMax, max(MeetingAlertLogic.scaleMin, nextScale))
+            if abs(clamped - scale) < 0.005 { return false }
+            dragMoved = true
+            onScaleChanged?(clamped)
+            return true
         }
-        guard let mouseDownScreenPoint, let windowOriginAtDown, let window else { return }
-        let now = NSEvent.mouseLocation
-        let delta = NSPoint(
-            x: now.x - mouseDownScreenPoint.x,
-            y: now.y - mouseDownScreenPoint.y
+        let delta = NSPoint(x: now.x - startMouse.x, y: now.y - startMouse.y)
+        if hypot(delta.x, delta.y) < dragThreshold { return false }
+        let origin = Self.clampedOrigin(
+            NSPoint(x: startOrigin.x + delta.x, y: startOrigin.y + delta.y),
+            size: window.frame.size
         )
-        if !dragging && hypot(delta.x, delta.y) < dragThreshold { return }
-        dragging = true
-        var origin = NSPoint(
-            x: windowOriginAtDown.x + delta.x,
-            y: windowOriginAtDown.y + delta.y
-        )
-        origin = Self.clampedOrigin(origin, size: window.frame.size)
         window.setFrameOrigin(origin)
-    }
-
-    override func mouseUp(with event: NSEvent) {
-        if resizing {
-            resizing = false
-            onDragEnded?()
-            return
-        }
-        let wasDragging = dragging
-        dragging = false
-        mouseDownScreenPoint = nil
-        windowOriginAtDown = nil
-        if wasDragging {
-            onDragEnded?()
-            return
-        }
-        super.mouseUp(with: event)
+        dragMoved = true
+        return true
     }
 
     static func clampedOrigin(_ origin: NSPoint, size: NSSize) -> NSPoint {
@@ -279,10 +364,11 @@ final class MeetingAlertCardView: NSView {
         let screen = NSScreen.screens.first { NSMouseInRect(probe, $0.frame, false) }
             ?? NSScreen.main
             ?? NSScreen.screens.first
-        guard let bounds = screen?.visibleFrame else { return origin }
+        // Full display frame, not visibleFrame: visibleFrame stops at the Dock.
+        guard let bounds = screen?.frame else { return origin }
         let margin: CGFloat = 48
         let x = min(max(origin.x, bounds.minX - size.width + margin), bounds.maxX - margin)
-        let y = min(max(origin.y, bounds.minY), bounds.maxY - margin)
+        let y = min(max(origin.y, bounds.minY - size.height + margin), bounds.maxY - margin)
         return NSPoint(x: x, y: y)
     }
 
@@ -322,6 +408,32 @@ struct MeetingAlertSnapshot: Equatable {
     var soundEnabled: Bool
 }
 
+/// Pointer samples taken off the main thread while a drag is active.
+private final class DragSample: @unchecked Sendable {
+    private let lock = NSLock()
+    private var point: NSPoint?
+    private var scheduled = false
+
+    /// Stores `point`. Returns true when the caller should schedule one main-thread apply.
+    func send(_ point: NSPoint) -> Bool {
+        lock.lock()
+        self.point = point
+        let shouldSchedule = !scheduled
+        scheduled = true
+        lock.unlock()
+        return shouldSchedule
+    }
+
+    func take() -> NSPoint? {
+        lock.lock()
+        let point = self.point
+        self.point = nil
+        scheduled = false
+        lock.unlock()
+        return point
+    }
+}
+
 private final class MeetingCardButton: NSButton {
     var corner: CGFloat = 10 {
         didSet { layer?.cornerRadius = corner }
@@ -330,19 +442,78 @@ private final class MeetingCardButton: NSButton {
         didSet { font = .systemFont(ofSize: fontSize, weight: .medium) }
     }
 
+    private var baseFill: NSColor = .clear
+    private var hovered = false
+    /// Shadow lives outside the fill, so a translucent button matches an opaque one.
+    private let shadowHost = CALayer()
+    private let shadowCast = CALayer()
+
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         bezelStyle = .regularSquare
         isBordered = false
         wantsLayer = true
         layer?.cornerRadius = 10
+        layer?.masksToBounds = true
         focusRingType = .none
         font = .systemFont(ofSize: 20, weight: .medium)
         setButtonType(.momentaryChange)
+        shadowCast.backgroundColor = NSColor.white.cgColor
+        shadowCast.shadowColor = NSColor.white.cgColor
+        shadowCast.shadowOpacity = 0
+        shadowCast.shadowOffset = CGSize(width: 0, height: -2)
+        shadowHost.addSublayer(shadowCast)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { nil }
+
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .pointingHand)
+    }
+
+    override func layout() {
+        super.layout()
+        guard bounds.width > 0, bounds.height > 0, let host = superview?.layer else { return }
+        if shadowHost.superlayer !== host {
+            host.insertSublayer(shadowHost, below: layer)
+        }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        // The host is larger than the button so the shadow has pixels to land in.
+        // The mask removes the button shape, which is what showed through Snooze.
+        let pad: CGFloat = 32
+        shadowHost.frame = frame.insetBy(dx: -pad, dy: -pad)
+        let cast = CGRect(x: pad, y: pad, width: bounds.width, height: bounds.height)
+        shadowCast.frame = cast
+        shadowCast.cornerRadius = corner
+        shadowCast.shadowPath = CGPath(
+            roundedRect: shadowCast.bounds,
+            cornerWidth: corner,
+            cornerHeight: corner,
+            transform: nil
+        )
+        let mask = CAShapeLayer()
+        let cutout = CGMutablePath()
+        cutout.addRect(CGRect(origin: .zero, size: shadowHost.bounds.size))
+        cutout.addRoundedRect(in: cast, cornerWidth: corner, cornerHeight: corner)
+        mask.frame = shadowHost.bounds
+        mask.fillRule = .evenOdd
+        mask.path = cutout
+        shadowHost.mask = mask
+        CATransaction.commit()
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        if window == nil { shadowHost.removeFromSuperlayer() }
+    }
+
+    func setHovered(_ on: Bool) {
+        guard hovered != on else { return }
+        hovered = on
+        applyHover(animated: true)
+    }
 
     func setTitle(_ title: String, color: NSColor, fill: NSColor) {
         image = nil
@@ -350,8 +521,9 @@ private final class MeetingCardButton: NSButton {
             .font: NSFont.systemFont(ofSize: fontSize, weight: .medium),
             .foregroundColor: color,
         ])
-        layer?.backgroundColor = fill.cgColor
         contentTintColor = color
+        baseFill = fill
+        applyHover(animated: false)
     }
 
     func setSound(on: Bool, scale: CGFloat) {
@@ -362,7 +534,30 @@ private final class MeetingCardButton: NSButton {
             .withSymbolConfiguration(config)
         imagePosition = .imageOnly
         contentTintColor = on ? .white : NSColor.white.withAlphaComponent(0.55)
-        layer?.backgroundColor = NSColor.white.withAlphaComponent(on ? 0.12 : 0.08).cgColor
+        baseFill = NSColor.white.withAlphaComponent(on ? 0.12 : 0.08)
+        applyHover(animated: false)
+    }
+
+    /// Drop shadow from the button outline, not its fill. The card refresh must
+    /// not restart a hover that is already showing.
+    private func applyHover(animated: Bool) {
+        guard let layer else { return }
+        self.shadow = nil
+        layer.shadowOpacity = 0
+        CATransaction.begin()
+        if animated {
+            CATransaction.setAnimationDuration(0.16)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeOut))
+        } else {
+            CATransaction.setDisableActions(true)
+        }
+        layer.backgroundColor = baseFill.cgColor
+        layer.cornerRadius = corner
+        layer.masksToBounds = true
+        shadowCast.shadowOpacity = hovered ? 1 : 0
+        shadowCast.shadowRadius = hovered ? 14 : 0
+        shadowCast.shadowOffset = CGSize(width: 0, height: hovered ? -3 : 0)
+        CATransaction.commit()
     }
 }
 
@@ -393,11 +588,11 @@ private final class CountdownRingView: NSView {
         let track = NSBezierPath()
         track.appendArc(withCenter: center, radius: radius, startAngle: 0, endAngle: 360)
         track.lineWidth = stroke
-        NSColor.white.withAlphaComponent(0.16).setStroke()
+        NSColor.white.withAlphaComponent(0.4).setStroke()
         track.stroke()
 
         let sweep = max(0, min(1, fraction)) * 359.99
-        if sweep >= 1 {
+        if sweep > 0 {
             let arc = NSBezierPath()
             arc.lineWidth = stroke
             arc.lineCapStyle = .round

@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic leest titels en starttijden van agenda’s op deze Mac. Er wordt niets geüpload.";
 "meeting.status.upcoming" = "AANKOMENDE VERGADERING";
 "meeting.status.soon" = "VERGADERING BEGINT ZO!";
-"meeting.status.now" = "VERGADERING BEGINT NU!";
+"meeting.status.now" = "VERGADERING IS BEGONNEN";
 "meeting.snooze" = "Snooze %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Agenda-afspraak";

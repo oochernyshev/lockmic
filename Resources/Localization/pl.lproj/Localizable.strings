@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic odczytuje tytuły i godziny z kalendarzy na tym Macu. Nic nie jest wysyłane.";
 "meeting.status.upcoming" = "NADCHODZĄCE SPOTKANIE";
 "meeting.status.soon" = "SPOTKANIE WKRÓTCE SIĘ ZACZNIE!";
-"meeting.status.now" = "SPOTKANIE SIĘ ZACZYNA!";
+"meeting.status.now" = "SPOTKANIE SIĘ ROZPOCZĘŁO";
 "meeting.snooze" = "Drzemka %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Spotkanie z kalendarza";

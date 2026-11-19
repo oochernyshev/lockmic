@@ -245,7 +245,7 @@
 "meetings.access.caption" = "O LockMic lê títulos e horários dos calendários neste Mac. Nada é enviado.";
 "meeting.status.upcoming" = "REUNIÃO EM BREVE";
 "meeting.status.soon" = "A REUNIÃO COMEÇA LOGO!";
-"meeting.status.now" = "A REUNIÃO COMEÇA AGORA!";
+"meeting.status.now" = "A REUNIÃO COMEÇOU";
 "meeting.snooze" = "Adiar %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Reunião do calendário";

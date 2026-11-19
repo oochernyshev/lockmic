@@ -10,6 +10,7 @@ final class MeetingAlertWindowController {
     private var card: MeetingAlertCardView?
     private var scale: CGFloat
     private var appeared = false
+    private var latest: MeetingAlertSnapshot?
 
     init() {
         scale = Self.loadScale()
@@ -22,6 +23,7 @@ final class MeetingAlertWindowController {
             width: MeetingAlertLogic.cardWidth * scale,
             height: MeetingAlertLogic.cardHeight * scale
         )
+        latest = snapshot
         if panel == nil {
             let card = MeetingAlertCardView(frame: NSRect(origin: .zero, size: size))
             card.onSnooze = { [weak self] in self?.onSnooze?() }
@@ -29,7 +31,7 @@ final class MeetingAlertWindowController {
             card.onToggleSound = { [weak self] in self?.onToggleSound?() }
             card.onDragEnded = { [weak self] in self?.saveOrigin() }
             card.onScaleChanged = { [weak self] next in
-                self?.applyScale(next, snapshot: snapshot)
+                self?.applyScale(next)
             }
             self.card = card
 
@@ -47,6 +49,7 @@ final class MeetingAlertWindowController {
             panel.isFloatingPanel = true
             panel.hidesOnDeactivate = false
             panel.becomesKeyOnlyIfNeeded = true
+            panel.acceptsMouseMovedEvents = true
             panel.animationBehavior = .none
             panel.contentView = card
             self.panel = panel
@@ -70,19 +73,20 @@ final class MeetingAlertWindowController {
         panel?.orderOut(nil)
         panel = nil
         card = nil
+        latest = nil
         appeared = false
     }
 
-    private func applyScale(_ next: CGFloat, snapshot: MeetingAlertSnapshot) {
+    private func applyScale(_ next: CGFloat) {
         scale = next
         Self.saveScale(next)
-        guard let panel, let card else { return }
+        guard let panel, let card, let latest else { return }
         let old = panel.frame
         let size = NSSize(
             width: MeetingAlertLogic.cardWidth * scale,
             height: MeetingAlertLogic.cardHeight * scale
         )
-        card.apply(snapshot, scale: scale)
+        card.apply(latest, scale: scale)
         let origin = NSPoint(x: old.origin.x, y: old.maxY - size.height)
         panel.setFrame(NSRect(origin: origin, size: size), display: true)
     }

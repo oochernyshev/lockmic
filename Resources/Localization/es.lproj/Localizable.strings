@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic lee títulos y horas de inicio de los calendarios de este Mac. No se sube nada.";
 "meeting.status.upcoming" = "REUNIÓN PRÓXIMA";
 "meeting.status.soon" = "¡LA REUNIÓN EMPIEZA PRONTO!";
-"meeting.status.now" = "¡LA REUNIÓN EMPIEZA YA!";
+"meeting.status.now" = "LA REUNIÓN HA EMPEZADO";
 "meeting.snooze" = "Posponer %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Reunión del calendario";

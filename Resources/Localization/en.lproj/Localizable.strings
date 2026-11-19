@@ -143,7 +143,7 @@
 "meetings.access.caption" = "LockMic reads event titles and start times from calendars on this Mac. Nothing is uploaded.";
 "meeting.status.upcoming" = "UPCOMING MEETING";
 "meeting.status.soon" = "MEETING STARTING SOON!";
-"meeting.status.now" = "MEETING STARTING NOW!";
+"meeting.status.now" = "MEETING STARTED";
 "meeting.snooze" = "Snooze %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Calendar Meeting";

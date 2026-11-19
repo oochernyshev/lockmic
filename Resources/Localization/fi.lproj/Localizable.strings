@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic lukee tapahtumien nimet ja ajat tämän Macin kalentereista. Mitään ei lähetetä.";
 "meeting.status.upcoming" = "TULEVA KOKOUS";
 "meeting.status.soon" = "KOKOUS ALKAA PIAN!";
-"meeting.status.now" = "KOKOUS ALKAA NYT!";
+"meeting.status.now" = "KOKOUS ON ALKANUT";
 "meeting.snooze" = "Torkku %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Kalenterikokous";

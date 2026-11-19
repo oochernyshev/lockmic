@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMicはこのMacのカレンダーから予定のタイトルと開始時刻を読み取ります。アップロードはしません。";
 "meeting.status.upcoming" = "まもなくミーティング";
 "meeting.status.soon" = "まもなく開始！";
-"meeting.status.now" = "ミーティング開始！";
+"meeting.status.now" = "ミーティングが始まりました";
 "meeting.snooze" = "スヌーズ %d秒";
 "meeting.ok" = "OK";
 "meeting.untitled" = "カレンダーの予定";

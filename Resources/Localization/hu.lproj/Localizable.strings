@@ -245,7 +245,7 @@
 "meetings.access.caption" = "A LockMic a Mac naptáraiból olvassa a címeket és időpontokat. Semmi nem töltődik fel.";
 "meeting.status.upcoming" = "KÖZELGŐ TALÁLKOZÓ";
 "meeting.status.soon" = "A TALÁLKOZÓ HAMAROSAN KEZDŐDIK!";
-"meeting.status.now" = "A TALÁLKOZÓ MOST KEZDŐDIK!";
+"meeting.status.now" = "A TALÁLKOZÓ ELKEZDŐDÖTT";
 "meeting.snooze" = "Szundi %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Naptári találkozó";

@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic liest Titel und Startzeiten von Kalendern auf diesem Mac. Es wird nichts hochgeladen.";
 "meeting.status.upcoming" = "BEVORSTEHENDES MEETING";
 "meeting.status.soon" = "MEETING BEGINNT BALD!";
-"meeting.status.now" = "MEETING BEGINNT JETZT!";
+"meeting.status.now" = "MEETING HAT BEGONNEN";
 "meeting.snooze" = "Schlummern %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Kalendertermin";

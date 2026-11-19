@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic citește titlurile și orele din calendarele de pe acest Mac. Nimic nu este încărcat.";
 "meeting.status.upcoming" = "ÎNTÂLNIRE VIITOARE";
 "meeting.status.soon" = "ÎNTÂLNIREA ÎNCEPE CURÂND!";
-"meeting.status.now" = "ÎNTÂLNIREA ÎNCEPE ACUM!";
+"meeting.status.now" = "ÎNTÂLNIREA A ÎNCEPUT";
 "meeting.snooze" = "Amână %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Întâlnire din calendar";

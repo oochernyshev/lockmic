@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic läser titlar och starttider från kalendrar på den här Macen. Inget laddas upp.";
 "meeting.status.upcoming" = "KOMMANDE MÖTE";
 "meeting.status.soon" = "MÖTET BÖRJAR SNART!";
-"meeting.status.now" = "MÖTET BÖRJAR NU!";
+"meeting.status.now" = "MÖTET HAR BÖRJAT";
 "meeting.snooze" = "Snooza %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Kalendermöte";

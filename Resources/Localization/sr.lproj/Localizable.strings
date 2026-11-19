@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic čita naslove i vreme iz kalendara na ovom Macu. Ništa se ne šalje.";
 "meeting.status.upcoming" = "PREDSTOJEĆI SASTANAK";
 "meeting.status.soon" = "SASTANAK USKORO POČINJE!";
-"meeting.status.now" = "SASTANAK POČINJE!";
+"meeting.status.now" = "SASTANAK JE POČEO";
 "meeting.snooze" = "Odloži %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Sastanak iz kalendara";

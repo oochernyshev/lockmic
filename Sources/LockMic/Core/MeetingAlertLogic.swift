@@ -52,9 +52,9 @@ enum MeetingAlertLogic {
     }
 
     static func countdownText(remaining: TimeInterval) -> String {
+        // Elapsed time stays on the ring without a leading +. The status line says the meeting started.
         let whole = Int(remaining.rounded(.towardZero).magnitude)
-        let clock = String(format: "%02d:%02d", whole / 60, whole % 60)
-        return remaining < 0 ? "+\(clock)" : clock
+        return String(format: "%02d:%02d", whole / 60, whole % 60)
     }
 
     static func meetingTimeText(start: TimeInterval, calendar: Calendar = .current) -> String {
@@ -71,7 +71,7 @@ enum MeetingAlertLogic {
         let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let display = name.isEmpty ? "Calendar Meeting" : name
         if timeText.isEmpty { return display }
-        return "\(timeText)   \(display)"
+        return "\(timeText) \(display)"
     }
 
     /// Remaining fraction of the 2-minute lookahead, or elapsed fraction of the meeting.

@@ -245,7 +245,7 @@
 "meetings.access.caption" = "LockMic은 이 Mac의 캘린더에서 제목과 시작 시간을 읽습니다. 아무것도 업로드되지 않습니다.";
 "meeting.status.upcoming" = "예정된 미팅";
 "meeting.status.soon" = "미팅이 곧 시작됩니다!";
-"meeting.status.now" = "미팅이 시작됩니다!";
+"meeting.status.now" = "미팅이 시작되었습니다";
 "meeting.snooze" = "%d초 다시 알림";
 "meeting.ok" = "확인";
 "meeting.untitled" = "캘린더 미팅";
