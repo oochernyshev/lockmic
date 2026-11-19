@@ -45,6 +45,9 @@ enum UsageReporter {
         case stopRecording
         case showRecordings
         case mixFailed
+        case meetingAlertShown
+        case meetingAlertDismissed
+        case meetingAlertSnoozed
 
         /// GA4 event name (snake_case, ≤40 chars).
         var eventName: String {
@@ -60,6 +63,9 @@ enum UsageReporter {
             case .stopRecording: return "action_stop_recording"
             case .showRecordings: return "action_show_recordings"
             case .mixFailed: return "action_mix_failed"
+            case .meetingAlertShown: return "action_meeting_shown"
+            case .meetingAlertDismissed: return "action_meeting_dismissed"
+            case .meetingAlertSnoozed: return "action_meeting_snoozed"
             }
         }
     }

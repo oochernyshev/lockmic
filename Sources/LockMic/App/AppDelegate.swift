@@ -29,7 +29,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         bundleReplacementWatcher?.start()
 
-        let status = StatusItemController(mic: mic, preferences: preferences, recorder: recorder)
+        let status = StatusItemController(
+            mic: mic,
+            preferences: preferences,
+            recorder: recorder,
+            audio: audio
+        )
         status.onMenuBarIconVisibilityChange = { [weak self] visible in
             self?.setMenuBarIconVisible(visible)
         }

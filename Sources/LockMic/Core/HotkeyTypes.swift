@@ -31,6 +31,8 @@ enum HotkeyAction: String, Sendable {
     case pushToMute
     /// Hold to invert mute; release restores prior mute state (UI: “Push to flip”).
     case pushToToggle
+    /// Dismiss the meeting countdown card.
+    case dismissMeeting
 
     var isMomentary: Bool {
         switch self {

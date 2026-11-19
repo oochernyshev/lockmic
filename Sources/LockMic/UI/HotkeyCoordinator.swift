@@ -12,6 +12,7 @@ final class HotkeyCoordinator {
     var onMuteChanged: ((_ showHUD: Bool, _ playSound: Bool?) -> Void)?
     var onStartRecording: (() -> Void)?
     var onStopRecording: (() -> Void)?
+    var onDismissMeeting: (() -> Void)?
 
     private enum MomentaryHold {
         case none
@@ -108,6 +109,9 @@ final class HotkeyCoordinator {
         case .stopRecording:
             guard phase == .pressed else { return }
             onStopRecording?()
+        case .dismissMeeting:
+            guard phase == .pressed else { return }
+            onDismissMeeting?()
         case .pushToTalk:
             handleMomentary(phase: phase, mode: .talk)
         case .pushToMute:

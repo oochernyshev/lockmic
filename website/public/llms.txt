@@ -23,6 +23,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - Virtual Core Audio devices are listed but ignored for mute control
 - Global hotkeys: toggle (⌘⇧M, optional ⌘F5), mute/unmute, start/stop recording (⌘⇧R / ⌥⌘⇧R), push-to-talk, push-to-mute, push-to-flip
 - HUD toast and optional always-on floating HUD per display
+- Optional Calendar meeting countdown card (local titles and times; not uploaded)
 - Optional local recording (mic + system playback → dated mix on disk; not uploaded)
 - 23 UI languages following system language
 - Recommended install: Mac App Store (automatic updates)
