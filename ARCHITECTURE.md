@@ -119,7 +119,7 @@ Only one momentary hold is active at a time; latching shortcuts are ignored whil
 | `RecordingCoordinator` | Start/stop capture, TCC retry, monitor, mix-on-quit |
 | `UpdateChecker` | Daily GitHub release check; badges + Preferences About update section (Homebrew vs DMG) |
 | `HUDOverlay` | `showToast` / `showFloating` — one pill per display |
-| `PreferencesView` | System Settings–style sidebar: General, Devices, Recording, Meetings, Keyboard, About |
+| `PreferencesView` | System Settings–style sidebar: General, Devices, Recording, Alerts, Keyboard, About |
 | `MeetingAlertCoordinator` | EventKit countdown card two minutes before calendar events |
 | `SessionRecorder` | Selected mic (HAL, retargetable) + system playback tap → dated AAC mix |
 | `RecordingMonitorWindow` | AppKit monitor: input/output list, levels, mute, stop, permission retry |

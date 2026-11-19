@@ -62,7 +62,7 @@ struct PreferencesKeyboardPage: View {
             }
 
             PreferencesChrome.sectionCard {
-                PreferencesChrome.sectionHeader(L10n.keyboardMeetingsHeader)
+                PreferencesChrome.sectionHeader(L10n.keyboardAlertsHeader)
                 PreferencesChrome.shortcutRow(
                     title: L10n.keyboardDismissMeeting,
                     pref: $preferences.dismissMeetingShortcut

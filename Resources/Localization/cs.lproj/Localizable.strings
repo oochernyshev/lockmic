@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: stav mikrofonu není znám";
 "status.tooltip.cant_mute" = "LockMic: nelze ztlumit %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Schůzky";
+"keyboard.alerts.header" = "Upozornění";
 "keyboard.dismiss_meeting" = "Zavřít kartu schůzky";
-"tab.meetings" = "Schůzky";
+"tab.alerts" = "Upozornění";
 "meetings.header" = "Upozornění z kalendáře";
 "meetings.enable" = "Zobrazit odpočet schůzky";
 "meetings.enable.caption" = "Dvě minuty před událostí v kalendáři se objeví plovoucí karta s odpočtem, odložením a volitelným zvukem.";

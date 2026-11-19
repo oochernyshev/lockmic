@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: stanje mikrofona nije poznato";
 "status.tooltip.cant_mute" = "LockMic: nije moguće utišati %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Sastanci";
+"keyboard.alerts.header" = "Upozorenja";
 "keyboard.dismiss_meeting" = "Zatvori karticu sastanka";
-"tab.meetings" = "Sastanci";
+"tab.alerts" = "Upozorenja";
 "meetings.header" = "Obaveštenja iz kalendara";
 "meetings.enable" = "Prikaži odbrojavanje sastanka";
 "meetings.enable.caption" = "Dva minuta pre događaja pojavljuje se plutajuća kartica sa odbrojavanjem, odložiti i opcionim zvukom.";

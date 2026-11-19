@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: a mikrofon állapota ismeretlen";
 "status.tooltip.cant_mute" = "LockMic: %@ nem némítható";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Találkozók";
+"keyboard.alerts.header" = "Riasztások";
 "keyboard.dismiss_meeting" = "Találkozókártya bezárása";
-"tab.meetings" = "Találkozók";
+"tab.alerts" = "Riasztások";
 "meetings.header" = "Naptárértesítések";
 "meetings.enable" = "Találkozó-visszaszámlálás";
 "meetings.enable.caption" = "Két perccel a naptáresemény előtt lebegő kártya jelenik meg visszaszámlálással, szundival és opcionális hanggal.";

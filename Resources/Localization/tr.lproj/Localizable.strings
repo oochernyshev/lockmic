@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: mikrofon durumu bilinmiyor";
 "status.tooltip.cant_mute" = "LockMic: %@ susturulamıyor";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Toplantılar";
+"keyboard.alerts.header" = "Uyarılar";
 "keyboard.dismiss_meeting" = "Toplantı kartını kapat";
-"tab.meetings" = "Toplantılar";
+"tab.alerts" = "Uyarılar";
 "meetings.header" = "Takvim uyarıları";
 "meetings.enable" = "Toplantı geri sayımını göster";
 "meetings.enable.caption" = "Takvim etkinliklerinden iki dakika önce geri sayım, erteleme ve isteğe bağlı ses içeren yüzen bir kart görünür.";

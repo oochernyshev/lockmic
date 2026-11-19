@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: 마이크 상태를 알 수 없음";
 "status.tooltip.cant_mute" = "LockMic: %@을(를) 음소거할 수 없음";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "미팅";
+"keyboard.alerts.header" = "알림";
 "keyboard.dismiss_meeting" = "미팅 카드 닫기";
-"tab.meetings" = "미팅";
+"tab.alerts" = "알림";
 "meetings.header" = "캘린더 알림";
 "meetings.enable" = "미팅 카운트다운 표시";
 "meetings.enable.caption" = "캘린더 일정 2분 전에 카운트다운, 다시 알림, 선택적 알림음이 있는 플로팅 카드가 나타납니다.";

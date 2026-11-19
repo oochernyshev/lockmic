@@ -30,7 +30,7 @@ Available through the Mac App Store, Homebrew, and a direct DMG. See [ARCHITECTU
 - Sound feedback on mute/unmute (optional)
 - Launch at login (optional)
 - Optional **meeting countdown** from Calendar: a floating card two minutes before an event, with snooze, OK, and an escalating alert sound
-- Preferences: General, Devices, Recording, Meetings, Keyboard, About
+- Preferences: General, Devices, Recording, Alerts, Keyboard, About
 - Re-applies mute when apps unmute the hardware, on device switch, and every 2 seconds as a safety net
 - **Record** the default microphone with system playback into a dated AAC mix (optional); optionally stop after 30s / 1m / 2m of silence
 

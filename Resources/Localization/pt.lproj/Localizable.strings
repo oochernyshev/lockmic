@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: estado do microfone desconhecido";
 "status.tooltip.cant_mute" = "LockMic: não é possível silenciar %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Reuniões";
+"keyboard.alerts.header" = "Alertas";
 "keyboard.dismiss_meeting" = "Fechar cartão da reunião";
-"tab.meetings" = "Reuniões";
+"tab.alerts" = "Alertas";
 "meetings.header" = "Alertas do calendário";
 "meetings.enable" = "Mostrar contagem regressiva";
 "meetings.enable.caption" = "Dois minutos antes dos eventos, um cartão flutuante aparece com contagem regressiva, adiar e som opcional.";

@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: mikrofonstatus ukjent";
 "status.tooltip.cant_mute" = "LockMic: kan ikke dempe %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Møter";
+"keyboard.alerts.header" = "Varsler";
 "keyboard.dismiss_meeting" = "Lukk møtekort";
-"tab.meetings" = "Møter";
+"tab.alerts" = "Varsler";
 "meetings.header" = "Kalendervarsler";
 "meetings.enable" = "Vis møtenedtelling";
 "meetings.enable.caption" = "To minutter før kalenderhendelser vises et flytende kort med nedtelling, slumring og valgfri varsellyd.";

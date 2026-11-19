@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: mikrofonin tila tuntematon";
 "status.tooltip.cant_mute" = "LockMic: kohdetta %@ ei voi mykistää";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Kokoukset";
+"keyboard.alerts.header" = "Hälytykset";
 "keyboard.dismiss_meeting" = "Sulje kokouskortti";
-"tab.meetings" = "Kokoukset";
+"tab.alerts" = "Hälytykset";
 "meetings.header" = "Kalenterihälytykset";
 "meetings.enable" = "Näytä kokouksen lähtölaskenta";
 "meetings.enable.caption" = "Kaksi minuuttia ennen kalenteritapahtumaa näkyy kelluva kortti, lähtölaskenta, torkku ja valinnainen ääni.";

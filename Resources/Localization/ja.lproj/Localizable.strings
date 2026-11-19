@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic：マイクの状態が不明です";
 "status.tooltip.cant_mute" = "LockMic：%@をミュートできません";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "ミーティング";
+"keyboard.alerts.header" = "アラート";
 "keyboard.dismiss_meeting" = "ミーティングカードを閉じる";
-"tab.meetings" = "ミーティング";
+"tab.alerts" = "アラート";
 "meetings.header" = "カレンダー通知";
 "meetings.enable" = "ミーティングのカウントダウンを表示";
 "meetings.enable.caption" = "カレンダー予定の2分前に、カウントダウン、スヌーズ、任意の通知音付きのフローティングカードを表示します。";

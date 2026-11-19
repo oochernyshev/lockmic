@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: starea microfonului este necunoscută";
 "status.tooltip.cant_mute" = "LockMic: %@ nu poate fi dezactivat";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Întâlniri";
+"keyboard.alerts.header" = "Alerte";
 "keyboard.dismiss_meeting" = "Închide cardul întâlnirii";
-"tab.meetings" = "Întâlniri";
+"tab.alerts" = "Alerte";
 "meetings.header" = "Alerte din calendar";
 "meetings.enable" = "Afișează numărătoarea întâlnirii";
 "meetings.enable.caption" = "Cu două minute înainte de evenimente apare un card plutitor cu numărătoare, amânare și sunet opțional.";

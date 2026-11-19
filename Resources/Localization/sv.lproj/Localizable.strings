@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: mikrofonstatus okänd";
 "status.tooltip.cant_mute" = "LockMic: kan inte stänga av %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Möten";
+"keyboard.alerts.header" = "Aviseringar";
 "keyboard.dismiss_meeting" = "Stäng möteskort";
-"tab.meetings" = "Möten";
+"tab.alerts" = "Aviseringar";
 "meetings.header" = "Kalenderaviseringar";
 "meetings.enable" = "Visa mötesnedräkning";
 "meetings.enable.caption" = "Två minuter före kalenderhändelser visas ett flytande kort med nedräkning, snooze och valfritt ljud.";

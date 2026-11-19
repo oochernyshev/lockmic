@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic : état du microphone inconnu";
 "status.tooltip.cant_mute" = "LockMic : impossible de couper %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Réunions";
+"keyboard.alerts.header" = "Alertes";
 "keyboard.dismiss_meeting" = "Fermer la carte de réunion";
-"tab.meetings" = "Réunions";
+"tab.alerts" = "Alertes";
 "meetings.header" = "Alertes calendrier";
 "meetings.enable" = "Afficher le compte à rebours";
 "meetings.enable.caption" = "Deux minutes avant un événement, une carte flottante apparaît avec un compte à rebours, un report et un son optionnel.";

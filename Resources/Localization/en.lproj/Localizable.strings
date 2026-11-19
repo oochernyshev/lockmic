@@ -80,7 +80,7 @@
 "keyboard.push_flip" = "Push to flip";
 "keyboard.push_mute" = "Push to mute";
 "keyboard.push_talk" = "Push to talk";
-"keyboard.meetings.header" = "Meetings";
+"keyboard.alerts.header" = "Alerts";
 "keyboard.dismiss_meeting" = "Dismiss meeting card";
 "keyboard.recording.header" = "Recording";
 "keyboard.reset" = "Reset to Defaults";
@@ -127,7 +127,7 @@
 "tab.devices" = "Devices";
 "tab.general" = "General";
 "tab.keyboard" = "Keyboard";
-"tab.meetings" = "Meetings";
+"tab.alerts" = "Alerts";
 "tab.recording" = "Recording";
 "meetings.header" = "Calendar alerts";
 "meetings.enable" = "Show meeting countdown";

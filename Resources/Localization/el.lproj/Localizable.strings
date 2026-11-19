@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: άγνωστη κατάσταση μικροφώνου";
 "status.tooltip.cant_mute" = "LockMic: δεν είναι δυνατή η σίγαση του %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Συναντήσεις";
+"keyboard.alerts.header" = "Ειδοποιήσεις";
 "keyboard.dismiss_meeting" = "Κλείσιμο κάρτας συνάντησης";
-"tab.meetings" = "Συναντήσεις";
+"tab.alerts" = "Ειδοποιήσεις";
 "meetings.header" = "Ειδοποιήσεις ημερολογίου";
 "meetings.enable" = "Εμφάνιση αντίστροφης μέτρησης";
 "meetings.enable.caption" = "Δύο λεπτά πριν από τα γεγονότα εμφανίζεται μια κάρτα με αντίστροφη μέτρηση, αναβολή και προαιρετικό ήχο.";

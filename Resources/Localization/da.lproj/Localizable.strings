@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: mikrofonstatus ukendt";
 "status.tooltip.cant_mute" = "LockMic: kan ikke slå lyd fra på %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Møder";
+"keyboard.alerts.header" = "Alarmer";
 "keyboard.dismiss_meeting" = "Luk mødekort";
-"tab.meetings" = "Møder";
+"tab.alerts" = "Alarmer";
 "meetings.header" = "Kalenderpåmindelser";
 "meetings.enable" = "Vis mødenedtælling";
 "meetings.enable.caption" = "Et flydende kort vises to minutter før kalenderbegivenheder med nedtælling, udsættelse og valgfri alarmlyd.";

@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic：麦克风状态未知";
 "status.tooltip.cant_mute" = "LockMic：无法将 %@ 静音";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "会议";
+"keyboard.alerts.header" = "提醒";
 "keyboard.dismiss_meeting" = "关闭会议卡片";
-"tab.meetings" = "会议";
+"tab.alerts" = "提醒";
 "meetings.header" = "日历提醒";
 "meetings.enable" = "显示会议倒计时";
 "meetings.enable.caption" = "日历事件开始前两分钟会显示浮动卡片，含倒计时、延后和可选提示音。";

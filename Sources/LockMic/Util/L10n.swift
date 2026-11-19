@@ -19,7 +19,7 @@ enum L10n {
     static var appearanceIndicatorsHeader: String { tr("appearance.indicators.header") }
     static var tabDevices: String { tr("tab.devices") }
     static var tabRecording: String { tr("tab.recording") }
-    static var tabMeetings: String { tr("tab.meetings") }
+    static var tabAlerts: String { tr("tab.alerts") }
     static var tabKeyboard: String { tr("tab.keyboard") }
     static var tabAbout: String { tr("tab.about") }
 
@@ -201,14 +201,14 @@ enum L10n {
     static var keyboardPushFlip: String { tr("keyboard.push_flip") }
     static var keyboardPushTalk: String { tr("keyboard.push_talk") }
     static var keyboardPushMute: String { tr("keyboard.push_mute") }
-    static var keyboardMeetingsHeader: String { tr("keyboard.meetings.header") }
+    static var keyboardAlertsHeader: String { tr("keyboard.alerts.header") }
     static var keyboardDismissMeeting: String { tr("keyboard.dismiss_meeting") }
     static var keyboardReset: String { tr("keyboard.reset") }
     static var keyboardTypeShortcut: String { tr("keyboard.type_shortcut") }
     static var keyboardHelpRecording: String { tr("keyboard.help.recording") }
     static var keyboardHelpClick: String { tr("keyboard.help.click") }
 
-    // MARK: - Meetings
+    // MARK: - Alerts
 
     static var meetingsHeader: String { tr("meetings.header") }
     static var meetingsEnable: String { tr("meetings.enable") }

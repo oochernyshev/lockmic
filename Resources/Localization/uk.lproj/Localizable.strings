@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: стан мікрофона невідомий";
 "status.tooltip.cant_mute" = "LockMic: неможливо вимкнути %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Зустрічі";
+"keyboard.alerts.header" = "Сповіщення";
 "keyboard.dismiss_meeting" = "Закрити картку зустрічі";
-"tab.meetings" = "Зустрічі";
+"tab.alerts" = "Сповіщення";
 "meetings.header" = "Сповіщення календаря";
 "meetings.enable" = "Показувати зворотний відлік зустрічі";
 "meetings.enable.caption" = "За дві хвилини до події з’являється плаваюча картка з таймером, відкласти та необов’язковим звуком.";

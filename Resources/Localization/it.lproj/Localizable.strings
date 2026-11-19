@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: stato del microfono sconosciuto";
 "status.tooltip.cant_mute" = "LockMic: impossibile disattivare %@";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Riunioni";
+"keyboard.alerts.header" = "Avvisi";
 "keyboard.dismiss_meeting" = "Chiudi scheda riunione";
-"tab.meetings" = "Riunioni";
+"tab.alerts" = "Avvisi";
 "meetings.header" = "Avvisi calendario";
 "meetings.enable" = "Mostra conto alla rovescia";
 "meetings.enable.caption" = "Due minuti prima degli eventi compare una scheda mobile con conto alla rovescia, posticipo e suono opzionale.";

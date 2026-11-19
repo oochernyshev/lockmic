@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: Mikrofonstatus unbekannt";
 "status.tooltip.cant_mute" = "LockMic: %@ kann nicht stummgeschaltet werden";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Meetings";
+"keyboard.alerts.header" = "Hinweise";
 "keyboard.dismiss_meeting" = "Meeting-Karte schließen";
-"tab.meetings" = "Meetings";
+"tab.alerts" = "Hinweise";
 "meetings.header" = "Kalenderhinweise";
 "meetings.enable" = "Meeting-Countdown anzeigen";
 "meetings.enable.caption" = "Zwei Minuten vor Kalenderterminen erscheint eine schwebende Karte mit Countdown, Schlummern und optionalem Hinweiston.";

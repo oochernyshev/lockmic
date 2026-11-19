@@ -228,9 +228,9 @@
 "status.tooltip.unknown" = "LockMic: microfoonstatus onbekend";
 "status.tooltip.cant_mute" = "LockMic: kan %@ niet dempen";
 "recording.device.sample_rate" = "%@ kHz";
-"keyboard.meetings.header" = "Vergaderingen";
+"keyboard.alerts.header" = "Meldingen";
 "keyboard.dismiss_meeting" = "Vergaderkaart sluiten";
-"tab.meetings" = "Vergaderingen";
+"tab.alerts" = "Meldingen";
 "meetings.header" = "Agenda-meldingen";
 "meetings.enable" = "Vergadercountdown tonen";
 "meetings.enable.caption" = "Twee minuten voor agenda-afspraken verschijnt een zwevende kaart met countdown, snooze en optioneel geluid.";

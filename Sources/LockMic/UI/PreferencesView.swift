@@ -138,7 +138,7 @@ struct PreferencesView: View {
                     PreferencesRecordingPage(preferences: preferences, recorder: recorder)
                         .disabled(!preferences.featuresEnabled)
                         .opacity(preferences.featuresEnabled ? 1 : 0.45)
-                case .meetings:
+                case .alerts:
                     PreferencesMeetingsPage(preferences: preferences, meetings: meetings)
                         .disabled(!preferences.featuresEnabled)
                         .opacity(preferences.featuresEnabled ? 1 : 0.45)
