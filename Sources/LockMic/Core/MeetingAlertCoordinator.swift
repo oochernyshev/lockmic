@@ -53,6 +53,12 @@ final class MeetingAlertCoordinator: ObservableObject {
                 self?.syncEnabled()
             }
             .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshAccess()
+            }
+            .store(in: &cancellables)
     }
 
     func start() {

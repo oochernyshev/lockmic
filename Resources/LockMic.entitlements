@@ -7,5 +7,8 @@
 	<false/>
 	<key>com.apple.security.device.audio-input</key>
 	<true/>
+	<!-- Hardened Runtime still needs this for EventKit to honor the Calendars privacy switch. -->
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
 </dict>
 </plist>

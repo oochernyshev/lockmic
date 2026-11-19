@@ -1,3 +1,4 @@
+import AppKit
 import EventKit
 import Foundation
 import os.log
@@ -36,12 +37,26 @@ final class MeetingCalendarService: @unchecked Sendable {
 
     func requestAccess() async -> MeetingCalendarAccess {
         if access == .granted { return .granted }
+        // A menu-bar app does not show the system prompt unless it is active.
+        NSApp.activate(ignoringOtherApps: true)
         do {
             let granted = try await store.requestFullAccessToEvents()
-            return granted ? .granted : .denied
+            let status = Self.access(from: EKEventStore.authorizationStatus(for: .event))
+            if granted || status == .granted { return .granted }
+            log.error("Calendar access not granted, status=\(statusLabel(status), privacy: .public)")
+            return status
         } catch {
             log.error("Calendar access request failed: \(error.localizedDescription, privacy: .public)")
             return access
+        }
+    }
+
+    private func statusLabel(_ status: MeetingCalendarAccess) -> String {
+        switch status {
+        case .granted: return "granted"
+        case .denied: return "denied"
+        case .restricted: return "restricted"
+        case .notDetermined: return "notDetermined"
         }
     }
 
