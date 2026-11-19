@@ -29,7 +29,7 @@ final class MeetingAlertCardView: NSView {
 
     private var scale: CGFloat = 1
     private var snapshot: MeetingAlertSnapshot?
-    private var mouseDownPoint: NSPoint?
+    private var mouseDownScreenPoint: NSPoint?
     private var windowOriginAtDown: NSPoint?
     private var dragging = false
     private var resizing = false
@@ -208,7 +208,6 @@ final class MeetingAlertCardView: NSView {
             resizeStartScale = scale
             resizeStartSize = window?.frame.size ?? bounds.size
             resizeStartMouse = NSEvent.mouseLocation
-            mouseDownPoint = local
             return
         }
         if soundButton.frame.contains(local)
@@ -220,7 +219,7 @@ final class MeetingAlertCardView: NSView {
         }
         resizing = false
         dragging = false
-        mouseDownPoint = event.locationInWindow
+        mouseDownScreenPoint = NSEvent.mouseLocation
         windowOriginAtDown = window?.frame.origin
     }
 
@@ -242,10 +241,11 @@ final class MeetingAlertCardView: NSView {
             }
             return
         }
-        guard let mouseDownPoint, let windowOriginAtDown, let window else { return }
+        guard let mouseDownScreenPoint, let windowOriginAtDown, let window else { return }
+        let now = NSEvent.mouseLocation
         let delta = NSPoint(
-            x: event.locationInWindow.x - mouseDownPoint.x,
-            y: event.locationInWindow.y - mouseDownPoint.y
+            x: now.x - mouseDownScreenPoint.x,
+            y: now.y - mouseDownScreenPoint.y
         )
         if !dragging && hypot(delta.x, delta.y) < dragThreshold { return }
         dragging = true
@@ -261,12 +261,11 @@ final class MeetingAlertCardView: NSView {
         if resizing {
             resizing = false
             onDragEnded?()
-            mouseDownPoint = nil
             return
         }
         let wasDragging = dragging
         dragging = false
-        mouseDownPoint = nil
+        mouseDownScreenPoint = nil
         windowOriginAtDown = nil
         if wasDragging {
             onDragEnded?()
