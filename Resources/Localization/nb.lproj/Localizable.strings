@@ -234,6 +234,10 @@
 "meetings.header" = "Kalendervarsler";
 "meetings.enable" = "Vis møtenedtelling";
 "meetings.enable.caption" = "To minutter før kalenderhendelser vises et flytende kort med nedtelling, slumring og valgfri varsellyd.";
+"meetings.sound" = "Spill av varsellyd";
+"meetings.sound.caption" = "Spiller Glass-lyden de siste 30 sekundene og i ett minutt etter at møtet har startet.";
+"meetings.sound.all_outputs" = "På alle utganger de siste 15 sekundene";
+"meetings.sound.all_outputs.caption" = "Sender lyden til hver fysiske utgang, ikke bare standarden.";
 "meetings.access.header" = "Kalendertilgang";
 "meetings.access.status" = "Tilgang";
 "meetings.access.granted" = "Tillatt";

@@ -234,6 +234,10 @@
 "meetings.header" = "Kalenderhinweise";
 "meetings.enable" = "Meeting-Countdown anzeigen";
 "meetings.enable.caption" = "Zwei Minuten vor Kalenderterminen erscheint eine schwebende Karte mit Countdown, Schlummern und optionalem Hinweiston.";
+"meetings.sound" = "Hinweiston abspielen";
+"meetings.sound.caption" = "Spielt den Glass-Ton in den letzten 30 Sekunden und eine Minute nach Beginn.";
+"meetings.sound.all_outputs" = "In den letzten 15 Sekunden auf allen Ausgängen";
+"meetings.sound.all_outputs.caption" = "Spielt den Ton auf jedem physischen Ausgang, nicht nur auf dem Standardausgang.";
 "meetings.access.header" = "Kalenderzugriff";
 "meetings.access.status" = "Zugriff";
 "meetings.access.granted" = "Erlaubt";

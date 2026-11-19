@@ -234,6 +234,10 @@
 "meetings.header" = "Avisos del calendario";
 "meetings.enable" = "Mostrar cuenta atrás de reuniones";
 "meetings.enable.caption" = "Dos minutos antes de un evento aparece una tarjeta flotante con cuenta atrás, posponer y un sonido opcional.";
+"meetings.sound" = "Reproducir sonido de alerta";
+"meetings.sound.caption" = "Reproduce el sonido Glass en los últimos 30 segundos y durante un minuto tras el inicio.";
+"meetings.sound.all_outputs" = "En todas las salidas los últimos 15 segundos";
+"meetings.sound.all_outputs.caption" = "Envía ese sonido a cada salida física, no solo a la predeterminada.";
 "meetings.access.header" = "Acceso al calendario";
 "meetings.access.status" = "Acceso";
 "meetings.access.granted" = "Permitido";

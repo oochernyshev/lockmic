@@ -234,6 +234,10 @@
 "meetings.header" = "Kalenderaviseringar";
 "meetings.enable" = "Visa mötesnedräkning";
 "meetings.enable.caption" = "Två minuter före kalenderhändelser visas ett flytande kort med nedräkning, snooze och valfritt ljud.";
+"meetings.sound" = "Spela varningsljud";
+"meetings.sound.caption" = "Spelar Glass-ljudet de sista 30 sekunderna och en minut efter starten.";
+"meetings.sound.all_outputs" = "På alla utgångar de sista 15 sekunderna";
+"meetings.sound.all_outputs.caption" = "Skickar ljudet till varje fysisk utgång, inte bara standardutgången.";
 "meetings.access.header" = "Kalenderåtkomst";
 "meetings.access.status" = "Åtkomst";
 "meetings.access.granted" = "Tillåten";

@@ -234,6 +234,10 @@
 "meetings.header" = "Alertes calendrier";
 "meetings.enable" = "Afficher le compte à rebours";
 "meetings.enable.caption" = "Deux minutes avant un événement, une carte flottante apparaît avec un compte à rebours, un report et un son optionnel.";
+"meetings.sound" = "Jouer le son d’alerte";
+"meetings.sound.caption" = "Joue le son Glass pendant les 30 dernières secondes et une minute après le début.";
+"meetings.sound.all_outputs" = "Sur toutes les sorties les 15 dernières secondes";
+"meetings.sound.all_outputs.caption" = "Envoie ce son à chaque sortie physique, pas seulement la sortie par défaut.";
 "meetings.access.header" = "Accès au calendrier";
 "meetings.access.status" = "Accès";
 "meetings.access.granted" = "Autorisé";

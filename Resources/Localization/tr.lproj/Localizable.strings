@@ -234,6 +234,10 @@
 "meetings.header" = "Takvim uyarıları";
 "meetings.enable" = "Toplantı geri sayımını göster";
 "meetings.enable.caption" = "Takvim etkinliklerinden iki dakika önce geri sayım, erteleme ve isteğe bağlı ses içeren yüzen bir kart görünür.";
+"meetings.sound" = "Uyarı sesini çal";
+"meetings.sound.caption" = "Geri sayımın son 30 saniyesinde ve başladıktan sonra bir dakika Glass sesini çalar.";
+"meetings.sound.all_outputs" = "Son 15 saniyede tüm çıkışlarda çal";
+"meetings.sound.all_outputs.caption" = "Sesi yalnızca varsayılan çıkışa değil, her fiziksel çıkışa gönderir.";
 "meetings.access.header" = "Takvim erişimi";
 "meetings.access.status" = "Erişim";
 "meetings.access.granted" = "İzinli";

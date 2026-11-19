@@ -234,6 +234,10 @@
 "meetings.header" = "Kalenderpåmindelser";
 "meetings.enable" = "Vis mødenedtælling";
 "meetings.enable.caption" = "Et flydende kort vises to minutter før kalenderbegivenheder med nedtælling, udsættelse og valgfri alarmlyd.";
+"meetings.sound" = "Afspil alarmlyd";
+"meetings.sound.caption" = "Afspil Glass-lyden i de sidste 30 sekunder af nedtællingen og i et minut efter mødet er startet.";
+"meetings.sound.all_outputs" = "Afspil på alle udgange de sidste 15 sekunder";
+"meetings.sound.all_outputs.caption" = "Send lyden til alle fysiske udgange, ikke kun standarden.";
 "meetings.access.header" = "Kalenderadgang";
 "meetings.access.status" = "Adgang";
 "meetings.access.granted" = "Tilladt";

@@ -132,6 +132,10 @@
 "meetings.header" = "Calendar alerts";
 "meetings.enable" = "Show meeting countdown";
 "meetings.enable.caption" = "A floating card appears two minutes before calendar events, with a countdown, snooze, and an optional alert sound.";
+"meetings.sound" = "Play alert sound";
+"meetings.sound.caption" = "Play the Glass sound while the countdown is in its last 30 seconds, and for a minute after the meeting starts.";
+"meetings.sound.all_outputs" = "Play on all outputs for the last 15 seconds";
+"meetings.sound.all_outputs.caption" = "Send that sound to every physical output, not only the default one.";
 "meetings.access.header" = "Calendar access";
 "meetings.access.status" = "Access";
 "meetings.access.granted" = "Allowed";

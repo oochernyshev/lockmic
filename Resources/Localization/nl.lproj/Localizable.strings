@@ -234,6 +234,10 @@
 "meetings.header" = "Agenda-meldingen";
 "meetings.enable" = "Vergadercountdown tonen";
 "meetings.enable.caption" = "Twee minuten voor agenda-afspraken verschijnt een zwevende kaart met countdown, snooze en optioneel geluid.";
+"meetings.sound" = "Waarschuwingsgeluid afspelen";
+"meetings.sound.caption" = "Speelt het Glass-geluid in de laatste 30 seconden en een minuut na de start.";
+"meetings.sound.all_outputs" = "Op alle uitgangen in de laatste 15 seconden";
+"meetings.sound.all_outputs.caption" = "Stuurt dat geluid naar elke fysieke uitgang, niet alleen de standaard.";
 "meetings.access.header" = "Agendatoegang";
 "meetings.access.status" = "Toegang";
 "meetings.access.granted" = "Toegestaan";

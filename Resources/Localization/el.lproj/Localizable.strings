@@ -234,6 +234,10 @@
 "meetings.header" = "Ειδοποιήσεις ημερολογίου";
 "meetings.enable" = "Εμφάνιση αντίστροφης μέτρησης";
 "meetings.enable.caption" = "Δύο λεπτά πριν από τα γεγονότα εμφανίζεται μια κάρτα με αντίστροφη μέτρηση, αναβολή και προαιρετικό ήχο.";
+"meetings.sound" = "Αναπαραγωγή ήχου ειδοποίησης";
+"meetings.sound.caption" = "Ο ήχος Glass παίζει στα τελευταία 30 δευτερόλεπτα και για ένα λεπτό μετά την έναρξη.";
+"meetings.sound.all_outputs" = "Σε όλες τις εξόδους τα τελευταία 15 δευτερόλεπτα";
+"meetings.sound.all_outputs.caption" = "Ο ήχος πάει σε κάθε φυσική έξοδο, όχι μόνο στην προεπιλογή.";
 "meetings.access.header" = "Πρόσβαση ημερολογίου";
 "meetings.access.status" = "Πρόσβαση";
 "meetings.access.granted" = "Επιτρέπεται";

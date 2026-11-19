@@ -234,6 +234,10 @@
 "meetings.header" = "日历提醒";
 "meetings.enable" = "显示会议倒计时";
 "meetings.enable.caption" = "日历事件开始前两分钟会显示浮动卡片，含倒计时、延后和可选提示音。";
+"meetings.sound" = "播放提示音";
+"meetings.sound.caption" = "在倒计时最后 30 秒以及会议开始后的一分钟内播放 Glass 提示音。";
+"meetings.sound.all_outputs" = "最后 15 秒在所有输出上播放";
+"meetings.sound.all_outputs.caption" = "将该声音发送到每个物理输出，而不只是默认输出。";
 "meetings.access.header" = "日历访问";
 "meetings.access.status" = "访问";
 "meetings.access.granted" = "已允许";

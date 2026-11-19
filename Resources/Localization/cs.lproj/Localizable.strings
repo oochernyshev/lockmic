@@ -234,6 +234,10 @@
 "meetings.header" = "Upozornění z kalendáře";
 "meetings.enable" = "Zobrazit odpočet schůzky";
 "meetings.enable.caption" = "Dvě minuty před událostí v kalendáři se objeví plovoucí karta s odpočtem, odložením a volitelným zvukem.";
+"meetings.sound" = "Přehrát zvuk upozornění";
+"meetings.sound.caption" = "Přehrává zvuk Glass v posledních 30 sekundách a minutu po začátku.";
+"meetings.sound.all_outputs" = "Na všech výstupech posledních 15 sekund";
+"meetings.sound.all_outputs.caption" = "Pošle zvuk na každý fyzický výstup, ne jen na výchozí.";
 "meetings.access.header" = "Přístup ke kalendáři";
 "meetings.access.status" = "Přístup";
 "meetings.access.granted" = "Povolen";

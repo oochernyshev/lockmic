@@ -202,7 +202,7 @@ final class MeetingAlertCoordinator: ObservableObject {
             shownSecond = second
             shownTitle = title
             if !window.isVisible {
-                cardSoundEnabled = true
+                cardSoundEnabled = preferences.meetingAlertSoundEnabled
                 UsageReporter.record(.meetingAlertShown, source: .hud)
             }
             window.show(MeetingAlertSnapshot(
@@ -231,7 +231,9 @@ final class MeetingAlertCoordinator: ObservableObject {
         let now = ProcessInfo.processInfo.systemUptime
         let last = lastBeep[id]
         if last == nil || now - last! >= interval || beepEvery != interval {
-            sound.play(allPhysical: MeetingAlertLogic.playsOnAllOutputs(remaining: remaining))
+            let allOutputs = preferences.meetingAlertSoundAllOutputs
+                && MeetingAlertLogic.playsOnAllOutputs(remaining: remaining)
+            sound.play(allPhysical: allOutputs)
             lastBeep[id] = now
             beepEvery = interval
         }
