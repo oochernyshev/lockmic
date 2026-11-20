@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Fermer la carte de réunion";
 "tab.alerts" = "Alertes";
 "meetings.header" = "Alertes calendrier";
+"meetings.preview.header" = "Aperçu de l’alerte";
 "meetings.enable" = "Afficher le compte à rebours";
 "meetings.enable.caption" = "Deux minutes avant un événement, une carte flottante apparaît avec un compte à rebours, un report et un son optionnel.";
 "meetings.sound" = "Jouer le son d’alerte";

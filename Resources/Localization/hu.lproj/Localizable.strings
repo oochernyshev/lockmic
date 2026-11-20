@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Találkozókártya bezárása";
 "tab.alerts" = "Riasztások";
 "meetings.header" = "Naptárértesítések";
+"meetings.preview.header" = "Értesítés előnézete";
 "meetings.enable" = "Találkozó-visszaszámlálás";
 "meetings.enable.caption" = "Két perccel a naptáresemény előtt lebegő kártya jelenik meg visszaszámlálással, szundival és opcionális hanggal.";
 "meetings.sound" = "Figyelmeztető hang lejátszása";

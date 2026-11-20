@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Lukk møtekort";
 "tab.alerts" = "Varsler";
 "meetings.header" = "Kalendervarsler";
+"meetings.preview.header" = "Forhåndsvisning av varsel";
 "meetings.enable" = "Vis møtenedtelling";
 "meetings.enable.caption" = "To minutter før kalenderhendelser vises et flytende kort med nedtelling, slumring og valgfri varsellyd.";
 "meetings.sound" = "Spill av varsellyd";

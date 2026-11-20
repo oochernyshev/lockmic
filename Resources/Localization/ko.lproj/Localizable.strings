@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "미팅 카드 닫기";
 "tab.alerts" = "알림";
 "meetings.header" = "캘린더 알림";
+"meetings.preview.header" = "알림 미리보기";
 "meetings.enable" = "미팅 카운트다운 표시";
 "meetings.enable.caption" = "캘린더 일정 2분 전에 카운트다운, 다시 알림, 선택적 알림음이 있는 플로팅 카드가 나타납니다.";
 "meetings.sound" = "알림음 재생";

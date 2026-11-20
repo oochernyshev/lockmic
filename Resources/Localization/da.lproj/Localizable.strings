@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Luk mødekort";
 "tab.alerts" = "Alarmer";
 "meetings.header" = "Kalenderpåmindelser";
+"meetings.preview.header" = "Forhåndsvisning af besked";
 "meetings.enable" = "Vis mødenedtælling";
 "meetings.enable.caption" = "Et flydende kort vises to minutter før kalenderbegivenheder med nedtælling, udsættelse og valgfri alarmlyd.";
 "meetings.sound" = "Afspil alarmlyd";

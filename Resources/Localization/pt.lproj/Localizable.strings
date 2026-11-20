@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Fechar cartão da reunião";
 "tab.alerts" = "Alertas";
 "meetings.header" = "Alertas do calendário";
+"meetings.preview.header" = "Pré-visualização do alerta";
 "meetings.enable" = "Mostrar contagem regressiva";
 "meetings.enable.caption" = "Dois minutos antes dos eventos, um cartão flutuante aparece com contagem regressiva, adiar e som opcional.";
 "meetings.sound" = "Tocar som de alerta";

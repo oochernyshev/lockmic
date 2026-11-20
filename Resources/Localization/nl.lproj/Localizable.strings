@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Vergaderkaart sluiten";
 "tab.alerts" = "Meldingen";
 "meetings.header" = "Agenda-meldingen";
+"meetings.preview.header" = "Voorbeeld van de melding";
 "meetings.enable" = "Vergadercountdown tonen";
 "meetings.enable.caption" = "Twee minuten voor agenda-afspraken verschijnt een zwevende kaart met countdown, snooze en optioneel geluid.";
 "meetings.sound" = "Waarschuwingsgeluid afspelen";

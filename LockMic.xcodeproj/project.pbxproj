@@ -64,6 +64,7 @@
 		ACC18BD5233D2126186035CC /* RecordingDSP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D648AE0FEB3920E8A9FA910C /* RecordingDSP.swift */; };
 		AEF4D2C00132A9A39FC3359B /* MeetingAlertCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED5D7307E3B76FC00E704CA /* MeetingAlertCoordinator.swift */; };
 		B8F8DFAECFDB1AC041DB0EE7 /* MeetingAlertSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0160224EDB6ABED31506900C /* MeetingAlertSound.swift */; };
+		B9FC24981D0E4F55E0659268 /* MeetingAlertPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EC254849F97601A45E54EB0 /* MeetingAlertPreview.swift */; };
 		BA20006664889BFA032B547D /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402280C03971421D5FC37176 /* PreferencesStore.swift */; };
 		BDD8AAD6F773AE812F75400F /* HUDHoldKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500AF84D4D16D9AFA3D3F98C /* HUDHoldKind.swift */; };
 		BF3DB9643FDA7D80CC2D5AEF /* CaptureRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B806C87B787DA85D4DC8F2A0 /* CaptureRig.swift */; };
@@ -101,6 +102,7 @@
 		273A8EAC41182E9890D9602B /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/Localizable.strings; sourceTree = "<group>"; };
 		29B2EEF27306A31B09E7F00C /* StatusItemVisibility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemVisibility.swift; sourceTree = "<group>"; };
 		2AD030E987ACB3A7DE02B0CB /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = el; path = el.lproj/Localizable.strings; sourceTree = "<group>"; };
+		2EC254849F97601A45E54EB0 /* MeetingAlertPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingAlertPreview.swift; sourceTree = "<group>"; };
 		34AF434F3D3D1AC17E977DE6 /* MuteVolumeDucker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuteVolumeDucker.swift; sourceTree = "<group>"; };
 		37710D2E97833DD8E01573D6 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3F8F61DC24A2F34968588493 /* PreferencesAboutPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesAboutPage.swift; sourceTree = "<group>"; };
@@ -279,6 +281,7 @@
 				FAD5EF33BC8D4A49401F7228 /* HUDPresenter.swift */,
 				FCF980886270422245BA9835 /* IndicatorPreviews.swift */,
 				0B4CB872F727BA2DC6ED4192 /* MeetingAlertCardView.swift */,
+				2EC254849F97601A45E54EB0 /* MeetingAlertPreview.swift */,
 				695CD22AB77336C619824461 /* MeetingAlertWindow.swift */,
 				9C7DA62C00646979C53378E3 /* MenuBarIconRenderer.swift */,
 				D312D52AC94D3F1F353FCD46 /* MenuBarIconStylePicker.swift */,
@@ -469,6 +472,7 @@
 				0DF851308A0FA4B2B9C7BDFE /* MeetingAlertCardView.swift in Sources */,
 				AEF4D2C00132A9A39FC3359B /* MeetingAlertCoordinator.swift in Sources */,
 				8FB12383CFF8EC3E91507972 /* MeetingAlertLogic.swift in Sources */,
+				B9FC24981D0E4F55E0659268 /* MeetingAlertPreview.swift in Sources */,
 				B8F8DFAECFDB1AC041DB0EE7 /* MeetingAlertSound.swift in Sources */,
 				98826819C6252B764B4D2D86 /* MeetingAlertWindow.swift in Sources */,
 				4A9777A85400FBA34C4592EA /* MeetingCalendarService.swift in Sources */,

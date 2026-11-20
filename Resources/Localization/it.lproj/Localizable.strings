@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Chiudi scheda riunione";
 "tab.alerts" = "Avvisi";
 "meetings.header" = "Avvisi calendario";
+"meetings.preview.header" = "Anteprima dell’avviso";
 "meetings.enable" = "Mostra conto alla rovescia";
 "meetings.enable.caption" = "Due minuti prima degli eventi compare una scheda mobile con conto alla rovescia, posticipo e suono opzionale.";
 "meetings.sound" = "Riproduci suono di avviso";

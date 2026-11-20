@@ -130,6 +130,7 @@
 "tab.alerts" = "Alerts";
 "tab.recording" = "Recording";
 "meetings.header" = "Calendar alerts";
+"meetings.preview.header" = "Alert preview";
 "meetings.enable" = "Show meeting countdown";
 "meetings.enable.caption" = "A floating card appears two minutes before calendar events, with a countdown, snooze, and an optional alert sound.";
 "meetings.sound" = "Play alert sound";

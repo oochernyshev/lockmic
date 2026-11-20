@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Zatvori karticu sastanka";
 "tab.alerts" = "Upozorenja";
 "meetings.header" = "Obaveštenja iz kalendara";
+"meetings.preview.header" = "Pregled upozorenja";
 "meetings.enable" = "Prikaži odbrojavanje sastanka";
 "meetings.enable.caption" = "Dva minuta pre događaja pojavljuje se plutajuća kartica sa odbrojavanjem, odložiti i opcionim zvukom.";
 "meetings.sound" = "Pusti zvuk upozorenja";

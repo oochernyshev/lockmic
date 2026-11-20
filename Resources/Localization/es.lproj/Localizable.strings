@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Cerrar tarjeta de reunión";
 "tab.alerts" = "Alertas";
 "meetings.header" = "Avisos del calendario";
+"meetings.preview.header" = "Vista previa de la alerta";
 "meetings.enable" = "Mostrar cuenta atrás de reuniones";
 "meetings.enable.caption" = "Dos minutos antes de un evento aparece una tarjeta flotante con cuenta atrás, posponer y un sonido opcional.";
 "meetings.sound" = "Reproducir sonido de alerta";

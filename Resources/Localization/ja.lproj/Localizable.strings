@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "ミーティングカードを閉じる";
 "tab.alerts" = "アラート";
 "meetings.header" = "カレンダー通知";
+"meetings.preview.header" = "通知のプレビュー";
 "meetings.enable" = "ミーティングのカウントダウンを表示";
 "meetings.enable.caption" = "カレンダー予定の2分前に、カウントダウン、スヌーズ、任意の通知音付きのフローティングカードを表示します。";
 "meetings.sound" = "通知音を再生";

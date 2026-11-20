@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Meeting-Karte schließen";
 "tab.alerts" = "Hinweise";
 "meetings.header" = "Kalenderhinweise";
+"meetings.preview.header" = "Vorschau des Hinweises";
 "meetings.enable" = "Meeting-Countdown anzeigen";
 "meetings.enable.caption" = "Zwei Minuten vor Kalenderterminen erscheint eine schwebende Karte mit Countdown, Schlummern und optionalem Hinweiston.";
 "meetings.sound" = "Hinweiston abspielen";

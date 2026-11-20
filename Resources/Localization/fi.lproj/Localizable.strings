@@ -232,6 +232,7 @@
 "keyboard.dismiss_meeting" = "Sulje kokouskortti";
 "tab.alerts" = "Hälytykset";
 "meetings.header" = "Kalenterihälytykset";
+"meetings.preview.header" = "Ilmoituksen esikatselu";
 "meetings.enable" = "Näytä kokouksen lähtölaskenta";
 "meetings.enable.caption" = "Kaksi minuuttia ennen kalenteritapahtumaa näkyy kelluva kortti, lähtölaskenta, torkku ja valinnainen ääni.";
 "meetings.sound" = "Toista hälytysääni";
