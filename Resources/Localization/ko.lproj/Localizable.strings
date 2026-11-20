@@ -233,6 +233,8 @@
 "tab.alerts" = "알림";
 "meetings.header" = "캘린더 알림";
 "meetings.preview.header" = "알림 미리보기";
+"meetings.preview.position" = "위치 지정을 위해 알림 표시";
+"meetings.preview.position.caption" = "샘플 데이터로 실제 알림을 표시합니다. 드래그하여 이동하고, 모서리를 드래그하여 크기를 조절하며, 확인을 눌러 닫습니다. LockMic이 위치를 기억합니다.";
 "meetings.enable" = "미팅 카운트다운 표시";
 "meetings.enable.caption" = "캘린더 일정 2분 전에 카운트다운, 다시 알림, 선택적 알림음이 있는 플로팅 카드가 나타납니다.";
 "meetings.sound" = "알림음 재생";

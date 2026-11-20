@@ -233,6 +233,8 @@
 "tab.alerts" = "Alertas";
 "meetings.header" = "Alertas do calendário";
 "meetings.preview.header" = "Pré-visualização do alerta";
+"meetings.preview.position" = "Mostrar alerta para posicionar";
+"meetings.preview.position.caption" = "Mostra o alerta real com dados de exemplo. Arraste para mover, arraste o canto para redimensionar e prima OK para fechar. O LockMic memoriza a posição.";
 "meetings.enable" = "Mostrar contagem regressiva";
 "meetings.enable.caption" = "Dois minutos antes dos eventos, um cartão flutuante aparece com contagem regressiva, adiar e som opcional.";
 "meetings.sound" = "Tocar som de alerta";

@@ -233,6 +233,8 @@
 "tab.alerts" = "Alertas";
 "meetings.header" = "Avisos del calendario";
 "meetings.preview.header" = "Vista previa de la alerta";
+"meetings.preview.position" = "Mostrar alerta para colocarla";
+"meetings.preview.position.caption" = "Muestra la alerta real con datos de ejemplo. Arrástrala para moverla, arrastra la esquina para cambiar el tamaño y pulsa OK para cerrarla. LockMic recuerda la posición.";
 "meetings.enable" = "Mostrar cuenta atrás de reuniones";
 "meetings.enable.caption" = "Dos minutos antes de un evento aparece una tarjeta flotante con cuenta atrás, posponer y un sonido opcional.";
 "meetings.sound" = "Reproducir sonido de alerta";

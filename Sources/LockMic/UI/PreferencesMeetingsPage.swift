@@ -23,6 +23,12 @@ struct PreferencesMeetingsPage: View {
             PreferencesChrome.sectionCard {
                 PreferencesChrome.sectionHeader(L10n.meetingsPreviewHeader)
                 MeetingAlertPreview(soundEnabled: preferences.meetingAlertSoundEnabled)
+                Button(L10n.meetingsPreviewPosition) {
+                    meetings.showPositioningCard()
+                }
+                .focusable(false)
+                .focusEffectDisabled()
+                PreferencesChrome.caption(L10n.meetingsPreviewPositionCaption)
             }
 
             PreferencesChrome.sectionCard {

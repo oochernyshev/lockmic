@@ -233,6 +233,8 @@
 "tab.alerts" = "Aviseringar";
 "meetings.header" = "Kalenderaviseringar";
 "meetings.preview.header" = "Förhandsvisning av avisering";
+"meetings.preview.position" = "Visa aviseringen för att placera den";
+"meetings.preview.position.caption" = "Visar den riktiga aviseringen med exempeldata. Dra för att flytta, dra i hörnet för att ändra storlek och tryck OK för att stänga. LockMic kommer ihåg positionen.";
 "meetings.enable" = "Visa mötesnedräkning";
 "meetings.enable.caption" = "Två minuter före kalenderhändelser visas ett flytande kort med nedräkning, snooze och valfritt ljud.";
 "meetings.sound" = "Spela varningsljud";

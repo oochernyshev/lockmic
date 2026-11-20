@@ -233,6 +233,8 @@
 "tab.alerts" = "アラート";
 "meetings.header" = "カレンダー通知";
 "meetings.preview.header" = "通知のプレビュー";
+"meetings.preview.position" = "位置を決めるために通知を表示";
+"meetings.preview.position.caption" = "サンプルデータで実際の通知を表示します。ドラッグで移動、角をドラッグでサイズ変更、OK で閉じます。位置は LockMic が記憶します。";
 "meetings.enable" = "ミーティングのカウントダウンを表示";
 "meetings.enable.caption" = "カレンダー予定の2分前に、カウントダウン、スヌーズ、任意の通知音付きのフローティングカードを表示します。";
 "meetings.sound" = "通知音を再生";

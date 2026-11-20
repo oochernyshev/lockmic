@@ -233,6 +233,8 @@
 "tab.alerts" = "Alerty";
 "meetings.header" = "Powiadomienia z kalendarza";
 "meetings.preview.header" = "Podgląd alertu";
+"meetings.preview.position" = "Pokaż alert, aby go ustawić";
+"meetings.preview.position.caption" = "Pokazuje prawdziwy alert z przykładowymi danymi. Przeciągnij, aby przesunąć, przeciągnij róg, aby zmienić rozmiar, i naciśnij OK, aby zamknąć. LockMic zapamiętuje pozycję.";
 "meetings.enable" = "Pokaż odliczanie do spotkania";
 "meetings.enable.caption" = "Dwie minuty przed wydarzeniem pojawia się pływająca karta z odliczaniem, drzemką i opcjonalnym dźwiękiem.";
 "meetings.sound" = "Odtwarzaj dźwięk alertu";

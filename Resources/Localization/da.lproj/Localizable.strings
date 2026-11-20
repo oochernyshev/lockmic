@@ -233,6 +233,8 @@
 "tab.alerts" = "Alarmer";
 "meetings.header" = "Kalenderpåmindelser";
 "meetings.preview.header" = "Forhåndsvisning af besked";
+"meetings.preview.position" = "Vis beskeden for at placere den";
+"meetings.preview.position.caption" = "Viser den rigtige besked med eksempeldata. Træk for at flytte, træk i hjørnet for at ændre størrelse, og tryk OK for at lukke. LockMic husker placeringen.";
 "meetings.enable" = "Vis mødenedtælling";
 "meetings.enable.caption" = "Et flydende kort vises to minutter før kalenderbegivenheder med nedtælling, udsættelse og valgfri alarmlyd.";
 "meetings.sound" = "Afspil alarmlyd";

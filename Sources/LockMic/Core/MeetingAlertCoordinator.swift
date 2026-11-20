@@ -10,6 +10,8 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "Meetings")
 final class MeetingAlertCoordinator: ObservableObject {
     @Published private(set) var access: MeetingCalendarAccess = .notDetermined
     @Published private(set) var isShowing = false
+    /// True while the real card is shown with sample data so the user can place it.
+    @Published private(set) var isPositioning = false
 
     private let preferences: PreferencesStore
     private let calendar = MeetingCalendarService()
@@ -37,8 +39,8 @@ final class MeetingAlertCoordinator: ObservableObject {
         self.preferences = preferences
         self.sound = MeetingAlertSound(audio: audio)
         access = calendar.access
-        window.onSnooze = { [weak self] in self?.snoozeCurrent() }
-        window.onDismiss = { [weak self] in self?.dismissCurrent() }
+        window.onSnooze = { [weak self] in self?.dismissOrClosePositioning(snooze: true) }
+        window.onDismiss = { [weak self] in self?.dismissOrClosePositioning(snooze: false) }
         window.onToggleSound = { [weak self] in self?.toggleSound() }
 
         preferences.$meetingAlertsEnabled
@@ -94,6 +96,36 @@ final class MeetingAlertCoordinator: ObservableObject {
             if let url = URL(string: raw), NSWorkspace.shared.open(url) {
                 return
             }
+        }
+    }
+
+    /// Show the real alert window with sample data so it can be dragged and resized.
+    /// A genuine upcoming meeting takes over the card as soon as one appears.
+    func showPositioningCard() {
+        guard pinned == nil else { return }
+        isPositioning = true
+        cardSoundEnabled = preferences.meetingAlertSoundEnabled
+        showPositioningSnapshot()
+    }
+
+    private func showPositioningSnapshot() {
+        window.show(MeetingAlertSnapshot(
+            title: L10n.meetingUntitled,
+            start: Date().timeIntervalSince1970 + MeetingAlertLogic.lookahead,
+            remaining: MeetingAlertLogic.lookahead,
+            duration: MeetingAlertLogic.lookahead,
+            soundEnabled: cardSoundEnabled
+        ))
+        isShowing = true
+    }
+
+    private func dismissOrClosePositioning(snooze: Bool) {
+        if isPositioning, pinned == nil {
+            closeCard()
+        } else if snooze {
+            snoozeCurrent()
+        } else {
+            dismissCurrent()
         }
     }
 
@@ -194,9 +226,10 @@ final class MeetingAlertCoordinator: ObservableObject {
             snoozeReturn: snoozeReturn
         )
         guard let upcoming else {
-            closeCard()
+            if !isPositioning { closeCard() }
             return
         }
+        isPositioning = false
         if snoozeReturn.contains(upcoming.id) {
             snoozeReturn.remove(upcoming.id)
         }
@@ -257,6 +290,10 @@ final class MeetingAlertCoordinator: ObservableObject {
 
     private func toggleSound() {
         cardSoundEnabled.toggle()
+        if isPositioning, pinned == nil {
+            showPositioningSnapshot()
+            return
+        }
         if !cardSoundEnabled {
             sound.stop()
         } else if let pinned {
@@ -273,5 +310,6 @@ final class MeetingAlertCoordinator: ObservableObject {
         shownTitle = nil
         beepEvery = nil
         isShowing = false
+        isPositioning = false
     }
 }

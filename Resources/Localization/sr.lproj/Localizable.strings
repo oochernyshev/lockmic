@@ -233,6 +233,8 @@
 "tab.alerts" = "Upozorenja";
 "meetings.header" = "Obaveštenja iz kalendara";
 "meetings.preview.header" = "Pregled upozorenja";
+"meetings.preview.position" = "Prikaži upozorenje radi postavljanja";
+"meetings.preview.position.caption" = "Prikazuje pravo upozorenje sa probnim podacima. Prevucite da ga pomerite, prevucite ugao da promenite veličinu i pritisnite OK da ga zatvorite. LockMic pamti položaj.";
 "meetings.enable" = "Prikaži odbrojavanje sastanka";
 "meetings.enable.caption" = "Dva minuta pre događaja pojavljuje se plutajuća kartica sa odbrojavanjem, odložiti i opcionim zvukom.";
 "meetings.sound" = "Pusti zvuk upozorenja";
