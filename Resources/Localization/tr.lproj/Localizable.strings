@@ -232,6 +232,9 @@
 "keyboard.dismiss_meeting" = "Toplantı kartını kapat";
 "tab.alerts" = "Uyarılar";
 "meetings.header" = "Takvim uyarıları";
+"meetings.preview.header" = "Uyarı önizlemesi";
+"meetings.preview.position" = "Yerleştirmek için uyarıyı göster";
+"meetings.preview.position.caption" = "Gerçek uyarıyı örnek verilerle gösterir. Taşımak için sürükleyin, yeniden boyutlandırmak için köşesini sürükleyin ve kapatmak için Tamam’a basın. LockMic konumu hatırlar.";
 "meetings.enable" = "Toplantı geri sayımını göster";
 "meetings.enable.caption" = "Takvim etkinliklerinden iki dakika önce geri sayım, erteleme ve isteğe bağlı ses içeren yüzen bir kart görünür.";
 "meetings.sound" = "Uyarı sesini çal";

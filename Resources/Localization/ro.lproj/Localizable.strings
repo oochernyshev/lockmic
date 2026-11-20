@@ -232,6 +232,9 @@
 "keyboard.dismiss_meeting" = "Închide cardul întâlnirii";
 "tab.alerts" = "Alerte";
 "meetings.header" = "Alerte din calendar";
+"meetings.preview.header" = "Previzualizare alertă";
+"meetings.preview.position" = "Afișează alerta pentru poziționare";
+"meetings.preview.position.caption" = "Afișează alerta reală cu date de exemplu. Trage pentru a o muta, trage de colț pentru a o redimensiona și apasă OK pentru a o închide. LockMic reține poziția.";
 "meetings.enable" = "Afișează numărătoarea întâlnirii";
 "meetings.enable.caption" = "Cu două minute înainte de evenimente apare un card plutitor cu numărătoare, amânare și sunet opțional.";
 "meetings.sound" = "Redă sunetul de alertă";

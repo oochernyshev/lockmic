@@ -232,6 +232,9 @@
 "keyboard.dismiss_meeting" = "Vergaderkaart sluiten";
 "tab.alerts" = "Meldingen";
 "meetings.header" = "Agenda-meldingen";
+"meetings.preview.header" = "Voorbeeld van de melding";
+"meetings.preview.position" = "Melding tonen om te positioneren";
+"meetings.preview.position.caption" = "Toont de echte melding met voorbeeldgegevens. Sleep om te verplaatsen, sleep de hoek om het formaat te wijzigen en druk op OK om te sluiten. LockMic onthoudt de positie.";
 "meetings.enable" = "Vergadercountdown tonen";
 "meetings.enable.caption" = "Twee minuten voor agenda-afspraken verschijnt een zwevende kaart met countdown, snooze en optioneel geluid.";
 "meetings.sound" = "Waarschuwingsgeluid afspelen";

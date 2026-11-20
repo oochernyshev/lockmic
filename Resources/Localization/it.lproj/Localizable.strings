@@ -232,6 +232,9 @@
 "keyboard.dismiss_meeting" = "Chiudi scheda riunione";
 "tab.alerts" = "Avvisi";
 "meetings.header" = "Avvisi calendario";
+"meetings.preview.header" = "Anteprima dell’avviso";
+"meetings.preview.position" = "Mostra l’avviso per posizionarlo";
+"meetings.preview.position.caption" = "Mostra l’avviso reale con dati di esempio. Trascinalo per spostarlo, trascina l’angolo per ridimensionarlo e premi OK per chiuderlo. LockMic ricorda la posizione.";
 "meetings.enable" = "Mostra conto alla rovescia";
 "meetings.enable.caption" = "Due minuti prima degli eventi compare una scheda mobile con conto alla rovescia, posticipo e suono opzionale.";
 "meetings.sound" = "Riproduci suono di avviso";

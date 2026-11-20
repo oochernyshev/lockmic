@@ -232,6 +232,9 @@
 "keyboard.dismiss_meeting" = "Találkozókártya bezárása";
 "tab.alerts" = "Riasztások";
 "meetings.header" = "Naptárértesítések";
+"meetings.preview.header" = "Értesítés előnézete";
+"meetings.preview.position" = "Értesítés megjelenítése az elhelyezéshez";
+"meetings.preview.position.caption" = "A valódi értesítést mutatja mintaadatokkal. Húzással mozgathatod, a sarkánál fogva átméretezheted, az OK gombbal bezárhatod. A LockMic megjegyzi a helyét.";
 "meetings.enable" = "Találkozó-visszaszámlálás";
 "meetings.enable.caption" = "Két perccel a naptáresemény előtt lebegő kártya jelenik meg visszaszámlálással, szundival és opcionális hanggal.";
 "meetings.sound" = "Figyelmeztető hang lejátszása";

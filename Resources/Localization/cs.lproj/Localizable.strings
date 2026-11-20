@@ -232,6 +232,9 @@
 "keyboard.dismiss_meeting" = "Zavřít kartu schůzky";
 "tab.alerts" = "Upozornění";
 "meetings.header" = "Upozornění z kalendáře";
+"meetings.preview.header" = "Náhled upozornění";
+"meetings.preview.position" = "Zobrazit upozornění k umístění";
+"meetings.preview.position.caption" = "Zobrazí skutečné upozornění s ukázkovými daty. Přetažením ho přesunete, tažením za roh změníte velikost a tlačítkem OK ho zavřete. LockMic si pozici pamatuje.";
 "meetings.enable" = "Zobrazit odpočet schůzky";
 "meetings.enable.caption" = "Dvě minuty před událostí v kalendáři se objeví plovoucí karta s odpočtem, odložením a volitelným zvukem.";
 "meetings.sound" = "Přehrát zvuk upozornění";

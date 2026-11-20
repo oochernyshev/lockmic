@@ -232,6 +232,9 @@
 "keyboard.dismiss_meeting" = "Lukk møtekort";
 "tab.alerts" = "Varsler";
 "meetings.header" = "Kalendervarsler";
+"meetings.preview.header" = "Forhåndsvisning av varsel";
+"meetings.preview.position" = "Vis varselet for å plassere det";
+"meetings.preview.position.caption" = "Viser det ekte varselet med eksempeldata. Dra for å flytte, dra i hjørnet for å endre størrelse, og trykk OK for å lukke. LockMic husker posisjonen.";
 "meetings.enable" = "Vis møtenedtelling";
 "meetings.enable.caption" = "To minutter før kalenderhendelser vises et flytende kort med nedtelling, slumring og valgfri varsellyd.";
 "meetings.sound" = "Spill av varsellyd";

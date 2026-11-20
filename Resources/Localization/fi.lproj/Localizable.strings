@@ -232,6 +232,9 @@
 "keyboard.dismiss_meeting" = "Sulje kokouskortti";
 "tab.alerts" = "Hälytykset";
 "meetings.header" = "Kalenterihälytykset";
+"meetings.preview.header" = "Ilmoituksen esikatselu";
+"meetings.preview.position" = "Näytä ilmoitus sijoittelua varten";
+"meetings.preview.position.caption" = "Näyttää todellisen ilmoituksen esimerkkitiedoilla. Siirrä vetämällä, muuta kokoa vetämällä kulmasta ja sulje painamalla OK. LockMic muistaa sijainnin.";
 "meetings.enable" = "Näytä kokouksen lähtölaskenta";
 "meetings.enable.caption" = "Kaksi minuuttia ennen kalenteritapahtumaa näkyy kelluva kortti, lähtölaskenta, torkku ja valinnainen ääni.";
 "meetings.sound" = "Toista hälytysääni";

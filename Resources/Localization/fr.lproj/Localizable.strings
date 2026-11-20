@@ -232,6 +232,9 @@
 "keyboard.dismiss_meeting" = "Fermer la carte de réunion";
 "tab.alerts" = "Alertes";
 "meetings.header" = "Alertes calendrier";
+"meetings.preview.header" = "Aperçu de l’alerte";
+"meetings.preview.position" = "Afficher l’alerte pour la placer";
+"meetings.preview.position.caption" = "Affiche la vraie alerte avec des données d’exemple. Faites-la glisser pour la déplacer, tirez son coin pour la redimensionner et appuyez sur OK pour la fermer. LockMic mémorise la position.";
 "meetings.enable" = "Afficher le compte à rebours";
 "meetings.enable.caption" = "Deux minutes avant un événement, une carte flottante apparaît avec un compte à rebours, un report et un son optionnel.";
 "meetings.sound" = "Jouer le son d’alerte";

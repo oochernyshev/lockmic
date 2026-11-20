@@ -21,6 +21,17 @@ struct PreferencesMeetingsPage: View {
             .opacity(preferences.featuresEnabled ? 1 : 0.45)
 
             PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader(L10n.meetingsPreviewHeader)
+                MeetingAlertPreview(soundEnabled: preferences.meetingAlertSoundEnabled)
+                Button(L10n.meetingsPreviewPosition) {
+                    meetings.showPositioningCard()
+                }
+                .focusable(false)
+                .focusEffectDisabled()
+                PreferencesChrome.caption(L10n.meetingsPreviewPositionCaption)
+            }
+
+            PreferencesChrome.sectionCard {
                 PreferencesChrome.sectionHeader(L10n.meetingsAccessHeader)
                 PreferencesChrome.statusRow(
                     title: L10n.meetingsAccessStatus,
