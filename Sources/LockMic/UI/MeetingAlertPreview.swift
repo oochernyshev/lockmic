@@ -11,25 +11,17 @@ struct MeetingAlertPreview: View {
     var body: some View {
         let fullWidth = MeetingAlertLogic.cardWidth + Self.inset * 2
         let fullHeight = MeetingAlertLogic.cardHeight + Self.inset * 2
-        ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.16, green: 0.22, blue: 0.38), Color(red: 0.30, green: 0.20, blue: 0.38)],
-                startPoint: .topLeading, endPoint: .bottomTrailing
-            )
-            // Shrink the card to whatever width the settings page gives it.
-            GeometryReader { proxy in
-                let scale = min(1, proxy.size.width / fullWidth)
-                CardRepresentable(soundEnabled: soundEnabled)
-                    .frame(width: MeetingAlertLogic.cardWidth, height: MeetingAlertLogic.cardHeight)
-                    .scaleEffect(scale)
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-            }
+        // Shrink the card to whatever width the settings page gives it.
+        GeometryReader { proxy in
+            let scale = min(1, proxy.size.width / fullWidth)
+            CardRepresentable(soundEnabled: soundEnabled)
+                .frame(width: MeetingAlertLogic.cardWidth, height: MeetingAlertLogic.cardHeight)
+                .scaleEffect(scale)
+                .frame(width: proxy.size.width, height: proxy.size.height)
         }
         .aspectRatio(fullWidth / fullHeight, contentMode: .fit)
         .frame(maxWidth: fullWidth)
         .frame(maxWidth: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.secondary.opacity(0.35), lineWidth: 0.5))
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
