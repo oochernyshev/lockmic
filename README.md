@@ -10,6 +10,7 @@ Available through the Mac App Store, Homebrew, and a direct DMG. See [ARCHITECTU
 
 - **System-level mute** via Core Audio (not app-specific mute buttons)
 - **Mute all input devices** by default (optional: default input only)
+- While muted, also sets each device's **input volume to 0** (restored on unmute) so apps that unmute the hardware while starting capture, like Messages voice recording, still record silence
 - Virtual devices (`transportType == Virtual`) are listed but **ignored** for mute control
 - **Menu bar** icon — click to toggle, right-click for menu
 - Global hotkeys (customizable):
