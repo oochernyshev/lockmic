@@ -43,6 +43,7 @@ final class AudioDeviceService: @unchecked Sendable {
     private var muteListenKeys: Set<MuteListenKey> = []
     private var muteNotifyQueued = false
     private let lock = NSLock()
+    let ducker = MuteVolumeDucker()
     private var onDevicesChangedHandlers: [UUID: () -> Void] = [:]
     private var onMuteChangedHandlers: [UUID: () -> Void] = [:]
     /// HAL may `dispatch_sync` onto this queue from inside Start/Stop/Destroy.
@@ -184,6 +185,13 @@ final class AudioDeviceService: @unchecked Sendable {
         }
         guard wrote else {
             throw AudioDeviceServiceError.propertyFailed("set mute (\(lastStatus))")
+        }
+        // HAL mute alone can be bypassed by a stream started during another app's
+        // unmute; zero the input gain too, and restore it on unmute.
+        if muted {
+            duckInputVolume(deviceID: deviceID)
+        } else {
+            restoreDuckedInputVolumes()
         }
     }
 

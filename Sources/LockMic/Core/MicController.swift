@@ -82,6 +82,11 @@ private actor MicHardwareWorker {
         self.audio = audio
     }
 
+    /// Undo a volume duck left behind by a previous run (quit or crash while muted).
+    func restoreDuckedVolumes() {
+        audio.restoreDuckedInputVolumes()
+    }
+
     func snapshot(muteAllInputs: Bool) -> Snapshot {
         makeSnapshot(muteAllInputs: muteAllInputs)
     }
@@ -436,6 +441,9 @@ final class MicController: ObservableObject {
         if let muted {
             state = muted ? .muted : .unmuted
             if seedDesiredMuted { desiredMuted = muted }
+            if seedDesiredMuted, !muted {
+                Task { [hardware] in await hardware.restoreDuckedVolumes() }
+            }
         } else if supportsMute {
             state = .unknown
         } else if snapshot.error == nil {
