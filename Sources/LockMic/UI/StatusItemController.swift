@@ -11,7 +11,7 @@ final class StatusItemController {
     private let hotkeys: HotkeyCoordinator
     private let recording: RecordingCoordinator
     private let meetings: MeetingAlertCoordinator
-    private let sounds = SoundFeedback()
+    private let sounds: SoundFeedback
 
     private var statusItem: NSStatusItem?
     private var preferencesWindow: NSWindow?
@@ -39,6 +39,7 @@ final class StatusItemController {
         self.mic = mic
         self.preferences = preferences
         self.recorder = recorder
+        self.sounds = SoundFeedback(audio: audio)
         self.hud = HUDPresenter(preferences: preferences)
         self.hotkeys = HotkeyCoordinator(mic: mic, preferences: preferences)
         self.recording = RecordingCoordinator(recorder: recorder, preferences: preferences, mic: mic)
