@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "REUNIÓN PRÓXIMA";
 "meeting.status.soon" = "¡LA REUNIÓN EMPIEZA PRONTO!";
 "meeting.status.now" = "LA REUNIÓN HA EMPEZADO";
+"meeting.status.finished" = "LA REUNIÓN HA TERMINADO";
 "meeting.snooze" = "Posponer %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Reunión del calendario";

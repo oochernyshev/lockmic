@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "BEVORSTEHENDES MEETING";
 "meeting.status.soon" = "MEETING BEGINNT BALD!";
 "meeting.status.now" = "MEETING HAT BEGONNEN";
+"meeting.status.finished" = "MEETING BEENDET";
 "meeting.snooze" = "Schlummern %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Kalendertermin";

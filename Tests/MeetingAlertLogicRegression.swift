@@ -28,6 +28,11 @@ enum MeetingAlertLogicRegression {
         expect(MeetingAlertLogic.phase(remaining: 0) == .now, "now at start")
         expect(MeetingAlertLogic.phase(remaining: -5) == .now, "now after start")
 
+        expect(MeetingAlertLogic.phase(remaining: -1799, duration: 1800) == .now, "running meeting is now")
+        expect(MeetingAlertLogic.phase(remaining: -1800, duration: 1800) == .finished, "finished at end")
+        expect(MeetingAlertLogic.clampedRemaining(-5000, duration: 1800) == -1800, "clock stops at duration")
+        expect(MeetingAlertLogic.clampedRemaining(-5, duration: nil) == -5, "no clamp without duration")
+
         expect(MeetingAlertLogic.countdownText(remaining: 75) == "01:15", "countdown before start")
         expect(MeetingAlertLogic.countdownText(remaining: 0) == "00:00", "clock at start")
         expect(MeetingAlertLogic.countdownText(remaining: -17) == "00:17", "elapsed clock without plus")

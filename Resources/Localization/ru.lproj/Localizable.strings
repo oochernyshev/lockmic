@@ -256,6 +256,7 @@
 "meeting.status.upcoming" = "ПРЕДСТОЯЩАЯ ВСТРЕЧА";
 "meeting.status.soon" = "ВСТРЕЧА СКОРО НАЧНЁТСЯ!";
 "meeting.status.now" = "ВСТРЕЧА НАЧАЛАСЬ";
+"meeting.status.finished" = "ВСТРЕЧА ЗАВЕРШЕНА";
 "meeting.snooze" = "Отложить %dс";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Встреча из календаря";

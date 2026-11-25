@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "YAKLAŞAN TOPLANTI";
 "meeting.status.soon" = "TOPLANTI YAKINDA BAŞLIYOR!";
 "meeting.status.now" = "TOPLANTI BAŞLADI";
+"meeting.status.finished" = "TOPLANTI BİTTİ";
 "meeting.snooze" = "%ds ertele";
 "meeting.ok" = "Tamam";
 "meeting.untitled" = "Takvim toplantısı";

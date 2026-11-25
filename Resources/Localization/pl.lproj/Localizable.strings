@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "NADCHODZĄCE SPOTKANIE";
 "meeting.status.soon" = "SPOTKANIE WKRÓTCE SIĘ ZACZNIE!";
 "meeting.status.now" = "SPOTKANIE SIĘ ROZPOCZĘŁO";
+"meeting.status.finished" = "SPOTKANIE SIĘ ZAKOŃCZYŁO";
 "meeting.snooze" = "Drzemka %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Spotkanie z kalendarza";

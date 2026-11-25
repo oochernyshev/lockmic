@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "ΕΠΕΡΧΟΜΕΝΗ ΣΥΝΑΝΤΗΣΗ";
 "meeting.status.soon" = "Η ΣΥΝΑΝΤΗΣΗ ΞΕΚΙΝΑ ΣΥΝΤΟΜΑ!";
 "meeting.status.now" = "Η ΣΥΝΑΝΤΗΣΗ ΞΕΚΙΝΗΣΕ";
+"meeting.status.finished" = "Η ΣΥΝΑΝΤΗΣΗ ΤΕΛΕΙΩΣΕ";
 "meeting.snooze" = "Αναβολή %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Συνάντηση ημερολογίου";
