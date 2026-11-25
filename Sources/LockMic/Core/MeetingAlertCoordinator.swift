@@ -29,6 +29,7 @@ final class MeetingAlertCoordinator: ObservableObject {
     private var cardSoundEnabled = true
     private var beepEvery: TimeInterval?
     private var tickTimer: Timer?
+    private var tickInterval: TimeInterval = MeetingAlertLogic.tick
     private var fetchTimer: Timer?
     private var sourceTimer: Timer?
     private var storeObserver: NSObjectProtocol?
@@ -162,11 +163,7 @@ final class MeetingAlertCoordinator: ObservableObject {
 
     private func startTimers() {
         stopTimers()
-        let tick = Timer(timeInterval: MeetingAlertLogic.tick, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
-        }
-        RunLoop.main.add(tick, forMode: .common)
-        tickTimer = tick
+        scheduleTick(MeetingAlertLogic.tick)
 
         let fetch = Timer(timeInterval: MeetingAlertLogic.fetchInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refreshEvents() }
@@ -192,6 +189,19 @@ final class MeetingAlertCoordinator: ObservableObject {
         }
     }
 
+    /// The timer is already on the main run loop. Reschedule only when the cadence changes.
+    private func scheduleTick(_ interval: TimeInterval) {
+        tickTimer?.invalidate()
+        tickInterval = interval
+        let tick = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.tick()
+            }
+        }
+        RunLoop.main.add(tick, forMode: .common)
+        tickTimer = tick
+    }
+
     private func stopTimers() {
         tickTimer?.invalidate()
         fetchTimer?.invalidate()
@@ -199,6 +209,7 @@ final class MeetingAlertCoordinator: ObservableObject {
         tickTimer = nil
         fetchTimer = nil
         sourceTimer = nil
+        tickInterval = MeetingAlertLogic.tick
         if let storeObserver {
             NotificationCenter.default.removeObserver(storeObserver)
             self.storeObserver = nil
@@ -226,6 +237,9 @@ final class MeetingAlertCoordinator: ObservableObject {
             snoozeReturn: snoozeReturn
         )
         guard let upcoming else {
+            if tickInterval != MeetingAlertLogic.tick {
+                scheduleTick(MeetingAlertLogic.tick)
+            }
             if !isPositioning { closeCard() }
             return
         }
@@ -254,6 +268,10 @@ final class MeetingAlertCoordinator: ObservableObject {
             isShowing = true
         }
         updateSound(id: upcoming.id, remaining: remaining)
+        let nextTick = MeetingAlertLogic.tickInterval(remaining: remaining)
+        if nextTick != tickInterval {
+            scheduleTick(nextTick)
+        }
     }
 
     private func updateSound(id: String, remaining: TimeInterval) {
@@ -269,7 +287,9 @@ final class MeetingAlertCoordinator: ObservableObject {
         let interval = MeetingAlertLogic.beepInterval(remaining: remaining)
         let now = ProcessInfo.processInfo.systemUptime
         let last = lastBeep[id]
-        if last == nil || now - last! >= interval || beepEvery != interval {
+        if last == nil
+            || MeetingAlertLogic.beepIsDue(elapsed: now - last!, interval: interval, tick: tickInterval)
+            || beepEvery != interval {
             let allOutputs = preferences.meetingAlertSoundAllOutputs
                 && MeetingAlertLogic.playsOnAllOutputs(remaining: remaining)
             sound.play(allPhysical: allOutputs)
