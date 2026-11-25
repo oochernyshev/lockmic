@@ -74,6 +74,8 @@ private actor MicHardwareWorker {
     struct EnforceCheck: Sendable {
         let needsWrite: Bool
         let snapshot: Snapshot
+        /// Mute-all publishes the full input list. The default-only poll does not.
+        let replacesDeviceList: Bool
     }
 
     private let audio: AudioDeviceService
@@ -129,18 +131,22 @@ private actor MicHardwareWorker {
 
     /// Read-only: skip the 2s write when HAL is already holding mute on the same default.
     /// Device switch, unknown mute, or any in-scope unmute still needs a write.
+    /// Mute-all walks every input. The default-only poll reads that one device.
     func muteEnforceCheck(
         muteAllInputs: Bool,
         lastEnforcedDefaultID: AudioDeviceID
     ) -> EnforceCheck {
-        let snapshot = makeSnapshot(muteAllInputs: muteAllInputs)
+        let snapshot = muteAllInputs
+            ? makeSnapshot(muteAllInputs: true)
+            : makeDefaultSnapshot()
         return EnforceCheck(
             needsWrite: Self.needsMuteWrite(
                 snapshot: snapshot,
                 muteAllInputs: muteAllInputs,
                 lastEnforcedDefaultID: lastEnforcedDefaultID
             ),
-            snapshot: snapshot
+            snapshot: snapshot,
+            replacesDeviceList: muteAllInputs
         )
     }
 
@@ -159,6 +165,46 @@ private actor MicHardwareWorker {
             }
         }
         return snapshot.defaultMuted != true
+    }
+
+    /// Default input only. `devices` stays empty so the caller keeps the menu list.
+    private func makeDefaultSnapshot() -> Snapshot {
+        do {
+            let defaultID = try audio.defaultInputDeviceID()
+            let name = audio.deviceName(defaultID)
+            let supportsMute = audio.supportsMute(defaultID)
+            let muted: Bool?
+            let error: String?
+            if supportsMute {
+                do {
+                    muted = try audio.isMuted(defaultID)
+                    error = nil
+                } catch let caught {
+                    muted = nil
+                    error = caught.localizedDescription
+                }
+            } else {
+                muted = nil
+                error = nil
+            }
+            return Snapshot(
+                defaultID: defaultID,
+                deviceName: name,
+                defaultMuted: muted,
+                defaultSupportsMute: supportsMute,
+                devices: [],
+                error: error
+            )
+        } catch {
+            return Snapshot(
+                defaultID: nil,
+                deviceName: "—",
+                defaultMuted: nil,
+                defaultSupportsMute: false,
+                devices: [],
+                error: error.localizedDescription
+            )
+        }
     }
 
     private func makeSnapshot(muteAllInputs: Bool) -> Snapshot {
@@ -502,8 +548,10 @@ final class MicController: ObservableObject {
             applyMute(true)
             return
         }
-        let devicesRequest = nextDevicesRequest()
         let muteAllInputs = preferences.muteAllInputs
+        // Only a full list bumps the generation. A default-only check must not
+        // discard a device-list refresh that is already in flight.
+        let devicesRequest = muteAllInputs ? nextDevicesRequest() : nil
         let lastDefaultID = lastEnforcedDefaultID
         Task { [weak self, hardware] in
             let check = await hardware.muteEnforceCheck(
@@ -511,7 +559,7 @@ final class MicController: ObservableObject {
                 lastEnforcedDefaultID: lastDefaultID
             )
             guard let self else { return }
-            if devicesRequest == self.devicesRequest {
+            if let devicesRequest, check.replacesDeviceList, devicesRequest == self.devicesRequest {
                 self.inputDevices = check.snapshot.devices
             }
             guard self.desiredMuted, !self.suppressDeviceResync else { return }

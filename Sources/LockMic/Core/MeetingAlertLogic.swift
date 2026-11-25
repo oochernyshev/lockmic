@@ -32,7 +32,8 @@ enum MeetingAlertLogic {
     static let fastEvery: TimeInterval = 0.5
     static let fetchInterval: TimeInterval = 30
     static let sourceRefreshInterval: TimeInterval = 30 * 60
-    static let tick: TimeInterval = 0.1
+    /// Card text changes on the whole second. The 0.5 s beep only needs a faster tick.
+    static let tick: TimeInterval = 1
     static let appearDuration: TimeInterval = 0.34
     static let scaleMin: CGFloat = 0.7
     static let scaleMax: CGFloat = 2.5
@@ -107,6 +108,19 @@ enum MeetingAlertLogic {
         if remaining <= alertAll { return 2 }
         if remaining <= beepMid { return 3 }
         return 5
+    }
+
+    /// 1 s while the card is idle. 0.5 s from one idle tick before the fast beep through the start.
+    static func tickInterval(remaining: TimeInterval?) -> TimeInterval {
+        guard let remaining, remaining >= 0, remaining <= alertFast + tick else { return tick }
+        return fastEvery
+    }
+
+    /// A repeating timer stays on its original cadence. After a late callback the next
+    /// one can arrive early relative to the beep. Play on this tick when waiting would
+    /// land at least as far past the interval as playing now would land early.
+    static func beepIsDue(elapsed: TimeInterval, interval: TimeInterval, tick: TimeInterval) -> Bool {
+        elapsed + max(0, tick) / 2 >= interval
     }
 
     static func isSnoozed(id: String, now: TimeInterval, until: [String: TimeInterval]) -> Bool {
