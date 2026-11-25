@@ -2,7 +2,7 @@
 
 System-wide microphone mute for macOS — menu bar icon, global hotkeys, and an on-screen HUD. Works in Zoom, Teams, Meet, FaceTime, browsers, and every other app by muting input devices via Core Audio.
 
-**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** [MIT](./LICENSE) · **Version:** 1.5.6
+**Owner:** [WIXEE.AI](https://wixee.ai) · **License:** [MIT](./LICENSE) · **Version:** 1.5.7
 
 Available through the Mac App Store, Homebrew, and a direct DMG. See [ARCHITECTURE.md](./ARCHITECTURE.md) for design details.
 
@@ -89,7 +89,7 @@ Package a release zip/DMG:
 
 ```bash
 ./Scripts/package_dmg.sh
-# → build/dist/LockMic-1.5.6.zip (+ .dmg, sha256)
+# → build/dist/LockMic-1.5.7.zip (+ .dmg, sha256)
 ```
 
 ## Install via Homebrew
