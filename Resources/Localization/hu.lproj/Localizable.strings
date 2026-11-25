@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "KÖZELGŐ TALÁLKOZÓ";
 "meeting.status.soon" = "A TALÁLKOZÓ HAMAROSAN KEZDŐDIK!";
 "meeting.status.now" = "A TALÁLKOZÓ ELKEZDŐDÖTT";
+"meeting.status.finished" = "A TALÁLKOZÓ VÉGET ÉRT";
 "meeting.snooze" = "Szundi %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Naptári találkozó";

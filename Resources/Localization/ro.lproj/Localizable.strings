@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "ÎNTÂLNIRE VIITOARE";
 "meeting.status.soon" = "ÎNTÂLNIREA ÎNCEPE CURÂND!";
 "meeting.status.now" = "ÎNTÂLNIREA A ÎNCEPUT";
+"meeting.status.finished" = "ÎNTÂLNIREA S-A TERMINAT";
 "meeting.snooze" = "Amână %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Întâlnire din calendar";

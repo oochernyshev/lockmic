@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "PREDSTOJEĆI SASTANAK";
 "meeting.status.soon" = "SASTANAK USKORO POČINJE!";
 "meeting.status.now" = "SASTANAK JE POČEO";
+"meeting.status.finished" = "SASTANAK JE ZAVRŠEN";
 "meeting.snooze" = "Odloži %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Sastanak iz kalendara";

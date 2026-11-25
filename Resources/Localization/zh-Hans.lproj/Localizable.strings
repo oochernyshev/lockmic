@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "即将开始的会议";
 "meeting.status.soon" = "会议即将开始！";
 "meeting.status.now" = "会议已开始";
+"meeting.status.finished" = "会议已结束";
 "meeting.snooze" = "延后 %d 秒";
 "meeting.ok" = "好";
 "meeting.untitled" = "日历会议";

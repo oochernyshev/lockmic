@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "AANKOMENDE VERGADERING";
 "meeting.status.soon" = "VERGADERING BEGINT ZO!";
 "meeting.status.now" = "VERGADERING IS BEGONNEN";
+"meeting.status.finished" = "VERGADERING IS AFGELOPEN";
 "meeting.snooze" = "Snooze %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Agenda-afspraak";

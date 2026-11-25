@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "まもなくミーティング";
 "meeting.status.soon" = "まもなく開始！";
 "meeting.status.now" = "ミーティングが始まりました";
+"meeting.status.finished" = "ミーティングが終了しました";
 "meeting.snooze" = "スヌーズ %d秒";
 "meeting.ok" = "OK";
 "meeting.untitled" = "カレンダーの予定";

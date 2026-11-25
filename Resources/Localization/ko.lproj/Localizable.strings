@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "예정된 미팅";
 "meeting.status.soon" = "미팅이 곧 시작됩니다!";
 "meeting.status.now" = "미팅이 시작되었습니다";
+"meeting.status.finished" = "미팅이 종료되었습니다";
 "meeting.snooze" = "%d초 다시 알림";
 "meeting.ok" = "확인";
 "meeting.untitled" = "캘린더 미팅";

@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "KOMMANDE MÖTE";
 "meeting.status.soon" = "MÖTET BÖRJAR SNART!";
 "meeting.status.now" = "MÖTET HAR BÖRJAT";
+"meeting.status.finished" = "MÖTET ÄR SLUT";
 "meeting.snooze" = "Snooza %ds";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Kalendermöte";
