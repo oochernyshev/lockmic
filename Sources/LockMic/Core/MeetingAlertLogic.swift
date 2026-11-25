@@ -17,6 +17,7 @@ enum MeetingAlertPhase: Equatable, Sendable {
     case upcoming
     case soon
     case now
+    case finished
 }
 
 enum MeetingAlertLogic {
@@ -38,10 +39,17 @@ enum MeetingAlertLogic {
     static let cardWidth: CGFloat = 490
     static let cardHeight: CGFloat = 220
 
-    static func phase(remaining: TimeInterval) -> MeetingAlertPhase {
+    static func phase(remaining: TimeInterval, duration: TimeInterval? = nil) -> MeetingAlertPhase {
+        if let duration, duration > 0, -remaining >= duration { return .finished }
         if remaining <= 0 { return .now }
         if remaining <= urgent { return .soon }
         return .upcoming
+    }
+
+    /// Stops the elapsed clock at the meeting length once the meeting is over.
+    static func clampedRemaining(_ remaining: TimeInterval, duration: TimeInterval?) -> TimeInterval {
+        guard let duration, duration > 0 else { return remaining }
+        return max(remaining, -duration)
     }
 
     static func snoozeSeconds(remaining: TimeInterval) -> Int {

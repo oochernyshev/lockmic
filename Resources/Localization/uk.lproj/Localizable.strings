@@ -253,6 +253,7 @@
 "meeting.status.upcoming" = "НАБЛИЖАЄТЬСЯ ЗУСТРІЧ";
 "meeting.status.soon" = "ЗУСТРІЧ СКОРО ПОЧНЕТЬСЯ!";
 "meeting.status.now" = "ЗУСТРІЧ ПОЧАЛАСЯ";
+"meeting.status.finished" = "ЗУСТРІЧ ЗАВЕРШЕНО";
 "meeting.snooze" = "Відкласти %dс";
 "meeting.ok" = "OK";
 "meeting.untitled" = "Зустріч із календаря";

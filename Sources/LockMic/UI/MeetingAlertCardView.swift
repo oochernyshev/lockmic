@@ -127,13 +127,14 @@ final class MeetingAlertCardView: NSView {
     func apply(_ snapshot: MeetingAlertSnapshot, scale: CGFloat) {
         self.snapshot = snapshot
         self.scale = min(MeetingAlertLogic.scaleMax, max(MeetingAlertLogic.scaleMin, scale))
-        let phase = MeetingAlertLogic.phase(remaining: snapshot.remaining)
+        let phase = MeetingAlertLogic.phase(remaining: snapshot.remaining, duration: snapshot.duration)
         let accent: NSColor = phase == .upcoming ? Self.yellow : Self.red
         let status: String
         switch phase {
         case .upcoming: status = L10n.meetingStatusUpcoming
         case .soon: status = L10n.meetingStatusSoon
         case .now: status = L10n.meetingStatusNow
+        case .finished: status = L10n.meetingStatusFinished
         }
 
         let timeText = MeetingAlertLogic.meetingTimeText(start: snapshot.start)

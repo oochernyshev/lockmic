@@ -234,7 +234,7 @@ final class MeetingAlertCoordinator: ObservableObject {
             snoozeReturn.remove(upcoming.id)
         }
         pinned = upcoming
-        let remaining = upcoming.start - now
+        let remaining = MeetingAlertLogic.clampedRemaining(upcoming.start - now, duration: upcoming.duration)
         let title = upcoming.title.isEmpty ? L10n.meetingUntitled : upcoming.title
         let second = Int(remaining.rounded(.towardZero))
         if shownSecond != second || shownTitle != title || !window.isVisible {

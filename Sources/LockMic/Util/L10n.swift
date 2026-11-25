@@ -232,6 +232,7 @@ enum L10n {
     static var meetingStatusUpcoming: String { tr("meeting.status.upcoming") }
     static var meetingStatusSoon: String { tr("meeting.status.soon") }
     static var meetingStatusNow: String { tr("meeting.status.now") }
+    static var meetingStatusFinished: String { tr("meeting.status.finished") }
     static func meetingSnooze(_ seconds: Int) -> String {
         format("meeting.snooze", seconds)
     }
