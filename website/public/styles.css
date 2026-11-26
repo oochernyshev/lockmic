@@ -1873,6 +1873,15 @@ kbd {
 .footer-copy a:hover {
   color: var(--text-muted);
 }
+.footer-badge {
+  display: inline-block;
+  line-height: 0;
+}
+.footer-badge img {
+  display: block;
+  height: 56px;
+  width: auto;
+}
 
 /* Reveal on scroll */
 .reveal {
