@@ -29,8 +29,8 @@ struct OnboardingView: View {
                 case 0: welcomePage
                 case 1: analyticsPage
                 case 2: hudPage
-                case 3: alertsPage
-                case 4: syncPage
+                case 3: syncPage
+                case 4: alertsPage
                 default: readyPage
                 }
             }
