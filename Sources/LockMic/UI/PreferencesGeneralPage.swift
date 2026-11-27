@@ -33,16 +33,6 @@ struct PreferencesGeneralPage: View {
             }
 
             PreferencesChrome.sectionCard {
-                PreferencesChrome.sectionHeader(L10n.generalGettingStartedHeader)
-                PreferencesChrome.caption(L10n.generalGettingStartedCaption)
-                Button(L10n.generalGettingStartedButton) {
-                    NotificationCenter.default.post(name: .lockMicOpenOnboarding, object: nil)
-                }
-                .focusable(false)
-                .focusEffectDisabled()
-            }
-
-            PreferencesChrome.sectionCard {
                 PreferencesChrome.sectionHeader(L10n.generalOptionsHeader)
                 Group {
                     Toggle(L10n.generalOptionsSound, isOn: $preferences.soundEnabled)
@@ -50,6 +40,16 @@ struct PreferencesGeneralPage: View {
                 }
                 .disabled(!preferences.featuresEnabled)
                 .opacity(preferences.featuresEnabled ? 1 : 0.45)
+            }
+
+            PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader(L10n.generalGettingStartedHeader)
+                PreferencesChrome.caption(L10n.generalGettingStartedCaption)
+                Button(L10n.generalGettingStartedButton) {
+                    NotificationCenter.default.post(name: .lockMicOpenOnboarding, object: nil)
+                }
+                .focusable(false)
+                .focusEffectDisabled()
             }
         }
     }
