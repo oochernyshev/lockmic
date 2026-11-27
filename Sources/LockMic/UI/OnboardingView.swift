@@ -6,6 +6,8 @@ struct OnboardingView: View {
     @ObservedObject var preferences: PreferencesStore
     @ObservedObject var mic: MicController
     let testMute: () -> Void
+    /// Turns meeting alerts on and asks for Calendar access.
+    let enableMeetingAlerts: () -> Void
     let finish: () -> Void
 
     @State private var page = 0
@@ -13,7 +15,7 @@ struct OnboardingView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 7) {
-                ForEach(0..<5, id: \.self) { index in
+                ForEach(0..<6, id: \.self) { index in
                     Capsule()
                         .fill(index == page ? Color.accentColor : Color.secondary.opacity(0.22))
                         .frame(width: index == page ? 28 : 8, height: 8)
@@ -27,7 +29,8 @@ struct OnboardingView: View {
                 case 0: welcomePage
                 case 1: analyticsPage
                 case 2: hudPage
-                case 3: syncPage
+                case 3: alertsPage
+                case 4: syncPage
                 default: readyPage
                 }
             }
@@ -49,7 +52,7 @@ struct OnboardingView: View {
                         page = 2
                     }
                         .keyboardShortcut(.defaultAction)
-                } else if page == 2 || page == 3 {
+                } else if page >= 2 && page <= 4 {
                     Button("Continue") { page += 1 }
                         .keyboardShortcut(.defaultAction)
                 } else {
@@ -62,7 +65,7 @@ struct OnboardingView: View {
             }
             .padding(20)
         }
-        .frame(width: 620, height: 600)
+        .frame(width: 620, height: 660)
         .background(.ultraThinMaterial)
     }
 
@@ -83,8 +86,6 @@ struct OnboardingView: View {
                 onboardingFeature("waveform", "Record microphone and system audio when you need it")
             }
             .frame(maxWidth: 410, alignment: .leading)
-            AccessibilityAccessRow()
-                .frame(maxWidth: 410)
         }
         .padding(36)
     }
@@ -231,6 +232,55 @@ struct OnboardingView: View {
         .padding(14)
     }
 
+    private var alertsPage: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "bell.badge.fill")
+                .font(.system(size: 44, weight: .medium))
+                .foregroundStyle(.tint)
+            VStack(spacing: 4) {
+                Text("Never walk into a meeting live")
+                    .font(.system(size: 24, weight: .bold))
+                Text("Two minutes before a calendar event, a floating countdown card reminds you to check your microphone.")
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 470)
+            }
+
+            MeetingAlertPreview(soundEnabled: preferences.meetingAlertSoundEnabled)
+                .frame(maxWidth: 360)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Toggle("Show meeting countdown", isOn: Binding(
+                    get: { preferences.meetingAlertsEnabled },
+                    set: { newValue in
+                        if newValue {
+                            enableMeetingAlerts()
+                        } else {
+                            preferences.meetingAlertsEnabled = false
+                        }
+                    }
+                ))
+                .toggleStyle(.checkbox)
+                .fontWeight(.medium)
+                Toggle("Play an alert sound near the start", isOn: $preferences.meetingAlertSoundEnabled)
+                    .toggleStyle(.checkbox)
+                    .disabled(!preferences.meetingAlertsEnabled)
+            }
+            .frame(maxWidth: 520, alignment: .leading)
+            .padding(12)
+            .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Needs Calendar access: macOS asks when you turn it on. LockMic reads event titles and start times on this Mac and uploads nothing.", systemImage: "calendar")
+                Label("You can change this anytime in Preferences → Alerts.", systemImage: "gearshape.fill")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: 520, alignment: .leading)
+        }
+        .padding(14)
+    }
+
     private var syncPage: some View {
         VStack(spacing: 12) {
             Image(systemName: "arrow.left.arrow.right.circle.fill")
@@ -268,8 +318,11 @@ struct OnboardingView: View {
             .padding(12)
             .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
 
+            AccessibilityAccessRow()
+                .frame(maxWidth: 520)
+
             VStack(alignment: .leading, spacing: 6) {
-                Label("Needs Accessibility access: macOS asks when you finish setup. LockMic only reads each call's mute button and the page address needed to find it, never audio or what is on the page.", systemImage: "hand.raised.fill")
+                Label("LockMic only reads each call's mute button and the page address needed to find it, never audio or what is on the page.", systemImage: "lock.shield.fill")
                 Label("You can change these anytime in Preferences → Sync.", systemImage: "gearshape.fill")
             }
             .font(.caption)

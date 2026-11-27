@@ -694,6 +694,9 @@ final class StatusItemController {
                     guard let self else { return }
                     self.applyFeatureAvailability(force: true)
                     self.toggleFromUser(source: .menu)
+                },
+                enableMeetingAlerts: { [weak self] in
+                    self?.meetings.requestAccessAndEnable()
                 }
             ) { [weak self] in
                 self?.applyFeatureAvailability(force: true)
