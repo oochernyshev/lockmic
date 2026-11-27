@@ -8,7 +8,8 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "MeetBridge")
 /// Google Meet in the browser through Accessibility. Browsers expose the page's web area with its
 /// URL, so Meet is found by `meet.google.com` (any language); the mic button inside is read and
 /// pressed like in the Zoom and Teams bridges. Works in Safari and Chromium browsers.
-/// Only the visible tab is exposed by Chromium browsers, so that is the call that syncs.
+/// Every Meet call found (tabs in Safari, the visible tab of Chromium browsers, Picture-in-Picture
+/// windows, several browsers) is kept in the same mute state, since there is only one microphone.
 @MainActor
 final class MeetBridge: CallService {
     let id = CallServiceID.meet
@@ -38,7 +39,8 @@ final class MeetBridge: CallService {
     private var timer: Timer?
     private var scanning = false
     private var lastEvent: CallServiceEvent?
-    private var lastButton: AXUIElement?
+    /// Last known mute state of every Meet call seen in the previous scan, keyed by its button.
+    private var calls: [AXUIElement: Bool] = [:]
     private var pending: (muted: Bool, deadline: TimeInterval)?
     /// Consecutive scans without the button. A single miss (tree rebuild, busy page) is not a hang-up.
     private var misses = 0
@@ -59,19 +61,26 @@ final class MeetBridge: CallService {
         timer?.invalidate()
         timer = nil
         lastEvent = nil
-        lastButton = nil
+        calls = [:]
         pending = nil
         misses = 0
     }
 
     func push(muted: Bool) {
-        guard let button = lastButton,
-              let label = Self.label(of: button), let seen = MeetLabels.muted(for: label) else { return }
-        let current = pending.map { $0.muted } ?? seen
-        guard current != muted else { return }
-        AXUIElementPerformAction(button, kAXPressAction as CFString)
+        var pressed = false
+        for (button, _) in calls where press(button, toMuted: muted) { pressed = true }
+        guard pressed else { return }
         pending = (muted, ProcessInfo.processInfo.systemUptime + Self.settleTimeout)
         lastEvent = CallServiceEvent(muted: muted, inCall: true)
+    }
+
+    /// Presses `button` if its label says it is not yet in the wanted state.
+    @discardableResult
+    private func press(_ button: AXUIElement, toMuted muted: Bool) -> Bool {
+        guard let label = Self.label(of: button), let seen = MeetLabels.muted(for: label), seen != muted
+        else { return false }
+        AXUIElementPerformAction(button, kAXPressAction as CFString)
+        return true
     }
 
     // MARK: - Polling (tree walk runs off the main thread)
@@ -81,34 +90,48 @@ final class MeetBridge: CallService {
         guard !scanning else { return }
         scanning = true
         Self.queue.async { [weak self] in
-            let hit = Self.scan()
+            let hits = Self.scan()
             Task { @MainActor in
                 self?.scanning = false
-                self?.finish(hit)
+                self?.finish(hits)
             }
         }
     }
 
-    private func finish(_ scanned: Hit?) {
-        let hit = scanned
-        if hit == nil, lastEvent?.inCall == true, misses < Self.missesToLeave {
+    private func finish(_ hits: [Hit]) {
+        if hits.isEmpty, lastEvent?.inCall == true, misses < Self.missesToLeave {
             misses += 1
             return
         }
-        if hit != nil { misses = 0 }
-        lastButton = hit?.button
+        if !hits.isEmpty { misses = 0 }
+        let previous = calls
+        calls = Dictionary(hits.map { ($0.button, $0.muted) }, uniquingKeysWith: { _, last in last })
+
+        let synced = lastEvent?.muted
         if let wait = pending {
-            if hit == nil || hit?.muted == wait.muted || ProcessInfo.processInfo.systemUptime > wait.deadline {
+            let settled = hits.allSatisfy { $0.muted == wait.muted }
+            if hits.isEmpty || settled || ProcessInfo.processInfo.systemUptime > wait.deadline {
                 pending = nil
             } else {
-                return // stale label right after our own press
+                return // stale labels right after our own press
             }
         }
-        let event = CallServiceEvent(muted: hit?.muted, inCall: hit != nil)
+
+        // A call that appeared while others are running adopts the current synced state.
+        if lastEvent?.inCall == true, let synced {
+            for hit in hits where previous[hit.button] == nil && hit.muted != synced {
+                press(hit.button, toMuted: synced)
+            }
+        }
+
+        // The state a user just changed in any call; unchanged calls do not vote.
+        let changed = hits.filter { previous[$0.button] != nil && previous[$0.button] != $0.muted }
+        let muted = changed.last?.muted ?? (lastEvent?.inCall == true ? lastEvent?.muted : hits.first?.muted)
+        let event = CallServiceEvent(muted: muted, inCall: !hits.isEmpty)
         if let last = lastEvent, last.inCall == event.inCall, last.muted == event.muted { return }
         let wasInCall = lastEvent?.inCall ?? false
         lastEvent = event
-        log.info("event inCall=\(event.inCall, privacy: .public) muted=\(event.muted.map { String($0) } ?? "nil", privacy: .public)")
+        log.info("event inCall=\(event.inCall, privacy: .public) muted=\(event.muted.map { String($0) } ?? "nil", privacy: .public) calls=\(hits.count, privacy: .public)")
         if event.inCall || wasInCall { onEvent?(event) }
     }
 
@@ -118,7 +141,8 @@ final class MeetBridge: CallService {
         browserIDs.flatMap { NSRunningApplication.runningApplications(withBundleIdentifier: $0) }
     }
 
-    private nonisolated static func scan() -> Hit? {
+    private nonisolated static func scan() -> [Hit] {
+        var found: [Hit] = []
         for app in runningBrowsers() {
             let root = AXUIElementCreateApplication(app.processIdentifier)
             AXUIElementSetMessagingTimeout(root, 0.5)
@@ -128,33 +152,33 @@ final class MeetBridge: CallService {
             for window in children(root) where string(window, "AXRole") == "AXWindow" {
                 // Meet's Picture-in-Picture window has a blank URL but a "Meet – …" title.
                 let pip = string(window, "AXTitle")?.localizedCaseInsensitiveContains("meet") == true
-                if let hit = search(window, inMeet: false, pipWindow: pip, budget: &budget) { return hit }
+                search(window, inMeet: false, pipWindow: pip, budget: &budget, into: &found)
             }
         }
-        return nil
+        return found
     }
 
     private nonisolated static func search(
-        _ el: AXUIElement, inMeet: Bool, pipWindow: Bool, budget: inout Int
-    ) -> Hit? {
+        _ el: AXUIElement, inMeet: Bool, pipWindow: Bool, budget: inout Int, into found: inout [Hit]
+    ) {
         budget -= 1
-        if budget <= 0 { return nil }
+        if budget <= 0 { return }
         let role = string(el, "AXRole")
         var inMeet = inMeet
         if role == "AXWebArea" {
             let page = url(el)
             inMeet = page?.host == "meet.google.com"
                 || (pipWindow && (page == nil || page?.scheme == "about"))
-            if !inMeet { return nil } // skip other tabs entirely
+            if !inMeet { return } // skip other pages entirely
         }
         if inMeet, role == "AXButton",
            let label = label(of: el), let muted = MeetLabels.muted(for: label) {
-            return Hit(muted: muted, button: el)
+            found.append(Hit(muted: muted, button: el))
+            return // one mic button per call
         }
         for child in children(el) {
-            if let hit = search(child, inMeet: inMeet, pipWindow: pipWindow, budget: &budget) { return hit }
+            search(child, inMeet: inMeet, pipWindow: pipWindow, budget: &budget, into: &found)
         }
-        return nil
     }
 
     private nonisolated static func label(of el: AXUIElement) -> String? {
