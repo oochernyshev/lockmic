@@ -11,7 +11,7 @@ final class StatusItemController {
     private let hotkeys: HotkeyCoordinator
     private let recording: RecordingCoordinator
     private let meetings: MeetingAlertCoordinator
-    private let callSync: CallSyncCoordinator
+    let callSync: CallSyncCoordinator
     let zoomBridge = ZoomBridge()
     private let sounds: SoundFeedback
 
@@ -713,6 +713,7 @@ final class StatusItemController {
                 mic: mic,
                 recorder: recorder,
                 meetings: meetings,
+                callSync: callSync,
                 initialTab: tab
             )
                 .onExitCommand { [weak self] in

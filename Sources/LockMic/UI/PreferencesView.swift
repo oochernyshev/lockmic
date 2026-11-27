@@ -37,6 +37,7 @@ struct PreferencesView: View {
     /// and crash SwiftUI buttons (`MainActor.assumeIsolated`) while recording.
     let recorder: SessionRecorder
     @ObservedObject var meetings: MeetingAlertCoordinator
+    @ObservedObject var callSync: CallSyncCoordinator
     @State private var selection: PreferencesTab
     @State private var updateAvailable = UpdateChecker.shared.availableUpdate != nil
 
@@ -45,12 +46,14 @@ struct PreferencesView: View {
         mic: MicController,
         recorder: SessionRecorder,
         meetings: MeetingAlertCoordinator,
+        callSync: CallSyncCoordinator,
         initialTab: PreferencesTab = .general
     ) {
         self.preferences = preferences
         self.mic = mic
         self.recorder = recorder
         self.meetings = meetings
+        self.callSync = callSync
         _selection = State(initialValue: initialTab)
     }
 
@@ -143,7 +146,7 @@ struct PreferencesView: View {
                         .disabled(!preferences.featuresEnabled)
                         .opacity(preferences.featuresEnabled ? 1 : 0.45)
                 case .calls:
-                    PreferencesCallsPage(preferences: preferences)
+                    PreferencesCallsPage(preferences: preferences, callSync: callSync)
                         .disabled(!preferences.featuresEnabled)
                         .opacity(preferences.featuresEnabled ? 1 : 0.45)
                 case .keyboard:

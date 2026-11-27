@@ -10,6 +10,13 @@ final class ZoomBridge: CallService {
     let id = CallServiceID.zoom
     var onEvent: ((CallServiceEvent) -> Void)?
     var hasActiveCall: Bool { lastEvent?.inCall == true }
+    var status: CallServiceStatus {
+        guard timer != nil else { return .off }
+        guard Self.hasAccess else { return .needsAccess }
+        guard !NSRunningApplication.runningApplications(withBundleIdentifier: Self.bundleID).isEmpty
+        else { return .waiting }
+        return hasActiveCall ? .inCall : .connected
+    }
 
     static let bundleID = "us.zoom.xos"
     private static let muteTitle = "Mute audio"

@@ -11,6 +11,11 @@ final class TeamsBridge: CallService {
     let id = CallServiceID.teams
     var onEvent: ((CallServiceEvent) -> Void)?
     var hasActiveCall: Bool { connected && inMeeting }
+    var status: CallServiceStatus {
+        guard running else { return .off }
+        guard connected else { return .waiting }
+        return inMeeting ? .inCall : .connected
+    }
 
     private let preferences: PreferencesStore
     private var task: URLSessionWebSocketTask?

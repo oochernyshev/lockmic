@@ -10,7 +10,9 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "CallSync")
 /// `echoWindow` of our own push are treated as the echo of that command and ignored.
 /// A service-side change applied to LockMic is flagged so it is never pushed back.
 @MainActor
-final class CallSyncCoordinator {
+final class CallSyncCoordinator: ObservableObject {
+    @Published private(set) var statuses: [CallServiceID: CallServiceStatus] = [:]
+    private var statusTimer: Timer?
     static let echoWindow: TimeInterval = 0.3
     /// Lets the service mute itself before HAL mute lands (avoids Meet's "muted by system").
     static let serviceHeadStart: TimeInterval = 0.15
@@ -41,12 +43,23 @@ final class CallSyncCoordinator {
     }
 
     func start() {
+        let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.refreshStatuses() }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        statusTimer = t
         preferences.$callSyncMeetEnabled.sink { [weak self] in self?.apply(.meet, enabled: $0) }.store(in: &cancellables)
         preferences.$callSyncTeamsEnabled.sink { [weak self] in self?.apply(.teams, enabled: $0) }.store(in: &cancellables)
         preferences.$callSyncZoomEnabled.sink { [weak self] in self?.apply(.zoom, enabled: $0) }.store(in: &cancellables)
     }
 
+    func refreshStatuses() {
+        let next = services.mapValues(\.status)
+        if next != statuses { statuses = next }
+    }
+
     func stop() {
+        statusTimer?.invalidate()
         cancellables.removeAll()
         services.values.forEach { $0.stop() }
     }
@@ -60,9 +73,11 @@ final class CallSyncCoordinator {
         guard let service = services[id] else { return }
         if enabled {
             service.start()
+            refreshStatuses()
         } else {
             service.stop()
             inCall[id] = false
+            refreshStatuses()
         }
     }
 

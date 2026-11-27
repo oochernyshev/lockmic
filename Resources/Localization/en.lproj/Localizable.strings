@@ -285,3 +285,10 @@
 "calls.zoom" = "Zoom";
 "calls.zoom.caption" = "1. Turn this switch on and allow LockMic in System Settings → Privacy & Security → Accessibility.\n2. Keep Zoom's language set to English (its Meeting menu is read).\n3. Join a meeting: mute follows both ways within about half a second.";
 "calls.zoom.access" = "Accessibility access is required. Grant it in System Settings → Privacy & Security → Accessibility.";
+"calls.status" = "Status";
+"calls.status.off" = "Off";
+"calls.status.waiting" = "Waiting for the app (not running, or its API is off or not allowed)";
+"calls.status.waitingMeet" = "Waiting for the browser extension";
+"calls.status.needsAccess" = "Accessibility access needed";
+"calls.status.connected" = "Connected, no call";
+"calls.status.inCall" = "Connected, syncing the call";
