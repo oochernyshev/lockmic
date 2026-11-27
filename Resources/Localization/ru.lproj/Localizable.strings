@@ -293,3 +293,7 @@
 "sync.web.caption" = "Google Meet, Microsoft Teams и Zoom в браузере. Safari: синхронизируются звонки во всех вкладках. Chrome и другие браузеры на Chromium: только звонок, вкладка которого открыта и видна в окне, потому что фоновые вкладки они не отдают.";
 "sync.teamsApp" = "Приложение Microsoft Teams";
 "sync.zoomApp" = "Приложение Zoom";
+"sync.web.noTab" = "Вкладка не найдена";
+"sync.web.tabFound" = "Вкладка найдена";
+"sync.web.tabNoCall" = "Вкладка найдена, звонка нет";
+"sync.web.syncing" = "Звонок синхронизируется · найдено вкладок: %d";

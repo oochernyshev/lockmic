@@ -305,3 +305,7 @@
 "sync.web.caption" = "Google Meet, Microsoft Teams and Zoom in the browser. Safari: calls in all tabs are synced. Chrome and other Chromium browsers: only a call whose tab is open and visible in its window, because they do not expose background tabs.";
 "sync.teamsApp" = "Microsoft Teams app";
 "sync.zoomApp" = "Zoom app";
+"sync.web.noTab" = "No tab found";
+"sync.web.tabFound" = "Tab found";
+"sync.web.tabNoCall" = "Tab found, no call";
+"sync.web.syncing" = "Syncing the call · tabs found: %d";

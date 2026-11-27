@@ -60,7 +60,7 @@ struct PreferencesCallsPage: View {
 
     private func webRow(_ name: String, _ id: SyncSourceID) -> some View {
         let snapshot = callSync.snapshots[id] ?? SyncSourceSnapshot()
-        let (text, color) = display(snapshot)
+        let (text, color) = display(snapshot, web: true)
         return VStack(alignment: .leading, spacing: 2) {
             PreferencesChrome.statusRow(title: name, text: text, color: color)
             if snapshot.backgroundTabs > 0 {
@@ -71,7 +71,8 @@ struct PreferencesCallsPage: View {
         }
     }
 
-    private func display(_ snapshot: SyncSourceSnapshot) -> (String, Color) {
+    private func display(_ snapshot: SyncSourceSnapshot, web: Bool = false) -> (String, Color) {
+        if web { return displayWeb(snapshot) }
         switch snapshot.status {
         case .off: return (L10n.callsStatusOff, .secondary)
         case .waiting: return (L10n.callsStatusWaiting, .orange)
@@ -84,6 +85,18 @@ struct PreferencesCallsPage: View {
                 ? "\(L10n.callsStatusInCall) · \(L10n.callsFound(snapshot.calls))"
                 : L10n.callsStatusInCall
             return (text, .green)
+        }
+    }
+
+    /// Web calls live in browser tabs, so say "tab", not "app".
+    private func displayWeb(_ snapshot: SyncSourceSnapshot) -> (String, Color) {
+        switch snapshot.status {
+        case .off: return (L10n.callsStatusOff, .secondary)
+        case .waiting: return (L10n.syncWebNoTab, .orange)
+        // The warning below explains the missing permission; here only say what was found.
+        case .needsAccess: return (snapshot.detected ? L10n.syncWebTabFound : L10n.syncWebNoTab, .orange)
+        case .connected: return (L10n.syncWebTabNoCall, .green)
+        case .inCall: return (L10n.syncWebSyncing(snapshot.calls), .green)
         }
     }
 }

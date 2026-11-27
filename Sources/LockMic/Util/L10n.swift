@@ -36,6 +36,10 @@ enum L10n {
     static func callsBackgroundTabs(_ count: Int) -> String { format("calls.backgroundTabs", count) }
     static var syncWeb: String { tr("sync.web") }
     static var syncWebCaption: String { tr("sync.web.caption") }
+    static var syncWebNoTab: String { tr("sync.web.noTab") }
+    static var syncWebTabFound: String { tr("sync.web.tabFound") }
+    static var syncWebTabNoCall: String { tr("sync.web.tabNoCall") }
+    static func syncWebSyncing(_ tabs: Int) -> String { format("sync.web.syncing", tabs) }
     static var syncTeamsApp: String { tr("sync.teamsApp") }
     static var syncZoomApp: String { tr("sync.zoomApp") }
     static var callsStatusOff: String { tr("calls.status.off") }
