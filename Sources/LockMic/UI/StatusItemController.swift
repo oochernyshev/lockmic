@@ -61,11 +61,11 @@ final class StatusItemController {
             ],
             // Each source is switched on its own: web calls, the Teams app, the Zoom app.
             sources: [
-                SyncSource(id: .webMeet, service: webMeet, enabled: preferences.$syncWebEnabled.eraseToAnyPublisher()),
-                SyncSource(id: .webTeams, service: webTeams, enabled: preferences.$syncWebEnabled.eraseToAnyPublisher()),
-                SyncSource(id: .webZoom, service: webZoom, enabled: preferences.$syncWebEnabled.eraseToAnyPublisher()),
-                SyncSource(id: .teamsApp, service: teamsApp, enabled: preferences.$syncTeamsAppEnabled.eraseToAnyPublisher()),
-                SyncSource(id: .zoomApp, service: zoomApp, enabled: preferences.$syncZoomAppEnabled.eraseToAnyPublisher()),
+                SyncSource(id: .webMeet, service: webMeet, enabled: Self.syncEnabled(preferences.$syncWebEnabled, preferences)),
+                SyncSource(id: .webTeams, service: webTeams, enabled: Self.syncEnabled(preferences.$syncWebEnabled, preferences)),
+                SyncSource(id: .webZoom, service: webZoom, enabled: Self.syncEnabled(preferences.$syncWebEnabled, preferences)),
+                SyncSource(id: .teamsApp, service: teamsApp, enabled: Self.syncEnabled(preferences.$syncTeamsAppEnabled, preferences)),
+                SyncSource(id: .zoomApp, service: zoomApp, enabled: Self.syncEnabled(preferences.$syncZoomAppEnabled, preferences)),
             ]
         )
         callSync.onRemoteMuteApplied = { [weak self] in
@@ -674,6 +674,15 @@ final class StatusItemController {
 
     @objc private func openPreferences() {
         presentPreferences(source: .menu)
+    }
+
+    /// A sync switch counts only once setup is finished, so the Accessibility prompt of a fresh
+    /// install appears after the wizard, not at launch.
+    private static func syncEnabled(_ switchValue: Published<Bool>.Publisher, _ preferences: PreferencesStore) -> AnyPublisher<Bool, Never> {
+        switchValue
+            .combineLatest(preferences.$hasCompletedOnboarding)
+            .map { $0 && $1 }
+            .eraseToAnyPublisher()
     }
 
     private func presentOnboarding() {

@@ -150,7 +150,7 @@ final class PreferencesStore: ObservableObject {
         didSet { UserDefaults.standard.set(soundEnabled, forKey: Keys.soundEnabled) }
     }
 
-    /// Two-way mute sync with web calls (Google Meet, Teams, Zoom in browsers). Off by default.
+    /// Two-way mute sync with web calls (Google Meet, Teams, Zoom in browsers). On by default.
     @Published var syncWebEnabled: Bool {
         didSet { UserDefaults.standard.set(syncWebEnabled, forKey: Keys.syncWeb) }
     }
@@ -364,12 +364,19 @@ final class PreferencesStore: ObservableObject {
         }
         soundEnabled = defaults.bool(forKey: Keys.soundEnabled)
 
+        // Sync is on by default. People who already chose with the old per-service switches keep
+        // that choice (web is on if any of Meet/Teams/Zoom was).
+        let legacyKeys = [Keys.callSyncMeet, Keys.callSyncTeams, Keys.callSyncZoom]
+        let hadLegacyChoice = legacyKeys.contains { defaults.object(forKey: $0) != nil }
         let legacyMeet = defaults.bool(forKey: Keys.callSyncMeet)
         let legacyTeams = defaults.bool(forKey: Keys.callSyncTeams)
         let legacyZoom = defaults.bool(forKey: Keys.callSyncZoom)
-        syncWebEnabled = defaults.object(forKey: Keys.syncWeb) as? Bool ?? (legacyMeet || legacyTeams || legacyZoom)
-        syncTeamsAppEnabled = defaults.object(forKey: Keys.syncTeamsApp) as? Bool ?? legacyTeams
-        syncZoomAppEnabled = defaults.object(forKey: Keys.syncZoomApp) as? Bool ?? legacyZoom
+        syncWebEnabled = defaults.object(forKey: Keys.syncWeb) as? Bool
+            ?? (hadLegacyChoice ? (legacyMeet || legacyTeams || legacyZoom) : true)
+        syncTeamsAppEnabled = defaults.object(forKey: Keys.syncTeamsApp) as? Bool
+            ?? (hadLegacyChoice ? legacyTeams : true)
+        syncZoomAppEnabled = defaults.object(forKey: Keys.syncZoomApp) as? Bool
+            ?? (hadLegacyChoice ? legacyZoom : true)
 
         if defaults.object(forKey: Keys.meetingAlertsEnabled) == nil {
             defaults.set(false, forKey: Keys.meetingAlertsEnabled)

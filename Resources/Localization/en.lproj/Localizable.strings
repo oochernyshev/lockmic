@@ -277,7 +277,7 @@
 
 "tab.calls" = "Sync";
 "calls.header" = "Mute sync";
-"calls.intro" = "Keep LockMic and your call apps muted or unmuted together, in both directions. Everything here is off by default and works through Accessibility.";
+"calls.intro" = "Keep LockMic and your call apps muted or unmuted together, in both directions. Everything here works through Accessibility.";
 "calls.meet" = "Google Meet";
 "calls.meet.caption" = "Works in Safari and Chromium browsers (Chrome, Arc, Edge, Brave) through Accessibility. The Meet tab must be the visible one.";
 "calls.teams" = "Microsoft Teams";
