@@ -165,6 +165,22 @@
       },
       {
         "@type": "Question",
+        "name": "How does call sync work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "LockMic uses macOS Accessibility to find the mute button in your call, press it when you mute in LockMic, and notice when you mute in the call. It works with the Teams and Zoom apps and with Meet, Teams and Zoom in Safari and Chrome. Each integration can be switched off in Preferences → Sync."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need a browser extension for call sync?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Call sync needs no browser extension, only the macOS Accessibility permission for LockMic."
+        }
+      },
+      {
+        "@type": "Question",
         "name": "Does LockMic work with virtual microphones?",
         "acceptedAnswer": {
           "@type": "Answer",
@@ -435,8 +451,9 @@
         </article>
         <article class="feature-card reveal">
           <h3>Private by design</h3>
-          <p>It works through macOS Accessibility: LockMic only reads each call’s mute button — never audio, never what is
-            on your screen. Three independent switches, on by default, off whenever you like.</p>
+          <p>It works through macOS Accessibility: LockMic only looks for each call’s mute button and never reads or stores anything else. Three
+            independent switches, on by default, off whenever you like. macOS asks for Accessibility permission once,
+            the first time sync starts.</p>
         </article>
       </div>
       <p class="v2-cta reveal"><a class="btn btn-primary btn-lg" href="#download">Get LockMic 2.0</a></p>
@@ -472,7 +489,7 @@
               <circle cx="12" cy="12" r="3.2" fill="currentColor" />
             </svg>
           </div>
-          <h3>Record locally <span class="feature-new">New in 1.4</span></h3>
+          <h3>Record locally</h3>
           <p>Optionally capture your default mic and what you hear. LockMic writes a dated mix on your Mac — nothing is
             uploaded, and mute still works while you record.</p>
         </article>
@@ -544,8 +561,9 @@
             </svg>
           </div>
           <h3>Stays muted</h3>
-          <p>New mics and headsets you plug in later are muted too. If an app tries to unmute the input, LockMic
-            re-applies mute so you stay covered system-wide.</p>
+          <p>New mics and headsets you plug in later are muted too. If an app without call sync tries to unmute
+            the input, LockMic re-applies mute. For Meet, Teams and Zoom you decide who is in charge: mute in the call
+            or in LockMic, and the other follows.</p>
         </article>
         <article class="feature-card reveal">
           <div class="feature-icon" aria-hidden="true">
@@ -689,6 +707,18 @@ open /Applications/LockMic.app</code></pre>
             recording start/stop). No microphone audio, no recording files, and no personal data. Mute control stays off
             until you agree. This <strong>website</strong> uses the same Google Analytics property for anonymous page
             views (and optional download clicks) so we can improve the product and site.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>How does call sync work?</summary>
+          <p>LockMic uses macOS Accessibility to find the mute button in your call and press it when you mute in
+            LockMic — and to notice when you mute in the call. It works with the Teams and Zoom apps and with Meet,
+            Teams and Zoom in Safari and Chrome. Each integration has its own switch in Preferences → Sync. macOS asks
+            for Accessibility permission once.</p>
+        </details>
+        <details class="faq-item reveal">
+          <summary>Do I need a browser extension?</summary>
+          <p>No. Call sync needs no extension, plugin or add-on in Safari or Chrome — only the Accessibility
+            permission for LockMic.</p>
         </details>
         <details class="faq-item reveal">
           <summary>Can LockMic record audio?</summary>
