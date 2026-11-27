@@ -279,14 +279,13 @@
 "calls.header" = "Call mute sync";
 "calls.intro" = "Keep LockMic and your call app muted or unmuted together. With an integration off, LockMic works as before.";
 "calls.meet" = "Google Meet";
-"calls.meet.caption" = "1. Install the LockMic extension in Chrome, Arc, Edge or Brave (Extensions/Chrome in the LockMic repository, via chrome://extensions → Load unpacked).\n2. Turn this switch on, then reload open Meet tabs.\n3. Join a call: mute in LockMic or in Meet now follows both ways. Only the mute state is shared.";
+"calls.meet.caption" = "Works in Safari and Chromium browsers (Chrome, Arc, Edge, Brave) through Accessibility. The Meet tab must be the visible one.";
 "calls.teams" = "Microsoft Teams";
 "calls.zoom" = "Zoom";
 "calls.zoom.access" = "Accessibility access is required. Grant it to LockMic in System Settings → Privacy & Security → Accessibility.";
 "calls.status" = "Status";
 "calls.status.off" = "Off";
 "calls.status.waiting" = "App not detected";
-"calls.status.waitingMeet" = "Extension not detected";
 "calls.status.needsAccess" = "Accessibility access needed";
 "calls.status.connected" = "Detected, no call";
 "calls.status.inCall" = "Detected, syncing the call";

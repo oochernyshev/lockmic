@@ -15,7 +15,6 @@
 		0A315F2E7021DAC7BF9E9FD3 /* MuteGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FE4315D6334387497A5F82 /* MuteGate.swift */; };
 		0C3B48037049E1F1622E4C25 /* HUDPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAD5EF33BC8D4A49401F7228 /* HUDPresenter.swift */; };
 		0C94020926C4E63D80A3167C /* PreferencesDevicesPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DC7BD1E7A26042200E3B2B /* PreferencesDevicesPage.swift */; };
-		0CCBAB31B36243D4EFDD274F /* NativeHostPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8ABFF1CEF7BD0A335E3767C /* NativeHostPaths.swift */; };
 		0D4A5F4D20A2E31F464F4122 /* SessionMix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC7728A0646DDB0B80A26E3 /* SessionMix.swift */; };
 		0DF851308A0FA4B2B9C7BDFE /* MeetingAlertCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B4CB872F727BA2DC6ED4192 /* MeetingAlertCardView.swift */; };
 		0E89DC66FF7DCF6860A235A7 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = FE0EEB17C43E9CBE1ABED7C2 /* Localizable.strings */; };
@@ -33,6 +32,7 @@
 		3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9531C60032267EFA1757D1BC /* AppDelegate.swift */; };
 		34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47A7A118040E6EF54FF7752 /* MicController.swift */; };
 		358C70A7FD88858D53F57C40 /* ZoomMenuStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3802A4C8B7A8C3864DEBBD /* ZoomMenuStrings.swift */; };
+		35A746A45642E9A352EE2F99 /* MeetLabels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40301C3C4A850947408B9771 /* MeetLabels.swift */; };
 		3605565BF80745AFB2CCCEFF /* RecordingDeviceRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D388527075411120DE6777E2 /* RecordingDeviceRowView.swift */; };
 		37CB7FD2A8B24742EF1FA93D /* TeamsBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 894059E914968BFC5202D479 /* TeamsBridge.swift */; };
 		38AAAF7A28043BC67EFF634D /* MenuBarIconStylePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D312D52AC94D3F1F353FCD46 /* MenuBarIconStylePicker.swift */; };
@@ -69,7 +69,6 @@
 		AA473EA7E801B173E98DE292 /* LiveMixer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12E7B26E0035AAB6D481CEFE /* LiveMixer.swift */; };
 		ABC4BB296EB8E811E6452521 /* RecordingMonitorCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E8C8E5B49956116E86249C /* RecordingMonitorCard.swift */; };
 		ACC18BD5233D2126186035CC /* RecordingDSP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D648AE0FEB3920E8A9FA910C /* RecordingDSP.swift */; };
-		ACD269B68D6E2C5DCAE87F50 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044B2E3BEFCAA8C5700D58FE /* main.swift */; };
 		AEF4D2C00132A9A39FC3359B /* MeetingAlertCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED5D7307E3B76FC00E704CA /* MeetingAlertCoordinator.swift */; };
 		B8F8DFAECFDB1AC041DB0EE7 /* MeetingAlertSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0160224EDB6ABED31506900C /* MeetingAlertSound.swift */; };
 		B9FC24981D0E4F55E0659268 /* MeetingAlertPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EC254849F97601A45E54EB0 /* MeetingAlertPreview.swift */; };
@@ -95,20 +94,9 @@
 		FEE8EBDBBF2899014964D9EB /* HUDOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		0BC481B5A516988907C529F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 56B6648B20EB096606E9BDA3 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 49DD94BE25918803AFC3CFD5;
-			remoteInfo = LockMicNativeHost;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
 		00BF46D371BFBCB0BC6F1628 /* PlaybackTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackTap.swift; sourceTree = "<group>"; };
 		0160224EDB6ABED31506900C /* MeetingAlertSound.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingAlertSound.swift; sourceTree = "<group>"; };
-		044B2E3BEFCAA8C5700D58FE /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		06ADA52982EF60A0DC607152 /* SessionRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecorder.swift; sourceTree = "<group>"; };
 		0B4CB872F727BA2DC6ED4192 /* MeetingAlertCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingAlertCardView.swift; sourceTree = "<group>"; };
 		12E7B26E0035AAB6D481CEFE /* LiveMixer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMixer.swift; sourceTree = "<group>"; };
@@ -127,6 +115,7 @@
 		37710D2E97833DD8E01573D6 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/Localizable.strings; sourceTree = "<group>"; };
 		3F8F61DC24A2F34968588493 /* PreferencesAboutPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesAboutPage.swift; sourceTree = "<group>"; };
 		402280C03971421D5FC37176 /* PreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStore.swift; sourceTree = "<group>"; };
+		40301C3C4A850947408B9771 /* MeetLabels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetLabels.swift; sourceTree = "<group>"; };
 		40771CE30E43CEE7B2690B08 /* HotkeyRecorderButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyRecorderButton.swift; sourceTree = "<group>"; };
 		41CF7D9493670BC084D63103 /* AppearanceThemePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceThemePicker.swift; sourceTree = "<group>"; };
 		42A476D4BD52182D45C6E49B /* sr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sr; path = sr.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -179,7 +168,6 @@
 		C47A7A118040E6EF54FF7752 /* MicController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicController.swift; sourceTree = "<group>"; };
 		C6A31B76216FE78E401DB033 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C84E04D474632BF17022832F /* LevelMetering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelMetering.swift; sourceTree = "<group>"; };
-		C8ABFF1CEF7BD0A335E3767C /* NativeHostPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeHostPaths.swift; sourceTree = "<group>"; };
 		C98EF85571E738D1FB5D06D9 /* SystemAudioAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAudioAccess.swift; sourceTree = "<group>"; };
 		CDE39A650F3FD05056F59A8C /* SoundFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundFeedback.swift; sourceTree = "<group>"; };
 		CE8B1FA997CB548B8954B955 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -189,7 +177,6 @@
 		D38D0E203797E6588D537F34 /* CompressedStemWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompressedStemWriter.swift; sourceTree = "<group>"; };
 		D4D4F7620379C70EA9627772 /* DeviceRowBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceRowBuilder.swift; sourceTree = "<group>"; };
 		D648AE0FEB3920E8A9FA910C /* RecordingDSP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingDSP.swift; sourceTree = "<group>"; };
-		D7C85E1F0F432DD25F6BD2AF /* LockMicNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; path = LockMicNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
 		D8A8DD329C0A00C7F98AB6DF /* AppInstallMethod.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInstallMethod.swift; sourceTree = "<group>"; };
 		D98C0BBF4D42B2665D59AB36 /* CallService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallService.swift; sourceTree = "<group>"; };
 		D9B302F7FB86DB3FAF07A20E /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -244,7 +231,6 @@
 			isa = PBXGroup;
 			children = (
 				A4DE69CE589C220C182F7AAD /* LockMic.app */,
-				D7C85E1F0F432DD25F6BD2AF /* LockMicNativeHost */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -304,7 +290,7 @@
 				D98C0BBF4D42B2665D59AB36 /* CallService.swift */,
 				B91CEE6DCD87E3AFEB68A979 /* CallSyncCoordinator.swift */,
 				F89A2B21AA30C5D1606D9736 /* MeetBridge.swift */,
-				C8ABFF1CEF7BD0A335E3767C /* NativeHostPaths.swift */,
+				40301C3C4A850947408B9771 /* MeetLabels.swift */,
 				894059E914968BFC5202D479 /* TeamsBridge.swift */,
 				E93F77794A2A5B787DB61ABE /* ZoomBridge.swift */,
 				7C3802A4C8B7A8C3864DEBBD /* ZoomMenuStrings.swift */,
@@ -380,7 +366,6 @@
 			isa = PBXGroup;
 			children = (
 				16C3D7119294CBB92A7F40CA /* LockMic */,
-				F34D93A197ECEE5B9C112026 /* NativeHost */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -393,46 +378,19 @@
 			path = Localization;
 			sourceTree = "<group>";
 		};
-		F34D93A197ECEE5B9C112026 /* NativeHost */ = {
-			isa = PBXGroup;
-			children = (
-				044B2E3BEFCAA8C5700D58FE /* main.swift */,
-			);
-			path = NativeHost;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		49DD94BE25918803AFC3CFD5 /* LockMicNativeHost */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = DC4398FC8EC96375F0AF0B3C /* Build configuration list for PBXNativeTarget "LockMicNativeHost" */;
-			buildPhases = (
-				1B441F78FD89ED454C5FFE55 /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = LockMicNativeHost;
-			packageProductDependencies = (
-			);
-			productName = LockMicNativeHost;
-			productReference = D7C85E1F0F432DD25F6BD2AF /* LockMicNativeHost */;
-			productType = "com.apple.product-type.tool";
-		};
 		661F2FDF89B5F9C70A61A0B7 /* LockMic */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5266119FE794EA54E207E636 /* Build configuration list for PBXNativeTarget "LockMic" */;
 			buildPhases = (
 				5C483B2BCCCD98FB9AA074D8 /* Sources */,
 				FC1B24A7FC61F0E68A6CCC6F /* Resources */,
-				96F45BFB1CF9C55ADE776975 /* Embed LockMicNativeHost */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				B6622BD9B88C9D2DDB4195B8 /* PBXTargetDependency */,
 			);
 			name = LockMic;
 			packageProductDependencies = (
@@ -450,10 +408,6 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
-					49DD94BE25918803AFC3CFD5 = {
-						DevelopmentTeam = "";
-						ProvisioningStyle = Automatic;
-					};
 					661F2FDF89B5F9C70A61A0B7 = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
@@ -497,7 +451,6 @@
 			projectRoot = "";
 			targets = (
 				661F2FDF89B5F9C70A61A0B7 /* LockMic */,
-				49DD94BE25918803AFC3CFD5 /* LockMicNativeHost */,
 			);
 		};
 /* End PBXProject section */
@@ -515,37 +468,7 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
-/* Begin PBXShellScriptBuildPhase section */
-		96F45BFB1CF9C55ADE776975 /* Embed LockMicNativeHost */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Embed LockMicNativeHost";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "set -e\nDEST=\"${TARGET_BUILD_DIR}/${EXECUTABLE_FOLDER_PATH}/LockMicNativeHost\"\ncp -f \"${BUILT_PRODUCTS_DIR}/LockMicNativeHost\" \"$DEST\"\nif [ -n \"${EXPANDED_CODE_SIGN_IDENTITY}\" ] && [ \"${CODE_SIGNING_ALLOWED}\" != \"NO\" ]; then\n  codesign --force --options runtime --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" \"$DEST\"\nfi\n";
-		};
-/* End PBXShellScriptBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
-		1B441F78FD89ED454C5FFE55 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				ACD269B68D6E2C5DCAE87F50 /* main.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		5C483B2BCCCD98FB9AA074D8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -581,6 +504,7 @@
 				AA473EA7E801B173E98DE292 /* LiveMixer.swift in Sources */,
 				D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */,
 				723ADE2F0208495561AEC144 /* MeetBridge.swift in Sources */,
+				35A746A45642E9A352EE2F99 /* MeetLabels.swift in Sources */,
 				0DF851308A0FA4B2B9C7BDFE /* MeetingAlertCardView.swift in Sources */,
 				AEF4D2C00132A9A39FC3359B /* MeetingAlertCoordinator.swift in Sources */,
 				8FB12383CFF8EC3E91507972 /* MeetingAlertLogic.swift in Sources */,
@@ -593,7 +517,6 @@
 				34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */,
 				0A315F2E7021DAC7BF9E9FD3 /* MuteGate.swift in Sources */,
 				41C2D7DE214B2EEB8CFECEEA /* MuteVolumeDucker.swift in Sources */,
-				0CCBAB31B36243D4EFDD274F /* NativeHostPaths.swift in Sources */,
 				1ECE1E4FCAAF949A31E9F19D /* OnboardingView.swift in Sources */,
 				E7476AF3C6061511AF856AB6 /* PlaybackTap.swift in Sources */,
 				49AEAEFADFABB85941650D16 /* PreferencesAboutPage.swift in Sources */,
@@ -636,14 +559,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		B6622BD9B88C9D2DDB4195B8 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 49DD94BE25918803AFC3CFD5 /* LockMicNativeHost */;
-			targetProxy = 0BC481B5A516988907C529F3 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		FE0EEB17C43E9CBE1ABED7C2 /* Localizable.strings */ = {
@@ -846,38 +761,6 @@
 			};
 			name = Debug;
 		};
-		DF40304408EA62C8A39C2D1E /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.LockMicNativeHost;
-				PRODUCT_NAME = LockMicNativeHost;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-			};
-			name = Release;
-		};
-		E2DC45370EB8DDC8CAF1C448 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.lockmic.LockMicNativeHost;
-				PRODUCT_NAME = LockMicNativeHost;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-			};
-			name = Debug;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -895,15 +778,6 @@
 			buildConfigurations = (
 				20F84DEB0DE46FB5D82C88A3 /* Debug */,
 				8C8E6906F79D9E17FDCB6162 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
-		};
-		DC4398FC8EC96375F0AF0B3C /* Build configuration list for PBXNativeTarget "LockMicNativeHost" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E2DC45370EB8DDC8CAF1C448 /* Debug */,
-				DF40304408EA62C8A39C2D1E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

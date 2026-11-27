@@ -34,7 +34,6 @@ enum L10n {
     static var callsNotDetected: String { tr("calls.notDetected") }
     static var callsStatusOff: String { tr("calls.status.off") }
     static var callsStatusWaiting: String { tr("calls.status.waiting") }
-    static var callsStatusWaitingMeet: String { tr("calls.status.waitingMeet") }
     static var callsStatusNeedsAccess: String { tr("calls.status.needsAccess") }
     static var callsStatusConnected: String { tr("calls.status.connected") }
     static var callsStatusInCall: String { tr("calls.status.inCall") }

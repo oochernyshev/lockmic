@@ -30,7 +30,7 @@ struct PreferencesCallsPage: View {
             if let caption {
                 PreferencesChrome.caption(caption)
             }
-            if binding.wrappedValue, id != .meet, !AXIsProcessTrusted() {
+            if binding.wrappedValue, !AXIsProcessTrusted() {
                 Text(L10n.callsZoomAccess)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.orange)
@@ -41,7 +41,7 @@ struct PreferencesCallsPage: View {
     private func display(_ status: CallServiceStatus, _ id: CallServiceID, found: Bool) -> (String, Color) {
         switch status {
         case .off: return (L10n.callsStatusOff, .secondary)
-        case .waiting: return (id == .meet ? L10n.callsStatusWaitingMeet : L10n.callsStatusWaiting, .orange)
+        case .waiting: return (L10n.callsStatusWaiting, .orange)
         // The warning below explains the missing permission; here only say what was found.
         case .needsAccess: return (found ? L10n.callsDetected : L10n.callsNotDetected, .orange)
         case .connected: return (L10n.callsStatusConnected, .green)
