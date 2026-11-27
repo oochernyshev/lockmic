@@ -3,7 +3,10 @@ import ApplicationServices
 import Foundation
 
 /// New Microsoft Teams through Accessibility: the call window's "Mute mic" / "Unmute mic"
-/// button is read every ~0.2 s and pressed on command. Labels are matched in English only.
+/// button is read every ~0.2 s and pressed on command. The button is found by its web id
+/// (`microphone-button`), so the UI language does not matter for locating it. Its state comes
+/// from the English labels, and for any other language from the button's structure
+/// (an icon child is present while the mic is live).
 @MainActor
 final class TeamsBridge: CallService {
     let id = CallServiceID.teams
@@ -50,8 +53,7 @@ final class TeamsBridge: CallService {
 
     func push(muted: Bool) {
         guard let state = readMicButton() else { return }
-        let current = pending.map { $0.muted } ?? state.muted
-        guard current != muted else { return }
+        guard let current = pending.map({ $0.muted }) ?? state.muted, current != muted else { return }
         AXUIElementPerformAction(state.button, kAXPressAction as CFString)
         pending = (muted, ProcessInfo.processInfo.systemUptime + Self.settleTimeout)
         lastEvent = CallServiceEvent(muted: muted, inCall: true)
@@ -80,7 +82,7 @@ final class TeamsBridge: CallService {
         if event.inCall || wasInCall { onEvent?(event) }
     }
 
-    private func readMicButton() -> (muted: Bool, button: AXUIElement)? {
+    private func readMicButton() -> (muted: Bool?, button: AXUIElement)? {
         guard let app = Self.teamsApps.first else { return nil }
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 0.3)
@@ -93,14 +95,19 @@ final class TeamsBridge: CallService {
         return nil
     }
 
-    private func findMic(in element: AXUIElement, budget: inout Int) -> (muted: Bool, button: AXUIElement)? {
+    private func findMic(in element: AXUIElement, budget: inout Int) -> (muted: Bool?, button: AXUIElement)? {
         budget -= 1
         if budget <= 0 { return nil }
-        if string(element, "AXRole") == "AXButton" {
-            switch string(element, "AXDescription") {
+        let description = string(element, "AXDescription")
+        if string(element, "AXDOMIdentifier") == "microphone-button"
+            || (string(element, "AXRole") == "AXButton" && (description == "Mute mic" || description == "Unmute mic"))
+        {
+            switch description {
             case "Mute mic": return (false, element)
             case "Unmute mic": return (true, element)
-            default: break
+            default:
+                // Other UI language: the live-mic button has an icon child, the muted one has none.
+                return (children(element).isEmpty, element)
             }
         }
         for child in children(element) {
