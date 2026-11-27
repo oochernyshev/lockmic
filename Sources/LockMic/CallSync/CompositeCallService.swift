@@ -15,6 +15,8 @@ final class CompositeCallService: CallService {
     /// Mute state all children are supposed to share (last pushed or last user change).
     private var synced: Bool?
     private var wasInCall: [ObjectIdentifier: Bool] = [:]
+    /// Set by the coordinator: true when a state is a late echo of an older, superseded write.
+    var isStaleEcho: ((Bool) -> Bool)?
 
     init(id: CallServiceID, children: [CallService]) {
         self.id = id
@@ -56,6 +58,7 @@ final class CompositeCallService: CallService {
         let before = wasInCall[key] ?? false
         wasInCall[key] = event.inCall
         let others = children.filter { $0 !== child && $0.hasActiveCall }
+        if before, event.inCall, let muted = event.muted, isStaleEcho?(muted) == true { return }
         log.info("\(self.id.rawValue, privacy: .public) child=\(String(describing: type(of: child)), privacy: .public) inCall=\(event.inCall, privacy: .public) muted=\(event.muted.map { String($0) } ?? "nil", privacy: .public) wasInCall=\(before, privacy: .public) others=\(others.count, privacy: .public) synced=\(self.synced.map { String($0) } ?? "nil", privacy: .public)")
 
         if event.inCall, !before, !others.isEmpty, let synced {

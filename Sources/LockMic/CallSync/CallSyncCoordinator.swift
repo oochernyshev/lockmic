@@ -24,6 +24,10 @@ final class CallSyncCoordinator: ObservableObject {
     private var inCall: [CallServiceID: Bool] = [:]
     private var lastPushAt: [CallServiceID: TimeInterval] = [:]
     private var applyingRemote = false
+    /// Mute values we applied (as consequences of operations), newest last. Services follow the
+    /// system mute with a lag, so a late echo of an older write must not override a newer operation.
+    private var writes: [(value: Bool, at: TimeInterval)] = []
+    static let echoLag: TimeInterval = 2.5
     private var cancellables = Set<AnyCancellable>()
 
     /// Called after a service changed LockMic's mute so UI (HUD, icon, sound) can refresh.
@@ -39,6 +43,7 @@ final class CallSyncCoordinator: ObservableObject {
                 self?.handle(event, from: service)
             }
         }
+        for service in services { (service as? CompositeCallService)?.isStaleEcho = { [weak self] in self?.isStaleEcho($0) ?? false } }
         mic.muteInterceptor = { [weak self] muted in self?.localMuteRequested(muted) ?? 0 }
         mic.shouldEnforceMute = { [weak self] in self.map { !$0.hasSyncedCall } ?? true }
     }
@@ -87,6 +92,7 @@ final class CallSyncCoordinator: ObservableObject {
     /// LockMic changed (hotkey, menu bar, HUD, push-to-talk). Returns the HAL write delay.
     private func localMuteRequested(_ muted: Bool) -> TimeInterval {
         guard !applyingRemote else { return 0 }
+        noteWrite(muted)
         var pushed = false
         log.info("local muted=\(muted, privacy: .public) remote=\(self.applyingRemote, privacy: .public) activeCalls=\(self.services.values.filter(\.hasActiveCall).map { $0.id.rawValue }.joined(separator: ","), privacy: .public)")
         for service in services.values where service.hasActiveCall {
@@ -112,12 +118,17 @@ final class CallSyncCoordinator: ObservableObject {
             return
         }
         guard let muted = event.muted, muted != mic.effectiveMuted else { return }
+        if isStaleEcho(muted) {
+            log.info("\(id.rawValue, privacy: .public) event muted=\(muted, privacy: .public) ignored as stale echo")
+            return
+        }
         if now - (lastPushAt[id] ?? 0) < Self.echoWindow {
             log.info("\(id.rawValue, privacy: .public) event muted=\(muted, privacy: .public) ignored as echo")
             return
         }
 
         log.info("remote \(id.rawValue, privacy: .public) muted=\(muted, privacy: .public)")
+        noteWrite(muted)
         applyingRemote = true
         mic.setMuted(muted)
         applyingRemote = false
@@ -127,6 +138,19 @@ final class CallSyncCoordinator: ObservableObject {
             other.push(muted: muted)
         }
         onRemoteMuteApplied?()
+    }
+
+    private func noteWrite(_ value: Bool) {
+        writes.append((value, now))
+        writes.removeAll { now - $0.at > Self.echoLag * 2 }
+    }
+
+    /// A state that contradicts our latest write but equals an earlier, superseded one that is
+    /// still within the services' follow-up lag: the service is catching up with the past.
+    private func isStaleEcho(_ muted: Bool) -> Bool {
+        let recent = writes.filter { now - $0.at < Self.echoLag }
+        guard let latest = recent.last, latest.value != muted else { return false }
+        return recent.dropLast().contains { $0.value == muted }
     }
 
     private var now: TimeInterval { ProcessInfo.processInfo.systemUptime }
