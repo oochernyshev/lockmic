@@ -45,7 +45,7 @@ final class CallSyncCoordinator: ObservableObject {
         }
         for service in services { (service as? CompositeCallService)?.isStaleEcho = { [weak self] in self?.isStaleEcho($0) ?? false } }
         mic.muteInterceptor = { [weak self] muted in self?.localMuteRequested(muted) ?? 0 }
-        mic.shouldEnforceMute = { [weak self] in self.map { !$0.hasSyncedCall } ?? true }
+        mic.shouldEnforceMute = { [weak self] in self.map { !$0.hasSyncedCall || $0.preferences.muteMethod == .volume } ?? true }
     }
 
     func start() {

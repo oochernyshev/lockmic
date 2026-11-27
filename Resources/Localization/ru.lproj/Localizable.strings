@@ -279,3 +279,11 @@
 "calls.status.inCall" = "Обнаружено, звонок синхронизируется";
 "calls.detected" = "Обнаружено";
 "calls.notDetected" = "Не обнаружено";
+
+"devices.method.header" = "Способ mute";
+"devices.method.system" = "Системный mute";
+"devices.method.volume" = "Громкость";
+"devices.method.both" = "Оба";
+"devices.method.caption.system" = "Только системный mute Core Audio. Приложения видят отключённый микрофон и могут об этом предупреждать.";
+"devices.method.caption.volume" = "Вместо mute ставит входную громкость в 0. Приложения видят обычный, но тихий микрофон, поэтому предупреждений «отключён системой» нет. Нужен микрофон с регулировкой входной громкости, некоторые приложения могут её поднять.";
+"devices.method.caption.both" = "Системный mute плюс громкость 0 (по умолчанию, самый надёжный).";

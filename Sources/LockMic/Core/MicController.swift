@@ -1,3 +1,4 @@
+import Combine
 import CoreAudio
 import Foundation
 import os.log
@@ -289,6 +290,7 @@ final class MicController: ObservableObject {
     private let audio: AudioDeviceService
     private let hardware: MicHardwareWorker
     private let preferences: PreferencesStore
+    private var methodCancellable: AnyCancellable?
     private var devicesToken: UUID?
     private var muteToken: UUID?
     private var deviceChangeWorkItem: DispatchWorkItem?
@@ -308,6 +310,7 @@ final class MicController: ObservableObject {
         self.audio = audio
         self.hardware = MicHardwareWorker(audio: audio)
         self.preferences = preferences
+        audio.muteMethod = preferences.muteMethod
         devicesToken = audio.onDevicesChanged { [weak self] in
             Task { @MainActor in
                 self?.scheduleHandleDevicesChanged()
@@ -317,6 +320,12 @@ final class MicController: ObservableObject {
             Task { @MainActor in
                 self?.handleMutePropertyChanged()
             }
+        }
+        methodCancellable = preferences.$muteMethod.dropFirst().removeDuplicates().sink { [weak self] method in
+            guard let self else { return }
+            self.audio.muteMethod = method
+            // Re-apply under the new method (also clears what the old one left behind).
+            self.preferenceMuteScopeChanged()
         }
         refreshFromHardware(applyDesired: false)
         // refreshFromHardware already rebuilds the list and starts mute enforcement if needed.

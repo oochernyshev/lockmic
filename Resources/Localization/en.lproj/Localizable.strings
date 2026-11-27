@@ -291,3 +291,11 @@
 "calls.status.inCall" = "Detected, syncing the call";
 "calls.detected" = "Detected";
 "calls.notDetected" = "Not detected";
+
+"devices.method.header" = "Mute method";
+"devices.method.system" = "System mute";
+"devices.method.volume" = "Volume";
+"devices.method.both" = "Both";
+"devices.method.caption.system" = "Core Audio system mute only. Apps see a muted microphone and may warn about it.";
+"devices.method.caption.volume" = "Sets the input volume to 0 instead of muting. Apps see a normal but silent microphone, so no \"muted by system\" warnings. Needs a microphone with an input volume control; some apps can raise it again.";
+"devices.method.caption.both" = "System mute plus volume 0 (default, most reliable).";

@@ -20,6 +20,18 @@ struct PreferencesDevicesPage: View {
             }
 
             PreferencesChrome.sectionCard {
+                PreferencesChrome.sectionHeader(L10n.devicesMethodHeader)
+                Picker("", selection: $preferences.muteMethod) {
+                    Text(L10n.devicesMethodSystem).tag(MuteMethod.system)
+                    Text(L10n.devicesMethodVolume).tag(MuteMethod.volume)
+                    Text(L10n.devicesMethodBoth).tag(MuteMethod.both)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                PreferencesChrome.caption(methodCaption)
+            }
+
+            PreferencesChrome.sectionCard {
                 HStack {
                     PreferencesChrome.sectionHeader(L10n.devicesListHeader)
                     Spacer()
@@ -52,6 +64,14 @@ struct PreferencesDevicesPage: View {
         }
         .onAppear {
             mic.refreshDeviceList()
+        }
+    }
+
+    private var methodCaption: String {
+        switch preferences.muteMethod {
+        case .system: return L10n.devicesMethodCaptionSystem
+        case .volume: return L10n.devicesMethodCaptionVolume
+        case .both: return L10n.devicesMethodCaptionBoth
         }
     }
 

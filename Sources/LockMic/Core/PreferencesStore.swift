@@ -47,6 +47,7 @@ final class PreferencesStore: ObservableObject {
         static let soundEnabled = "soundEnabled"
         static let launchAtLogin = "launchAtLogin"
         static let muteAllInputs = "muteAllInputs"
+        static let muteMethod = "muteMethod"
         static let recordAllPlayback = "recordAllPlayback"
         static let followDefaultMic = "followDefaultMic"
         static let followDefaultOutput = "followDefaultOutput"
@@ -168,6 +169,11 @@ final class PreferencesStore: ObservableObject {
     /// During the last 15 seconds, play that beep on every physical output.
     @Published var meetingAlertSoundAllOutputs: Bool {
         didSet { UserDefaults.standard.set(meetingAlertSoundAllOutputs, forKey: Keys.meetingAlertSoundAllOutputs) }
+    }
+
+    /// System mute, input volume 0, or both.
+    @Published var muteMethod: MuteMethod {
+        didSet { UserDefaults.standard.set(muteMethod.rawValue, forKey: Keys.muteMethod) }
     }
 
     @Published var muteAllInputs: Bool {
@@ -369,6 +375,8 @@ final class PreferencesStore: ObservableObject {
             defaults.set(true, forKey: Keys.meetingAlertSoundAllOutputs)
         }
         meetingAlertSoundAllOutputs = defaults.bool(forKey: Keys.meetingAlertSoundAllOutputs)
+
+        muteMethod = defaults.string(forKey: Keys.muteMethod).flatMap(MuteMethod.init(rawValue:)) ?? .both
 
         if defaults.object(forKey: Keys.muteAllInputs) == nil {
             defaults.set(true, forKey: Keys.muteAllInputs)

@@ -83,6 +83,13 @@ enum L10n {
     // MARK: - Devices
 
     static var devicesScopeHeader: String { tr("devices.scope.header") }
+    static var devicesMethodHeader: String { tr("devices.method.header") }
+    static var devicesMethodSystem: String { tr("devices.method.system") }
+    static var devicesMethodVolume: String { tr("devices.method.volume") }
+    static var devicesMethodBoth: String { tr("devices.method.both") }
+    static var devicesMethodCaptionSystem: String { tr("devices.method.caption.system") }
+    static var devicesMethodCaptionVolume: String { tr("devices.method.caption.volume") }
+    static var devicesMethodCaptionBoth: String { tr("devices.method.caption.both") }
     static var devicesScopeToggle: String { tr("devices.scope.toggle") }
     static var devicesScopeCaptionAll: String { tr("devices.scope.caption.all") }
     static var devicesScopeCaptionDefault: String { tr("devices.scope.caption.default") }

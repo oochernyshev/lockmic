@@ -34,8 +34,30 @@ enum AudioDeviceServiceError: LocalizedError {
     }
 }
 
+/// How LockMic silences a microphone.
+enum MuteMethod: String, CaseIterable, Identifiable, Sendable {
+    /// Core Audio system mute only. Apps see a muted device.
+    case system
+    /// Input volume to 0 only. Apps see a normal device that is silent, so they show no
+    /// "muted by system" warnings. Needs a device with settable input volume.
+    case volume
+    /// Both (default): system mute plus volume 0.
+    case both
+
+    var id: String { rawValue }
+    var usesSystemMute: Bool { self != .volume }
+    var usesVolume: Bool { self != .system }
+}
+
 /// Core Audio HAL — input/output devices and mute.
 final class AudioDeviceService: @unchecked Sendable {
+    private var _muteMethod: MuteMethod = .both
+    /// Thread-safe: read from the HAL worker, written from the main actor.
+    var muteMethod: MuteMethod {
+        get { lock.lock(); defer { lock.unlock() }; return _muteMethod }
+        set { lock.lock(); _muteMethod = newValue; lock.unlock() }
+    }
+
     private var defaultDeviceListenerBlock: AudioObjectPropertyListenerBlock?
     private var defaultOutputListenerBlock: AudioObjectPropertyListenerBlock?
     private var deviceListListenerBlock: AudioObjectPropertyListenerBlock?
@@ -143,10 +165,14 @@ final class AudioDeviceService: @unchecked Sendable {
     }
 
     func supportsMute(_ deviceID: AudioDeviceID) -> Bool {
-        !muteTargets(deviceID).isEmpty
+        muteMethod == .volume ? supportsInputVolume(deviceID) : !muteTargets(deviceID).isEmpty
     }
 
     func isMuted(_ deviceID: AudioDeviceID) throws -> Bool {
+        if muteMethod == .volume {
+            // Volume-only mode: "muted" means the input gain sits at 0.
+            return try inputVolume(deviceID) <= 0.001
+        }
         let targets = muteTargets(deviceID)
         guard !targets.isEmpty else { throw AudioDeviceServiceError.muteUnsupported }
         for target in targets {
@@ -158,6 +184,29 @@ final class AudioDeviceService: @unchecked Sendable {
     }
 
     func setMuted(_ muted: Bool, deviceID: AudioDeviceID) throws {
+        let method = muteMethod
+        if method == .volume {
+            // No system mute: clear any left over from another method, then use the gain only.
+            if !muteTargets(deviceID).isEmpty { try? writeSystemMute(false, deviceID: deviceID) }
+            guard supportsInputVolume(deviceID) else { throw AudioDeviceServiceError.muteUnsupported }
+            if muted { duckInputVolume(deviceID: deviceID) } else { restoreDuckedInputVolumes() }
+            return
+        }
+        try writeSystemMute(muted, deviceID: deviceID)
+        if method == .system {
+            restoreDuckedInputVolumes() // drop a gain duck left over from another method
+            return
+        }
+        // HAL mute alone can be bypassed by a stream started during another app's
+        // unmute; zero the input gain too, and restore it on unmute.
+        if muted {
+            duckInputVolume(deviceID: deviceID)
+        } else {
+            restoreDuckedInputVolumes()
+        }
+    }
+
+    private func writeSystemMute(_ muted: Bool, deviceID: AudioDeviceID) throws {
         let targets = muteTargets(deviceID)
         guard !targets.isEmpty else { throw AudioDeviceServiceError.muteUnsupported }
         var value: UInt32 = muted ? 1 : 0
@@ -185,13 +234,6 @@ final class AudioDeviceService: @unchecked Sendable {
         }
         guard wrote else {
             throw AudioDeviceServiceError.propertyFailed("set mute (\(lastStatus))")
-        }
-        // HAL mute alone can be bypassed by a stream started during another app's
-        // unmute; zero the input gain too, and restore it on unmute.
-        if muted {
-            duckInputVolume(deviceID: deviceID)
-        } else {
-            restoreDuckedInputVolumes()
         }
     }
 
