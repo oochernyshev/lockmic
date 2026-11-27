@@ -15,6 +15,8 @@ struct AccessRow: View {
     let title: String
     let detail: String
     var action: Action?
+    /// False inside a card that already has its own background (Preferences).
+    var boxed = true
 
     var body: some View {
         HStack(spacing: 10) {
@@ -24,6 +26,7 @@ struct AccessRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.callout.weight(.semibold))
+                    .lineLimit(1)
                 Text(detail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -32,17 +35,21 @@ struct AccessRow: View {
             Spacer()
             if !granted, let action {
                 Button(action.title, action: action.perform)
+                    .fixedSize()
                     .focusable(false)
                     .focusEffectDisabled()
             }
         }
-        .padding(10)
-        .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+        .padding(boxed ? 10 : 0)
+        .background {
+            if boxed { RoundedRectangle(cornerRadius: 12).fill(Color.secondary.opacity(0.07)) }
+        }
     }
 }
 
 /// Accessibility: lets LockMic sync mute with call apps.
 struct AccessibilityAccessRow: View {
+    var boxed = true
     @State private var granted = AXIsProcessTrusted()
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -52,7 +59,8 @@ struct AccessibilityAccessRow: View {
             neededIcon: "hand.raised.fill",
             title: granted ? "Accessibility access granted" : "Accessibility access needed",
             detail: "Lets LockMic sync mute with Meet, Teams and Zoom.",
-            action: .init(title: "Allow Access…") { AccessibilityPrompt.requestNow() }
+            action: .init(title: "Allow Access…") { AccessibilityPrompt.requestNow() },
+            boxed: boxed
         )
         .onReceive(timer) { _ in granted = AXIsProcessTrusted() }
     }
@@ -61,6 +69,7 @@ struct AccessibilityAccessRow: View {
 /// Calendar: lets LockMic show the countdown before meetings.
 struct CalendarAccessRow: View {
     @ObservedObject var meetings: MeetingAlertCoordinator
+    var boxed = true
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -69,7 +78,8 @@ struct CalendarAccessRow: View {
             neededIcon: "calendar.badge.exclamationmark",
             title: title,
             detail: "Lets LockMic show the countdown before your meetings.",
-            action: action
+            action: action,
+            boxed: boxed
         )
         .onAppear { meetings.refreshAccess() }
         .onReceive(timer) { _ in meetings.refreshAccess() }

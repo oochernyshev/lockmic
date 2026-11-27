@@ -11,10 +11,10 @@ struct PreferencesCallsPage: View {
             PreferencesChrome.sectionCard {
                 PreferencesChrome.sectionHeader(L10n.callsHeader)
                 PreferencesChrome.caption(L10n.callsIntro)
-            }
-
-            if preferences.syncWebEnabled || preferences.syncTeamsAppEnabled || preferences.syncZoomAppEnabled {
-                AccessibilityAccessRow()
+                if preferences.syncWebEnabled || preferences.syncTeamsAppEnabled || preferences.syncZoomAppEnabled {
+                    Divider()
+                    AccessibilityAccessRow(boxed: false)
+                }
             }
 
             PreferencesChrome.sectionCard {

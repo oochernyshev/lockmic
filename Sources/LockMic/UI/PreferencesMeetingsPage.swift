@@ -32,7 +32,7 @@ struct PreferencesMeetingsPage: View {
             }
 
             PreferencesChrome.sectionCard {
-                CalendarAccessRow(meetings: meetings)
+                CalendarAccessRow(meetings: meetings, boxed: false)
                 PreferencesChrome.caption(L10n.meetingsAccessCaption)
             }
         }
