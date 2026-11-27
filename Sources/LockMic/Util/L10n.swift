@@ -30,8 +30,6 @@ enum L10n {
     static var callsZoom: String { tr("calls.zoom") }
     static var callsZoomCaption: String { tr("calls.zoom.caption") }
     static var callsStatus: String { tr("calls.status") }
-    static var callsApp: String { tr("calls.app") }
-    static var callsExtension: String { tr("calls.extension") }
     static var callsDetected: String { tr("calls.detected") }
     static var callsNotDetected: String { tr("calls.notDetected") }
     static var callsStatusOff: String { tr("calls.status.off") }

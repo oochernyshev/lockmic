@@ -285,12 +285,10 @@
 "calls.zoom.access" = "Accessibility access is required. Grant it to LockMic in System Settings → Privacy & Security → Accessibility.";
 "calls.status" = "Status";
 "calls.status.off" = "Off";
-"calls.status.waiting" = "Waiting for the app to start";
-"calls.status.waitingMeet" = "Waiting for the browser extension";
+"calls.status.waiting" = "App not detected";
+"calls.status.waitingMeet" = "Extension not detected";
 "calls.status.needsAccess" = "Accessibility access needed";
-"calls.status.connected" = "Connected, no call";
-"calls.status.inCall" = "Connected, syncing the call";
-"calls.app" = "Application";
-"calls.extension" = "Browser extension";
+"calls.status.connected" = "Detected, no call";
+"calls.status.inCall" = "Detected, syncing the call";
 "calls.detected" = "Detected";
 "calls.notDetected" = "Not detected";

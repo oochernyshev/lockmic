@@ -273,12 +273,10 @@
 "calls.zoom.access" = "Нужен доступ к Универсальному доступу. Разрешите LockMic в Системных настройках → Конфиденциальность и безопасность → Универсальный доступ.";
 "calls.status" = "Статус";
 "calls.status.off" = "Выключено";
-"calls.status.waiting" = "Ожидание запуска приложения";
-"calls.status.waitingMeet" = "Ожидание расширения браузера";
+"calls.status.waiting" = "Приложение не обнаружено";
+"calls.status.waitingMeet" = "Расширение не обнаружено";
 "calls.status.needsAccess" = "Нужен доступ к Универсальному доступу";
-"calls.status.connected" = "Подключено, звонка нет";
-"calls.status.inCall" = "Подключено, звонок синхронизируется";
-"calls.app" = "Приложение";
-"calls.extension" = "Расширение браузера";
+"calls.status.connected" = "Обнаружено, звонка нет";
+"calls.status.inCall" = "Обнаружено, звонок синхронизируется";
 "calls.detected" = "Обнаружено";
 "calls.notDetected" = "Не обнаружено";
