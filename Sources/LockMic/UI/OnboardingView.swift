@@ -266,7 +266,6 @@ struct OnboardingView: View {
             .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 6) {
-                Label("The most recent change wins, so quick clicks never leave you out of step.", systemImage: "checkmark.circle.fill")
                 Label("Needs Accessibility access: macOS asks when you finish setup. LockMic only reads each call's mute button and the page address needed to find it, never audio or what is on the page.", systemImage: "hand.raised.fill")
                 Label("On by default. Turn any of them off anytime in Preferences → Sync.", systemImage: "gearshape.fill")
             }
