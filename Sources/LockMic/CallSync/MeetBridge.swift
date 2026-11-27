@@ -125,18 +125,26 @@ final class MeetBridge: CallService {
             // Chromium builds the web tree only for assistive tech that asks.
             AXUIElementSetAttributeValue(root, "AXEnhancedUserInterface" as CFString, true as CFTypeRef)
             var budget = 12000
-            if let hit = search(root, inMeet: false, budget: &budget) { return hit }
+            for window in children(root) where string(window, "AXRole") == "AXWindow" {
+                // Meet's Picture-in-Picture window has a blank URL but a "Meet – …" title.
+                let pip = string(window, "AXTitle")?.localizedCaseInsensitiveContains("meet") == true
+                if let hit = search(window, inMeet: false, pipWindow: pip, budget: &budget) { return hit }
+            }
         }
         return nil
     }
 
-    private nonisolated static func search(_ el: AXUIElement, inMeet: Bool, budget: inout Int) -> Hit? {
+    private nonisolated static func search(
+        _ el: AXUIElement, inMeet: Bool, pipWindow: Bool, budget: inout Int
+    ) -> Hit? {
         budget -= 1
         if budget <= 0 { return nil }
         let role = string(el, "AXRole")
         var inMeet = inMeet
         if role == "AXWebArea" {
-            inMeet = url(el)?.host == "meet.google.com"
+            let page = url(el)
+            inMeet = page?.host == "meet.google.com"
+                || (pipWindow && (page == nil || page?.scheme == "about"))
             if !inMeet { return nil } // skip other tabs entirely
         }
         if inMeet, role == "AXButton",
@@ -144,7 +152,7 @@ final class MeetBridge: CallService {
             return Hit(muted: muted, button: el)
         }
         for child in children(el) {
-            if let hit = search(child, inMeet: inMeet, budget: &budget) { return hit }
+            if let hit = search(child, inMeet: inMeet, pipWindow: pipWindow, budget: &budget) { return hit }
         }
         return nil
     }
