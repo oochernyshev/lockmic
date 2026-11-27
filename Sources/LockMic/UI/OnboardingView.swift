@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import SwiftUI
 
 struct OnboardingView: View {
@@ -82,6 +83,8 @@ struct OnboardingView: View {
                 onboardingFeature("waveform", "Record microphone and system audio when you need it")
             }
             .frame(maxWidth: 410, alignment: .leading)
+            AccessibilityAccessRow()
+                .frame(maxWidth: 410)
         }
         .padding(36)
     }
@@ -334,5 +337,36 @@ private struct OnboardingHUDPreview: NSViewRepresentable {
 
     func updateNSView(_ view: HUDContentView, context: Context) {
         view.configureToast(muted: muted)
+    }
+}
+
+/// Shows whether LockMic may use Accessibility (needed to sync mute with call apps) and lets the
+/// person grant it right away instead of waiting for the macOS prompt later.
+private struct AccessibilityAccessRow: View {
+    @State private var granted = AXIsProcessTrusted()
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: granted ? "checkmark.circle.fill" : "hand.raised.fill")
+                .foregroundStyle(granted ? Color.green : Color.orange)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(granted ? "Accessibility access granted" : "Accessibility access needed")
+                    .font(.callout.weight(.semibold))
+                Text("Lets LockMic sync mute with Meet, Teams and Zoom.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if !granted {
+                Button("Allow Access…") {
+                    _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+        .onReceive(timer) { _ in granted = AXIsProcessTrusted() }
     }
 }
