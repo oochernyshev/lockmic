@@ -12,7 +12,7 @@ struct OnboardingView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 7) {
-                ForEach(0..<4, id: \.self) { index in
+                ForEach(0..<5, id: \.self) { index in
                     Capsule()
                         .fill(index == page ? Color.accentColor : Color.secondary.opacity(0.22))
                         .frame(width: index == page ? 28 : 8, height: 8)
@@ -26,6 +26,7 @@ struct OnboardingView: View {
                 case 0: welcomePage
                 case 1: analyticsPage
                 case 2: hudPage
+                case 3: syncPage
                 default: readyPage
                 }
             }
@@ -47,8 +48,8 @@ struct OnboardingView: View {
                         page = 2
                     }
                         .keyboardShortcut(.defaultAction)
-                } else if page == 2 {
-                    Button("Continue") { page = 3 }
+                } else if page == 2 || page == 3 {
+                    Button("Continue") { page += 1 }
                         .keyboardShortcut(.defaultAction)
                 } else {
                     Button("Start Using LockMic") {
@@ -60,7 +61,7 @@ struct OnboardingView: View {
             }
             .padding(20)
         }
-        .frame(width: 620, height: 560)
+        .frame(width: 620, height: 600)
         .background(.ultraThinMaterial)
     }
 
@@ -224,6 +225,68 @@ struct OnboardingView: View {
             .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
         }
         .padding(14)
+    }
+
+    private var syncPage: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "arrow.left.arrow.right.circle.fill")
+                .font(.system(size: 44, weight: .medium))
+                .foregroundStyle(.tint)
+            VStack(spacing: 4) {
+                Text("Keep your calls in sync")
+                    .font(.system(size: 24, weight: .bold))
+                Text("Mute in LockMic and the call mutes. Mute in the call and LockMic follows, both ways, within a second.")
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 470)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                syncOption(
+                    "Web calls",
+                    detail: "Google Meet, Microsoft Teams and Zoom in your browser. Safari: calls in every tab. Chrome and other Chromium browsers: the tab that is open and visible in its window.",
+                    isOn: $preferences.syncWebEnabled
+                )
+                Divider()
+                syncOption(
+                    "Microsoft Teams app",
+                    detail: "Follows mute in the Teams desktop app.",
+                    isOn: $preferences.syncTeamsAppEnabled
+                )
+                Divider()
+                syncOption(
+                    "Zoom app",
+                    detail: "Follows mute in the Zoom desktop app.",
+                    isOn: $preferences.syncZoomAppEnabled
+                )
+            }
+            .frame(maxWidth: 520)
+            .padding(12)
+            .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Label("The most recent change wins, so quick clicks never leave you out of step.", systemImage: "checkmark.circle.fill")
+                Label("Needs Accessibility access: macOS asks when you turn one on. LockMic only reads each call's mute button and the page address needed to find it, never audio or what is on the page.", systemImage: "hand.raised.fill")
+                Label("Off by default. Change anytime in Preferences → Sync.", systemImage: "gearshape.fill")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: 520, alignment: .leading)
+        }
+        .padding(14)
+    }
+
+    private func syncOption(_ title: String, detail: String, isOn: Binding<Bool>) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Toggle(title, isOn: isOn)
+                .toggleStyle(.checkbox)
+                .fontWeight(.medium)
+            Text(detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, 20)
+        }
     }
 
     private func onboardingFeature(_ icon: String, _ title: String) -> some View {
