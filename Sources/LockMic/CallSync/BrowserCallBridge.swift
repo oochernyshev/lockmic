@@ -294,6 +294,16 @@ final class BrowserCallBridge: CallService {
                 && previous[$0.button] != nil && previous[$0.button] != $0.muted
         }
         let muted = changed.last?.muted ?? (lastEvent?.inCall == true ? lastEvent?.muted : hits.first?.muted)
+
+        // A user change in one call is mirrored to the other calls of this bridge (another tab,
+        // browser or window); the coordinator only mirrors to other services.
+        if let target = changed.last?.muted {
+            var pressed = false
+            for hit in hits where !hit.unavailable && hit.muted != target {
+                if press(hit.button, toMuted: target) { pressed = true }
+            }
+            if pressed { pending = (target, ProcessInfo.processInfo.systemUptime + Self.settleTimeout) }
+        }
         let event = CallServiceEvent(muted: muted, inCall: !hits.isEmpty)
         if let last = lastEvent, last.inCall == event.inCall, last.muted == event.muted { return }
         let wasInCall = lastEvent?.inCall ?? false
