@@ -67,6 +67,14 @@ struct OnboardingView: View {
         }
         .frame(width: 620, height: 660)
         .background(.ultraThinMaterial)
+        .onChange(of: page) { old, new in
+            // Leaving the Sync page with any sync switched on: ask for Accessibility now.
+            let syncPage = 3
+            if old == syncPage, new != syncPage,
+               preferences.syncWebEnabled || preferences.syncTeamsAppEnabled || preferences.syncZoomAppEnabled {
+                AccessibilityPrompt.requestNow()
+            }
+        }
     }
 
     private var welcomePage: some View {
@@ -414,7 +422,7 @@ private struct AccessibilityAccessRow: View {
             Spacer()
             if !granted {
                 Button("Allow Access…") {
-                    _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+                    AccessibilityPrompt.requestNow()
                 }
             }
         }

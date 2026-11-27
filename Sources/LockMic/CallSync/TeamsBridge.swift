@@ -50,7 +50,7 @@ final class TeamsBridge: CallService {
     /// Shows the system Accessibility prompt. Called only when the user enables this integration.
     func start() {
         guard timer == nil else { return }
-        _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+        AccessibilityPrompt.requestOnce()
         let t = Timer(timeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.poll() }
         }

@@ -50,17 +50,11 @@ final class ZoomBridge: CallService {
     private static let pollInterval: TimeInterval = 0.2
     private static let settleTimeout: TimeInterval = 1.5
 
-    /// Shows the system Accessibility prompt. Call only when the user enables this integration.
-    static func requestAccess() -> Bool {
-        let opts = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
-        return AXIsProcessTrustedWithOptions(opts)
-    }
-
     static var hasAccess: Bool { AXIsProcessTrusted() }
 
     func start() {
         guard timer == nil else { return }
-        _ = Self.requestAccess()
+        AccessibilityPrompt.requestOnce()
         let t = Timer(timeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.poll() }
         }

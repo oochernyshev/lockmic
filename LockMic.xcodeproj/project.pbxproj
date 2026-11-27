@@ -72,6 +72,7 @@
 		ACC18BD5233D2126186035CC /* RecordingDSP.swift in Sources */ = {isa = PBXBuildFile; fileRef = D648AE0FEB3920E8A9FA910C /* RecordingDSP.swift */; };
 		AEF4D2C00132A9A39FC3359B /* MeetingAlertCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED5D7307E3B76FC00E704CA /* MeetingAlertCoordinator.swift */; };
 		B8F8DFAECFDB1AC041DB0EE7 /* MeetingAlertSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0160224EDB6ABED31506900C /* MeetingAlertSound.swift */; };
+		B955E7514EA2329740618C04 /* AccessibilityPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = B44F5F4BDC23564183E92988 /* AccessibilityPrompt.swift */; };
 		B9FC24981D0E4F55E0659268 /* MeetingAlertPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EC254849F97601A45E54EB0 /* MeetingAlertPreview.swift */; };
 		BA20006664889BFA032B547D /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 402280C03971421D5FC37176 /* PreferencesStore.swift */; };
 		BDD8AAD6F773AE812F75400F /* HUDHoldKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500AF84D4D16D9AFA3D3F98C /* HUDHoldKind.swift */; };
@@ -165,6 +166,7 @@
 		B0873DBEFA0A8A6FDBCCDF83 /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sv; path = sv.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B1B4F82F794FD82FF78EC8B9 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		B35F1D3335235FFC0A1CFD00 /* HotkeyTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyTypes.swift; sourceTree = "<group>"; };
+		B44F5F4BDC23564183E92988 /* AccessibilityPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityPrompt.swift; sourceTree = "<group>"; };
 		B5A1F4FAA32D2DF9650CF00C /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceService.swift; sourceTree = "<group>"; };
 		B6FE4315D6334387497A5F82 /* MuteGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuteGate.swift; sourceTree = "<group>"; };
@@ -293,6 +295,7 @@
 		6475B769EAD198F3AB59972F /* CallSync */ = {
 			isa = PBXGroup;
 			children = (
+				B44F5F4BDC23564183E92988 /* AccessibilityPrompt.swift */,
 				192E18B01E44BADA5E61116A /* AXWindowFingerprint.swift */,
 				8C11566FBAB8C47DD434F894 /* BrowserCallBridge.swift */,
 				D98C0BBF4D42B2665D59AB36 /* CallService.swift */,
@@ -483,6 +486,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2A45FE63E7C73A0F4F278E2E /* AXWindowFingerprint.swift in Sources */,
+				B955E7514EA2329740618C04 /* AccessibilityPrompt.swift in Sources */,
 				3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */,
 				6507DC18A3CA52D862E30880 /* AppInstallMethod.swift in Sources */,
 				7BCF28B6E67FFB6A7D883F39 /* AppInstanceGuard.swift in Sources */,
