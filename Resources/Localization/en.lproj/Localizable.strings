@@ -308,3 +308,6 @@
 "sync.web.tabFound" = "Tab found";
 "sync.web.tabNoCall" = "Tab found, no call";
 "sync.web.syncing" = "Syncing the call";
+"general.gettingStarted.header" = "Getting Started";
+"general.gettingStarted.caption" = "Walk through the setup guide again: mute basics, the HUD, and syncing with your calls.";
+"general.gettingStarted.button" = "Open Getting Started…";

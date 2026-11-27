@@ -146,7 +146,7 @@ struct OnboardingView: View {
             .padding(10)
             .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
 
-            Text("Right-click the menu-bar icon for recording, Preferences, and Getting Started.")
+            Text("Right-click the menu-bar icon for recording and Preferences. You can reopen this guide from Preferences → General.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

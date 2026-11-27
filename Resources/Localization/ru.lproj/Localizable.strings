@@ -296,3 +296,6 @@
 "sync.web.tabFound" = "Вкладка найдена";
 "sync.web.tabNoCall" = "Вкладка найдена, звонка нет";
 "sync.web.syncing" = "Звонок синхронизируется";
+"general.gettingStarted.header" = "Начало работы";
+"general.gettingStarted.caption" = "Пройти руководство по настройке ещё раз: основы mute, индикатор и синхронизация со звонками.";
+"general.gettingStarted.button" = "Открыть руководство…";

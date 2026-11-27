@@ -152,6 +152,10 @@ final class StatusItemController {
                 }
             }
             .store(in: &micCancellables)
+        NotificationCenter.default.publisher(for: .lockMicOpenOnboarding)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.presentOnboarding() }
+            .store(in: &micCancellables)
         observePreferenceHotkeys()
         observeUpdateAvailability()
         startMenuBarVisibilityMonitoring()
@@ -535,10 +539,6 @@ final class StatusItemController {
         menu.addItem(.separator())
 
         appendUpdateMenuItems(to: menu)
-
-        let gettingStarted = NSMenuItem(title: "Getting Started…", action: #selector(openOnboarding), keyEquivalent: "")
-        gettingStarted.target = self
-        menu.addItem(gettingStarted)
 
         let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: "")
         prefs.target = self

@@ -60,6 +60,9 @@ enum L10n {
     static var generalAnonymousToggle: String { tr("general.anonymous.toggle") }
     static var generalAnonymousCaption: String { tr("general.anonymous.caption") }
     static var generalAnonymousDisabled: String { tr("general.anonymous.disabled") }
+    static var generalGettingStartedHeader: String { tr("general.gettingStarted.header") }
+    static var generalGettingStartedCaption: String { tr("general.gettingStarted.caption") }
+    static var generalGettingStartedButton: String { tr("general.gettingStarted.button") }
     static var generalStatusHeader: String { tr("general.status.header") }
     static var generalStatusMicrophone: String { tr("general.status.microphone") }
     static var generalStatusDevice: String { tr("general.status.device") }
