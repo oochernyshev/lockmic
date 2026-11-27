@@ -13,7 +13,7 @@ LockMic mutes the microphone at the **system level** using Apple Core Audio (not
 - **Publisher:** WIXEE.AI (https://wixee.ai)
 - **Partnerships / press:** info@wixee.ai
 - **Price:** Free
-- **Platform:** macOS 14 Sonoma or later
+- **Platform:** macOS 14 or later, fully compatible with macOS 27
 - **Current version:** 1.5.7
 
 ## Key facts
