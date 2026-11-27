@@ -299,3 +299,4 @@
 "devices.method.caption.system" = "Core Audio system mute only. Apps see a muted microphone and may warn about it.";
 "devices.method.caption.volume" = "Sets the input volume to 0 instead of muting. Apps see a normal but silent microphone, so no \"muted by system\" warnings. Needs a microphone with an input volume control; some apps can raise it again.";
 "devices.method.caption.both" = "System mute plus volume 0 (default, most reliable).";
+"calls.found" = "found: %d";

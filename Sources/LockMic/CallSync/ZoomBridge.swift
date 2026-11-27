@@ -14,6 +14,7 @@ final class ZoomBridge: CallService {
     let id = CallServiceID.zoom
     var onEvent: ((CallServiceEvent) -> Void)?
     var hasActiveCall: Bool { lastEvent?.inCall == true }
+    var callCount: Int { hasActiveCall ? 1 : 0 }
     var appDetected: Bool {
         !NSRunningApplication.runningApplications(withBundleIdentifier: Self.bundleID).isEmpty
     }

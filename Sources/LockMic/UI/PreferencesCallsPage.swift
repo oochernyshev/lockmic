@@ -24,7 +24,7 @@ struct PreferencesCallsPage: View {
         PreferencesChrome.sectionCard {
             Toggle(title, isOn: binding)
             if binding.wrappedValue {
-                let (text, color) = display(callSync.statuses[id] ?? .waiting, id, found: callSync.detected[id] ?? false)
+                let (text, color) = display(callSync.statuses[id] ?? .waiting, id, found: callSync.detected[id] ?? false, calls: callSync.callCounts[id] ?? 0)
                 PreferencesChrome.statusRow(title: L10n.callsStatus, text: text, color: color)
             }
             if let caption {
@@ -38,14 +38,14 @@ struct PreferencesCallsPage: View {
         }
     }
 
-    private func display(_ status: CallServiceStatus, _ id: CallServiceID, found: Bool) -> (String, Color) {
+    private func display(_ status: CallServiceStatus, _ id: CallServiceID, found: Bool, calls: Int) -> (String, Color) {
         switch status {
         case .off: return (L10n.callsStatusOff, .secondary)
         case .waiting: return (L10n.callsStatusWaiting, .orange)
         // The warning below explains the missing permission; here only say what was found.
         case .needsAccess: return (found ? L10n.callsDetected : L10n.callsNotDetected, .orange)
         case .connected: return (L10n.callsStatusConnected, .green)
-        case .inCall: return (L10n.callsStatusInCall, .green)
+        case .inCall: return (calls > 0 ? "\(L10n.callsStatusInCall) · \(L10n.callsFound(calls))" : L10n.callsStatusInCall, .green)
         }
     }
 }

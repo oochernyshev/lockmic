@@ -32,6 +32,7 @@ enum L10n {
     static var callsStatus: String { tr("calls.status") }
     static var callsDetected: String { tr("calls.detected") }
     static var callsNotDetected: String { tr("calls.notDetected") }
+    static func callsFound(_ count: Int) -> String { format("calls.found", count) }
     static var callsStatusOff: String { tr("calls.status.off") }
     static var callsStatusWaiting: String { tr("calls.status.waiting") }
     static var callsStatusNeedsAccess: String { tr("calls.status.needsAccess") }

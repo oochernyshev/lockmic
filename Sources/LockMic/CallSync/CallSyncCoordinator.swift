@@ -13,6 +13,7 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "CallSync")
 final class CallSyncCoordinator: ObservableObject {
     @Published private(set) var statuses: [CallServiceID: CallServiceStatus] = [:]
     @Published private(set) var detected: [CallServiceID: Bool] = [:]
+    @Published private(set) var callCounts: [CallServiceID: Int] = [:]
     private var statusTimer: Timer?
     static let echoWindow: TimeInterval = 0.3
     /// Lets the service mute itself before HAL mute lands (avoids Meet's "muted by system").
@@ -64,6 +65,8 @@ final class CallSyncCoordinator: ObservableObject {
         if next != statuses { statuses = next }
         let found = services.mapValues(\.appDetected)
         if found != detected { detected = found }
+        let counts = services.mapValues(\.callCount)
+        if counts != callCounts { callCounts = counts }
     }
 
     func stop() {

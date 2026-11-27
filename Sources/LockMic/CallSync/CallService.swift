@@ -9,6 +9,8 @@ protocol CallService: AnyObject {
     var status: CallServiceStatus { get }
     /// The target app (or, for Meet, the browser extension) is reachable right now.
     var appDetected: Bool { get }
+    /// Calls currently synced through this service (apps, tabs, windows).
+    var callCount: Int { get }
     /// Called with every observed service-side state change.
     var onEvent: ((CallServiceEvent) -> Void)? { get set }
     func start()

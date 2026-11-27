@@ -123,6 +123,7 @@ final class BrowserCallBridge: CallService {
     var hasActiveCall: Bool { lastEvent?.inCall == true }
     /// A page of this service is open in some browser (even before joining a call).
     private(set) var appDetected = false
+    var callCount: Int { hasActiveCall ? calls.count : 0 }
     var status: CallServiceStatus {
         guard timer != nil else { return .off }
         guard AXIsProcessTrusted() else { return .needsAccess }
