@@ -85,6 +85,7 @@ final class CallSyncCoordinator: ObservableObject {
     private func localMuteRequested(_ muted: Bool) -> TimeInterval {
         guard !applyingRemote else { return 0 }
         var pushed = false
+        log.info("local muted=\(muted, privacy: .public) remote=\(self.applyingRemote, privacy: .public) activeCalls=\(self.services.values.filter(\.hasActiveCall).map { $0.id.rawValue }.joined(separator: ","), privacy: .public)")
         for service in services.values where service.hasActiveCall {
             lastPushAt[service.id] = now
             service.push(muted: muted)
@@ -108,9 +109,12 @@ final class CallSyncCoordinator: ObservableObject {
             return
         }
         guard let muted = event.muted, muted != mic.effectiveMuted else { return }
-        if now - (lastPushAt[id] ?? 0) < Self.echoWindow { return }
+        if now - (lastPushAt[id] ?? 0) < Self.echoWindow {
+            log.info("\(id.rawValue, privacy: .public) event muted=\(muted, privacy: .public) ignored as echo")
+            return
+        }
 
-        log.debug("remote \(id.rawValue, privacy: .public) muted=\(muted, privacy: .public)")
+        log.info("remote \(id.rawValue, privacy: .public) muted=\(muted, privacy: .public)")
         applyingRemote = true
         mic.setMuted(muted)
         applyingRemote = false

@@ -1,6 +1,9 @@
 import AppKit
 import ApplicationServices
 import Foundation
+import os.log
+
+private let log = Logger(subsystem: "com.lockmic.app", category: "ZoomBridge")
 
 /// Zoom sync through Accessibility: polls Zoom's Meeting menu ("Mute audio" / "Unmute audio")
 /// about every 0.2 s while Zoom runs, and presses the item to change state.
@@ -56,8 +59,12 @@ final class ZoomBridge: CallService {
     }
 
     func push(muted: Bool) {
-        guard let state = readState(), state.inCall, state.muted != muted,
-              let item = state.item else { return }
+        let seen = readState()
+        log.info("push muted=\(muted, privacy: .public) trusted=\(Self.hasAccess, privacy: .public) zoomInCall=\(seen?.inCall ?? false, privacy: .public) zoomMuted=\(seen.map { String($0.muted) } ?? "nil", privacy: .public) hasActiveCall=\(self.hasActiveCall, privacy: .public)")
+        guard let state = seen, state.inCall, let item = state.item else { return }
+        // Right after our own press the menu title is stale: trust what we asked for.
+        let current = pending.map { $0.muted } ?? state.muted
+        guard current != muted else { return }
         AXUIElementPerformAction(item, kAXPressAction as CFString)
         pending = (muted, ProcessInfo.processInfo.systemUptime + Self.settleTimeout)
         lastEvent = CallServiceEvent(muted: muted, inCall: true)
@@ -80,6 +87,7 @@ final class ZoomBridge: CallService {
         if let last = lastEvent, last.inCall == event.inCall, last.muted == event.muted { return }
         let wasInCall = lastEvent?.inCall ?? false
         lastEvent = event
+        log.info("event inCall=\(event.inCall, privacy: .public) muted=\(event.muted.map { String($0) } ?? "nil", privacy: .public)")
         if event.inCall || wasInCall { onEvent?(event) }
     }
 
