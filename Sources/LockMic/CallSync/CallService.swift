@@ -13,6 +13,9 @@ protocol CallService: AnyObject {
     var callCount: Int { get }
     /// Calls seen only as a browser tab in the background (content not readable until shown).
     var backgroundCallTabs: Int { get }
+    /// What the service's calls show right now, as an absolute state. `truth` (LockMic's state) if
+    /// all known calls agree with it, `!truth` if any differs, `nil` when unknown or settling.
+    func observedMuted(truth: Bool) -> Bool?
     /// Called with every observed service-side state change.
     var onEvent: ((CallServiceEvent) -> Void)? { get set }
     func start()

@@ -133,6 +133,13 @@ final class BrowserCallBridge: CallService {
     private(set) var appDetected = false
     var callCount: Int { hasActiveCall ? calls.count : 0 }
     private(set) var backgroundCallTabs = 0
+    func observedMuted(truth: Bool) -> Bool? {
+        guard hasActiveCall, pending == nil else { return nil }
+        // Calls whose mic is unusable (system mute) say nothing about the in-app state.
+        let states = calls.filter { !unavailableCalls.contains($0.key) }.map(\.value)
+        guard !states.isEmpty else { return nil }
+        return states.allSatisfy { $0 == truth } ? truth : !truth
+    }
     var status: CallServiceStatus {
         guard timer != nil else { return .off }
         guard AXIsProcessTrusted() else { return .needsAccess }

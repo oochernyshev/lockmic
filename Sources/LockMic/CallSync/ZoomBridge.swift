@@ -16,6 +16,10 @@ final class ZoomBridge: CallService {
     var hasActiveCall: Bool { lastEvent?.inCall == true }
     var callCount: Int { hasActiveCall ? 1 : 0 }
     var backgroundCallTabs: Int { 0 }
+    func observedMuted(truth: Bool) -> Bool? {
+        guard hasActiveCall, pending == nil, let muted = lastEvent?.muted else { return nil }
+        return muted
+    }
     var appDetected: Bool {
         !NSRunningApplication.runningApplications(withBundleIdentifier: Self.bundleID).isEmpty
     }

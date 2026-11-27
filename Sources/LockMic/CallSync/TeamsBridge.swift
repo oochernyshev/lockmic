@@ -15,6 +15,10 @@ final class TeamsBridge: CallService {
     var appDetected: Bool { !Self.teamsApps.isEmpty }
     var callCount: Int { hasActiveCall ? 1 : 0 }
     var backgroundCallTabs: Int { 0 }
+    func observedMuted(truth: Bool) -> Bool? {
+        guard hasActiveCall, pending == nil, let muted = lastEvent?.muted else { return nil }
+        return muted
+    }
     var status: CallServiceStatus {
         guard timer != nil else { return .off }
         guard AXIsProcessTrusted() else { return .needsAccess }

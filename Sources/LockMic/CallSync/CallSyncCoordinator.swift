@@ -46,6 +46,11 @@ final class CallSyncCoordinator: ObservableObject {
     /// system mute with a lag, so a late echo of an older write must not override a newer operation.
     private var writes: [(value: Bool, at: TimeInterval)] = []
     static let echoLag: TimeInterval = 2.5
+    /// Reconciliation runs once the state has been quiet for this long.
+    static let settleTime: TimeInterval = 2.5
+    private var lastChangeAt: TimeInterval = 0
+    private var observedBefore: [CallServiceID: Bool] = [:]
+    private var observedChangedAt: [CallServiceID: TimeInterval] = [:]
     private var cancellables = Set<AnyCancellable>()
 
     /// Called after a service changed LockMic's mute so UI (HUD, icon, sound) can refresh.
@@ -97,6 +102,7 @@ final class CallSyncCoordinator: ObservableObject {
             )
         }
         if next != snapshots { snapshots = next }
+        reconcile()
     }
 
     private func sourceStopped(_ source: SyncSource) {
@@ -154,6 +160,11 @@ final class CallSyncCoordinator: ObservableObject {
         }
 
         log.info("remote \(id.rawValue, privacy: .public) muted=\(muted, privacy: .public)")
+        adopt(muted, from: id)
+    }
+
+    /// A service made the latest change: LockMic and every other synced service follow it.
+    private func adopt(_ muted: Bool, from id: CallServiceID) {
         noteWrite(muted)
         applyingRemote = true
         mic.setMuted(muted)
@@ -166,8 +177,32 @@ final class CallSyncCoordinator: ObservableObject {
         onRemoteMuteApplied?()
     }
 
+    /// Regular check: a quick click can leave a service out of step when its event was dropped as an
+    /// echo. Once things are quiet, the latest actor wins: a service that changed after LockMic's
+    /// last change is adopted; otherwise LockMic's state is pushed to the service.
+    private func reconcile() {
+        let truth = mic.effectiveMuted
+        let quiet = now - lastChangeAt > Self.settleTime
+        for service in services.values where service.hasActiveCall {
+            let id = service.id
+            guard let observed = service.observedMuted(truth: truth) else { continue }
+            if let before = observedBefore[id], before != observed { observedChangedAt[id] = now }
+            observedBefore[id] = observed
+            guard quiet, observed != truth else { continue }
+            if (observedChangedAt[id] ?? 0) > lastChangeAt {
+                log.info("reconcile: \(id.rawValue, privacy: .public) changed last, adopting muted=\(observed, privacy: .public)")
+                adopt(observed, from: id)
+            } else {
+                log.info("reconcile: pushing muted=\(truth, privacy: .public) to \(id.rawValue, privacy: .public)")
+                lastPushAt[id] = now
+                service.push(muted: truth)
+            }
+        }
+    }
+
     private func noteWrite(_ value: Bool) {
         writes.append((value, now))
+        lastChangeAt = now
         writes.removeAll { now - $0.at > Self.echoLag * 2 }
     }
 

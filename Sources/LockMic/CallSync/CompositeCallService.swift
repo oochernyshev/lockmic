@@ -34,6 +34,12 @@ final class CompositeCallService: CallService {
     var callCount: Int { children.reduce(0) { $0 + $1.callCount } }
     var backgroundCallTabs: Int { children.reduce(0) { $0 + $1.backgroundCallTabs } }
 
+    func observedMuted(truth: Bool) -> Bool? {
+        let seen = children.compactMap { $0.observedMuted(truth: truth) }
+        if seen.contains(!truth) { return !truth }
+        return seen.isEmpty ? nil : truth
+    }
+
     var status: CallServiceStatus {
         let all = children.map(\.status)
         for wanted in [CallServiceStatus.inCall, .connected, .needsAccess, .waiting] where all.contains(wanted) {
