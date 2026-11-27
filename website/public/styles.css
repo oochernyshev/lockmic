@@ -2121,3 +2121,6 @@ kbd {
 .v2-cta { text-align: center; margin-top: 2.5rem; }
 .v2 .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 720px) { .v2 .feature-grid { grid-template-columns: 1fr; } }
+.v2-shot { margin: 0 auto 2.5rem; max-width: 560px; text-align: center; }
+.v2-shot img { width: 100%; border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.12); height: auto; display: block; filter: drop-shadow(0 30px 60px rgba(90, 110, 255, 0.28)); }
+.v2-shot figcaption { margin-top: 1rem; font-size: 0.9rem; color: var(--muted, #8b90a0); }
