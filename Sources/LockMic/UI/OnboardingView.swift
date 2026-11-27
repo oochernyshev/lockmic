@@ -6,8 +6,7 @@ struct OnboardingView: View {
     @ObservedObject var preferences: PreferencesStore
     @ObservedObject var mic: MicController
     let testMute: () -> Void
-    /// Turns meeting alerts on and asks for Calendar access.
-    let enableMeetingAlerts: () -> Void
+    @ObservedObject var meetings: MeetingAlertCoordinator
     let finish: () -> Void
 
     @State private var page = 0
@@ -73,6 +72,12 @@ struct OnboardingView: View {
             if old == syncPage, new != syncPage,
                preferences.syncWebEnabled || preferences.syncTeamsAppEnabled || preferences.syncZoomAppEnabled {
                 AccessibilityPrompt.requestNow()
+            }
+            // Leaving the Alerts page with the countdown on: ask for Calendar access now.
+            let alertsPage = 4
+            if old == alertsPage, new != alertsPage,
+               preferences.meetingAlertsEnabled, meetings.access == .notDetermined {
+                meetings.requestAccessAndEnable()
             }
         }
     }
@@ -258,16 +263,7 @@ struct OnboardingView: View {
                 .frame(maxWidth: 360)
 
             VStack(alignment: .leading, spacing: 10) {
-                Toggle("Show meeting countdown", isOn: Binding(
-                    get: { preferences.meetingAlertsEnabled },
-                    set: { newValue in
-                        if newValue {
-                            enableMeetingAlerts()
-                        } else {
-                            preferences.meetingAlertsEnabled = false
-                        }
-                    }
-                ))
+                Toggle("Show meeting countdown", isOn: $preferences.meetingAlertsEnabled)
                 .toggleStyle(.checkbox)
                 .fontWeight(.medium)
                 Toggle("Play an alert sound near the start", isOn: $preferences.meetingAlertSoundEnabled)
@@ -279,12 +275,15 @@ struct OnboardingView: View {
             .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
 
             VStack(alignment: .leading, spacing: 6) {
-                Label("Needs Calendar access: macOS asks when you turn it on. LockMic reads event titles and start times on this Mac and uploads nothing.", systemImage: "calendar")
+                Label("LockMic reads event titles and start times on this Mac and uploads nothing.", systemImage: "lock.shield.fill")
                 Label("You can change this anytime in Preferences → Alerts.", systemImage: "gearshape.fill")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
             .frame(maxWidth: 520, alignment: .leading)
+
+            CalendarAccessRow(meetings: meetings)
+                .frame(maxWidth: 520)
         }
         .padding(14)
     }
@@ -429,5 +428,51 @@ private struct AccessibilityAccessRow: View {
         .padding(10)
         .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
         .onReceive(timer) { _ in granted = AXIsProcessTrusted() }
+    }
+}
+
+/// Shows whether LockMic may read Calendar (needed for meeting alerts) and lets the person grant
+/// it right away. Mirrors the Accessibility row.
+private struct CalendarAccessRow: View {
+    @ObservedObject var meetings: MeetingAlertCoordinator
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: granted ? "checkmark.circle.fill" : "calendar.badge.exclamationmark")
+                .foregroundStyle(granted ? Color.green : Color.orange)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.callout.weight(.semibold))
+                Text("Lets LockMic show the countdown before your meetings.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            switch meetings.access {
+            case .granted:
+                EmptyView()
+            case .notDetermined:
+                Button("Allow Access…") { meetings.requestAccessAndEnable() }
+            case .denied, .restricted:
+                Button("Open Settings…") { meetings.openPrivacySettings() }
+            }
+        }
+        .padding(10)
+        .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+        .onAppear { meetings.refreshAccess() }
+        .onReceive(timer) { _ in meetings.refreshAccess() }
+    }
+
+    private var granted: Bool { meetings.access == .granted }
+
+    private var title: String {
+        switch meetings.access {
+        case .granted: return "Calendar access granted"
+        case .notDetermined: return "Calendar access needed"
+        case .denied: return "Calendar access is off"
+        case .restricted: return "Calendar access is restricted"
+        }
     }
 }

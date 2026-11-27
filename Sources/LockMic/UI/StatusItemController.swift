@@ -695,9 +695,7 @@ final class StatusItemController {
                     self.applyFeatureAvailability(force: true)
                     self.toggleFromUser(source: .menu)
                 },
-                enableMeetingAlerts: { [weak self] in
-                    self?.meetings.requestAccessAndEnable()
-                }
+                meetings: meetings
             ) { [weak self] in
                 self?.applyFeatureAvailability(force: true)
                 self?.onboardingWindow?.performClose(nil)
