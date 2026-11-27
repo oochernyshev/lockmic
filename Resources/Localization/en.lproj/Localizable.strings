@@ -281,10 +281,8 @@
 "calls.meet" = "Google Meet";
 "calls.meet.caption" = "1. Install the LockMic extension in Chrome, Arc, Edge or Brave (Extensions/Chrome in the LockMic repository, via chrome://extensions → Load unpacked).\n2. Turn this switch on, then reload open Meet tabs.\n3. Join a call: mute in LockMic or in Meet now follows both ways. Only the mute state is shared.";
 "calls.teams" = "Microsoft Teams";
-"calls.teams.caption" = "1. Turn this switch on and allow LockMic in System Settings → Privacy & Security → Accessibility.\n2. Keep Teams (new Teams) in English: the call window's Mute mic button is read.\n3. Join a meeting: mute follows both ways within about a second.";
 "calls.zoom" = "Zoom";
-"calls.zoom.caption" = "1. Turn this switch on and allow LockMic in System Settings → Privacy & Security → Accessibility.\n2. Keep Zoom in English: its Meeting menu is read.\n3. Join a meeting: mute follows both ways within about a second.";
-"calls.zoom.access" = "Accessibility access is required. Grant it in System Settings → Privacy & Security → Accessibility.";
+"calls.zoom.access" = "Accessibility access is required. Grant it to LockMic in System Settings → Privacy & Security → Accessibility.";
 "calls.status" = "Status";
 "calls.status.off" = "Off";
 "calls.status.waiting" = "Waiting for the app to start";

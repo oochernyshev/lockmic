@@ -1,3 +1,4 @@
+import ApplicationServices
 import SwiftUI
 
 struct PreferencesCallsPage: View {
@@ -11,14 +12,14 @@ struct PreferencesCallsPage: View {
                 PreferencesChrome.caption(L10n.callsIntro)
             }
             service(L10n.callsMeet, .meet, $preferences.callSyncMeetEnabled, L10n.callsMeetCaption)
-            service(L10n.callsTeams, .teams, $preferences.callSyncTeamsEnabled, L10n.callsTeamsCaption)
-            service(L10n.callsZoom, .zoom, $preferences.callSyncZoomEnabled, L10n.callsZoomCaption)
+            service(L10n.callsTeams, .teams, $preferences.callSyncTeamsEnabled, nil)
+            service(L10n.callsZoom, .zoom, $preferences.callSyncZoomEnabled, nil)
         }
         .onAppear { callSync.refreshStatuses() }
     }
 
     private func service(
-        _ title: String, _ id: CallServiceID, _ binding: Binding<Bool>, _ caption: String
+        _ title: String, _ id: CallServiceID, _ binding: Binding<Bool>, _ caption: String?
     ) -> some View {
         PreferencesChrome.sectionCard {
             Toggle(title, isOn: binding)
@@ -32,7 +33,14 @@ struct PreferencesCallsPage: View {
                 )
                 PreferencesChrome.statusRow(title: L10n.callsStatus, text: text, color: color)
             }
-            PreferencesChrome.caption(caption)
+            if let caption {
+                PreferencesChrome.caption(caption)
+            }
+            if binding.wrappedValue, id != .meet, !AXIsProcessTrusted() {
+                Text(L10n.callsZoomAccess)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.orange)
+            }
         }
     }
 
