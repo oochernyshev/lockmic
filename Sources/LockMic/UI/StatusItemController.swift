@@ -52,7 +52,7 @@ final class StatusItemController {
             services: [
                 BrowserCallBridge(profile: .meet),
                 CompositeCallService(id: .teams, children: [TeamsBridge(), BrowserCallBridge(profile: .teams)]),
-                zoomBridge,
+                CompositeCallService(id: .zoom, children: [zoomBridge, BrowserCallBridge(profile: .zoom)]),
             ]
         )
         callSync.onRemoteMuteApplied = { [weak self] in

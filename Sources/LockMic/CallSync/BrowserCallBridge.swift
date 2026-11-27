@@ -50,6 +50,27 @@ struct BrowserCallProfile: Sendable {
             return domID == "microphone-button" ? AXString.childCount(button) == 0 : nil
         }
     )
+
+    /// Zoom's web client (`app.zoom.us/wc/…`). The audio button is found by its class (stable and
+    /// language-independent); its state only by the label, which is read in English here:
+    /// "unmute my microphone" while muted, "mute my microphone" while live.
+    static let zoom = BrowserCallProfile(
+        id: .zoom,
+        pageMatches: { url in
+            guard let url, let host = url.host else { return false }
+            return (host == "zoom.us" || host.hasSuffix(".zoom.us")) && url.path.hasPrefix("/wc/")
+        },
+        titleHint: "zoom",
+        acceptsBlankPiP: false,
+        micState: { button in
+            guard AXString.value(button, "AXRole") == "AXButton",
+                  AXString.list(button, "AXDOMClassList")?.contains("join-audio-container__btn") == true,
+                  let label = AXString.value(button, "AXDescription")?.lowercased() else { return nil }
+            if label.contains("unmute") { return true }
+            if label.contains("mute") { return false }
+            return nil // e.g. "Join Audio" before audio is connected, or an unknown language
+        }
+    )
 }
 
 enum AXString {
@@ -58,6 +79,14 @@ enum AXString {
         guard AXUIElementCopyAttributeValue(el, name as CFString, &value) == .success,
               let text = value as? String, !text.isEmpty else { return nil }
         return text
+    }
+
+    /// Array attributes such as `AXDOMClassList`, joined by spaces.
+    static func list(_ el: AXUIElement, _ name: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, name as CFString, &value) == .success,
+              let items = value as? [String], !items.isEmpty else { return nil }
+        return items.joined(separator: " ")
     }
 
     static func childCount(_ el: AXUIElement) -> Int {
