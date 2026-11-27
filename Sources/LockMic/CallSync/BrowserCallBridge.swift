@@ -221,17 +221,16 @@ final class BrowserCallBridge: CallService {
         }
         if !hits.isEmpty { misses = 0 }
         let previous = calls
-        calls = Dictionary(hits.map { ($0.button, $0.muted) }, uniquingKeysWith: { _, last in last })
-
         let synced = lastEvent?.muted
         if let wait = pending {
             let settled = hits.allSatisfy { $0.muted == wait.muted }
             if hits.isEmpty || settled || ProcessInfo.processInfo.systemUptime > wait.deadline {
                 pending = nil
             } else {
-                return // stale labels right after our own press
+                return // stale labels right after our own press; keep `calls` so a real click is seen later
             }
         }
+        calls = Dictionary(hits.map { ($0.button, $0.muted) }, uniquingKeysWith: { _, last in last })
 
         // A call that appeared while others are running adopts the current synced state.
         if lastEvent?.inCall == true, let synced {

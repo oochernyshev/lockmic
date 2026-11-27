@@ -1,4 +1,7 @@
 import Foundation
+import os.log
+
+private let log = Logger(subsystem: "com.lockmic.app", category: "CompositeCall")
 
 /// One service reachable in several ways (e.g. Teams app + Teams in a browser), kept in one mute
 /// state: LockMic's pushes go to every child; a change the user makes in one child is mirrored to
@@ -53,6 +56,7 @@ final class CompositeCallService: CallService {
         let before = wasInCall[key] ?? false
         wasInCall[key] = event.inCall
         let others = children.filter { $0 !== child && $0.hasActiveCall }
+        log.info("\(self.id.rawValue, privacy: .public) child=\(String(describing: type(of: child)), privacy: .public) inCall=\(event.inCall, privacy: .public) muted=\(event.muted.map { String($0) } ?? "nil", privacy: .public) wasInCall=\(before, privacy: .public) others=\(others.count, privacy: .public) synced=\(self.synced.map { String($0) } ?? "nil", privacy: .public)")
 
         if event.inCall, !before, !others.isEmpty, let synced {
             // Joined while another child is already in a call: adopt the shared state.
