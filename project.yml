@@ -71,4 +71,29 @@ targets:
         # Prefer classic .strings files (not String Catalog)
         SWIFT_EMIT_LOC_STRINGS: NO
         LOCALIZATION_PREFERS_STRING_CATALOGS: NO
+    dependencies:
+      - target: LockMicNativeHost
+        embed: false
+        link: false
+    postBuildScripts:
+      - name: Embed LockMicNativeHost
+        basedOnDependencyAnalysis: false
+        script: |
+          set -e
+          DEST="${TARGET_BUILD_DIR}/${EXECUTABLE_FOLDER_PATH}/LockMicNativeHost"
+          cp -f "${BUILT_PRODUCTS_DIR}/LockMicNativeHost" "$DEST"
+          if [ -n "${EXPANDED_CODE_SIGN_IDENTITY}" ] && [ "${CODE_SIGNING_ALLOWED}" != "NO" ]; then
+            codesign --force --options runtime --sign "${EXPANDED_CODE_SIGN_IDENTITY}" "$DEST"
+          fi
     # Do not use `info.properties` — XcodeGen rewrites Info.plist and drops keys.
+  LockMicNativeHost:
+    # Relays Chrome Native Messaging <-> LockMic's local socket (Google Meet sync).
+    type: tool
+    platform: macOS
+    sources:
+      - path: Sources/NativeHost
+    settings:
+      base:
+        PRODUCT_NAME: LockMicNativeHost
+        ENABLE_HARDENED_RUNTIME: YES
+        SKIP_INSTALL: YES

@@ -11,6 +11,8 @@ final class StatusItemController {
     private let hotkeys: HotkeyCoordinator
     private let recording: RecordingCoordinator
     private let meetings: MeetingAlertCoordinator
+    private let callSync: CallSyncCoordinator
+    let zoomBridge = ZoomBridge()
     private let sounds: SoundFeedback
 
     private var statusItem: NSStatusItem?
@@ -44,6 +46,14 @@ final class StatusItemController {
         self.hotkeys = HotkeyCoordinator(mic: mic, preferences: preferences)
         self.recording = RecordingCoordinator(recorder: recorder, preferences: preferences, mic: mic)
         self.meetings = MeetingAlertCoordinator(preferences: preferences, audio: audio)
+        self.callSync = CallSyncCoordinator(
+            mic: mic,
+            preferences: preferences,
+            services: [MeetBridge(), TeamsBridge(preferences: preferences), zoomBridge]
+        )
+        callSync.onRemoteMuteApplied = { [weak self] in
+            self?.handleMuteChanged(showHUD: true)
+        }
 
         hotkeys.onMuteChanged = { [weak self] showHUD, playSound in
             self?.handleMuteChanged(showHUD: showHUD, playSound: playSound)
@@ -129,6 +139,7 @@ final class StatusItemController {
         observeUpdateAvailability()
         startMenuBarVisibilityMonitoring()
         meetings.start()
+        callSync.start()
         refreshUpdateBadge()
     }
 

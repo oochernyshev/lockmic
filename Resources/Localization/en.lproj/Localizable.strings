@@ -274,3 +274,14 @@
 
 "recording.split" = "Split";
 "recording.split.tooltip" = "Save this segment and immediately start a new recording";
+
+"tab.calls" = "Calls";
+"calls.header" = "Call mute sync";
+"calls.intro" = "Keep LockMic and your call app muted or unmuted together. With an integration off, LockMic works as before.";
+"calls.meet" = "Google Meet";
+"calls.meet.caption" = "Needs the LockMic browser extension (Chrome, Arc, Edge, Brave). Only the mute state is shared with it.";
+"calls.teams" = "Microsoft Teams";
+"calls.teams.caption" = "In new Teams enable Settings → Privacy → Manage API, then allow LockMic once when Teams asks.";
+"calls.zoom" = "Zoom";
+"calls.zoom.caption" = "Reads Zoom's Meeting menu through Accessibility. Zoom's menus must be in English.";
+"calls.zoom.access" = "Accessibility access is required. Grant it in System Settings → Privacy & Security → Accessibility.";

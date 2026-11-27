@@ -262,3 +262,14 @@
 "meeting.untitled" = "Встреча из календаря";
 "meeting.sound.on" = "Звук включён";
 "meeting.sound.off" = "Звук выключен";
+
+"tab.calls" = "Звонки";
+"calls.header" = "Синхронизация mute со звонками";
+"calls.intro" = "LockMic и приложение звонков мьютятся и размьючиваются вместе. Пока интеграция выключена, LockMic работает как раньше.";
+"calls.meet" = "Google Meet";
+"calls.meet.caption" = "Нужно расширение LockMic для браузера (Chrome, Arc, Edge, Brave). Ему передаётся только состояние mute.";
+"calls.teams" = "Microsoft Teams";
+"calls.teams.caption" = "В новом Teams включите Настройки → Конфиденциальность → Manage API и один раз разрешите подключение LockMic.";
+"calls.zoom" = "Zoom";
+"calls.zoom.caption" = "Читает меню Meeting в Zoom через Универсальный доступ. Меню Zoom должно быть на английском.";
+"calls.zoom.access" = "Нужен доступ к Универсальному доступу: Системные настройки → Конфиденциальность и безопасность → Универсальный доступ.";

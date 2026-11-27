@@ -1,0 +1,111 @@
+import AppKit
+import ApplicationServices
+import Foundation
+
+/// Zoom sync through Accessibility: polls Zoom's Meeting menu ("Mute audio" / "Unmute audio")
+/// about every 0.5 s while Zoom runs, and presses the item to change state.
+/// Titles are matched in English only; other Zoom languages simply never report a call.
+@MainActor
+final class ZoomBridge: CallService {
+    let id = CallServiceID.zoom
+    var onEvent: ((CallServiceEvent) -> Void)?
+    var hasActiveCall: Bool { lastEvent?.inCall == true }
+
+    static let bundleID = "us.zoom.xos"
+    private static let muteTitle = "Mute audio"
+    private static let unmuteTitle = "Unmute audio"
+
+    private var timer: Timer?
+    private var lastEvent: CallServiceEvent?
+
+    /// Shows the system Accessibility prompt. Call only when the user enables this integration.
+    static func requestAccess() -> Bool {
+        let opts = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
+        return AXIsProcessTrustedWithOptions(opts)
+    }
+
+    static var hasAccess: Bool { AXIsProcessTrusted() }
+
+    func start() {
+        guard timer == nil else { return }
+        _ = Self.requestAccess()
+        let t = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.poll() }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+        lastEvent = nil
+    }
+
+    func push(muted: Bool) {
+        guard let state = readState(), state.inCall, state.muted != muted,
+              let item = state.item else { return }
+        AXUIElementPerformAction(item, kAXPressAction as CFString)
+        // Pre-empt the next poll reading a stale title.
+        lastEvent = CallServiceEvent(muted: muted, inCall: true)
+    }
+
+    // MARK: - Polling
+
+    private func poll() {
+        guard Self.hasAccess else { return }
+        let state = readState()
+        let event = CallServiceEvent(muted: state?.muted, inCall: state?.inCall ?? false)
+        if let last = lastEvent, last.inCall == event.inCall, last.muted == event.muted { return }
+        let wasInCall = lastEvent?.inCall ?? false
+        lastEvent = event
+        if event.inCall || wasInCall { onEvent?(event) }
+    }
+
+    private struct ZoomState {
+        let muted: Bool
+        let inCall: Bool
+        let item: AXUIElement?
+    }
+
+    private func readState() -> ZoomState? {
+        guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: Self.bundleID).first
+        else { return nil }
+        let root = AXUIElementCreateApplication(app.processIdentifier)
+        AXUIElementSetMessagingTimeout(root, 0.3)
+        guard let bar = element(root, kAXMenuBarAttribute) else { return nil }
+        let tops = children(bar)
+        // Mute lives in the "Meeting" menu; scanning only it keeps the 0.5 s poll cheap.
+        let meeting = tops.filter { string($0, kAXTitleAttribute) == "Meeting" }
+        for top in (meeting.isEmpty ? tops : meeting) {
+            for menu in children(top) {
+                for item in children(menu) {
+                    guard let title = string(item, kAXTitleAttribute) else { continue }
+                    if title == Self.muteTitle { return ZoomState(muted: false, inCall: true, item: item) }
+                    if title == Self.unmuteTitle { return ZoomState(muted: true, inCall: true, item: item) }
+                }
+            }
+        }
+        return nil
+    }
+
+    private func string(_ el: AXUIElement, _ name: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, name as CFString, &value) == .success else { return nil }
+        return value as? String
+    }
+
+    private func element(_ el: AXUIElement, _ name: String) -> AXUIElement? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, name as CFString, &value) == .success,
+              let value, CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+        return (value as! AXUIElement)
+    }
+
+    private func children(_ el: AXUIElement) -> [AXUIElement] {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, kAXChildrenAttribute as CFString, &value) == .success
+        else { return [] }
+        return value as? [AXUIElement] ?? []
+    }
+}

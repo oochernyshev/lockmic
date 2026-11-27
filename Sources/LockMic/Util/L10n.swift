@@ -20,6 +20,16 @@ enum L10n {
     static var tabDevices: String { tr("tab.devices") }
     static var tabRecording: String { tr("tab.recording") }
     static var tabAlerts: String { tr("tab.alerts") }
+    static var tabCalls: String { tr("tab.calls") }
+    static var callsHeader: String { tr("calls.header") }
+    static var callsIntro: String { tr("calls.intro") }
+    static var callsMeet: String { tr("calls.meet") }
+    static var callsMeetCaption: String { tr("calls.meet.caption") }
+    static var callsTeams: String { tr("calls.teams") }
+    static var callsTeamsCaption: String { tr("calls.teams.caption") }
+    static var callsZoom: String { tr("calls.zoom") }
+    static var callsZoomCaption: String { tr("calls.zoom.caption") }
+    static var callsZoomAccess: String { tr("calls.zoom.access") }
     static var tabKeyboard: String { tr("tab.keyboard") }
     static var tabAbout: String { tr("tab.about") }
 

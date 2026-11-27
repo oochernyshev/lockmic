@@ -142,6 +142,10 @@ struct PreferencesView: View {
                     PreferencesMeetingsPage(preferences: preferences, meetings: meetings)
                         .disabled(!preferences.featuresEnabled)
                         .opacity(preferences.featuresEnabled ? 1 : 0.45)
+                case .calls:
+                    PreferencesCallsPage(preferences: preferences)
+                        .disabled(!preferences.featuresEnabled)
+                        .opacity(preferences.featuresEnabled ? 1 : 0.45)
                 case .keyboard:
                     PreferencesKeyboardPage(preferences: preferences)
                         .disabled(!preferences.featuresEnabled)

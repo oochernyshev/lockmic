@@ -99,6 +99,10 @@ final class PreferencesStore: ObservableObject {
         static let dismissMeetingKeyCode = "hotkeyDismissMeetingKeyCode"
         static let dismissMeetingModifiers = "hotkeyDismissMeetingModifiers"
 
+        static let callSyncMeet = "callSyncMeetEnabled"
+        static let callSyncTeams = "callSyncTeamsEnabled"
+        static let callSyncZoom = "callSyncZoomEnabled"
+        static let teamsAPIToken = "callSyncTeamsToken"
         static let meetingAlertsEnabled = "meetingAlertsEnabled"
         static let meetingAlertSoundEnabled = "meetingAlertSoundEnabled"
         static let meetingAlertSoundAllOutputs = "meetingAlertSoundAllOutputs"
@@ -140,6 +144,22 @@ final class PreferencesStore: ObservableObject {
 
     @Published var soundEnabled: Bool {
         didSet { UserDefaults.standard.set(soundEnabled, forKey: Keys.soundEnabled) }
+    }
+
+    /// Two-way mute sync with call services. Off by default: LockMic behaves as before.
+    @Published var callSyncMeetEnabled: Bool {
+        didSet { UserDefaults.standard.set(callSyncMeetEnabled, forKey: Keys.callSyncMeet) }
+    }
+    @Published var callSyncTeamsEnabled: Bool {
+        didSet { UserDefaults.standard.set(callSyncTeamsEnabled, forKey: Keys.callSyncTeams) }
+    }
+    @Published var callSyncZoomEnabled: Bool {
+        didSet { UserDefaults.standard.set(callSyncZoomEnabled, forKey: Keys.callSyncZoom) }
+    }
+    /// Pairing token Teams hands out after the user allows the connection once.
+    var teamsAPIToken: String {
+        get { UserDefaults.standard.string(forKey: Keys.teamsAPIToken) ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: Keys.teamsAPIToken) }
     }
 
     /// Floating countdown card two minutes before Calendar events.
@@ -337,6 +357,10 @@ final class PreferencesStore: ObservableObject {
             defaults.set(true, forKey: Keys.soundEnabled)
         }
         soundEnabled = defaults.bool(forKey: Keys.soundEnabled)
+
+        callSyncMeetEnabled = defaults.bool(forKey: Keys.callSyncMeet)
+        callSyncTeamsEnabled = defaults.bool(forKey: Keys.callSyncTeams)
+        callSyncZoomEnabled = defaults.bool(forKey: Keys.callSyncZoom)
 
         if defaults.object(forKey: Keys.meetingAlertsEnabled) == nil {
             defaults.set(false, forKey: Keys.meetingAlertsEnabled)
