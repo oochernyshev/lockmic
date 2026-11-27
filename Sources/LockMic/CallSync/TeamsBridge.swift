@@ -1,3 +1,5 @@
+import AppKit
+import ApplicationServices
 import Foundation
 import os.log
 
@@ -6,16 +8,29 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "TeamsBridge")
 /// New Microsoft Teams, via its official local "third-party app API" (Settings → Privacy →
 /// Manage API). Teams listens on ws://127.0.0.1:8124, asks the user once to allow the
 /// connection, then hands out a token that is stored and reused.
+///
+/// When that API is unavailable (personal accounts, admin policy, no "Manage API" switch),
+/// falls back to Accessibility: the call window's "Mute mic" / "Unmute mic" button is read
+/// every ~0.5 s and pressed on command. Button labels are matched in English only.
 @MainActor
 final class TeamsBridge: CallService {
     let id = CallServiceID.teams
     var onEvent: ((CallServiceEvent) -> Void)?
-    var hasActiveCall: Bool { connected && inMeeting }
+    var hasActiveCall: Bool { (connected && inMeeting) || (!connected && axEvent?.inCall == true) }
     var status: CallServiceStatus {
         guard running else { return .off }
-        guard connected else { return .waiting }
-        return inMeeting ? .inCall : .connected
+        if connected { return inMeeting ? .inCall : .connected }
+        guard AXIsProcessTrusted() else { return .needsAccess }
+        guard !Self.teamsApps.isEmpty else { return .waiting }
+        return axEvent?.inCall == true ? .inCall : .connected
     }
+
+    private static let bundleID = "com.microsoft.teams2"
+    private static var teamsApps: [NSRunningApplication] {
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+    }
+    private var axTimer: Timer?
+    private var axEvent: CallServiceEvent?
 
     private let preferences: PreferencesStore
     private var task: URLSessionWebSocketTask?
@@ -35,10 +50,19 @@ final class TeamsBridge: CallService {
         guard !running else { return }
         running = true
         connect()
+        _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+        let t = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.pollAccessibility() }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        axTimer = t
     }
 
     func stop() {
         running = false
+        axTimer?.invalidate()
+        axTimer = nil
+        axEvent = nil
         retryWork?.cancel()
         task?.cancel(with: .goingAway, reason: nil)
         task = nil
@@ -48,8 +72,70 @@ final class TeamsBridge: CallService {
     }
 
     func push(muted: Bool) {
-        guard hasActiveCall, isMuted != muted else { return }
-        sendAction("toggle-mute")
+        if connected {
+            guard inMeeting, isMuted != muted else { return }
+            sendAction("toggle-mute")
+        } else if let state = readMicButton(), state.muted != muted {
+            AXUIElementPerformAction(state.button, kAXPressAction as CFString)
+            axEvent = CallServiceEvent(muted: muted, inCall: true)
+        }
+    }
+
+    // MARK: - Accessibility fallback
+
+    private func pollAccessibility() {
+        guard !connected, AXIsProcessTrusted() else {
+            axEvent = nil
+            return
+        }
+        let state = readMicButton()
+        let event = CallServiceEvent(muted: state?.muted, inCall: state != nil)
+        if let last = axEvent, last.inCall == event.inCall, last.muted == event.muted { return }
+        let wasInCall = axEvent?.inCall ?? false
+        axEvent = event
+        if event.inCall || wasInCall { onEvent?(event) }
+    }
+
+    private func readMicButton() -> (muted: Bool, button: AXUIElement)? {
+        guard let app = Self.teamsApps.first else { return nil }
+        let root = AXUIElementCreateApplication(app.processIdentifier)
+        AXUIElementSetMessagingTimeout(root, 0.3)
+        // Chromium-style web content only exposes its tree once asked.
+        AXUIElementSetAttributeValue(root, "AXManualAccessibility" as CFString, true as CFTypeRef)
+        var budget = 1500
+        for window in axChildren(root) where axString(window, "AXRole") == "AXWindow" {
+            if let hit = findMic(in: window, budget: &budget) { return hit }
+        }
+        return nil
+    }
+
+    private func findMic(in element: AXUIElement, budget: inout Int) -> (muted: Bool, button: AXUIElement)? {
+        budget -= 1
+        if budget <= 0 { return nil }
+        if axString(element, "AXRole") == "AXButton" {
+            switch axString(element, "AXDescription") {
+            case "Mute mic": return (false, element)
+            case "Unmute mic": return (true, element)
+            default: break
+            }
+        }
+        for child in axChildren(element) {
+            if let hit = findMic(in: child, budget: &budget) { return hit }
+        }
+        return nil
+    }
+
+    private func axString(_ el: AXUIElement, _ name: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, name as CFString, &value) == .success else { return nil }
+        return value as? String
+    }
+
+    private func axChildren(_ el: AXUIElement) -> [AXUIElement] {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, kAXChildrenAttribute as CFString, &value) == .success
+        else { return [] }
+        return value as? [AXUIElement] ?? []
     }
 
     // MARK: - Connection
@@ -94,7 +180,7 @@ final class TeamsBridge: CallService {
     }
 
     private func disconnected() {
-        let wasInMeeting = hasActiveCall
+        let wasInMeeting = connected && inMeeting
         connected = false
         inMeeting = false
         isMuted = nil
