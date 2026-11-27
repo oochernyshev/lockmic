@@ -38,6 +38,11 @@ final class MeetBridge: CallService {
 
     private var timer: Timer?
     private var scanning = false
+    /// Full tree scans are costly: rare while in a call (cached buttons are re-read in between)
+    /// and slow while idle.
+    private var lastFullScan: TimeInterval = 0
+    private static let fullScanInCall: TimeInterval = 3
+    private static let fullScanIdle: TimeInterval = 1.5
     private var lastEvent: CallServiceEvent?
     /// Last known mute state of every Meet call seen in the previous scan, keyed by its button.
     private var calls: [AXUIElement: Bool] = [:]
@@ -88,12 +93,21 @@ final class MeetBridge: CallService {
     private func poll() {
         guard AXIsProcessTrusted() else { lastEvent = nil; return }
         guard !scanning else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        let full = now - lastFullScan >= (calls.isEmpty ? Self.fullScanIdle : Self.fullScanInCall)
+        if calls.isEmpty, !full { return }
+        if full { lastFullScan = now }
         scanning = true
+        let cached = calls.mapValues { _ in () }.keys.map { Hit(muted: false, button: $0) }
         Self.queue.async { [weak self] in
-            let hits = Self.scan()
+            let hits = full ? Self.scan() : Self.quickScan(cached)
             Task { @MainActor in
                 self?.scanning = false
-                self?.finish(hits)
+                if let hits {
+                    self?.finish(hits)
+                } else {
+                    self?.lastFullScan = 0 // cached button went stale: rescan next tick
+                }
             }
         }
     }
@@ -101,6 +115,7 @@ final class MeetBridge: CallService {
     private func finish(_ hits: [Hit]) {
         if hits.isEmpty, lastEvent?.inCall == true, misses < Self.missesToLeave {
             misses += 1
+            lastFullScan = 0
             return
         }
         if !hits.isEmpty { misses = 0 }
@@ -139,6 +154,16 @@ final class MeetBridge: CallService {
 
     private nonisolated static func runningBrowsers() -> [NSRunningApplication] {
         browserIDs.flatMap { NSRunningApplication.runningApplications(withBundleIdentifier: $0) }
+    }
+
+    /// Re-reads the labels of already known buttons. `nil` when any of them is gone.
+    private nonisolated static func quickScan(_ cached: [Hit]) -> [Hit]? {
+        var hits: [Hit] = []
+        for known in cached {
+            guard let label = label(of: known.button), let muted = MeetLabels.muted(for: label) else { return nil }
+            hits.append(Hit(muted: muted, button: known.button))
+        }
+        return hits
     }
 
     private nonisolated static func scan() -> [Hit] {

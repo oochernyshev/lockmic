@@ -29,6 +29,11 @@ final class TeamsBridge: CallService {
 
     private var timer: Timer?
     private var lastEvent: CallServiceEvent?
+    /// The found button is re-read cheaply; the window tree walk runs only occasionally.
+    private var cachedButton: AXUIElement?
+    private var lastFullScan: TimeInterval = 0
+    private static let fullScanInCall: TimeInterval = 2
+    private static let fullScanIdle: TimeInterval = 1
     /// The button label lags behind a press; until it shows the requested state, older
     /// readings are stale, not user actions.
     private var pending: (muted: Bool, deadline: TimeInterval)?
@@ -47,6 +52,7 @@ final class TeamsBridge: CallService {
     func stop() {
         timer?.invalidate()
         timer = nil
+        cachedButton = nil
         lastEvent = nil
         pending = nil
     }
@@ -83,6 +89,35 @@ final class TeamsBridge: CallService {
     }
 
     private func readMicButton() -> (muted: Bool?, button: AXUIElement)? {
+        let now = ProcessInfo.processInfo.systemUptime
+        if let button = cachedButton, now - lastFullScan < Self.fullScanInCall,
+           let muted = quickState(of: button) {
+            return (muted.value, button)
+        }
+        if cachedButton == nil, now - lastFullScan < Self.fullScanIdle { return nil }
+        lastFullScan = now
+        let hit = scanWindows()
+        cachedButton = hit?.button
+        return hit
+    }
+
+    /// One AX call (two for non-English labels). `nil` means the button is gone.
+    private func quickState(of button: AXUIElement) -> (value: Bool?, ok: Bool)? {
+        guard let description = string(button, "AXDescription") else {
+            // No label: either gone (children unreadable too) or a language without one.
+            var value: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(button, kAXChildrenAttribute as CFString, &value) == .success
+            else { return nil }
+            return ((value as? [AXUIElement] ?? []).isEmpty, true)
+        }
+        switch description {
+        case "Mute mic": return (false, true)
+        case "Unmute mic": return (true, true)
+        default: return (children(button).isEmpty, true)
+        }
+    }
+
+    private func scanWindows() -> (muted: Bool?, button: AXUIElement)? {
         guard let app = Self.teamsApps.first else { return nil }
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 0.3)

@@ -29,6 +29,12 @@ final class ZoomBridge: CallService {
 
     private var timer: Timer?
     private var lastEvent: CallServiceEvent?
+    /// The found menu item is re-read cheaply; the full menu scan runs only occasionally.
+    private var cachedItem: AXUIElement?
+    private var cachedTitles = ZoomMenuStrings.Titles()
+    private var lastFullScan: TimeInterval = 0
+    private static let fullScanInCall: TimeInterval = 2
+    private static let fullScanIdle: TimeInterval = 1
     /// Zoom renames the menu item ~400-500 ms after a press. Until it shows the state we
     /// asked for (or the deadline passes) older readings are stale, not user actions.
     private var pending: (muted: Bool, deadline: TimeInterval)?
@@ -56,6 +62,7 @@ final class ZoomBridge: CallService {
     func stop() {
         timer?.invalidate()
         timer = nil
+        cachedItem = nil
         lastEvent = nil
         pending = nil
     }
@@ -100,9 +107,25 @@ final class ZoomBridge: CallService {
     }
 
     private func readState() -> ZoomState? {
+        let now = ProcessInfo.processInfo.systemUptime
+        if let item = cachedItem, now - lastFullScan < Self.fullScanInCall,
+           let title = string(item, kAXTitleAttribute) {
+            let muted: Bool? = cachedTitles.unmute.contains(title) ? true
+                : cachedTitles.mute.contains(title) ? false : nil
+            return ZoomState(muted: muted, inCall: true, item: item)
+        }
+        if cachedItem == nil, now - lastFullScan < Self.fullScanIdle { return nil }
+        lastFullScan = now
+        let state = scanMenus()
+        cachedItem = state?.item
+        return state
+    }
+
+    private func scanMenus() -> ZoomState? {
         guard let app = NSRunningApplication.runningApplications(withBundleIdentifier: Self.bundleID).first
         else { return nil }
         let titles = ZoomMenuStrings.titles(for: app)
+        cachedTitles = titles
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 0.3)
         guard let bar = element(root, kAXMenuBarAttribute) else { return nil }
