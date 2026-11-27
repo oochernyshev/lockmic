@@ -47,6 +47,7 @@ final class PreferencesStore: ObservableObject {
         static let soundEnabled = "soundEnabled"
         static let launchAtLogin = "launchAtLogin"
         static let muteAllInputs = "muteAllInputs"
+        static let muteMethod = "muteMethod"
         static let recordAllPlayback = "recordAllPlayback"
         static let followDefaultMic = "followDefaultMic"
         static let followDefaultOutput = "followDefaultOutput"
@@ -99,6 +100,13 @@ final class PreferencesStore: ObservableObject {
         static let dismissMeetingKeyCode = "hotkeyDismissMeetingKeyCode"
         static let dismissMeetingModifiers = "hotkeyDismissMeetingModifiers"
 
+        // Legacy per-service keys (migrated once into the three below).
+        static let callSyncMeet = "callSyncMeetEnabled"
+        static let callSyncTeams = "callSyncTeamsEnabled"
+        static let callSyncZoom = "callSyncZoomEnabled"
+        static let syncWeb = "syncWebEnabled"
+        static let syncTeamsApp = "syncTeamsAppEnabled"
+        static let syncZoomApp = "syncZoomAppEnabled"
         static let meetingAlertsEnabled = "meetingAlertsEnabled"
         static let meetingAlertSoundEnabled = "meetingAlertSoundEnabled"
         static let meetingAlertSoundAllOutputs = "meetingAlertSoundAllOutputs"
@@ -142,6 +150,19 @@ final class PreferencesStore: ObservableObject {
         didSet { UserDefaults.standard.set(soundEnabled, forKey: Keys.soundEnabled) }
     }
 
+    /// Two-way mute sync with web calls (Google Meet, Teams, Zoom in browsers). On by default.
+    @Published var syncWebEnabled: Bool {
+        didSet { UserDefaults.standard.set(syncWebEnabled, forKey: Keys.syncWeb) }
+    }
+    /// Two-way mute sync with the Microsoft Teams app.
+    @Published var syncTeamsAppEnabled: Bool {
+        didSet { UserDefaults.standard.set(syncTeamsAppEnabled, forKey: Keys.syncTeamsApp) }
+    }
+    /// Two-way mute sync with the Zoom app.
+    @Published var syncZoomAppEnabled: Bool {
+        didSet { UserDefaults.standard.set(syncZoomAppEnabled, forKey: Keys.syncZoomApp) }
+    }
+
     /// Floating countdown card two minutes before Calendar events.
     @Published var meetingAlertsEnabled: Bool {
         didSet { UserDefaults.standard.set(meetingAlertsEnabled, forKey: Keys.meetingAlertsEnabled) }
@@ -155,6 +176,11 @@ final class PreferencesStore: ObservableObject {
     /// During the last 15 seconds, play that beep on every physical output.
     @Published var meetingAlertSoundAllOutputs: Bool {
         didSet { UserDefaults.standard.set(meetingAlertSoundAllOutputs, forKey: Keys.meetingAlertSoundAllOutputs) }
+    }
+
+    /// System mute, input volume 0, or both.
+    @Published var muteMethod: MuteMethod {
+        didSet { UserDefaults.standard.set(muteMethod.rawValue, forKey: Keys.muteMethod) }
     }
 
     @Published var muteAllInputs: Bool {
@@ -338,6 +364,20 @@ final class PreferencesStore: ObservableObject {
         }
         soundEnabled = defaults.bool(forKey: Keys.soundEnabled)
 
+        // Sync is on by default. People who already chose with the old per-service switches keep
+        // that choice (web is on if any of Meet/Teams/Zoom was).
+        let legacyKeys = [Keys.callSyncMeet, Keys.callSyncTeams, Keys.callSyncZoom]
+        let hadLegacyChoice = legacyKeys.contains { defaults.object(forKey: $0) != nil }
+        let legacyMeet = defaults.bool(forKey: Keys.callSyncMeet)
+        let legacyTeams = defaults.bool(forKey: Keys.callSyncTeams)
+        let legacyZoom = defaults.bool(forKey: Keys.callSyncZoom)
+        syncWebEnabled = defaults.object(forKey: Keys.syncWeb) as? Bool
+            ?? (hadLegacyChoice ? (legacyMeet || legacyTeams || legacyZoom) : true)
+        syncTeamsAppEnabled = defaults.object(forKey: Keys.syncTeamsApp) as? Bool
+            ?? (hadLegacyChoice ? legacyTeams : true)
+        syncZoomAppEnabled = defaults.object(forKey: Keys.syncZoomApp) as? Bool
+            ?? (hadLegacyChoice ? legacyZoom : true)
+
         if defaults.object(forKey: Keys.meetingAlertsEnabled) == nil {
             defaults.set(false, forKey: Keys.meetingAlertsEnabled)
         }
@@ -352,6 +392,8 @@ final class PreferencesStore: ObservableObject {
             defaults.set(true, forKey: Keys.meetingAlertSoundAllOutputs)
         }
         meetingAlertSoundAllOutputs = defaults.bool(forKey: Keys.meetingAlertSoundAllOutputs)
+
+        muteMethod = defaults.string(forKey: Keys.muteMethod).flatMap(MuteMethod.init(rawValue:)) ?? .both
 
         if defaults.object(forKey: Keys.muteAllInputs) == nil {
             defaults.set(true, forKey: Keys.muteAllInputs)

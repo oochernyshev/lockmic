@@ -32,25 +32,8 @@ struct PreferencesMeetingsPage: View {
             }
 
             PreferencesChrome.sectionCard {
-                PreferencesChrome.sectionHeader(L10n.meetingsAccessHeader)
-                PreferencesChrome.statusRow(
-                    title: L10n.meetingsAccessStatus,
-                    text: accessText,
-                    color: accessColor
-                )
+                CalendarAccessRow(meetings: meetings, boxed: false)
                 PreferencesChrome.caption(L10n.meetingsAccessCaption)
-
-                if meetings.access != .granted {
-                    Button(accessButtonTitle) {
-                        if meetings.access == .notDetermined {
-                            meetings.requestAccessAndEnable()
-                        } else {
-                            meetings.openPrivacySettings()
-                        }
-                    }
-                    .focusable(false)
-                    .focusEffectDisabled()
-                }
             }
         }
         .onAppear {
@@ -68,26 +51,5 @@ struct PreferencesMeetingsPage: View {
                 }
             }
         )
-    }
-
-    private var accessText: String {
-        switch meetings.access {
-        case .granted: return L10n.meetingsAccessGranted
-        case .denied: return L10n.meetingsAccessDenied
-        case .restricted: return L10n.meetingsAccessRestricted
-        case .notDetermined: return L10n.meetingsAccessNotDetermined
-        }
-    }
-
-    private var accessColor: Color {
-        switch meetings.access {
-        case .granted: return .green
-        case .denied, .restricted: return .orange
-        case .notDetermined: return .secondary
-        }
-    }
-
-    private var accessButtonTitle: String {
-        meetings.access == .notDetermined ? L10n.meetingsAccessButton : L10n.meetingsAccessOpenSettings
     }
 }

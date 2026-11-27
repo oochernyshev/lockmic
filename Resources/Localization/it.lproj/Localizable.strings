@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "Riproduce il suono Glass negli ultimi 30 secondi e per un minuto dopo l’inizio.";
 "meetings.sound.all_outputs" = "Su tutte le uscite negli ultimi 15 secondi";
 "meetings.sound.all_outputs.caption" = "Invia il suono a ogni uscita fisica, non solo a quella predefinita.";
-"meetings.access.header" = "Accesso al calendario";
-"meetings.access.status" = "Accesso";
-"meetings.access.granted" = "Consentito";
-"meetings.access.denied" = "Disattivo";
-"meetings.access.restricted" = "Limitato";
-"meetings.access.notDetermined" = "Necessario";
-"meetings.access.button" = "Consenti accesso al calendario…";
-"meetings.access.openSettings" = "Apri privacy Calendario…";
 "meetings.access.caption" = "LockMic legge titoli e orari dai calendari di questo Mac. Nulla viene caricato.";
 "meeting.status.upcoming" = "RIUNIONE IN ARRIVO";
 "meeting.status.soon" = "LA RIUNIONE INIZIA TRA POCO!";

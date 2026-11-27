@@ -1,3 +1,4 @@
+import Combine
 import CoreAudio
 import Foundation
 import os.log
@@ -277,9 +278,19 @@ final class MicController: ObservableObject {
     /// When true (push-to-talk held), skip mute re-apply from poll and HAL.
     var suppressDeviceResync = false
 
+    /// Called on every mute request before HAL is written. Returns how long (seconds) to
+    /// delay the HAL write, so a synced call service can mute itself first
+    /// (Meet shows "Microphone muted by system" if the system mute arrives first).
+    var muteInterceptor: ((Bool) -> TimeInterval)?
+
+    /// False while a call service stays in sync with LockMic: then a service-side unmute is
+    /// a real user action (handled by the sync layer), not something to re-mute.
+    var shouldEnforceMute: () -> Bool = { true }
+
     private let audio: AudioDeviceService
     private let hardware: MicHardwareWorker
     private let preferences: PreferencesStore
+    private var methodCancellable: AnyCancellable?
     private var devicesToken: UUID?
     private var muteToken: UUID?
     private var deviceChangeWorkItem: DispatchWorkItem?
@@ -299,6 +310,7 @@ final class MicController: ObservableObject {
         self.audio = audio
         self.hardware = MicHardwareWorker(audio: audio)
         self.preferences = preferences
+        audio.muteMethod = preferences.muteMethod
         devicesToken = audio.onDevicesChanged { [weak self] in
             Task { @MainActor in
                 self?.scheduleHandleDevicesChanged()
@@ -308,6 +320,12 @@ final class MicController: ObservableObject {
             Task { @MainActor in
                 self?.handleMutePropertyChanged()
             }
+        }
+        methodCancellable = preferences.$muteMethod.dropFirst().removeDuplicates().sink { [weak self] method in
+            guard let self else { return }
+            self.audio.muteMethod = method
+            // Re-apply under the new method (also clears what the old one left behind).
+            self.preferenceMuteScopeChanged()
         }
         refreshFromHardware(applyDesired: false)
         // refreshFromHardware already rebuilds the list and starts mute enforcement if needed.
@@ -345,6 +363,16 @@ final class MicController: ObservableObject {
         // Keep hotkeys, HUD, and recording gates responsive while HAL works in the background.
         state = muted ? .muted : .unmuted
         syncMuteEnforcementTimer()
+        let delay = muteInterceptor?(muted) ?? 0
+        if muted, delay > 0 {
+            let request = stateRequest
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                // A newer request (e.g. quick unmute) supersedes this delayed write.
+                guard let self, self.desiredMuted, request == self.stateRequest else { return }
+                self.applyMute(true)
+            }
+            return
+        }
         applyMute(muted)
     }
 
@@ -530,7 +558,7 @@ final class MicController: ObservableObject {
 
     /// HAL mute property changed. Our own writes are ignored; Teams/Zoom unmute is not.
     private func handleMutePropertyChanged() {
-        guard desiredMuted, !suppressDeviceResync else { return }
+        guard desiredMuted, !suppressDeviceResync, shouldEnforceMute() else { return }
         let elapsed = ProcessInfo.processInfo.systemUptime - lastMuteWriteAt
         if elapsed < Self.ignoreMuteNotificationsAfterWrite { return }
         reassertMuteIfNeeded()
@@ -548,6 +576,7 @@ final class MicController: ObservableObject {
             applyMute(true)
             return
         }
+        guard shouldEnforceMute() else { return }
         let muteAllInputs = preferences.muteAllInputs
         // Only a full list bumps the generation. A default-only check must not
         // discard a device-list refresh that is already in flight.

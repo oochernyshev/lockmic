@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "Звук Glass в останні 30 секунд і хвилину після початку.";
 "meetings.sound.all_outputs" = "На всі виходи в останні 15 секунд";
 "meetings.sound.all_outputs.caption" = "Звук іде на кожен фізичний вихід, не лише на типовий.";
-"meetings.access.header" = "Доступ до календаря";
-"meetings.access.status" = "Доступ";
-"meetings.access.granted" = "Дозволено";
-"meetings.access.denied" = "Вимкнено";
-"meetings.access.restricted" = "Обмежено";
-"meetings.access.notDetermined" = "Потрібен";
-"meetings.access.button" = "Дозволити доступ до календаря…";
-"meetings.access.openSettings" = "Відкрити параметри приватності…";
 "meetings.access.caption" = "LockMic читає назви й час подій із календарів на цьому Mac. Нічого не надсилається.";
 "meeting.status.upcoming" = "НАБЛИЖАЄТЬСЯ ЗУСТРІЧ";
 "meeting.status.soon" = "ЗУСТРІЧ СКОРО ПОЧНЕТЬСЯ!";

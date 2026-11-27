@@ -7,6 +7,8 @@ extension Notification.Name {
     static let lockMicUpdatesDidChange = Notification.Name("LockMic.updatesDidChange")
     /// Open Preferences; `object` is `PreferencesTab.rawValue`.
     static let lockMicOpenPreferencesTab = Notification.Name("LockMic.openPreferencesTab")
+    /// Preferences → General → Getting Started asks the status item controller to show the wizard.
+    static let lockMicOpenOnboarding = Notification.Name("LockMic.openOnboarding")
 }
 
 struct AppUpdateInfo: Equatable, Sendable {

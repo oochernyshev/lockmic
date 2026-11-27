@@ -1,0 +1,467 @@
+import AppKit
+import ApplicationServices
+import Foundation
+import os.log
+
+private let log = Logger(subsystem: "com.lockmic.app", category: "BrowserCallBridge")
+
+/// How a web call service is recognised inside a browser page.
+struct BrowserCallProfile: Sendable {
+    let id: CallServiceID
+    /// Is this page (by URL) the service?
+    let pageMatches: @Sendable (URL?) -> Bool
+    /// Lower-case word in a window title that hints at the service (Picture-in-Picture window,
+    /// or a page where a call may start). `nil`: no hint.
+    let titleHint: String?
+    /// Blank-URL windows whose title has the hint count as the service (Meet's Picture-in-Picture).
+    let acceptsBlankPiP: Bool
+    /// The mic button exists but the service shows it as unusable because the system mic is muted
+    /// (Zoom web turns its button into plain "audio"). Counts as muted, in a call; not pressable.
+    let micUnavailable: @Sendable (AXUIElement) -> Bool
+    /// Does this tab title (read from the tab strip) belong to a call of the service?
+    let isCallTabTitle: @Sendable (String) -> Bool
+    /// `true` = muted, `false` = live, `nil` = not the mic button.
+    let micState: @Sendable (AXUIElement) -> Bool?
+
+    static let meet = BrowserCallProfile(
+        id: .meet,
+        pageMatches: { $0?.host == "meet.google.com" },
+        titleHint: "meet",
+        acceptsBlankPiP: true,
+        micUnavailable: { _ in false },
+        // Meet tabs are titled "Meet – abc-defg-hij" (a meeting code) in every language.
+        isCallTabTitle: { title in
+            title.range(of: "\\b[a-z]{3}-[a-z]{4}-[a-z]{3}\\b", options: [.regularExpression, .caseInsensitive]) != nil
+        },
+        micState: { button in
+            guard AXString.value(button, "AXRole") == "AXButton",
+                  let label = AXString.value(button, "AXDescription") ?? AXString.value(button, "AXTitle")
+            else { return nil }
+            return MeetLabels.muted(for: label)
+        }
+    )
+
+    static let teams = BrowserCallProfile(
+        id: .teams,
+        pageMatches: { url in
+            guard let host = url?.host else { return false }
+            return host == "teams.live.com" || host == "teams.microsoft.com"
+                || host.hasSuffix(".teams.microsoft.com") || host == "teams.cloud.microsoft"
+        },
+        titleHint: "teams",
+        acceptsBlankPiP: false,
+        micUnavailable: { _ in false },
+        isCallTabTitle: { _ in false }, // Teams tab titles do not tell a call from a chat
+        micState: { button in
+            // Full Teams uses `microphone-button`; the guest "light meeting" page uses `mic-button`.
+            let domID = AXString.value(button, "AXDOMIdentifier")
+            guard domID == "microphone-button" || domID == "mic-button" else { return nil }
+            let label = AXString.value(button, "AXDescription")
+            if let label, let muted = TeamsWebLabels.muted(for: label) { return muted }
+            // Unknown label: the full UI shows an icon child only while the mic is live.
+            return domID == "microphone-button" ? AXString.childCount(button) == 0 : nil
+        }
+    )
+
+    /// Zoom's web client (`app.zoom.us/wc/…`). The audio button is found by its class (stable and
+    /// language-independent); its state only by the label, which is read in English here:
+    /// "unmute my microphone" while muted, "mute my microphone" while live.
+    static let zoom = BrowserCallProfile(
+        id: .zoom,
+        pageMatches: { url in
+            guard let url, let host = url.host else { return false }
+            return (host == "zoom.us" || host.hasSuffix(".zoom.us")) && url.path.hasPrefix("/wc/")
+        },
+        titleHint: "zoom",
+        acceptsBlankPiP: false,
+        micUnavailable: { button in
+            // Same audio button, label "audio" only: the mic is not usable (system mute).
+            guard AXString.value(button, "AXRole") == "AXButton",
+                  AXString.list(button, "AXDOMClassList")?.contains("join-audio-container__btn") == true
+            else { return false }
+            return AXString.value(button, "AXDescription")?.lowercased() == "audio"
+        },
+        isCallTabTitle: { $0.localizedCaseInsensitiveContains("zoom meeting") },
+        micState: { button in
+            guard AXString.value(button, "AXRole") == "AXButton",
+                  AXString.list(button, "AXDOMClassList")?.contains("join-audio-container__btn") == true,
+                  let label = AXString.value(button, "AXDescription")?.lowercased() else { return nil }
+            if label.contains("unmute") { return true }
+            if label.contains("mute") { return false }
+            return nil // e.g. "Join Audio" before audio is connected, or an unknown language
+        }
+    )
+}
+
+enum AXString {
+    static func value(_ el: AXUIElement, _ name: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, name as CFString, &value) == .success,
+              let text = value as? String, !text.isEmpty else { return nil }
+        return text
+    }
+
+    /// Array attributes such as `AXDOMClassList`, joined by spaces.
+    static func list(_ el: AXUIElement, _ name: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, name as CFString, &value) == .success,
+              let items = value as? [String], !items.isEmpty else { return nil }
+        return items.joined(separator: " ")
+    }
+
+    static func childCount(_ el: AXUIElement) -> Int {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, kAXChildrenAttribute as CFString, &value) == .success
+        else { return 0 }
+        return (value as? [AXUIElement])?.count ?? 0
+    }
+}
+
+/// A web call service (Google Meet, Teams in the browser) through Accessibility. Browsers expose
+/// each page's web area with its URL, so the page is found by address in any UI language; the mic
+/// button inside is read and pressed like in the Zoom and Teams app bridges. Works in Safari and
+/// Chromium browsers. Every call found (tabs in Safari, the visible tab of Chromium browsers,
+/// Picture-in-Picture windows, several browsers) is kept in the same mute state, since there is
+/// only one microphone.
+@MainActor
+final class BrowserCallBridge: CallService {
+    let profile: BrowserCallProfile
+    var id: CallServiceID { profile.id }
+    var onEvent: ((CallServiceEvent) -> Void)?
+    var hasActiveCall: Bool { lastEvent?.inCall == true }
+    /// A page of this service is open in some browser (even before joining a call).
+    private(set) var appDetected = false
+    var callCount: Int { hasActiveCall ? calls.count : 0 }
+    private(set) var backgroundCallTabs = 0
+    func observedMuted(truth: Bool) -> Bool? {
+        guard hasActiveCall, pending == nil else { return nil }
+        // Calls whose mic is unusable (system mute) say nothing about the in-app state.
+        let states = calls.filter { !unavailableCalls.contains($0.key) }.map(\.value)
+        guard !states.isEmpty else { return nil }
+        return states.allSatisfy { $0 == truth } ? truth : !truth
+    }
+    var status: CallServiceStatus {
+        guard timer != nil else { return .off }
+        guard AXIsProcessTrusted() else { return .needsAccess }
+        guard appDetected else { return .waiting }
+        return hasActiveCall ? .inCall : .connected
+    }
+
+    init(profile: BrowserCallProfile) {
+        self.profile = profile
+    }
+
+    static let browserIDs = [
+        "com.apple.Safari", "com.google.Chrome", "company.thebrowser.Browser",
+        "com.microsoft.edgemac", "com.brave.Browser", "org.chromium.Chromium",
+        "com.vivaldi.Vivaldi", "com.operasoftware.Opera",
+    ]
+    private static let pollInterval: TimeInterval = 0.3
+    private static let settleTimeout: TimeInterval = 1.5
+
+    private struct Hit: @unchecked Sendable {
+        let muted: Bool
+        let button: AXUIElement
+        /// Muted because the service cannot use the system-muted mic; the button cannot be pressed.
+        var unavailable = false
+    }
+
+    private var timer: Timer?
+    private var scanning = false
+    /// Full tree scans are costly: rare while in a call (cached buttons are re-read in between)
+    /// and slow while idle.
+    private var lastFullScan: TimeInterval = 0
+    private var lastFingerprint = 0
+    private var lastHinted = false
+    private var lastProbeAt: TimeInterval = 0
+    /// In a call the quick path notices a vanished button; new calls change the window fingerprint.
+    private static let fullScanInCall: TimeInterval = 15
+    /// While a window title carries the profile hint scan often; otherwise only on change or rarely.
+    private static let fullScanHinted: TimeInterval = 1.5
+    private static let fullScanForced: TimeInterval = 10
+    private var lastEvent: CallServiceEvent?
+    /// Last known mute state of every call seen in the previous scan, keyed by its button.
+    private var calls: [AXUIElement: Bool] = [:]
+    private var unavailableCalls: Set<AXUIElement> = []
+    private var pending: (muted: Bool, deadline: TimeInterval)?
+    /// Consecutive scans without the button. A single miss (tree rebuild, busy page) is not a hang-up.
+    private var misses = 0
+    private static let missesToLeave = 4
+    private nonisolated static let queue = DispatchQueue(label: "com.lockmic.browser-call-scan", qos: .userInitiated)
+
+    func start() {
+        guard timer == nil else { return }
+        AccessibilityPrompt.requestOnce()
+        let t = Timer(timeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.poll() }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
+    }
+
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+        lastEvent = nil
+        calls = [:]
+        unavailableCalls = []
+        pending = nil
+        misses = 0
+    }
+
+    func push(muted: Bool) {
+        var pressed = false
+        for (button, _) in calls where press(button, toMuted: muted) { pressed = true }
+        log.info("push muted=\(muted, privacy: .public) calls=\(self.calls.count, privacy: .public) pressed=\(pressed, privacy: .public)")
+        guard pressed else { return }
+        pending = (muted, ProcessInfo.processInfo.systemUptime + Self.settleTimeout)
+        lastEvent = CallServiceEvent(muted: muted, inCall: true)
+    }
+
+    /// Presses `button` if its label says it is not yet in the wanted state.
+    @discardableResult
+    private func press(_ button: AXUIElement, toMuted muted: Bool) -> Bool {
+        guard let seen = profile.micState(button), seen != muted else { return false }
+        AXUIElementPerformAction(button, kAXPressAction as CFString)
+        return true
+    }
+
+    // MARK: - Polling (tree walk runs off the main thread)
+
+    private func poll() {
+        guard AXIsProcessTrusted() else { lastEvent = nil; return }
+        guard !scanning else { return }
+        let now = ProcessInfo.processInfo.systemUptime
+        let lastFull = lastFullScan
+        let lastPrint = lastFingerprint
+        let lastHinted = lastHinted
+        let probeDue = now - lastProbeAt >= 1 // window probe once a second; quick reads run more often
+        let inCall = !calls.isEmpty
+        let cached = calls.keys.map { Hit(muted: false, button: $0) }
+        let profile = profile
+        scanning = true
+        Self.queue.async { [weak self] in
+            let print = probeDue ? Self.fingerprint(hint: profile.titleHint) : (hash: lastPrint, hinted: lastHinted)
+            let interval = inCall ? Self.fullScanInCall
+                : (print.hinted ? Self.fullScanHinted : Self.fullScanForced)
+            let full = print.hash != lastPrint || now - lastFull >= interval
+            var hits: [Hit]?
+            var pageSeen: Bool?
+            var backgroundTabs: Int?
+            if full {
+                let result = Self.scan(profile)
+                hits = result.hits
+                pageSeen = result.pageSeen
+                backgroundTabs = result.backgroundTabs
+            } else if inCall {
+                hits = Self.quickScan(cached, profile)
+            } else {
+                hits = nil // nothing changed and no call: skip the tree walk
+            }
+            let skipped = !full && !inCall
+            Task { @MainActor in
+                guard let self else { return }
+                self.scanning = false
+                self.lastFingerprint = print.hash
+                self.lastHinted = print.hinted
+                if probeDue { self.lastProbeAt = now }
+                if full { self.lastFullScan = now }
+                if let pageSeen { self.appDetected = pageSeen }
+                if let backgroundTabs {
+                    if backgroundTabs != self.backgroundCallTabs {
+                        log.info("background call tabs=\(backgroundTabs, privacy: .public) service=\(profile.id.rawValue, privacy: .public)")
+                    }
+                    self.backgroundCallTabs = backgroundTabs
+                }
+                if skipped { return }
+                if let hits {
+                    self.finish(hits)
+                } else {
+                    self.lastFullScan = 0 // cached button went stale: rescan next tick
+                }
+            }
+        }
+    }
+
+    private func finish(_ hits: [Hit]) {
+        if hits.isEmpty, lastEvent?.inCall == true, misses < Self.missesToLeave {
+            misses += 1
+            lastFullScan = 0
+            return
+        }
+        if !hits.isEmpty { misses = 0 }
+        let previous = calls
+        let synced = lastEvent?.muted
+        if let wait = pending {
+            let settled = hits.allSatisfy { $0.muted == wait.muted }
+            if hits.isEmpty || settled || ProcessInfo.processInfo.systemUptime > wait.deadline {
+                pending = nil
+            } else {
+                return // stale labels right after our own press; keep `calls` so a real click is seen later
+            }
+        }
+        let wasUnavailable = unavailableCalls
+        calls = Dictionary(hits.map { ($0.button, $0.muted) }, uniquingKeysWith: { _, last in last })
+        unavailableCalls = Set(hits.filter(\.unavailable).map(\.button))
+
+        // A call that appeared while others are running adopts the current synced state.
+        if lastEvent?.inCall == true, let synced {
+            for hit in hits where !hit.unavailable && hit.muted != synced
+                && (previous[hit.button] == nil || wasUnavailable.contains(hit.button)) {
+                press(hit.button, toMuted: synced)
+            }
+        }
+
+        // The state a user just changed in any call; unchanged calls do not vote.
+        // A button that was unusable (system mute) or just became so did not change by user action.
+        let changed = hits.filter {
+            !$0.unavailable && !wasUnavailable.contains($0.button)
+                && previous[$0.button] != nil && previous[$0.button] != $0.muted
+        }
+        let muted = changed.last?.muted ?? (lastEvent?.inCall == true ? lastEvent?.muted : hits.first?.muted)
+
+        // A user change in one call is mirrored to the other calls of this bridge (another tab,
+        // browser or window); the coordinator only mirrors to other services.
+        if let target = changed.last?.muted {
+            var pressed = false
+            for hit in hits where !hit.unavailable && hit.muted != target {
+                if press(hit.button, toMuted: target) { pressed = true }
+            }
+            if pressed { pending = (target, ProcessInfo.processInfo.systemUptime + Self.settleTimeout) }
+        }
+        let event = CallServiceEvent(muted: muted, inCall: !hits.isEmpty)
+        if let last = lastEvent, last.inCall == event.inCall, last.muted == event.muted { return }
+        let wasInCall = lastEvent?.inCall ?? false
+        lastEvent = event
+        log.info("event inCall=\(event.inCall, privacy: .public) muted=\(event.muted.map { String($0) } ?? "nil", privacy: .public) calls=\(hits.count, privacy: .public)")
+        if event.inCall || wasInCall { onEvent?(event) }
+    }
+
+    // MARK: - Accessibility
+
+    private nonisolated static func runningBrowsers() -> [NSRunningApplication] {
+        browserIDs.flatMap { NSRunningApplication.runningApplications(withBundleIdentifier: $0) }
+    }
+
+    /// Window titles/sizes of every running browser, hashed. `hinted`: some title carries the hint.
+    private nonisolated static func fingerprint(hint: String?) -> (hash: Int, hinted: Bool) {
+        var hasher = Hasher()
+        var hinted = false
+        for app in runningBrowsers() {
+            let root = AXUIElementCreateApplication(app.processIdentifier)
+            AXUIElementSetMessagingTimeout(root, 0.5)
+            let probe = AXWindowFingerprint.probe(root)
+            hasher.combine(app.processIdentifier)
+            hasher.combine(probe.hash)
+            if let hint, probe.titles.contains(where: { $0.localizedCaseInsensitiveContains(hint) }) { hinted = true }
+        }
+        return (hasher.finalize(), hinted)
+    }
+
+    private nonisolated static let recordingMarkers = ["microphone recording", "using microphone", "запись с микрофона"]
+
+    private nonisolated static func isRecordingTab(_ title: String) -> Bool {
+        let lower = title.lowercased()
+        return recordingMarkers.contains { lower.contains($0) }
+    }
+
+    private nonisolated static func isSelected(_ el: AXUIElement) -> Bool {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, kAXValueAttribute as CFString, &value) == .success else { return false }
+        return (value as? NSNumber)?.intValue == 1
+    }
+
+    private nonisolated static func read(_ button: AXUIElement, _ profile: BrowserCallProfile) -> Hit? {
+        if let muted = profile.micState(button) { return Hit(muted: muted, button: button) }
+        if profile.micUnavailable(button) { return Hit(muted: true, button: button, unavailable: true) }
+        return nil
+    }
+
+    /// Re-reads the state of already known buttons. `nil` when any of them is gone.
+    private nonisolated static func quickScan(_ cached: [Hit], _ profile: BrowserCallProfile) -> [Hit]? {
+        var hits: [Hit] = []
+        for known in cached {
+            guard let hit = Self.read(known.button, profile) else { return nil }
+            hits.append(hit)
+        }
+        return hits
+    }
+
+    /// `pageSeen`: some page of the service is open, whether or not a call is running.
+    private nonisolated static func scan(
+        _ profile: BrowserCallProfile
+    ) -> (hits: [Hit], pageSeen: Bool, backgroundTabs: Int) {
+        var found: [Hit] = []
+        var pageSeen = false
+        var backgroundTabs = 0
+        for app in runningBrowsers() {
+            let root = AXUIElementCreateApplication(app.processIdentifier)
+            AXUIElementSetMessagingTimeout(root, 0.5)
+            // Chromium builds the web tree only for assistive tech that asks.
+            AXUIElementSetAttributeValue(root, "AXEnhancedUserInterface" as CFString, true as CFTypeRef)
+            var budget = 12000
+            for window in children(root) where string(window, "AXRole") == "AXWindow" {
+                // Meet's Picture-in-Picture window has a blank URL but a "Meet – …" title.
+                let pip = profile.acceptsBlankPiP && profile.titleHint.map {
+                    string(window, "AXTitle")?.localizedCaseInsensitiveContains($0) == true
+                } == true
+                search(window, profile, inPage: false, pipWindow: pip, budget: &budget,
+                       into: &found, pageSeen: &pageSeen, backgroundTabs: &backgroundTabs)
+            }
+        }
+        // Tabs already readable as calls are not "background".
+        return (found, pageSeen, found.isEmpty ? backgroundTabs : 0)
+    }
+
+    private nonisolated static func search(
+        _ el: AXUIElement, _ profile: BrowserCallProfile, inPage: Bool, pipWindow: Bool,
+        budget: inout Int, into found: inout [Hit], pageSeen: inout Bool, backgroundTabs: inout Int
+    ) {
+        budget -= 1
+        if budget <= 0 { return }
+        let role = string(el, "AXRole")
+        var inPage = inPage
+        // Chromium shows every tab in the tab strip (title only). A background tab of this service
+        // that is using the microphone is a call whose controls cannot be read until it is shown.
+        if role == "AXRadioButton", let hint = profile.titleHint, let title = string(el, "AXTitle"),
+           (profile.isCallTabTitle(title) || title.localizedCaseInsensitiveContains(hint) && isRecordingTab(title)),
+           !isSelected(el) {
+            backgroundTabs += 1
+        }
+        if role == "AXWebArea" {
+            let page = url(el)
+            inPage = profile.pageMatches(page)
+                || (pipWindow && (page == nil || page?.scheme == "about"))
+            if !inPage { return } // skip other pages entirely
+            pageSeen = true
+        }
+        if inPage, let hit = read(el, profile) {
+            found.append(hit)
+            return // one mic button per call
+        }
+        for child in children(el) {
+            search(child, profile, inPage: inPage, pipWindow: pipWindow, budget: &budget,
+                   into: &found, pageSeen: &pageSeen, backgroundTabs: &backgroundTabs)
+        }
+    }
+
+    private nonisolated static func url(_ el: AXUIElement) -> URL? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, "AXURL" as CFString, &value) == .success else { return nil }
+        return value as? URL
+    }
+
+    private nonisolated static func string(_ el: AXUIElement, _ name: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, name as CFString, &value) == .success,
+              let text = value as? String, !text.isEmpty else { return nil }
+        return text
+    }
+
+    private nonisolated static func children(_ el: AXUIElement) -> [AXUIElement] {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, kAXChildrenAttribute as CFString, &value) == .success
+        else { return [] }
+        return value as? [AXUIElement] ?? []
+    }
+}

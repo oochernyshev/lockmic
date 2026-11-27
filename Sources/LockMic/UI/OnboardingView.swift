@@ -1,18 +1,22 @@
 import AppKit
+import ApplicationServices
 import SwiftUI
 
 struct OnboardingView: View {
     @ObservedObject var preferences: PreferencesStore
     @ObservedObject var mic: MicController
     let testMute: () -> Void
+    @ObservedObject var meetings: MeetingAlertCoordinator
     let finish: () -> Void
 
     @State private var page = 0
+    @State private var askedAccessibility = false
+    @State private var askedCalendar = false
 
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 7) {
-                ForEach(0..<4, id: \.self) { index in
+                ForEach(0..<6, id: \.self) { index in
                     Capsule()
                         .fill(index == page ? Color.accentColor : Color.secondary.opacity(0.22))
                         .frame(width: index == page ? 28 : 8, height: 8)
@@ -26,6 +30,8 @@ struct OnboardingView: View {
                 case 0: welcomePage
                 case 1: analyticsPage
                 case 2: hudPage
+                case 3: syncPage
+                case 4: alertsPage
                 default: readyPage
                 }
             }
@@ -47,8 +53,8 @@ struct OnboardingView: View {
                         page = 2
                     }
                         .keyboardShortcut(.defaultAction)
-                } else if page == 2 {
-                    Button("Continue") { page = 3 }
+                } else if page >= 2 && page <= 4 {
+                    Button("Continue") { continueFromPage() }
                         .keyboardShortcut(.defaultAction)
                 } else {
                     Button("Start Using LockMic") {
@@ -60,8 +66,24 @@ struct OnboardingView: View {
             }
             .padding(20)
         }
-        .frame(width: 620, height: 560)
+        .frame(width: 620, height: 660)
         .background(.ultraThinMaterial)
+    }
+
+    /// On the Sync and Alerts pages the permission is asked first; the page changes on the next press.
+    private func continueFromPage() {
+        if page == 3, !askedAccessibility, !AXIsProcessTrusted(),
+           preferences.syncWebEnabled || preferences.syncTeamsAppEnabled || preferences.syncZoomAppEnabled {
+            askedAccessibility = true
+            AccessibilityPrompt.requestNow()
+            return
+        }
+        if page == 4, !askedCalendar, preferences.meetingAlertsEnabled, meetings.access == .notDetermined {
+            askedCalendar = true
+            meetings.requestAccessAndEnable()
+            return
+        }
+        page += 1
     }
 
     private var welcomePage: some View {
@@ -76,6 +98,7 @@ struct OnboardingView: View {
             }
             VStack(alignment: .leading, spacing: 14) {
                 onboardingFeature("mic.slash.fill", "Mute every controllable microphone at once")
+                onboardingFeature("arrow.left.arrow.right", "Stay in sync with Meet, Teams and Zoom, both ways")
                 onboardingFeature("keyboard", "Use global shortcuts from any app")
                 onboardingFeature("waveform", "Record microphone and system audio when you need it")
             }
@@ -145,7 +168,7 @@ struct OnboardingView: View {
             .padding(10)
             .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
 
-            Text("Right-click the menu-bar icon for recording, Preferences, and Getting Started.")
+            Text("Right-click the menu-bar icon for recording and Preferences. You can reopen this guide from Preferences → General.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -224,6 +247,113 @@ struct OnboardingView: View {
             .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
         }
         .padding(14)
+    }
+
+    private var alertsPage: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "bell.badge.fill")
+                .font(.system(size: 44, weight: .medium))
+                .foregroundStyle(.tint)
+            VStack(spacing: 4) {
+                Text("Never walk into a meeting live")
+                    .font(.system(size: 24, weight: .bold))
+                Text("Two minutes before a calendar event, a floating countdown card reminds you to check your microphone.")
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 470)
+            }
+
+            MeetingAlertPreview(soundEnabled: preferences.meetingAlertSoundEnabled)
+                .frame(maxWidth: 360)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Toggle("Show meeting countdown", isOn: $preferences.meetingAlertsEnabled)
+                .toggleStyle(.checkbox)
+                .fontWeight(.medium)
+                Toggle("Play an alert sound near the start", isOn: $preferences.meetingAlertSoundEnabled)
+                    .toggleStyle(.checkbox)
+                    .disabled(!preferences.meetingAlertsEnabled)
+            }
+            .frame(maxWidth: 520, alignment: .leading)
+            .padding(12)
+            .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Label("LockMic reads event titles and start times on this Mac and uploads nothing.", systemImage: "lock.shield.fill")
+                Label("You can change this anytime in Preferences → Alerts.", systemImage: "gearshape.fill")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: 520, alignment: .leading)
+
+            CalendarAccessRow(meetings: meetings)
+                .frame(maxWidth: 544)
+        }
+        .padding(14)
+    }
+
+    private var syncPage: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "arrow.left.arrow.right.circle.fill")
+                .font(.system(size: 44, weight: .medium))
+                .foregroundStyle(.tint)
+            VStack(spacing: 4) {
+                Text("Keep your calls in sync")
+                    .font(.system(size: 24, weight: .bold))
+                Text("Mute in LockMic and the call mutes. Mute in the call and LockMic follows, both ways, within a second.")
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 470)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                syncOption(
+                    "Web calls",
+                    detail: "Google Meet, Microsoft Teams and Zoom in your browser. Safari: calls in every tab. Chrome and other Chromium browsers: the tab that is open and visible in its window.",
+                    isOn: $preferences.syncWebEnabled
+                )
+                Divider()
+                syncOption(
+                    "Microsoft Teams app",
+                    detail: "Follows mute in the Teams desktop app.",
+                    isOn: $preferences.syncTeamsAppEnabled
+                )
+                Divider()
+                syncOption(
+                    "Zoom app",
+                    detail: "Follows mute in the Zoom desktop app.",
+                    isOn: $preferences.syncZoomAppEnabled
+                )
+            }
+            .frame(maxWidth: 520)
+            .padding(12)
+            .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+
+            VStack(alignment: .leading, spacing: 6) {
+                Label("LockMic only reads each call's mute button and the page address needed to find it, never audio or what is on the page.", systemImage: "lock.shield.fill")
+                Label("You can change these anytime in Preferences → Sync.", systemImage: "gearshape.fill")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: 520, alignment: .leading)
+
+            AccessibilityAccessRow()
+                .frame(maxWidth: 544)
+        }
+        .padding(14)
+    }
+
+    private func syncOption(_ title: String, detail: String, isOn: Binding<Bool>) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Toggle(title, isOn: isOn)
+                .toggleStyle(.checkbox)
+                .fontWeight(.medium)
+            Text(detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, 20)
+        }
     }
 
     private func onboardingFeature(_ icon: String, _ title: String) -> some View {

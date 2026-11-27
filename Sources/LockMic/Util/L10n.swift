@@ -20,6 +20,32 @@ enum L10n {
     static var tabDevices: String { tr("tab.devices") }
     static var tabRecording: String { tr("tab.recording") }
     static var tabAlerts: String { tr("tab.alerts") }
+    static var tabCalls: String { tr("tab.calls") }
+    static var callsHeader: String { tr("calls.header") }
+    static var callsIntro: String { tr("calls.intro") }
+    static var callsMeet: String { tr("calls.meet") }
+    static var callsMeetCaption: String { tr("calls.meet.caption") }
+    static var callsTeams: String { tr("calls.teams") }
+    static var callsTeamsCaption: String { tr("calls.teams.caption") }
+    static var callsZoom: String { tr("calls.zoom") }
+    static var callsZoomCaption: String { tr("calls.zoom.caption") }
+    static var callsStatus: String { tr("calls.status") }
+    static var callsDetected: String { tr("calls.detected") }
+    static var callsNotDetected: String { tr("calls.notDetected") }
+    static func callsBackgroundTabs(_ count: Int) -> String { format("calls.backgroundTabs", count) }
+    static var syncWeb: String { tr("sync.web") }
+    static var syncWebCaption: String { tr("sync.web.caption") }
+    static var syncWebNoTab: String { tr("sync.web.noTab") }
+    static var syncWebTabFound: String { tr("sync.web.tabFound") }
+    static var syncWebTabNoCall: String { tr("sync.web.tabNoCall") }
+    static var syncWebSyncing: String { tr("sync.web.syncing") }
+    static var syncTeamsApp: String { tr("sync.teamsApp") }
+    static var syncZoomApp: String { tr("sync.zoomApp") }
+    static var callsStatusOff: String { tr("calls.status.off") }
+    static var callsStatusWaiting: String { tr("calls.status.waiting") }
+    static var callsStatusNeedsAccess: String { tr("calls.status.needsAccess") }
+    static var callsStatusConnected: String { tr("calls.status.connected") }
+    static var callsStatusInCall: String { tr("calls.status.inCall") }
     static var tabKeyboard: String { tr("tab.keyboard") }
     static var tabAbout: String { tr("tab.about") }
 
@@ -33,6 +59,9 @@ enum L10n {
     static var generalAnonymousToggle: String { tr("general.anonymous.toggle") }
     static var generalAnonymousCaption: String { tr("general.anonymous.caption") }
     static var generalAnonymousDisabled: String { tr("general.anonymous.disabled") }
+    static var generalGettingStartedHeader: String { tr("general.gettingStarted.header") }
+    static var generalGettingStartedCaption: String { tr("general.gettingStarted.caption") }
+    static var generalGettingStartedButton: String { tr("general.gettingStarted.button") }
     static var generalStatusHeader: String { tr("general.status.header") }
     static var generalStatusMicrophone: String { tr("general.status.microphone") }
     static var generalStatusDevice: String { tr("general.status.device") }
@@ -65,6 +94,13 @@ enum L10n {
     // MARK: - Devices
 
     static var devicesScopeHeader: String { tr("devices.scope.header") }
+    static var devicesMethodHeader: String { tr("devices.method.header") }
+    static var devicesMethodSystem: String { tr("devices.method.system") }
+    static var devicesMethodVolume: String { tr("devices.method.volume") }
+    static var devicesMethodBoth: String { tr("devices.method.both") }
+    static var devicesMethodCaptionSystem: String { tr("devices.method.caption.system") }
+    static var devicesMethodCaptionVolume: String { tr("devices.method.caption.volume") }
+    static var devicesMethodCaptionBoth: String { tr("devices.method.caption.both") }
     static var devicesScopeToggle: String { tr("devices.scope.toggle") }
     static var devicesScopeCaptionAll: String { tr("devices.scope.caption.all") }
     static var devicesScopeCaptionDefault: String { tr("devices.scope.caption.default") }
@@ -220,14 +256,6 @@ enum L10n {
     static var meetingsSoundCaption: String { tr("meetings.sound.caption") }
     static var meetingsSoundAllOutputs: String { tr("meetings.sound.all_outputs") }
     static var meetingsSoundAllOutputsCaption: String { tr("meetings.sound.all_outputs.caption") }
-    static var meetingsAccessHeader: String { tr("meetings.access.header") }
-    static var meetingsAccessStatus: String { tr("meetings.access.status") }
-    static var meetingsAccessGranted: String { tr("meetings.access.granted") }
-    static var meetingsAccessDenied: String { tr("meetings.access.denied") }
-    static var meetingsAccessRestricted: String { tr("meetings.access.restricted") }
-    static var meetingsAccessNotDetermined: String { tr("meetings.access.notDetermined") }
-    static var meetingsAccessButton: String { tr("meetings.access.button") }
-    static var meetingsAccessOpenSettings: String { tr("meetings.access.openSettings") }
     static var meetingsAccessCaption: String { tr("meetings.access.caption") }
     static var meetingStatusUpcoming: String { tr("meeting.status.upcoming") }
     static var meetingStatusSoon: String { tr("meeting.status.soon") }

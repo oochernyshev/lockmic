@@ -139,14 +139,6 @@
 "meetings.sound.caption" = "Play the Glass sound while the countdown is in its last 30 seconds, and for a minute after the meeting starts.";
 "meetings.sound.all_outputs" = "Play on all outputs for the last 15 seconds";
 "meetings.sound.all_outputs.caption" = "Send that sound to every physical output, not only the default one.";
-"meetings.access.header" = "Calendar access";
-"meetings.access.status" = "Access";
-"meetings.access.granted" = "Allowed";
-"meetings.access.denied" = "Off";
-"meetings.access.restricted" = "Restricted";
-"meetings.access.notDetermined" = "Needed";
-"meetings.access.button" = "Allow Calendar Access…";
-"meetings.access.openSettings" = "Open Calendar Privacy Settings…";
 "meetings.access.caption" = "LockMic reads event titles and start times from calendars on this Mac. Nothing is uploaded.";
 "meeting.status.upcoming" = "UPCOMING MEETING";
 "meeting.status.soon" = "MEETING STARTING SOON!";
@@ -274,3 +266,39 @@
 
 "recording.split" = "Split";
 "recording.split.tooltip" = "Save this segment and immediately start a new recording";
+
+"tab.calls" = "Sync";
+"calls.header" = "Mute sync";
+"calls.intro" = "Keep LockMic and your call apps muted or unmuted together, in both directions. Everything here works through Accessibility.";
+"calls.meet" = "Google Meet";
+"calls.meet.caption" = "Works in Safari and Chromium browsers (Chrome, Arc, Edge, Brave) through Accessibility. The Meet tab must be the visible one.";
+"calls.teams" = "Microsoft Teams";
+"calls.zoom" = "Zoom";
+"calls.status" = "Status";
+"calls.status.off" = "Off";
+"calls.status.waiting" = "App not detected";
+"calls.status.needsAccess" = "Accessibility access needed";
+"calls.status.connected" = "Detected, no call";
+"calls.status.inCall" = "Detected, syncing the call";
+"calls.detected" = "Detected";
+"calls.notDetected" = "Not detected";
+
+"devices.method.header" = "Mute method";
+"devices.method.system" = "System mute";
+"devices.method.volume" = "Volume";
+"devices.method.both" = "Both";
+"devices.method.caption.system" = "Core Audio system mute only. Apps see a muted microphone and may warn about it.";
+"devices.method.caption.volume" = "Sets the input volume to 0 instead of muting. Apps see a normal but silent microphone, so no \"muted by system\" warnings. Needs a microphone with an input volume control; some apps can raise it again.";
+"devices.method.caption.both" = "System mute plus volume 0 (default, most reliable).";
+"calls.backgroundTabs" = "A call is open in a background browser tab (%d). Switch to that tab to sync it: Chrome does not expose background tabs.";
+"sync.web" = "Web calls";
+"sync.web.caption" = "Google Meet, Microsoft Teams and Zoom in the browser. Safari: calls in all tabs are synced. Chrome and other Chromium browsers: only a call whose tab is open and visible in its window, because they do not expose background tabs.";
+"sync.teamsApp" = "Microsoft Teams app";
+"sync.zoomApp" = "Zoom app";
+"sync.web.noTab" = "No tab found";
+"sync.web.tabFound" = "Tab found";
+"sync.web.tabNoCall" = "Tab found, no call";
+"sync.web.syncing" = "Syncing the call";
+"general.gettingStarted.header" = "Getting Started";
+"general.gettingStarted.caption" = "Walk through the setup guide again: mute basics, the HUD, and syncing with your calls.";
+"general.gettingStarted.button" = "Open Getting Started…";

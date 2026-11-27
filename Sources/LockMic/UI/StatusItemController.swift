@@ -11,6 +11,7 @@ final class StatusItemController {
     private let hotkeys: HotkeyCoordinator
     private let recording: RecordingCoordinator
     private let meetings: MeetingAlertCoordinator
+    let callSync: CallSyncCoordinator
     private let sounds: SoundFeedback
 
     private var statusItem: NSStatusItem?
@@ -44,6 +45,32 @@ final class StatusItemController {
         self.hotkeys = HotkeyCoordinator(mic: mic, preferences: preferences)
         self.recording = RecordingCoordinator(recorder: recorder, preferences: preferences, mic: mic)
         self.meetings = MeetingAlertCoordinator(preferences: preferences, audio: audio)
+        let webMeet = BrowserCallBridge(profile: .meet)
+        let webTeams = BrowserCallBridge(profile: .teams)
+        let webZoom = BrowserCallBridge(profile: .zoom)
+        let teamsApp = TeamsBridge()
+        let zoomApp = ZoomBridge()
+        self.callSync = CallSyncCoordinator(
+            mic: mic,
+            preferences: preferences,
+            // Events from every way of reaching a service are merged per service.
+            services: [
+                webMeet,
+                CompositeCallService(id: .teams, children: [teamsApp, webTeams]),
+                CompositeCallService(id: .zoom, children: [zoomApp, webZoom]),
+            ],
+            // Each source is switched on its own: web calls, the Teams app, the Zoom app.
+            sources: [
+                SyncSource(id: .webMeet, service: webMeet, enabled: Self.syncEnabled(preferences.$syncWebEnabled, preferences)),
+                SyncSource(id: .webTeams, service: webTeams, enabled: Self.syncEnabled(preferences.$syncWebEnabled, preferences)),
+                SyncSource(id: .webZoom, service: webZoom, enabled: Self.syncEnabled(preferences.$syncWebEnabled, preferences)),
+                SyncSource(id: .teamsApp, service: teamsApp, enabled: Self.syncEnabled(preferences.$syncTeamsAppEnabled, preferences)),
+                SyncSource(id: .zoomApp, service: zoomApp, enabled: Self.syncEnabled(preferences.$syncZoomAppEnabled, preferences)),
+            ]
+        )
+        callSync.onRemoteMuteApplied = { [weak self] in
+            self?.handleMuteChanged(showHUD: true)
+        }
 
         hotkeys.onMuteChanged = { [weak self] showHUD, playSound in
             self?.handleMuteChanged(showHUD: showHUD, playSound: playSound)
@@ -125,10 +152,15 @@ final class StatusItemController {
                 }
             }
             .store(in: &micCancellables)
+        NotificationCenter.default.publisher(for: .lockMicOpenOnboarding)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.presentOnboarding() }
+            .store(in: &micCancellables)
         observePreferenceHotkeys()
         observeUpdateAvailability()
         startMenuBarVisibilityMonitoring()
         meetings.start()
+        callSync.start()
         refreshUpdateBadge()
     }
 
@@ -508,10 +540,6 @@ final class StatusItemController {
 
         appendUpdateMenuItems(to: menu)
 
-        let gettingStarted = NSMenuItem(title: "Getting Started…", action: #selector(openOnboarding), keyEquivalent: "")
-        gettingStarted.target = self
-        menu.addItem(gettingStarted)
-
         let prefs = NSMenuItem(title: L10n.menuPreferences, action: #selector(openPreferences), keyEquivalent: "")
         prefs.target = self
         menu.addItem(prefs)
@@ -648,6 +676,15 @@ final class StatusItemController {
         presentPreferences(source: .menu)
     }
 
+    /// A sync switch counts only once setup is finished, so the Accessibility prompt of a fresh
+    /// install appears after the wizard, not at launch.
+    private static func syncEnabled(_ switchValue: Published<Bool>.Publisher, _ preferences: PreferencesStore) -> AnyPublisher<Bool, Never> {
+        switchValue
+            .combineLatest(preferences.$hasCompletedOnboarding)
+            .map { $0 && $1 }
+            .eraseToAnyPublisher()
+    }
+
     private func presentOnboarding() {
         if onboardingWindow == nil {
             let view = OnboardingView(
@@ -657,7 +694,8 @@ final class StatusItemController {
                     guard let self else { return }
                     self.applyFeatureAvailability(force: true)
                     self.toggleFromUser(source: .menu)
-                }
+                },
+                meetings: meetings
             ) { [weak self] in
                 self?.applyFeatureAvailability(force: true)
                 self?.onboardingWindow?.performClose(nil)
@@ -702,6 +740,7 @@ final class StatusItemController {
                 mic: mic,
                 recorder: recorder,
                 meetings: meetings,
+                callSync: callSync,
                 initialTab: tab
             )
                 .onExitCommand { [weak self] in

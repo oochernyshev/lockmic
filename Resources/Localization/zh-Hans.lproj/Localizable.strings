@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "在倒计时最后 30 秒以及会议开始后的一分钟内播放 Glass 提示音。";
 "meetings.sound.all_outputs" = "最后 15 秒在所有输出上播放";
 "meetings.sound.all_outputs.caption" = "将该声音发送到每个物理输出，而不只是默认输出。";
-"meetings.access.header" = "日历访问";
-"meetings.access.status" = "访问";
-"meetings.access.granted" = "已允许";
-"meetings.access.denied" = "已关闭";
-"meetings.access.restricted" = "受限制";
-"meetings.access.notDetermined" = "需要授权";
-"meetings.access.button" = "允许访问日历…";
-"meetings.access.openSettings" = "打开日历隐私设置…";
 "meetings.access.caption" = "LockMic 从此 Mac 上的日历读取标题和开始时间。不会上传任何内容。";
 "meeting.status.upcoming" = "即将开始的会议";
 "meeting.status.soon" = "会议即将开始！";

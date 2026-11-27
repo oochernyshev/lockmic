@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "カウントダウンの最後の30秒と開始後1分間、Glassの音を再生します。";
 "meetings.sound.all_outputs" = "最後の15秒はすべての出力で再生";
 "meetings.sound.all_outputs.caption" = "既定の出力だけでなく、すべての物理出力で再生します。";
-"meetings.access.header" = "カレンダーへのアクセス";
-"meetings.access.status" = "アクセス";
-"meetings.access.granted" = "許可済み";
-"meetings.access.denied" = "オフ";
-"meetings.access.restricted" = "制限あり";
-"meetings.access.notDetermined" = "必要";
-"meetings.access.button" = "カレンダーへのアクセスを許可…";
-"meetings.access.openSettings" = "カレンダーのプライバシー設定を開く…";
 "meetings.access.caption" = "LockMicはこのMacのカレンダーから予定のタイトルと開始時刻を読み取ります。アップロードはしません。";
 "meeting.status.upcoming" = "まもなくミーティング";
 "meeting.status.soon" = "まもなく開始！";

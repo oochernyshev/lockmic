@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "Přehrává zvuk Glass v posledních 30 sekundách a minutu po začátku.";
 "meetings.sound.all_outputs" = "Na všech výstupech posledních 15 sekund";
 "meetings.sound.all_outputs.caption" = "Pošle zvuk na každý fyzický výstup, ne jen na výchozí.";
-"meetings.access.header" = "Přístup ke kalendáři";
-"meetings.access.status" = "Přístup";
-"meetings.access.granted" = "Povolen";
-"meetings.access.denied" = "Vypnuto";
-"meetings.access.restricted" = "Omezeno";
-"meetings.access.notDetermined" = "Je potřeba";
-"meetings.access.button" = "Povolit přístup ke kalendáři…";
-"meetings.access.openSettings" = "Otevřít nastavení soukromí kalendáře…";
 "meetings.access.caption" = "LockMic čte názvy a časy událostí z kalendářů na tomto Macu. Nic se neodesílá.";
 "meeting.status.upcoming" = "NADCHÁZEJÍCÍ SCHŮZKA";
 "meeting.status.soon" = "SCHŮZKA ZAČÍNÁ BRZY!";
