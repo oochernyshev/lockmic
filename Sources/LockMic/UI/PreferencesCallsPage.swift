@@ -81,10 +81,7 @@ struct PreferencesCallsPage: View {
             return (snapshot.detected ? L10n.callsDetected : L10n.callsNotDetected, .orange)
         case .connected: return (L10n.callsStatusConnected, .green)
         case .inCall:
-            let text = snapshot.calls > 0
-                ? "\(L10n.callsStatusInCall) · \(L10n.callsFound(snapshot.calls))"
-                : L10n.callsStatusInCall
-            return (text, .green)
+            return (L10n.callsStatusInCall, .green)
         }
     }
 
@@ -96,7 +93,7 @@ struct PreferencesCallsPage: View {
         // The warning below explains the missing permission; here only say what was found.
         case .needsAccess: return (snapshot.detected ? L10n.syncWebTabFound : L10n.syncWebNoTab, .orange)
         case .connected: return (L10n.syncWebTabNoCall, .green)
-        case .inCall: return (L10n.syncWebSyncing(snapshot.calls), .green)
+        case .inCall: return (L10n.syncWebSyncing, .green)
         }
     }
 }
