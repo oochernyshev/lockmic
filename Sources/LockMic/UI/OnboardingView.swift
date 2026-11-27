@@ -267,7 +267,7 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Label("Needs Accessibility access: macOS asks when you finish setup. LockMic only reads each call's mute button and the page address needed to find it, never audio or what is on the page.", systemImage: "hand.raised.fill")
-                Label("On by default. Turn any of them off anytime in Preferences → Sync.", systemImage: "gearshape.fill")
+                Label("You can change these anytime in Preferences → Sync.", systemImage: "gearshape.fill")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
