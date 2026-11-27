@@ -28,6 +28,7 @@
 		22799EC9FE4846702741D29C /* StatusItemVisibility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B2EEF27306A31B09E7F00C /* StatusItemVisibility.swift */; };
 		22D629D37CABB69D24449A23 /* HUDContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24381AAC5C63C2B4DEB0E190 /* HUDContentView.swift */; };
 		2A17CFE4171FD22D8CF68EFB /* LevelSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = B970385D16347A74500516D7 /* LevelSnapshot.swift */; };
+		2A45FE63E7C73A0F4F278E2E /* AXWindowFingerprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 192E18B01E44BADA5E61116A /* AXWindowFingerprint.swift */; };
 		2BA758F4F6801B9775F202FD /* CompressedStemWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38D0E203797E6588D537F34 /* CompressedStemWriter.swift */; };
 		3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9531C60032267EFA1757D1BC /* AppDelegate.swift */; };
 		34D8CB9A6898B6ED6D6475AA /* MicController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47A7A118040E6EF54FF7752 /* MicController.swift */; };
@@ -101,6 +102,7 @@
 		0B4CB872F727BA2DC6ED4192 /* MeetingAlertCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetingAlertCardView.swift; sourceTree = "<group>"; };
 		12E7B26E0035AAB6D481CEFE /* LiveMixer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMixer.swift; sourceTree = "<group>"; };
 		182A9BCDF590AE38191EA976 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/Localizable.strings; sourceTree = "<group>"; };
+		192E18B01E44BADA5E61116A /* AXWindowFingerprint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AXWindowFingerprint.swift; sourceTree = "<group>"; };
 		1F757219C34041FABC16B182 /* Comparable+Clamped.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Comparable+Clamped.swift"; sourceTree = "<group>"; };
 		200E9D59454FF5C42F0D7ECB /* PreferencesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesTab.swift; sourceTree = "<group>"; };
 		20D4F51BC72B06AE60177E02 /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hu; path = hu.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -287,6 +289,7 @@
 		6475B769EAD198F3AB59972F /* CallSync */ = {
 			isa = PBXGroup;
 			children = (
+				192E18B01E44BADA5E61116A /* AXWindowFingerprint.swift */,
 				D98C0BBF4D42B2665D59AB36 /* CallService.swift */,
 				B91CEE6DCD87E3AFEB68A979 /* CallSyncCoordinator.swift */,
 				F89A2B21AA30C5D1606D9736 /* MeetBridge.swift */,
@@ -473,6 +476,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2A45FE63E7C73A0F4F278E2E /* AXWindowFingerprint.swift in Sources */,
 				3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */,
 				6507DC18A3CA52D862E30880 /* AppInstallMethod.swift in Sources */,
 				7BCF28B6E67FFB6A7D883F39 /* AppInstanceGuard.swift in Sources */,

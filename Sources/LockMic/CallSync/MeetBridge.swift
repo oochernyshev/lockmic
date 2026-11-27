@@ -41,8 +41,14 @@ final class MeetBridge: CallService {
     /// Full tree scans are costly: rare while in a call (cached buttons are re-read in between)
     /// and slow while idle.
     private var lastFullScan: TimeInterval = 0
-    private static let fullScanInCall: TimeInterval = 3
-    private static let fullScanIdle: TimeInterval = 1.5
+    private var lastFingerprint = 0
+    private var lastMeetLike = false
+    private var lastProbeAt: TimeInterval = 0
+    /// In a call the quick path notices a vanished button; new calls change the window fingerprint.
+    private static let fullScanInCall: TimeInterval = 15
+    /// While a window looks like Meet (title) scan often; otherwise only on change or rarely.
+    private static let fullScanMeetLike: TimeInterval = 1.5
+    private static let fullScanForced: TimeInterval = 10
     private var lastEvent: CallServiceEvent?
     /// Last known mute state of every Meet call seen in the previous scan, keyed by its button.
     private var calls: [AXUIElement: Bool] = [:]
@@ -94,19 +100,39 @@ final class MeetBridge: CallService {
         guard AXIsProcessTrusted() else { lastEvent = nil; return }
         guard !scanning else { return }
         let now = ProcessInfo.processInfo.systemUptime
-        let full = now - lastFullScan >= (calls.isEmpty ? Self.fullScanIdle : Self.fullScanInCall)
-        if calls.isEmpty, !full { return }
-        if full { lastFullScan = now }
+        let lastFull = lastFullScan
+        let lastPrint = lastFingerprint
+        let lastMeetLike = lastMeetLike
+        let probeDue = now - lastProbeAt >= 1 // window probe once a second; quick reads run more often
+        let inCall = !calls.isEmpty
+        let cached = calls.keys.map { Hit(muted: false, button: $0) }
         scanning = true
-        let cached = calls.mapValues { _ in () }.keys.map { Hit(muted: false, button: $0) }
         Self.queue.async { [weak self] in
-            let hits = full ? Self.scan() : Self.quickScan(cached)
+            let print = probeDue ? Self.fingerprint() : (hash: lastPrint, meetLike: lastMeetLike)
+            let interval = inCall ? Self.fullScanInCall
+                : (print.meetLike ? Self.fullScanMeetLike : Self.fullScanForced)
+            let full = print.hash != lastPrint || now - lastFull >= interval
+            var hits: [Hit]?
+            if full {
+                hits = Self.scan()
+            } else if inCall {
+                hits = Self.quickScan(cached)
+            } else {
+                hits = nil // nothing changed and no call: skip the tree walk
+            }
+            let skipped = !full && !inCall
             Task { @MainActor in
-                self?.scanning = false
+                guard let self else { return }
+                self.scanning = false
+                self.lastFingerprint = print.hash
+                self.lastMeetLike = print.meetLike
+                if probeDue { self.lastProbeAt = now }
+                if full { self.lastFullScan = now }
+                if skipped { return }
                 if let hits {
-                    self?.finish(hits)
+                    self.finish(hits)
                 } else {
-                    self?.lastFullScan = 0 // cached button went stale: rescan next tick
+                    self.lastFullScan = 0 // cached button went stale: rescan next tick
                 }
             }
         }
@@ -154,6 +180,21 @@ final class MeetBridge: CallService {
 
     private nonisolated static func runningBrowsers() -> [NSRunningApplication] {
         browserIDs.flatMap { NSRunningApplication.runningApplications(withBundleIdentifier: $0) }
+    }
+
+    /// Window titles/sizes of every running browser, hashed. `meetLike`: some title mentions Meet.
+    private nonisolated static func fingerprint() -> (hash: Int, meetLike: Bool) {
+        var hasher = Hasher()
+        var meetLike = false
+        for app in runningBrowsers() {
+            let root = AXUIElementCreateApplication(app.processIdentifier)
+            AXUIElementSetMessagingTimeout(root, 0.5)
+            let probe = AXWindowFingerprint.probe(root)
+            hasher.combine(app.processIdentifier)
+            hasher.combine(probe.hash)
+            if probe.titles.contains(where: { $0.localizedCaseInsensitiveContains("meet") }) { meetLike = true }
+        }
+        return (hasher.finalize(), meetLike)
     }
 
     /// Re-reads the labels of already known buttons. `nil` when any of them is gone.

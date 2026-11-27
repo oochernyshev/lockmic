@@ -32,8 +32,11 @@ final class TeamsBridge: CallService {
     /// The found button is re-read cheaply; the window tree walk runs only occasionally.
     private var cachedButton: AXUIElement?
     private var lastFullScan: TimeInterval = 0
+    private var lastFingerprint = 0
+    private var lastProbeAt: TimeInterval = 0
     private static let fullScanInCall: TimeInterval = 2
-    private static let fullScanIdle: TimeInterval = 1
+    /// Without a call, walk the tree only when Teams' windows changed, or this often as a fallback.
+    private static let fullScanIdle: TimeInterval = 5
     /// The button label lags behind a press; until it shows the requested state, older
     /// readings are stale, not user actions.
     private var pending: (muted: Bool, deadline: TimeInterval)?
@@ -94,7 +97,16 @@ final class TeamsBridge: CallService {
            let muted = quickState(of: button) {
             return (muted.value, button)
         }
-        if cachedButton == nil, now - lastFullScan < Self.fullScanIdle { return nil }
+        if cachedButton == nil {
+            if now - lastProbeAt < 1 { return nil } // idle: probe windows once a second
+            lastProbeAt = now
+            let print = Self.teamsApps.first.map {
+                AXWindowFingerprint.probe(AXUIElementCreateApplication($0.processIdentifier)).hash
+            } ?? 0
+            let changed = print != lastFingerprint
+            lastFingerprint = print
+            if !changed, now - lastFullScan < Self.fullScanIdle { return nil }
+        }
         lastFullScan = now
         let hit = scanWindows()
         cachedButton = hit?.button

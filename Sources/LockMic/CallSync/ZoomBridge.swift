@@ -34,7 +34,10 @@ final class ZoomBridge: CallService {
     private var cachedTitles = ZoomMenuStrings.Titles()
     private var lastFullScan: TimeInterval = 0
     private static let fullScanInCall: TimeInterval = 2
-    private static let fullScanIdle: TimeInterval = 1
+    /// Without a meeting, scan the menus only when Zoom's windows changed, or this often as a fallback.
+    private static let fullScanIdle: TimeInterval = 5
+    private var lastFingerprint = 0
+    private var lastProbeAt: TimeInterval = 0
     /// Zoom renames the menu item ~400-500 ms after a press. Until it shows the state we
     /// asked for (or the deadline passes) older readings are stale, not user actions.
     private var pending: (muted: Bool, deadline: TimeInterval)?
@@ -114,7 +117,16 @@ final class ZoomBridge: CallService {
                 : cachedTitles.mute.contains(title) ? false : nil
             return ZoomState(muted: muted, inCall: true, item: item)
         }
-        if cachedItem == nil, now - lastFullScan < Self.fullScanIdle { return nil }
+        if cachedItem == nil {
+            if now - lastProbeAt < 1 { return nil } // idle: probe windows once a second
+            lastProbeAt = now
+            let print = NSRunningApplication.runningApplications(withBundleIdentifier: Self.bundleID).first.map {
+                AXWindowFingerprint.probe(AXUIElementCreateApplication($0.processIdentifier)).hash
+            } ?? 0
+            let changed = print != lastFingerprint
+            lastFingerprint = print
+            if !changed, now - lastFullScan < Self.fullScanIdle { return nil }
+        }
         lastFullScan = now
         let state = scanMenus()
         cachedItem = state?.item
