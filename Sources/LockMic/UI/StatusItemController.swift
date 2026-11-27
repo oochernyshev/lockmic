@@ -49,7 +49,11 @@ final class StatusItemController {
         self.callSync = CallSyncCoordinator(
             mic: mic,
             preferences: preferences,
-            services: [MeetBridge(), TeamsBridge(), zoomBridge]
+            services: [
+                BrowserCallBridge(profile: .meet),
+                CompositeCallService(id: .teams, children: [TeamsBridge(), BrowserCallBridge(profile: .teams)]),
+                zoomBridge,
+            ]
         )
         callSync.onRemoteMuteApplied = { [weak self] in
             self?.handleMuteChanged(showHUD: true)

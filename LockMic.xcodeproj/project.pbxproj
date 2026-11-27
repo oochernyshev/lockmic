@@ -50,7 +50,6 @@
 		6507DC18A3CA52D862E30880 /* AppInstallMethod.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A8DD329C0A00C7F98AB6DF /* AppInstallMethod.swift */; };
 		6E5D4A31780B5C821D15249D /* CallService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98C0BBF4D42B2665D59AB36 /* CallService.swift */; };
 		6F86EC406C1C751E39675BFC /* PreferencesRecordingPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB8A0A431336671A517462A4 /* PreferencesRecordingPage.swift */; };
-		723ADE2F0208495561AEC144 /* MeetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F89A2B21AA30C5D1606D9736 /* MeetBridge.swift */; };
 		7ACD3E8814028BAC8F0FE595 /* DeviceRowBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D4F7620379C70EA9627772 /* DeviceRowBuilder.swift */; };
 		7AFC779B76AEA8179B52B8D0 /* UsageReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B05802BA0C62099286E966 /* UsageReporter.swift */; };
 		7BCF28B6E67FFB6A7D883F39 /* AppInstanceGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C32C09184D932FCEB0E14261 /* AppInstanceGuard.swift */; };
@@ -86,10 +85,12 @@
 		E20244D2F3506734EB9D15D9 /* HotkeyRecorderButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40771CE30E43CEE7B2690B08 /* HotkeyRecorderButton.swift */; };
 		E21C796C5F395CFDEC878645 /* ThinTransparentScroller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DCBF140C7338A9FBDC5EA31 /* ThinTransparentScroller.swift */; };
 		E7476AF3C6061511AF856AB6 /* PlaybackTap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00BF46D371BFBCB0BC6F1628 /* PlaybackTap.swift */; };
+		EC473015DB4561FEDB65EF1B /* BrowserCallBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C11566FBAB8C47DD434F894 /* BrowserCallBridge.swift */; };
 		ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DF80557326D4363ECF8311 /* AudioDeviceService.swift */; };
 		F004DB315B6F5162DE075031 /* DockIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 481D6112DE20013988EEC0FD /* DockIconRenderer.swift */; };
 		F2E3E37817B12E44EE8BD4C3 /* RecordingMonitorChips.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E5547634D2311D969DC063C /* RecordingMonitorChips.swift */; };
 		F4BD0330673686991169595E /* CallSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B91CEE6DCD87E3AFEB68A979 /* CallSyncCoordinator.swift */; };
+		F7CD60FEB1908C1121136B88 /* CompositeCallService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F25DEAD74A258B2ECB9C1E4 /* CompositeCallService.swift */; };
 		F7E3CD6E603CE3C004D16E3D /* AudioHAL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71A9FD3B593297945FD73999 /* AudioHAL.swift */; };
 		FEB5CB164E454ED583B43B91 /* MenuBarIconRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C7DA62C00646979C53378E3 /* MenuBarIconRenderer.swift */; };
 		FEE8EBDBBF2899014964D9EB /* HUDOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00474B1CB3A02EF7A384B5D /* HUDOverlay.swift */; };
@@ -145,10 +146,12 @@
 		85D3C494D4898BA8C2268DB1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		88D8E3B3E7AC79E5657EB4BD /* RecordingBitRate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingBitRate.swift; sourceTree = "<group>"; };
 		894059E914968BFC5202D479 /* TeamsBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeamsBridge.swift; sourceTree = "<group>"; };
+		8C11566FBAB8C47DD434F894 /* BrowserCallBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserCallBridge.swift; sourceTree = "<group>"; };
 		9531C60032267EFA1757D1BC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		96D23D9BDF660CFB378C08B5 /* fi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fi; path = fi.lproj/Localizable.strings; sourceTree = "<group>"; };
 		9ABACD1CA7F2993C2B6D3150 /* PreferencesCallsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesCallsPage.swift; sourceTree = "<group>"; };
 		9C7DA62C00646979C53378E3 /* MenuBarIconRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarIconRenderer.swift; sourceTree = "<group>"; };
+		9F25DEAD74A258B2ECB9C1E4 /* CompositeCallService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositeCallService.swift; sourceTree = "<group>"; };
 		A241D29FB85484E5361D626F /* DeviceSelectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceSelectionState.swift; sourceTree = "<group>"; };
 		A4DE69CE589C220C182F7AAD /* LockMic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LockMic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A51C7D193AC5B7126335223E /* LockMicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockMicApp.swift; sourceTree = "<group>"; };
@@ -199,7 +202,6 @@
 		F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
 		F1DC7BD1E7A26042200E3B2B /* PreferencesDevicesPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesDevicesPage.swift; sourceTree = "<group>"; };
 		F419C15AF8C957D43FB3505F /* PreferencesKeyboardPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesKeyboardPage.swift; sourceTree = "<group>"; };
-		F89A2B21AA30C5D1606D9736 /* MeetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeetBridge.swift; sourceTree = "<group>"; };
 		FA9D1A7B481E79C6A27412A6 /* SessionPermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionPermissions.swift; sourceTree = "<group>"; };
 		FAD5EF33BC8D4A49401F7228 /* HUDPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDPresenter.swift; sourceTree = "<group>"; };
 		FCF980886270422245BA9835 /* IndicatorPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndicatorPreviews.swift; sourceTree = "<group>"; };
@@ -290,9 +292,10 @@
 			isa = PBXGroup;
 			children = (
 				192E18B01E44BADA5E61116A /* AXWindowFingerprint.swift */,
+				8C11566FBAB8C47DD434F894 /* BrowserCallBridge.swift */,
 				D98C0BBF4D42B2665D59AB36 /* CallService.swift */,
 				B91CEE6DCD87E3AFEB68A979 /* CallSyncCoordinator.swift */,
-				F89A2B21AA30C5D1606D9736 /* MeetBridge.swift */,
+				9F25DEAD74A258B2ECB9C1E4 /* CompositeCallService.swift */,
 				40301C3C4A850947408B9771 /* MeetLabels.swift */,
 				894059E914968BFC5202D479 /* TeamsBridge.swift */,
 				E93F77794A2A5B787DB61ABE /* ZoomBridge.swift */,
@@ -483,10 +486,12 @@
 				032EFCBE4F5F2B3067CC0EAA /* AppearanceThemePicker.swift in Sources */,
 				ECE73A9B283F6AA42DE51227 /* AudioDeviceService.swift in Sources */,
 				F7E3CD6E603CE3C004D16E3D /* AudioHAL.swift in Sources */,
+				EC473015DB4561FEDB65EF1B /* BrowserCallBridge.swift in Sources */,
 				6E5D4A31780B5C821D15249D /* CallService.swift in Sources */,
 				F4BD0330673686991169595E /* CallSyncCoordinator.swift in Sources */,
 				BF3DB9643FDA7D80CC2D5AEF /* CaptureRig.swift in Sources */,
 				958180F202E06B74C7FF70B8 /* Comparable+Clamped.swift in Sources */,
+				F7CD60FEB1908C1121136B88 /* CompositeCallService.swift in Sources */,
 				2BA758F4F6801B9775F202FD /* CompressedStemWriter.swift in Sources */,
 				7ACD3E8814028BAC8F0FE595 /* DeviceRowBuilder.swift in Sources */,
 				60D1A8861650AE2C9CBF9110 /* DeviceSelectionState.swift in Sources */,
@@ -507,7 +512,6 @@
 				2A17CFE4171FD22D8CF68EFB /* LevelSnapshot.swift in Sources */,
 				AA473EA7E801B173E98DE292 /* LiveMixer.swift in Sources */,
 				D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */,
-				723ADE2F0208495561AEC144 /* MeetBridge.swift in Sources */,
 				35A746A45642E9A352EE2F99 /* MeetLabels.swift in Sources */,
 				0DF851308A0FA4B2B9C7BDFE /* MeetingAlertCardView.swift in Sources */,
 				AEF4D2C00132A9A39FC3359B /* MeetingAlertCoordinator.swift in Sources */,
