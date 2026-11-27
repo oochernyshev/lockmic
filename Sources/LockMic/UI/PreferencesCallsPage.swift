@@ -1,6 +1,7 @@
 import ApplicationServices
 import SwiftUI
 
+/// Preferences → Sync: three independent switches (web calls, Teams app, Zoom app).
 struct PreferencesCallsPage: View {
     @ObservedObject var preferences: PreferencesStore
     @ObservedObject var callSync: CallSyncCoordinator
@@ -11,41 +12,78 @@ struct PreferencesCallsPage: View {
                 PreferencesChrome.sectionHeader(L10n.callsHeader)
                 PreferencesChrome.caption(L10n.callsIntro)
             }
-            service(L10n.callsMeet, .meet, $preferences.callSyncMeetEnabled, L10n.callsMeetCaption)
-            service(L10n.callsTeams, .teams, $preferences.callSyncTeamsEnabled, nil)
-            service(L10n.callsZoom, .zoom, $preferences.callSyncZoomEnabled, nil)
+
+            PreferencesChrome.sectionCard {
+                Toggle(L10n.syncWeb, isOn: $preferences.syncWebEnabled)
+                PreferencesChrome.caption(L10n.syncWebCaption)
+                if preferences.syncWebEnabled {
+                    webRow(L10n.callsMeet, .webMeet)
+                    webRow(L10n.callsTeams, .webTeams)
+                    webRow(L10n.callsZoom, .webZoom)
+                    accessWarning
+                }
+            }
+
+            PreferencesChrome.sectionCard {
+                Toggle(L10n.syncTeamsApp, isOn: $preferences.syncTeamsAppEnabled)
+                if preferences.syncTeamsAppEnabled {
+                    appRow(.teamsApp)
+                    accessWarning
+                }
+            }
+
+            PreferencesChrome.sectionCard {
+                Toggle(L10n.syncZoomApp, isOn: $preferences.syncZoomAppEnabled)
+                if preferences.syncZoomAppEnabled {
+                    appRow(.zoomApp)
+                    accessWarning
+                }
+            }
         }
         .onAppear { callSync.refreshStatuses() }
     }
 
-    private func service(
-        _ title: String, _ id: CallServiceID, _ binding: Binding<Bool>, _ caption: String?
-    ) -> some View {
-        PreferencesChrome.sectionCard {
-            Toggle(title, isOn: binding)
-            if binding.wrappedValue {
-                let (text, color) = display(callSync.statuses[id] ?? .waiting, id, found: callSync.detected[id] ?? false, calls: callSync.callCounts[id] ?? 0)
-                PreferencesChrome.statusRow(title: L10n.callsStatus, text: text, color: color)
-            }
-            if let caption {
-                PreferencesChrome.caption(caption)
-            }
-            if binding.wrappedValue, !AXIsProcessTrusted() {
-                Text(L10n.callsZoomAccess)
+    @ViewBuilder
+    private var accessWarning: some View {
+        if !AXIsProcessTrusted() {
+            Text(L10n.callsZoomAccess)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.orange)
+        }
+    }
+
+    private func appRow(_ id: SyncSourceID) -> some View {
+        let snapshot = callSync.snapshots[id] ?? SyncSourceSnapshot()
+        let (text, color) = display(snapshot)
+        return PreferencesChrome.statusRow(title: L10n.callsStatus, text: text, color: color)
+    }
+
+    private func webRow(_ name: String, _ id: SyncSourceID) -> some View {
+        let snapshot = callSync.snapshots[id] ?? SyncSourceSnapshot()
+        let (text, color) = display(snapshot)
+        return VStack(alignment: .leading, spacing: 2) {
+            PreferencesChrome.statusRow(title: name, text: text, color: color)
+            if snapshot.backgroundTabs > 0 {
+                Text(L10n.callsBackgroundTabs(snapshot.backgroundTabs))
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.orange)
             }
         }
     }
 
-    private func display(_ status: CallServiceStatus, _ id: CallServiceID, found: Bool, calls: Int) -> (String, Color) {
-        switch status {
+    private func display(_ snapshot: SyncSourceSnapshot) -> (String, Color) {
+        switch snapshot.status {
         case .off: return (L10n.callsStatusOff, .secondary)
         case .waiting: return (L10n.callsStatusWaiting, .orange)
         // The warning below explains the missing permission; here only say what was found.
-        case .needsAccess: return (found ? L10n.callsDetected : L10n.callsNotDetected, .orange)
+        case .needsAccess:
+            return (snapshot.detected ? L10n.callsDetected : L10n.callsNotDetected, .orange)
         case .connected: return (L10n.callsStatusConnected, .green)
-        case .inCall: return (calls > 0 ? "\(L10n.callsStatusInCall) · \(L10n.callsFound(calls))" : L10n.callsStatusInCall, .green)
+        case .inCall:
+            let text = snapshot.calls > 0
+                ? "\(L10n.callsStatusInCall) · \(L10n.callsFound(snapshot.calls))"
+                : L10n.callsStatusInCall
+            return (text, .green)
         }
     }
 }

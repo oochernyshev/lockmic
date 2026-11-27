@@ -18,6 +18,8 @@ struct BrowserCallProfile: Sendable {
     /// The mic button exists but the service shows it as unusable because the system mic is muted
     /// (Zoom web turns its button into plain "audio"). Counts as muted, in a call; not pressable.
     let micUnavailable: @Sendable (AXUIElement) -> Bool
+    /// Does this tab title (read from the tab strip) belong to a call of the service?
+    let isCallTabTitle: @Sendable (String) -> Bool
     /// `true` = muted, `false` = live, `nil` = not the mic button.
     let micState: @Sendable (AXUIElement) -> Bool?
 
@@ -27,6 +29,10 @@ struct BrowserCallProfile: Sendable {
         titleHint: "meet",
         acceptsBlankPiP: true,
         micUnavailable: { _ in false },
+        // Meet tabs are titled "Meet – abc-defg-hij" (a meeting code) in every language.
+        isCallTabTitle: { title in
+            title.range(of: "\\b[a-z]{3}-[a-z]{4}-[a-z]{3}\\b", options: [.regularExpression, .caseInsensitive]) != nil
+        },
         micState: { button in
             guard AXString.value(button, "AXRole") == "AXButton",
                   let label = AXString.value(button, "AXDescription") ?? AXString.value(button, "AXTitle")
@@ -45,6 +51,7 @@ struct BrowserCallProfile: Sendable {
         titleHint: "teams",
         acceptsBlankPiP: false,
         micUnavailable: { _ in false },
+        isCallTabTitle: { _ in false }, // Teams tab titles do not tell a call from a chat
         micState: { button in
             // Full Teams uses `microphone-button`; the guest "light meeting" page uses `mic-button`.
             let domID = AXString.value(button, "AXDOMIdentifier")
@@ -74,6 +81,7 @@ struct BrowserCallProfile: Sendable {
             else { return false }
             return AXString.value(button, "AXDescription")?.lowercased() == "audio"
         },
+        isCallTabTitle: { $0.localizedCaseInsensitiveContains("zoom meeting") },
         micState: { button in
             guard AXString.value(button, "AXRole") == "AXButton",
                   AXString.list(button, "AXDOMClassList")?.contains("join-audio-container__btn") == true,
@@ -124,6 +132,7 @@ final class BrowserCallBridge: CallService {
     /// A page of this service is open in some browser (even before joining a call).
     private(set) var appDetected = false
     var callCount: Int { hasActiveCall ? calls.count : 0 }
+    private(set) var backgroundCallTabs = 0
     var status: CallServiceStatus {
         guard timer != nil else { return .off }
         guard AXIsProcessTrusted() else { return .needsAccess }
@@ -231,10 +240,12 @@ final class BrowserCallBridge: CallService {
             let full = print.hash != lastPrint || now - lastFull >= interval
             var hits: [Hit]?
             var pageSeen: Bool?
+            var backgroundTabs: Int?
             if full {
                 let result = Self.scan(profile)
                 hits = result.hits
                 pageSeen = result.pageSeen
+                backgroundTabs = result.backgroundTabs
             } else if inCall {
                 hits = Self.quickScan(cached, profile)
             } else {
@@ -249,6 +260,12 @@ final class BrowserCallBridge: CallService {
                 if probeDue { self.lastProbeAt = now }
                 if full { self.lastFullScan = now }
                 if let pageSeen { self.appDetected = pageSeen }
+                if let backgroundTabs {
+                    if backgroundTabs != self.backgroundCallTabs {
+                        log.info("background call tabs=\(backgroundTabs, privacy: .public) service=\(profile.id.rawValue, privacy: .public)")
+                    }
+                    self.backgroundCallTabs = backgroundTabs
+                }
                 if skipped { return }
                 if let hits {
                     self.finish(hits)
@@ -334,6 +351,19 @@ final class BrowserCallBridge: CallService {
         return (hasher.finalize(), hinted)
     }
 
+    private nonisolated static let recordingMarkers = ["microphone recording", "using microphone", "запись с микрофона"]
+
+    private nonisolated static func isRecordingTab(_ title: String) -> Bool {
+        let lower = title.lowercased()
+        return recordingMarkers.contains { lower.contains($0) }
+    }
+
+    private nonisolated static func isSelected(_ el: AXUIElement) -> Bool {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(el, kAXValueAttribute as CFString, &value) == .success else { return false }
+        return (value as? NSNumber)?.intValue == 1
+    }
+
     private nonisolated static func read(_ button: AXUIElement, _ profile: BrowserCallProfile) -> Hit? {
         if let muted = profile.micState(button) { return Hit(muted: muted, button: button) }
         if profile.micUnavailable(button) { return Hit(muted: true, button: button, unavailable: true) }
@@ -351,9 +381,12 @@ final class BrowserCallBridge: CallService {
     }
 
     /// `pageSeen`: some page of the service is open, whether or not a call is running.
-    private nonisolated static func scan(_ profile: BrowserCallProfile) -> (hits: [Hit], pageSeen: Bool) {
+    private nonisolated static func scan(
+        _ profile: BrowserCallProfile
+    ) -> (hits: [Hit], pageSeen: Bool, backgroundTabs: Int) {
         var found: [Hit] = []
         var pageSeen = false
+        var backgroundTabs = 0
         for app in runningBrowsers() {
             let root = AXUIElementCreateApplication(app.processIdentifier)
             AXUIElementSetMessagingTimeout(root, 0.5)
@@ -366,20 +399,28 @@ final class BrowserCallBridge: CallService {
                     string(window, "AXTitle")?.localizedCaseInsensitiveContains($0) == true
                 } == true
                 search(window, profile, inPage: false, pipWindow: pip, budget: &budget,
-                       into: &found, pageSeen: &pageSeen)
+                       into: &found, pageSeen: &pageSeen, backgroundTabs: &backgroundTabs)
             }
         }
-        return (found, pageSeen)
+        // Tabs already readable as calls are not "background".
+        return (found, pageSeen, found.isEmpty ? backgroundTabs : 0)
     }
 
     private nonisolated static func search(
         _ el: AXUIElement, _ profile: BrowserCallProfile, inPage: Bool, pipWindow: Bool,
-        budget: inout Int, into found: inout [Hit], pageSeen: inout Bool
+        budget: inout Int, into found: inout [Hit], pageSeen: inout Bool, backgroundTabs: inout Int
     ) {
         budget -= 1
         if budget <= 0 { return }
         let role = string(el, "AXRole")
         var inPage = inPage
+        // Chromium shows every tab in the tab strip (title only). A background tab of this service
+        // that is using the microphone is a call whose controls cannot be read until it is shown.
+        if role == "AXRadioButton", let hint = profile.titleHint, let title = string(el, "AXTitle"),
+           (profile.isCallTabTitle(title) || title.localizedCaseInsensitiveContains(hint) && isRecordingTab(title)),
+           !isSelected(el) {
+            backgroundTabs += 1
+        }
         if role == "AXWebArea" {
             let page = url(el)
             inPage = profile.pageMatches(page)
@@ -393,7 +434,7 @@ final class BrowserCallBridge: CallService {
         }
         for child in children(el) {
             search(child, profile, inPage: inPage, pipWindow: pipWindow, budget: &budget,
-                   into: &found, pageSeen: &pageSeen)
+                   into: &found, pageSeen: &pageSeen, backgroundTabs: &backgroundTabs)
         }
     }
 

@@ -100,9 +100,13 @@ final class PreferencesStore: ObservableObject {
         static let dismissMeetingKeyCode = "hotkeyDismissMeetingKeyCode"
         static let dismissMeetingModifiers = "hotkeyDismissMeetingModifiers"
 
+        // Legacy per-service keys (migrated once into the three below).
         static let callSyncMeet = "callSyncMeetEnabled"
         static let callSyncTeams = "callSyncTeamsEnabled"
         static let callSyncZoom = "callSyncZoomEnabled"
+        static let syncWeb = "syncWebEnabled"
+        static let syncTeamsApp = "syncTeamsAppEnabled"
+        static let syncZoomApp = "syncZoomAppEnabled"
         static let meetingAlertsEnabled = "meetingAlertsEnabled"
         static let meetingAlertSoundEnabled = "meetingAlertSoundEnabled"
         static let meetingAlertSoundAllOutputs = "meetingAlertSoundAllOutputs"
@@ -146,16 +150,19 @@ final class PreferencesStore: ObservableObject {
         didSet { UserDefaults.standard.set(soundEnabled, forKey: Keys.soundEnabled) }
     }
 
-    /// Two-way mute sync with call services. Off by default: LockMic behaves as before.
-    @Published var callSyncMeetEnabled: Bool {
-        didSet { UserDefaults.standard.set(callSyncMeetEnabled, forKey: Keys.callSyncMeet) }
+    /// Two-way mute sync with web calls (Google Meet, Teams, Zoom in browsers). Off by default.
+    @Published var syncWebEnabled: Bool {
+        didSet { UserDefaults.standard.set(syncWebEnabled, forKey: Keys.syncWeb) }
     }
-    @Published var callSyncTeamsEnabled: Bool {
-        didSet { UserDefaults.standard.set(callSyncTeamsEnabled, forKey: Keys.callSyncTeams) }
+    /// Two-way mute sync with the Microsoft Teams app.
+    @Published var syncTeamsAppEnabled: Bool {
+        didSet { UserDefaults.standard.set(syncTeamsAppEnabled, forKey: Keys.syncTeamsApp) }
     }
-    @Published var callSyncZoomEnabled: Bool {
-        didSet { UserDefaults.standard.set(callSyncZoomEnabled, forKey: Keys.callSyncZoom) }
+    /// Two-way mute sync with the Zoom app.
+    @Published var syncZoomAppEnabled: Bool {
+        didSet { UserDefaults.standard.set(syncZoomAppEnabled, forKey: Keys.syncZoomApp) }
     }
+
     /// Floating countdown card two minutes before Calendar events.
     @Published var meetingAlertsEnabled: Bool {
         didSet { UserDefaults.standard.set(meetingAlertsEnabled, forKey: Keys.meetingAlertsEnabled) }
@@ -357,9 +364,12 @@ final class PreferencesStore: ObservableObject {
         }
         soundEnabled = defaults.bool(forKey: Keys.soundEnabled)
 
-        callSyncMeetEnabled = defaults.bool(forKey: Keys.callSyncMeet)
-        callSyncTeamsEnabled = defaults.bool(forKey: Keys.callSyncTeams)
-        callSyncZoomEnabled = defaults.bool(forKey: Keys.callSyncZoom)
+        let legacyMeet = defaults.bool(forKey: Keys.callSyncMeet)
+        let legacyTeams = defaults.bool(forKey: Keys.callSyncTeams)
+        let legacyZoom = defaults.bool(forKey: Keys.callSyncZoom)
+        syncWebEnabled = defaults.object(forKey: Keys.syncWeb) as? Bool ?? (legacyMeet || legacyTeams || legacyZoom)
+        syncTeamsAppEnabled = defaults.object(forKey: Keys.syncTeamsApp) as? Bool ?? legacyTeams
+        syncZoomAppEnabled = defaults.object(forKey: Keys.syncZoomApp) as? Bool ?? legacyZoom
 
         if defaults.object(forKey: Keys.meetingAlertsEnabled) == nil {
             defaults.set(false, forKey: Keys.meetingAlertsEnabled)

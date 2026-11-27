@@ -32,6 +32,7 @@ final class CompositeCallService: CallService {
     var hasActiveCall: Bool { children.contains { $0.hasActiveCall } }
     var appDetected: Bool { children.contains { $0.appDetected } }
     var callCount: Int { children.reduce(0) { $0 + $1.callCount } }
+    var backgroundCallTabs: Int { children.reduce(0) { $0 + $1.backgroundCallTabs } }
 
     var status: CallServiceStatus {
         let all = children.map(\.status)

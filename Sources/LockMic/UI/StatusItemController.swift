@@ -12,7 +12,6 @@ final class StatusItemController {
     private let recording: RecordingCoordinator
     private let meetings: MeetingAlertCoordinator
     let callSync: CallSyncCoordinator
-    let zoomBridge = ZoomBridge()
     private let sounds: SoundFeedback
 
     private var statusItem: NSStatusItem?
@@ -46,13 +45,27 @@ final class StatusItemController {
         self.hotkeys = HotkeyCoordinator(mic: mic, preferences: preferences)
         self.recording = RecordingCoordinator(recorder: recorder, preferences: preferences, mic: mic)
         self.meetings = MeetingAlertCoordinator(preferences: preferences, audio: audio)
+        let webMeet = BrowserCallBridge(profile: .meet)
+        let webTeams = BrowserCallBridge(profile: .teams)
+        let webZoom = BrowserCallBridge(profile: .zoom)
+        let teamsApp = TeamsBridge()
+        let zoomApp = ZoomBridge()
         self.callSync = CallSyncCoordinator(
             mic: mic,
             preferences: preferences,
+            // Events from every way of reaching a service are merged per service.
             services: [
-                BrowserCallBridge(profile: .meet),
-                CompositeCallService(id: .teams, children: [TeamsBridge(), BrowserCallBridge(profile: .teams)]),
-                CompositeCallService(id: .zoom, children: [zoomBridge, BrowserCallBridge(profile: .zoom)]),
+                webMeet,
+                CompositeCallService(id: .teams, children: [teamsApp, webTeams]),
+                CompositeCallService(id: .zoom, children: [zoomApp, webZoom]),
+            ],
+            // Each source is switched on its own: web calls, the Teams app, the Zoom app.
+            sources: [
+                SyncSource(id: .webMeet, service: webMeet, enabled: preferences.$syncWebEnabled.eraseToAnyPublisher()),
+                SyncSource(id: .webTeams, service: webTeams, enabled: preferences.$syncWebEnabled.eraseToAnyPublisher()),
+                SyncSource(id: .webZoom, service: webZoom, enabled: preferences.$syncWebEnabled.eraseToAnyPublisher()),
+                SyncSource(id: .teamsApp, service: teamsApp, enabled: preferences.$syncTeamsAppEnabled.eraseToAnyPublisher()),
+                SyncSource(id: .zoomApp, service: zoomApp, enabled: preferences.$syncZoomAppEnabled.eraseToAnyPublisher()),
             ]
         )
         callSync.onRemoteMuteApplied = { [weak self] in

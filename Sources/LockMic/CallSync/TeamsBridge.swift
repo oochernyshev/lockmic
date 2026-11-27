@@ -14,6 +14,7 @@ final class TeamsBridge: CallService {
     var hasActiveCall: Bool { lastEvent?.inCall == true }
     var appDetected: Bool { !Self.teamsApps.isEmpty }
     var callCount: Int { hasActiveCall ? 1 : 0 }
+    var backgroundCallTabs: Int { 0 }
     var status: CallServiceStatus {
         guard timer != nil else { return .off }
         guard AXIsProcessTrusted() else { return .needsAccess }

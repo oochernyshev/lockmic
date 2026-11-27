@@ -11,6 +11,8 @@ protocol CallService: AnyObject {
     var appDetected: Bool { get }
     /// Calls currently synced through this service (apps, tabs, windows).
     var callCount: Int { get }
+    /// Calls seen only as a browser tab in the background (content not readable until shown).
+    var backgroundCallTabs: Int { get }
     /// Called with every observed service-side state change.
     var onEvent: ((CallServiceEvent) -> Void)? { get set }
     func start()

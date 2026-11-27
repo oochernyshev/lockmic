@@ -275,9 +275,9 @@
 "recording.split" = "Split";
 "recording.split.tooltip" = "Save this segment and immediately start a new recording";
 
-"tab.calls" = "Calls";
-"calls.header" = "Call mute sync";
-"calls.intro" = "Keep LockMic and your call app muted or unmuted together. With an integration off, LockMic works as before.";
+"tab.calls" = "Sync";
+"calls.header" = "Mute sync";
+"calls.intro" = "Keep LockMic and your call apps muted or unmuted together, in both directions. Everything here is off by default and works through Accessibility.";
 "calls.meet" = "Google Meet";
 "calls.meet.caption" = "Works in Safari and Chromium browsers (Chrome, Arc, Edge, Brave) through Accessibility. The Meet tab must be the visible one.";
 "calls.teams" = "Microsoft Teams";
@@ -300,3 +300,8 @@
 "devices.method.caption.volume" = "Sets the input volume to 0 instead of muting. Apps see a normal but silent microphone, so no \"muted by system\" warnings. Needs a microphone with an input volume control; some apps can raise it again.";
 "devices.method.caption.both" = "System mute plus volume 0 (default, most reliable).";
 "calls.found" = "found: %d";
+"calls.backgroundTabs" = "A call is open in a background browser tab (%d). Switch to that tab to sync it: Chrome does not expose background tabs.";
+"sync.web" = "Web calls";
+"sync.web.caption" = "Google Meet, Microsoft Teams and Zoom in the browser. Safari: calls in all tabs are synced. Chrome and other Chromium browsers: only a call whose tab is open and visible in its window, because they do not expose background tabs.";
+"sync.teamsApp" = "Microsoft Teams app";
+"sync.zoomApp" = "Zoom app";

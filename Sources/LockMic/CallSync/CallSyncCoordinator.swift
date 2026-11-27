@@ -9,11 +9,28 @@ private let log = Logger(subsystem: "com.lockmic.app", category: "CallSync")
 /// Loop protection: every change we push gets a timestamp; service events arriving within
 /// `echoWindow` of our own push are treated as the echo of that command and ignored.
 /// A service-side change applied to LockMic is flagged so it is never pushed back.
+/// One independently switchable way of reaching a call service.
+enum SyncSourceID: String, CaseIterable, Sendable {
+    case webMeet, webTeams, webZoom, teamsApp, zoomApp
+}
+
+struct SyncSource {
+    let id: SyncSourceID
+    let service: CallService
+    let enabled: AnyPublisher<Bool, Never>
+}
+
+struct SyncSourceSnapshot: Equatable {
+    var status: CallServiceStatus = .off
+    var detected = false
+    var calls = 0
+    var backgroundTabs = 0
+}
+
 @MainActor
 final class CallSyncCoordinator: ObservableObject {
-    @Published private(set) var statuses: [CallServiceID: CallServiceStatus] = [:]
-    @Published private(set) var detected: [CallServiceID: Bool] = [:]
-    @Published private(set) var callCounts: [CallServiceID: Int] = [:]
+    @Published private(set) var snapshots: [SyncSourceID: SyncSourceSnapshot] = [:]
+    private let sources: [SyncSource]
     private var statusTimer: Timer?
     static let echoWindow: TimeInterval = 0.3
     /// Lets the service mute itself before HAL mute lands (avoids Meet's "muted by system").
@@ -34,7 +51,11 @@ final class CallSyncCoordinator: ObservableObject {
     /// Called after a service changed LockMic's mute so UI (HUD, icon, sound) can refresh.
     var onRemoteMuteApplied: (() -> Void)?
 
-    init(mic: MicController, preferences: PreferencesStore, services: [CallService]) {
+    /// - Parameters:
+    ///   - services: the merged per-service views that carry events (Meet, Teams, Zoom).
+    ///   - sources: the individually switchable ways of reaching them (web, Teams app, Zoom app).
+    init(mic: MicController, preferences: PreferencesStore, services: [CallService], sources: [SyncSource]) {
+        self.sources = sources
         self.mic = mic
         self.preferences = preferences
         for service in services {
@@ -55,41 +76,43 @@ final class CallSyncCoordinator: ObservableObject {
         }
         RunLoop.main.add(t, forMode: .common)
         statusTimer = t
-        preferences.$callSyncMeetEnabled.sink { [weak self] in self?.apply(.meet, enabled: $0) }.store(in: &cancellables)
-        preferences.$callSyncTeamsEnabled.sink { [weak self] in self?.apply(.teams, enabled: $0) }.store(in: &cancellables)
-        preferences.$callSyncZoomEnabled.sink { [weak self] in self?.apply(.zoom, enabled: $0) }.store(in: &cancellables)
+        for source in sources {
+            source.enabled.removeDuplicates().sink { [weak self] enabled in
+                if enabled { source.service.start() } else { source.service.stop() }
+                if !enabled { self?.sourceStopped(source) }
+                self?.refreshStatuses()
+            }.store(in: &cancellables)
+        }
     }
 
     func refreshStatuses() {
-        let next = services.mapValues(\.status)
-        if next != statuses { statuses = next }
-        let found = services.mapValues(\.appDetected)
-        if found != detected { detected = found }
-        let counts = services.mapValues(\.callCount)
-        if counts != callCounts { callCounts = counts }
+        var next: [SyncSourceID: SyncSourceSnapshot] = [:]
+        for source in sources {
+            let service = source.service
+            next[source.id] = SyncSourceSnapshot(
+                status: service.status,
+                detected: service.appDetected,
+                calls: service.callCount,
+                backgroundTabs: service.backgroundCallTabs
+            )
+        }
+        if next != snapshots { snapshots = next }
+    }
+
+    private func sourceStopped(_ source: SyncSource) {
+        // A service whose last source went away is no longer in a call.
+        inCall[source.service.id] = services[source.service.id]?.hasActiveCall ?? false
     }
 
     func stop() {
         statusTimer?.invalidate()
         cancellables.removeAll()
-        services.values.forEach { $0.stop() }
+        sources.forEach { $0.service.stop() }
     }
 
     /// A call service is connected to a live call: do not fight its unmute.
     private var hasSyncedCall: Bool {
         services.values.contains { $0.hasActiveCall }
-    }
-
-    private func apply(_ id: CallServiceID, enabled: Bool) {
-        guard let service = services[id] else { return }
-        if enabled {
-            service.start()
-            refreshStatuses()
-        } else {
-            service.stop()
-            inCall[id] = false
-            refreshStatuses()
-        }
     }
 
     /// LockMic changed (hotkey, menu bar, HUD, push-to-talk). Returns the HAL write delay.
