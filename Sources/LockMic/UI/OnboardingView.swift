@@ -283,7 +283,7 @@ struct OnboardingView: View {
             .frame(maxWidth: 520, alignment: .leading)
 
             CalendarAccessRow(meetings: meetings)
-                .frame(maxWidth: 520)
+                .frame(maxWidth: 544)
         }
         .padding(14)
     }
@@ -334,7 +334,7 @@ struct OnboardingView: View {
             .frame(maxWidth: 520, alignment: .leading)
 
             AccessibilityAccessRow()
-                .frame(maxWidth: 520)
+                .frame(maxWidth: 544)
         }
         .padding(14)
     }
