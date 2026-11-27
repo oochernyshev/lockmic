@@ -41,12 +41,13 @@ struct BrowserCallProfile: Sendable {
         titleHint: "teams",
         acceptsBlankPiP: false,
         micState: { button in
-            guard AXString.value(button, "AXDOMIdentifier") == "microphone-button" else { return nil }
-            switch AXString.value(button, "AXDescription") {
-            case "Mute mic": return false
-            case "Unmute mic": return true
-            default: return AXString.childCount(button) == 0 // other UI language: no icon child = muted
-            }
+            // Full Teams uses `microphone-button`; the guest "light meeting" page uses `mic-button`.
+            let domID = AXString.value(button, "AXDOMIdentifier")
+            guard domID == "microphone-button" || domID == "mic-button" else { return nil }
+            let label = AXString.value(button, "AXDescription")
+            if let label, let muted = TeamsWebLabels.muted(for: label) { return muted }
+            // Unknown label: the full UI shows an icon child only while the mic is live.
+            return domID == "microphone-button" ? AXString.childCount(button) == 0 : nil
         }
     )
 }
@@ -149,6 +150,7 @@ final class BrowserCallBridge: CallService {
     func push(muted: Bool) {
         var pressed = false
         for (button, _) in calls where press(button, toMuted: muted) { pressed = true }
+        log.info("push muted=\(muted, privacy: .public) calls=\(self.calls.count, privacy: .public) pressed=\(pressed, privacy: .public)")
         guard pressed else { return }
         pending = (muted, ProcessInfo.processInfo.systemUptime + Self.settleTimeout)
         lastEvent = CallServiceEvent(muted: muted, inCall: true)
