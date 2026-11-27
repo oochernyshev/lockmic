@@ -77,6 +77,7 @@ struct OnboardingView: View {
             }
             VStack(alignment: .leading, spacing: 14) {
                 onboardingFeature("mic.slash.fill", "Mute every controllable microphone at once")
+                onboardingFeature("arrow.left.arrow.right", "Stay in sync with Meet, Teams and Zoom, both ways")
                 onboardingFeature("keyboard", "Use global shortcuts from any app")
                 onboardingFeature("waveform", "Record microphone and system audio when you need it")
             }
