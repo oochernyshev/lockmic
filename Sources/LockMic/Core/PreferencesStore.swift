@@ -102,7 +102,6 @@ final class PreferencesStore: ObservableObject {
         static let callSyncMeet = "callSyncMeetEnabled"
         static let callSyncTeams = "callSyncTeamsEnabled"
         static let callSyncZoom = "callSyncZoomEnabled"
-        static let teamsAPIToken = "callSyncTeamsToken"
         static let meetingAlertsEnabled = "meetingAlertsEnabled"
         static let meetingAlertSoundEnabled = "meetingAlertSoundEnabled"
         static let meetingAlertSoundAllOutputs = "meetingAlertSoundAllOutputs"
@@ -156,12 +155,6 @@ final class PreferencesStore: ObservableObject {
     @Published var callSyncZoomEnabled: Bool {
         didSet { UserDefaults.standard.set(callSyncZoomEnabled, forKey: Keys.callSyncZoom) }
     }
-    /// Pairing token Teams hands out after the user allows the connection once.
-    var teamsAPIToken: String {
-        get { UserDefaults.standard.string(forKey: Keys.teamsAPIToken) ?? "" }
-        set { UserDefaults.standard.set(newValue, forKey: Keys.teamsAPIToken) }
-    }
-
     /// Floating countdown card two minutes before Calendar events.
     @Published var meetingAlertsEnabled: Bool {
         didSet { UserDefaults.standard.set(meetingAlertsEnabled, forKey: Keys.meetingAlertsEnabled) }

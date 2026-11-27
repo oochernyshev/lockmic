@@ -12,6 +12,7 @@ final class MeetBridge: CallService {
     let id = CallServiceID.meet
     var onEvent: ((CallServiceEvent) -> Void)?
     var hasActiveCall: Bool { !clients.isEmpty && lastInCall }
+    var appDetected: Bool { !clients.isEmpty }
     var status: CallServiceStatus {
         guard listenFD >= 0 else { return .off }
         if clients.isEmpty { return .waiting }

@@ -24,6 +24,12 @@ struct PreferencesCallsPage: View {
             Toggle(title, isOn: binding)
             if binding.wrappedValue {
                 let (text, color) = display(callSync.statuses[id] ?? .waiting, id)
+                let found = callSync.detected[id] ?? false
+                PreferencesChrome.statusRow(
+                    title: id == .meet ? L10n.callsExtension : L10n.callsApp,
+                    text: found ? L10n.callsDetected : L10n.callsNotDetected,
+                    color: found ? .green : .orange
+                )
                 PreferencesChrome.statusRow(title: L10n.callsStatus, text: text, color: color)
             }
             PreferencesChrome.caption(caption)

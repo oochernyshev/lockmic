@@ -13,11 +13,13 @@ final class ZoomBridge: CallService {
     let id = CallServiceID.zoom
     var onEvent: ((CallServiceEvent) -> Void)?
     var hasActiveCall: Bool { lastEvent?.inCall == true }
+    var appDetected: Bool {
+        !NSRunningApplication.runningApplications(withBundleIdentifier: Self.bundleID).isEmpty
+    }
     var status: CallServiceStatus {
         guard timer != nil else { return .off }
         guard Self.hasAccess else { return .needsAccess }
-        guard !NSRunningApplication.runningApplications(withBundleIdentifier: Self.bundleID).isEmpty
-        else { return .waiting }
+        guard appDetected else { return .waiting }
         return hasActiveCall ? .inCall : .connected
     }
 

@@ -7,6 +7,8 @@ protocol CallService: AnyObject {
     /// True while there is a live link AND an active call to sync with.
     var hasActiveCall: Bool { get }
     var status: CallServiceStatus { get }
+    /// The target app (or, for Meet, the browser extension) is reachable right now.
+    var appDetected: Bool { get }
     /// Called with every observed service-side state change.
     var onEvent: ((CallServiceEvent) -> Void)? { get set }
     func start()
