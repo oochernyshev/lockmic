@@ -318,9 +318,6 @@ struct OnboardingView: View {
             .padding(12)
             .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
 
-            AccessibilityAccessRow()
-                .frame(maxWidth: 520)
-
             VStack(alignment: .leading, spacing: 6) {
                 Label("LockMic only reads each call's mute button and the page address needed to find it, never audio or what is on the page.", systemImage: "lock.shield.fill")
                 Label("You can change these anytime in Preferences → Sync.", systemImage: "gearshape.fill")
@@ -328,6 +325,9 @@ struct OnboardingView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
             .frame(maxWidth: 520, alignment: .leading)
+
+            AccessibilityAccessRow()
+                .frame(maxWidth: 520)
         }
         .padding(14)
     }
