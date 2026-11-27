@@ -10,6 +10,8 @@ struct OnboardingView: View {
     let finish: () -> Void
 
     @State private var page = 0
+    @State private var askedAccessibility = false
+    @State private var askedCalendar = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,7 +54,7 @@ struct OnboardingView: View {
                     }
                         .keyboardShortcut(.defaultAction)
                 } else if page >= 2 && page <= 4 {
-                    Button("Continue") { page += 1 }
+                    Button("Continue") { continueFromPage() }
                         .keyboardShortcut(.defaultAction)
                 } else {
                     Button("Start Using LockMic") {
@@ -66,20 +68,22 @@ struct OnboardingView: View {
         }
         .frame(width: 620, height: 660)
         .background(.ultraThinMaterial)
-        .onChange(of: page) { old, new in
-            // Leaving the Sync page with any sync switched on: ask for Accessibility now.
-            let syncPage = 3
-            if old == syncPage, new != syncPage,
-               preferences.syncWebEnabled || preferences.syncTeamsAppEnabled || preferences.syncZoomAppEnabled {
-                AccessibilityPrompt.requestNow()
-            }
-            // Leaving the Alerts page with the countdown on: ask for Calendar access now.
-            let alertsPage = 4
-            if old == alertsPage, new != alertsPage,
-               preferences.meetingAlertsEnabled, meetings.access == .notDetermined {
-                meetings.requestAccessAndEnable()
-            }
+    }
+
+    /// On the Sync and Alerts pages the permission is asked first; the page changes on the next press.
+    private func continueFromPage() {
+        if page == 3, !askedAccessibility, !AXIsProcessTrusted(),
+           preferences.syncWebEnabled || preferences.syncTeamsAppEnabled || preferences.syncZoomAppEnabled {
+            askedAccessibility = true
+            AccessibilityPrompt.requestNow()
+            return
         }
+        if page == 4, !askedCalendar, preferences.meetingAlertsEnabled, meetings.access == .notDetermined {
+            askedCalendar = true
+            meetings.requestAccessAndEnable()
+            return
+        }
+        page += 1
     }
 
     private var welcomePage: some View {
