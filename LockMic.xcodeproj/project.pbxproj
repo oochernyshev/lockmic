@@ -78,6 +78,7 @@
 		BDD8AAD6F773AE812F75400F /* HUDHoldKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500AF84D4D16D9AFA3D3F98C /* HUDHoldKind.swift */; };
 		BF3DB9643FDA7D80CC2D5AEF /* CaptureRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B806C87B787DA85D4DC8F2A0 /* CaptureRig.swift */; };
 		C06BA017129FFBF8FE432315 /* RecordingBitRate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88D8E3B3E7AC79E5657EB4BD /* RecordingBitRate.swift */; };
+		C2AF0A343576BFB4E0CDBD05 /* AccessRows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2189DCB7AF1BA25B65C5A027 /* AccessRows.swift */; };
 		D129EF36C3B284E7B232DB56 /* RecordingMonitorButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA0A37D32464F73BDBCD07DA /* RecordingMonitorButtons.swift */; };
 		D1B75AB5E76978F57BA54618 /* LockMicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51C7D193AC5B7126335223E /* LockMicApp.swift */; };
 		D2858916A735CF2E761476C5 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F192D7C9A6E81A1AB3DFF30B /* StatusItemController.swift */; };
@@ -109,6 +110,7 @@
 		1F757219C34041FABC16B182 /* Comparable+Clamped.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Comparable+Clamped.swift"; sourceTree = "<group>"; };
 		200E9D59454FF5C42F0D7ECB /* PreferencesTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesTab.swift; sourceTree = "<group>"; };
 		20D4F51BC72B06AE60177E02 /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hu; path = hu.lproj/Localizable.strings; sourceTree = "<group>"; };
+		2189DCB7AF1BA25B65C5A027 /* AccessRows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessRows.swift; sourceTree = "<group>"; };
 		23C3675125FEA46D7196900C /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
 		24381AAC5C63C2B4DEB0E190 /* HUDContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HUDContentView.swift; sourceTree = "<group>"; };
 		26CB49637ACD31ADA88C6706 /* pt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pt; path = pt.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -313,6 +315,7 @@
 		7ED25CE35A9A6424C2DFF368 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				2189DCB7AF1BA25B65C5A027 /* AccessRows.swift */,
 				41CF7D9493670BC084D63103 /* AppearanceThemePicker.swift */,
 				481D6112DE20013988EEC0FD /* DockIconRenderer.swift */,
 				4BC096BE49444BD1DD7C19BE /* EscapeToCloseWindow.swift */,
@@ -486,6 +489,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2A45FE63E7C73A0F4F278E2E /* AXWindowFingerprint.swift in Sources */,
+				C2AF0A343576BFB4E0CDBD05 /* AccessRows.swift in Sources */,
 				B955E7514EA2329740618C04 /* AccessibilityPrompt.swift in Sources */,
 				3226526B0E10685261CE34E5 /* AppDelegate.swift in Sources */,
 				6507DC18A3CA52D862E30880 /* AppInstallMethod.swift in Sources */,

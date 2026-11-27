@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "Redă sunetul Glass în ultimele 30 de secunde și un minut după început.";
 "meetings.sound.all_outputs" = "Pe toate ieșirile în ultimele 15 secunde";
 "meetings.sound.all_outputs.caption" = "Trimite sunetul la fiecare ieșire fizică, nu doar la cea implicită.";
-"meetings.access.header" = "Acces la calendar";
-"meetings.access.status" = "Acces";
-"meetings.access.granted" = "Permis";
-"meetings.access.denied" = "Oprit";
-"meetings.access.restricted" = "Restricționat";
-"meetings.access.notDetermined" = "Necesar";
-"meetings.access.button" = "Permite accesul la calendar…";
-"meetings.access.openSettings" = "Deschide confidențialitatea Calendar…";
 "meetings.access.caption" = "LockMic citește titlurile și orele din calendarele de pe acest Mac. Nimic nu este încărcat.";
 "meeting.status.upcoming" = "ÎNTÂLNIRE VIITOARE";
 "meeting.status.soon" = "ÎNTÂLNIREA ÎNCEPE CURÂND!";

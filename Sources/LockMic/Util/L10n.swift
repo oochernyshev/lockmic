@@ -256,14 +256,6 @@ enum L10n {
     static var meetingsSoundCaption: String { tr("meetings.sound.caption") }
     static var meetingsSoundAllOutputs: String { tr("meetings.sound.all_outputs") }
     static var meetingsSoundAllOutputsCaption: String { tr("meetings.sound.all_outputs.caption") }
-    static var meetingsAccessHeader: String { tr("meetings.access.header") }
-    static var meetingsAccessStatus: String { tr("meetings.access.status") }
-    static var meetingsAccessGranted: String { tr("meetings.access.granted") }
-    static var meetingsAccessDenied: String { tr("meetings.access.denied") }
-    static var meetingsAccessRestricted: String { tr("meetings.access.restricted") }
-    static var meetingsAccessNotDetermined: String { tr("meetings.access.notDetermined") }
-    static var meetingsAccessButton: String { tr("meetings.access.button") }
-    static var meetingsAccessOpenSettings: String { tr("meetings.access.openSettings") }
     static var meetingsAccessCaption: String { tr("meetings.access.caption") }
     static var meetingStatusUpcoming: String { tr("meeting.status.upcoming") }
     static var meetingStatusSoon: String { tr("meeting.status.soon") }

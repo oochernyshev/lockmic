@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "A Glass hang a visszaszámlálás utolsó 30 másodpercében és a kezdés után egy percig szól.";
 "meetings.sound.all_outputs" = "Minden kimeneten az utolsó 15 másodpercben";
 "meetings.sound.all_outputs.caption" = "A hang minden fizikai kimenetre megy, nem csak az alapértelmezettre.";
-"meetings.access.header" = "Naptárhozzáférés";
-"meetings.access.status" = "Hozzáférés";
-"meetings.access.granted" = "Engedélyezve";
-"meetings.access.denied" = "Ki";
-"meetings.access.restricted" = "Korlátozott";
-"meetings.access.notDetermined" = "Szükséges";
-"meetings.access.button" = "Naptárhozzáférés engedélyezése…";
-"meetings.access.openSettings" = "Naptár adatvédelem megnyitása…";
 "meetings.access.caption" = "A LockMic a Mac naptáraiból olvassa a címeket és időpontokat. Semmi nem töltődik fel.";
 "meeting.status.upcoming" = "KÖZELGŐ TALÁLKOZÓ";
 "meeting.status.soon" = "A TALÁLKOZÓ HAMAROSAN KEZDŐDIK!";

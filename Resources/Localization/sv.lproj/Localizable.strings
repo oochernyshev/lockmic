@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "Spelar Glass-ljudet de sista 30 sekunderna och en minut efter starten.";
 "meetings.sound.all_outputs" = "På alla utgångar de sista 15 sekunderna";
 "meetings.sound.all_outputs.caption" = "Skickar ljudet till varje fysisk utgång, inte bara standardutgången.";
-"meetings.access.header" = "Kalenderåtkomst";
-"meetings.access.status" = "Åtkomst";
-"meetings.access.granted" = "Tillåten";
-"meetings.access.denied" = "Av";
-"meetings.access.restricted" = "Begränsad";
-"meetings.access.notDetermined" = "Behövs";
-"meetings.access.button" = "Tillåt kalenderåtkomst…";
-"meetings.access.openSettings" = "Öppna kalenderns integritet…";
 "meetings.access.caption" = "LockMic läser titlar och starttider från kalendrar på den här Macen. Inget laddas upp.";
 "meeting.status.upcoming" = "KOMMANDE MÖTE";
 "meeting.status.soon" = "MÖTET BÖRJAR SNART!";

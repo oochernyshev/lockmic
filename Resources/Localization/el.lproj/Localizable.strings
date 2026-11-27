@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "Ο ήχος Glass παίζει στα τελευταία 30 δευτερόλεπτα και για ένα λεπτό μετά την έναρξη.";
 "meetings.sound.all_outputs" = "Σε όλες τις εξόδους τα τελευταία 15 δευτερόλεπτα";
 "meetings.sound.all_outputs.caption" = "Ο ήχος πάει σε κάθε φυσική έξοδο, όχι μόνο στην προεπιλογή.";
-"meetings.access.header" = "Πρόσβαση ημερολογίου";
-"meetings.access.status" = "Πρόσβαση";
-"meetings.access.granted" = "Επιτρέπεται";
-"meetings.access.denied" = "Ανενεργή";
-"meetings.access.restricted" = "Περιορισμένη";
-"meetings.access.notDetermined" = "Απαιτείται";
-"meetings.access.button" = "Να επιτραπεί η πρόσβαση…";
-"meetings.access.openSettings" = "Άνοιγμα απορρήτου ημερολογίου…";
 "meetings.access.caption" = "Το LockMic διαβάζει τίτλους και ώρες από τα ημερολόγια σε αυτό το Mac. Τίποτα δεν μεταφορτώνεται.";
 "meeting.status.upcoming" = "ΕΠΕΡΧΟΜΕΝΗ ΣΥΝΑΝΤΗΣΗ";
 "meeting.status.soon" = "Η ΣΥΝΑΝΤΗΣΗ ΞΕΚΙΝΑ ΣΥΝΤΟΜΑ!";

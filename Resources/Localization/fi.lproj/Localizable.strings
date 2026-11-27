@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "Glass-ääni soi lähtölaskennan viimeiset 30 sekuntia ja minuutin kokouksen alettua.";
 "meetings.sound.all_outputs" = "Kaikkiin lähtöihin viimeiset 15 sekuntia";
 "meetings.sound.all_outputs.caption" = "Ääni soi jokaisessa fyysisessä lähdössä, ei vain oletuksessa.";
-"meetings.access.header" = "Kalenterin käyttöoikeus";
-"meetings.access.status" = "Käyttö";
-"meetings.access.granted" = "Sallittu";
-"meetings.access.denied" = "Pois";
-"meetings.access.restricted" = "Rajoitettu";
-"meetings.access.notDetermined" = "Tarvitaan";
-"meetings.access.button" = "Salli kalenterin käyttö…";
-"meetings.access.openSettings" = "Avaa kalenterin tietosuoja…";
 "meetings.access.caption" = "LockMic lukee tapahtumien nimet ja ajat tämän Macin kalentereista. Mitään ei lähetetä.";
 "meeting.status.upcoming" = "TULEVA KOKOUS";
 "meeting.status.soon" = "KOKOUS ALKAA PIAN!";

@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "Glass zvuk u poslednjih 30 sekundi i minut nakon početka.";
 "meetings.sound.all_outputs" = "Na sve izlaze poslednjih 15 sekundi";
 "meetings.sound.all_outputs.caption" = "Zvuk ide na svaki fizički izlaz, ne samo na podrazumevani.";
-"meetings.access.header" = "Pristup kalendaru";
-"meetings.access.status" = "Pristup";
-"meetings.access.granted" = "Dozvoljen";
-"meetings.access.denied" = "Isključen";
-"meetings.access.restricted" = "Ograničen";
-"meetings.access.notDetermined" = "Potreban";
-"meetings.access.button" = "Dozvoli pristup kalendaru…";
-"meetings.access.openSettings" = "Otvori privatnost kalendara…";
 "meetings.access.caption" = "LockMic čita naslove i vreme iz kalendara na ovom Macu. Ništa se ne šalje.";
 "meeting.status.upcoming" = "PREDSTOJEĆI SASTANAK";
 "meeting.status.soon" = "SASTANAK USKORO POČINJE!";

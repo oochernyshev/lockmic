@@ -241,14 +241,6 @@
 "meetings.sound.caption" = "Geri sayımın son 30 saniyesinde ve başladıktan sonra bir dakika Glass sesini çalar.";
 "meetings.sound.all_outputs" = "Son 15 saniyede tüm çıkışlarda çal";
 "meetings.sound.all_outputs.caption" = "Sesi yalnızca varsayılan çıkışa değil, her fiziksel çıkışa gönderir.";
-"meetings.access.header" = "Takvim erişimi";
-"meetings.access.status" = "Erişim";
-"meetings.access.granted" = "İzinli";
-"meetings.access.denied" = "Kapalı";
-"meetings.access.restricted" = "Kısıtlı";
-"meetings.access.notDetermined" = "Gerekli";
-"meetings.access.button" = "Takvim erişimine izin ver…";
-"meetings.access.openSettings" = "Takvim gizliliğini aç…";
 "meetings.access.caption" = "LockMic bu Mac’teki takvimlerden başlık ve başlangıç saatini okur. Hiçbir şey yüklenmez.";
 "meeting.status.upcoming" = "YAKLAŞAN TOPLANTI";
 "meeting.status.soon" = "TOPLANTI YAKINDA BAŞLIYOR!";
