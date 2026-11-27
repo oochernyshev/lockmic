@@ -15,6 +15,9 @@ struct BrowserCallProfile: Sendable {
     let titleHint: String?
     /// Blank-URL windows whose title has the hint count as the service (Meet's Picture-in-Picture).
     let acceptsBlankPiP: Bool
+    /// The mic button exists but the service shows it as unusable because the system mic is muted
+    /// (Zoom web turns its button into plain "audio"). Counts as muted, in a call; not pressable.
+    let micUnavailable: @Sendable (AXUIElement) -> Bool
     /// `true` = muted, `false` = live, `nil` = not the mic button.
     let micState: @Sendable (AXUIElement) -> Bool?
 
@@ -23,6 +26,7 @@ struct BrowserCallProfile: Sendable {
         pageMatches: { $0?.host == "meet.google.com" },
         titleHint: "meet",
         acceptsBlankPiP: true,
+        micUnavailable: { _ in false },
         micState: { button in
             guard AXString.value(button, "AXRole") == "AXButton",
                   let label = AXString.value(button, "AXDescription") ?? AXString.value(button, "AXTitle")
@@ -40,6 +44,7 @@ struct BrowserCallProfile: Sendable {
         },
         titleHint: "teams",
         acceptsBlankPiP: false,
+        micUnavailable: { _ in false },
         micState: { button in
             // Full Teams uses `microphone-button`; the guest "light meeting" page uses `mic-button`.
             let domID = AXString.value(button, "AXDOMIdentifier")
@@ -62,6 +67,13 @@ struct BrowserCallProfile: Sendable {
         },
         titleHint: "zoom",
         acceptsBlankPiP: false,
+        micUnavailable: { button in
+            // Same audio button, label "audio" only: the mic is not usable (system mute).
+            guard AXString.value(button, "AXRole") == "AXButton",
+                  AXString.list(button, "AXDOMClassList")?.contains("join-audio-container__btn") == true
+            else { return false }
+            return AXString.value(button, "AXDescription")?.lowercased() == "audio"
+        },
         micState: { button in
             guard AXString.value(button, "AXRole") == "AXButton",
                   AXString.list(button, "AXDOMClassList")?.contains("join-audio-container__btn") == true,
@@ -133,6 +145,8 @@ final class BrowserCallBridge: CallService {
     private struct Hit: @unchecked Sendable {
         let muted: Bool
         let button: AXUIElement
+        /// Muted because the service cannot use the system-muted mic; the button cannot be pressed.
+        var unavailable = false
     }
 
     private var timer: Timer?
@@ -151,6 +165,7 @@ final class BrowserCallBridge: CallService {
     private var lastEvent: CallServiceEvent?
     /// Last known mute state of every call seen in the previous scan, keyed by its button.
     private var calls: [AXUIElement: Bool] = [:]
+    private var unavailableCalls: Set<AXUIElement> = []
     private var pending: (muted: Bool, deadline: TimeInterval)?
     /// Consecutive scans without the button. A single miss (tree rebuild, busy page) is not a hang-up.
     private var misses = 0
@@ -172,6 +187,7 @@ final class BrowserCallBridge: CallService {
         timer = nil
         lastEvent = nil
         calls = [:]
+        unavailableCalls = []
         pending = nil
         misses = 0
     }
@@ -259,17 +275,24 @@ final class BrowserCallBridge: CallService {
                 return // stale labels right after our own press; keep `calls` so a real click is seen later
             }
         }
+        let wasUnavailable = unavailableCalls
         calls = Dictionary(hits.map { ($0.button, $0.muted) }, uniquingKeysWith: { _, last in last })
+        unavailableCalls = Set(hits.filter(\.unavailable).map(\.button))
 
         // A call that appeared while others are running adopts the current synced state.
         if lastEvent?.inCall == true, let synced {
-            for hit in hits where previous[hit.button] == nil && hit.muted != synced {
+            for hit in hits where !hit.unavailable && hit.muted != synced
+                && (previous[hit.button] == nil || wasUnavailable.contains(hit.button)) {
                 press(hit.button, toMuted: synced)
             }
         }
 
         // The state a user just changed in any call; unchanged calls do not vote.
-        let changed = hits.filter { previous[$0.button] != nil && previous[$0.button] != $0.muted }
+        // A button that was unusable (system mute) or just became so did not change by user action.
+        let changed = hits.filter {
+            !$0.unavailable && !wasUnavailable.contains($0.button)
+                && previous[$0.button] != nil && previous[$0.button] != $0.muted
+        }
         let muted = changed.last?.muted ?? (lastEvent?.inCall == true ? lastEvent?.muted : hits.first?.muted)
         let event = CallServiceEvent(muted: muted, inCall: !hits.isEmpty)
         if let last = lastEvent, last.inCall == event.inCall, last.muted == event.muted { return }
@@ -300,12 +323,18 @@ final class BrowserCallBridge: CallService {
         return (hasher.finalize(), hinted)
     }
 
+    private nonisolated static func read(_ button: AXUIElement, _ profile: BrowserCallProfile) -> Hit? {
+        if let muted = profile.micState(button) { return Hit(muted: muted, button: button) }
+        if profile.micUnavailable(button) { return Hit(muted: true, button: button, unavailable: true) }
+        return nil
+    }
+
     /// Re-reads the state of already known buttons. `nil` when any of them is gone.
     private nonisolated static func quickScan(_ cached: [Hit], _ profile: BrowserCallProfile) -> [Hit]? {
         var hits: [Hit] = []
         for known in cached {
-            guard let muted = profile.micState(known.button) else { return nil }
-            hits.append(Hit(muted: muted, button: known.button))
+            guard let hit = Self.read(known.button, profile) else { return nil }
+            hits.append(hit)
         }
         return hits
     }
@@ -347,8 +376,8 @@ final class BrowserCallBridge: CallService {
             if !inPage { return } // skip other pages entirely
             pageSeen = true
         }
-        if inPage, let muted = profile.micState(el) {
-            found.append(Hit(muted: muted, button: el))
+        if inPage, let hit = read(el, profile) {
+            found.append(hit)
             return // one mic button per call
         }
         for child in children(el) {
