@@ -270,7 +270,6 @@
 "calls.meet.caption" = "Работает в Safari и браузерах на Chromium (Chrome, Arc, Edge, Brave) через Универсальный доступ. Вкладка Meet должна быть видимой.";
 "calls.teams" = "Microsoft Teams";
 "calls.zoom" = "Zoom";
-"calls.zoom.access" = "Нужен доступ к Универсальному доступу. Разрешите LockMic в Системных настройках → Конфиденциальность и безопасность → Универсальный доступ.";
 "calls.status" = "Статус";
 "calls.status.off" = "Выключено";
 "calls.status.waiting" = "Приложение не обнаружено";

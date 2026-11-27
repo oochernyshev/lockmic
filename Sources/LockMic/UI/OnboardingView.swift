@@ -402,7 +402,7 @@ private struct OnboardingHUDPreview: NSViewRepresentable {
 
 /// Shows whether LockMic may use Accessibility (needed to sync mute with call apps) and lets the
 /// person grant it right away instead of waiting for the macOS prompt later.
-private struct AccessibilityAccessRow: View {
+struct AccessibilityAccessRow: View {
     @State private var granted = AXIsProcessTrusted()
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 

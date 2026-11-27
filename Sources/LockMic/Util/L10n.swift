@@ -46,7 +46,6 @@ enum L10n {
     static var callsStatusNeedsAccess: String { tr("calls.status.needsAccess") }
     static var callsStatusConnected: String { tr("calls.status.connected") }
     static var callsStatusInCall: String { tr("calls.status.inCall") }
-    static var callsZoomAccess: String { tr("calls.zoom.access") }
     static var tabKeyboard: String { tr("tab.keyboard") }
     static var tabAbout: String { tr("tab.about") }
 

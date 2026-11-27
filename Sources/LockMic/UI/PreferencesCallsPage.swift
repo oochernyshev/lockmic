@@ -13,6 +13,10 @@ struct PreferencesCallsPage: View {
                 PreferencesChrome.caption(L10n.callsIntro)
             }
 
+            if preferences.syncWebEnabled || preferences.syncTeamsAppEnabled || preferences.syncZoomAppEnabled {
+                AccessibilityAccessRow()
+            }
+
             PreferencesChrome.sectionCard {
                 Toggle(L10n.syncWeb, isOn: $preferences.syncWebEnabled)
                 PreferencesChrome.caption(L10n.syncWebCaption)
@@ -20,7 +24,6 @@ struct PreferencesCallsPage: View {
                     webRow(L10n.callsMeet, .webMeet)
                     webRow(L10n.callsTeams, .webTeams)
                     webRow(L10n.callsZoom, .webZoom)
-                    accessWarning
                 }
             }
 
@@ -28,7 +31,6 @@ struct PreferencesCallsPage: View {
                 Toggle(L10n.syncTeamsApp, isOn: $preferences.syncTeamsAppEnabled)
                 if preferences.syncTeamsAppEnabled {
                     appRow(.teamsApp)
-                    accessWarning
                 }
             }
 
@@ -36,20 +38,10 @@ struct PreferencesCallsPage: View {
                 Toggle(L10n.syncZoomApp, isOn: $preferences.syncZoomAppEnabled)
                 if preferences.syncZoomAppEnabled {
                     appRow(.zoomApp)
-                    accessWarning
                 }
             }
         }
         .onAppear { callSync.refreshStatuses() }
-    }
-
-    @ViewBuilder
-    private var accessWarning: some View {
-        if !AXIsProcessTrusted() {
-            Text(L10n.callsZoomAccess)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.orange)
-        }
     }
 
     private func appRow(_ id: SyncSourceID) -> some View {

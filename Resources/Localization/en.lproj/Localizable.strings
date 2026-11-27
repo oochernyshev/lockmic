@@ -282,7 +282,6 @@
 "calls.meet.caption" = "Works in Safari and Chromium browsers (Chrome, Arc, Edge, Brave) through Accessibility. The Meet tab must be the visible one.";
 "calls.teams" = "Microsoft Teams";
 "calls.zoom" = "Zoom";
-"calls.zoom.access" = "Accessibility access is required. Grant it to LockMic in System Settings → Privacy & Security → Accessibility.";
 "calls.status" = "Status";
 "calls.status.off" = "Off";
 "calls.status.waiting" = "App not detected";
