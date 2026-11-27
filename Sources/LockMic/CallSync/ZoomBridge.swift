@@ -3,7 +3,7 @@ import ApplicationServices
 import Foundation
 
 /// Zoom sync through Accessibility: polls Zoom's Meeting menu ("Mute audio" / "Unmute audio")
-/// about every 0.5 s while Zoom runs, and presses the item to change state.
+/// about every 0.2 s while Zoom runs, and presses the item to change state.
 /// Titles are matched in English only; other Zoom languages simply never report a call.
 @MainActor
 final class ZoomBridge: CallService {
@@ -24,6 +24,11 @@ final class ZoomBridge: CallService {
 
     private var timer: Timer?
     private var lastEvent: CallServiceEvent?
+    /// Zoom renames the menu item ~400-500 ms after a press. Until it shows the state we
+    /// asked for (or the deadline passes) older readings are stale, not user actions.
+    private var pending: (muted: Bool, deadline: TimeInterval)?
+    private static let pollInterval: TimeInterval = 0.2
+    private static let settleTimeout: TimeInterval = 1.5
 
     /// Shows the system Accessibility prompt. Call only when the user enables this integration.
     static func requestAccess() -> Bool {
@@ -36,7 +41,7 @@ final class ZoomBridge: CallService {
     func start() {
         guard timer == nil else { return }
         _ = Self.requestAccess()
-        let t = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+        let t = Timer(timeInterval: Self.pollInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.poll() }
         }
         RunLoop.main.add(t, forMode: .common)
@@ -47,13 +52,14 @@ final class ZoomBridge: CallService {
         timer?.invalidate()
         timer = nil
         lastEvent = nil
+        pending = nil
     }
 
     func push(muted: Bool) {
         guard let state = readState(), state.inCall, state.muted != muted,
               let item = state.item else { return }
         AXUIElementPerformAction(item, kAXPressAction as CFString)
-        // Pre-empt the next poll reading a stale title.
+        pending = (muted, ProcessInfo.processInfo.systemUptime + Self.settleTimeout)
         lastEvent = CallServiceEvent(muted: muted, inCall: true)
     }
 
@@ -62,6 +68,14 @@ final class ZoomBridge: CallService {
     private func poll() {
         guard Self.hasAccess else { return }
         let state = readState()
+        if let wait = pending {
+            if state?.muted == wait.muted || state?.inCall != true
+                || ProcessInfo.processInfo.systemUptime > wait.deadline {
+                pending = nil
+            } else {
+                return // stale title right after our own press
+            }
+        }
         let event = CallServiceEvent(muted: state?.muted, inCall: state?.inCall ?? false)
         if let last = lastEvent, last.inCall == event.inCall, last.muted == event.muted { return }
         let wasInCall = lastEvent?.inCall ?? false
