@@ -21,13 +21,14 @@ struct PreferencesDevicesPage: View {
 
             PreferencesChrome.sectionCard {
                 PreferencesChrome.sectionHeader(L10n.devicesMethodHeader)
-                Picker("", selection: $preferences.muteMethod) {
-                    Text(L10n.devicesMethodSystem).tag(MuteMethod.system)
-                    Text(L10n.devicesMethodVolume).tag(MuteMethod.volume)
-                    Text(L10n.devicesMethodBoth).tag(MuteMethod.both)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+                ChoiceBar(
+                    options: [
+                        .init(value: MuteMethod.system, title: L10n.devicesMethodSystem),
+                        .init(value: MuteMethod.volume, title: L10n.devicesMethodVolume),
+                        .init(value: MuteMethod.both, title: L10n.devicesMethodBoth),
+                    ],
+                    selection: preferences.muteMethod
+                ) { preferences.muteMethod = $0 }
                 PreferencesChrome.caption(methodCaption)
             }
 

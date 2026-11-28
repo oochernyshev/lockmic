@@ -112,22 +112,11 @@ struct PreferencesRecordingPage: View {
     }
 
     private var qualityPicker: some View {
-        HStack(spacing: 0) {
-            ForEach(RecordingBitRate.allCases, id: \.self) { rate in
-                let selected = preferences.recordingBitRate == rate
-                Text(verbatim: "\(rate.rawValue)")
-                    .font(.callout.monospacedDigit().weight(selected ? .semibold : .regular))
-                    .lineLimit(1)
-                    .minimumScaleFactor(1)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 5)
-                    .background(selected ? Color.accentColor.opacity(0.22) : Color.clear)
-                    .contentShape(Rectangle())
-                    .onTapGesture { preferences.recordingBitRate = rate }
-            }
-        }
-        .background(Color.primary.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        ChoiceBar(
+            options: RecordingBitRate.allCases.map { .init(value: $0, title: "\($0.rawValue)") },
+            selection: preferences.recordingBitRate,
+            monospacedDigits: true
+        ) { preferences.recordingBitRate = $0 }
     }
 
     private enum PlaybackMode: CaseIterable, Hashable {
@@ -141,22 +130,10 @@ struct PreferencesRecordingPage: View {
     }
 
     private var playbackPicker: some View {
-        HStack(spacing: 0) {
-            ForEach(PlaybackMode.allCases, id: \.self) { mode in
-                let selected = playbackMode == mode
-                Text(playbackTitle(mode))
-                    .font(.callout.weight(selected ? .semibold : .regular))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 5)
-                    .background(selected ? Color.accentColor.opacity(0.22) : Color.clear)
-                    .contentShape(Rectangle())
-                    .onTapGesture { setPlaybackMode(mode) }
-            }
-        }
-        .background(Color.primary.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        ChoiceBar(
+            options: PlaybackMode.allCases.map { .init(value: $0, title: playbackTitle($0)) },
+            selection: playbackMode
+        ) { setPlaybackMode($0) }
     }
 
     private func playbackTitle(_ mode: PlaybackMode) -> String {
@@ -203,22 +180,11 @@ struct PreferencesRecordingPage: View {
     }
 
     private var silencePicker: some View {
-        HStack(spacing: 0) {
-            ForEach(RecordingSilenceTimeout.allCases) { option in
-                let selected = preferences.recordingSilenceTimeout == option
-                Text(silenceTitle(option))
-                    .font(.callout.monospacedDigit().weight(selected ? .semibold : .regular))
-                    .lineLimit(1)
-                    .minimumScaleFactor(1)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 5)
-                    .background(selected ? Color.accentColor.opacity(0.22) : Color.clear)
-                    .contentShape(Rectangle())
-                    .onTapGesture { preferences.recordingSilenceTimeout = option }
-            }
-        }
-        .background(Color.primary.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+        ChoiceBar(
+            options: RecordingSilenceTimeout.allCases.map { .init(value: $0, title: silenceTitle($0)) },
+            selection: preferences.recordingSilenceTimeout,
+            monospacedDigits: true
+        ) { preferences.recordingSilenceTimeout = $0 }
     }
 
     private func silenceTitle(_ option: RecordingSilenceTimeout) -> String {
