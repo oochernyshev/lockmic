@@ -16,10 +16,10 @@
 # Release archives are Developer ID signed and notarized.
 
 cask "lockmic" do
-  version "2.0.0"
+  version "2.0.1"
   # After first GitHub Release, set sha256 from:
-  #   shasum -a 256 build/dist/LockMic-2.0.0.zip
-  sha256 "b18aaaaa7bfcce849b28ccbe57e9825f636a352c5fedf3725803faa913313587"
+  #   shasum -a 256 build/dist/LockMic-2.0.1.zip
+  sha256 "c6849096a42cdbc9f217683e29e9440df08cf681369d30551e9c40a7cd9fe0fa"
 
   # Point this at your GitHub Releases asset (or a file:// path while testing):
   url "https://github.com/oochernyshev/lockmic/releases/download/v#{version}/LockMic-#{version}.zip"
